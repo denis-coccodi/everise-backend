@@ -1,12 +1,12 @@
-# ![RealWorld Example App](logo.png)
+# Conduit backend
 
-> A [TypeScript](https://www.typescriptlang.org/) backend for **Conduit**, a Medium-like social blogging app, implementing the [RealWorld](https://github.com/gothinkster/realworld) API spec. It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) with a [Durable Object](https://developers.cloudflare.com/durable-objects/) as its database, all on the free plan.
+A [TypeScript](https://www.typescriptlang.org/) backend for **Conduit**, a Medium-like social blogging app. It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) with a [Durable Object](https://developers.cloudflare.com/durable-objects/) as its database, all on the free plan.
 
 It covers users and authentication, profiles and follows, articles, comments, favorites, tags, feeds and pagination.
 
 # How it works
 
-The API is an [Express](https://expressjs.com/) app that runs inside a Cloudflare Worker through Cloudflare's [Node.js HTTP server support](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/). It implements the RealWorld [endpoints](https://realworld-docs.netlify.app/docs/specs/backend-specs/endpoints) under `/api`.
+The API is an [Express](https://expressjs.com/) app that runs inside a Cloudflare Worker through Cloudflare's [Node.js HTTP server support](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/). It serves a JSON REST API under `/api`.
 
 ```
 Browser ──HTTPS──> Cloudflare Worker "conduit"
@@ -25,6 +25,33 @@ Browser ──HTTPS──> Cloudflare Worker "conduit"
 | `src/db`             | The document store and the `ConduitDb` Durable Object              |
 | `__tests__`          | API tests, one file per endpoint                                   |
 | `public`             | Static assets, e.g. the default avatar                             |
+
+## Endpoints
+
+Auth: **required** endpoints return 401 without a valid token; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
+
+| Method   | Path                                       | Auth     | Description                                       |
+| -------- | ------------------------------------------ | -------- | ------------------------------------------------- |
+| POST     | `/api/users`                               |          | Register                                          |
+| POST     | `/api/users/login`                         |          | Log in                                            |
+| POST     | `/api/users/logout`                        |          | Clear the auth cookie                             |
+| GET      | `/api/user`                                | required | Current user                                      |
+| PUT      | `/api/user`                                | required | Update the current user                           |
+| GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
+| POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
+| DELETE   | `/api/profiles/:username/follow`           | required | Unfollow a user                                   |
+| GET      | `/api/articles`                            | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`) |
+| GET      | `/api/articles/feed`                       | required | Articles by followed users (`limit`, `offset`)    |
+| POST     | `/api/articles`                            | required | Create an article                                 |
+| GET      | `/api/articles/:slug`                      | optional | Get an article                                    |
+| PUT      | `/api/articles/:slug`                      | required | Update your article                               |
+| DELETE   | `/api/articles/:slug`                      | required | Delete your article                               |
+| POST     | `/api/articles/:slug/favorite`             | required | Favorite an article                               |
+| DELETE   | `/api/articles/:slug/favorite`             | required | Unfavorite an article                             |
+| GET      | `/api/articles/:slug/comments`             | optional | List comments                                     |
+| POST     | `/api/articles/:slug/comments`             | required | Add a comment                                     |
+| DELETE   | `/api/articles/:slug/comments/:commentId`  | required | Delete your comment                               |
+| GET      | `/api/tags`                                |          | List tags                                         |
 
 ## Database
 

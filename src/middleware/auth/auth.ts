@@ -63,7 +63,7 @@ class Auth {
       return;
     }
 
-    // Support both "Bearer <token>" and "Token <token>" (RealWorld spec)
+    // Support both "Bearer <token>" and "Token <token>"
     const parts = authorizationHeader.split(' ');
     return parts.length === 2 ? parts[1] : undefined;
   };

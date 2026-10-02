@@ -1,7 +1,7 @@
 {
-  "name": "typescript-firestore-realworld-backend",
+  "name": "typescript-cloudflare-conduit-backend",
   "version": "0.0.0",
-  "description": "TypeScript codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the RealWorld spec and API.",
+  "description": "TypeScript backend for Conduit, a Medium-like social blogging app, running on Cloudflare Workers with a Durable Object database.",
   "author": "Marcus Vinicius Monteiro de Souza",
   "license": "MIT",
   "private": true,
@@ -11,9 +11,7 @@
   "keywords": [
     "typescript",
     "cloudflare-workers",
-    "durable-objects",
-    "realworld",
-    "realworld-backend"
+    "durable-objects"
   ],
   "scripts": {
     "start": "wrangler dev",
