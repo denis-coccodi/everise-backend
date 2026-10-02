@@ -1,0 +1,59 @@
+{
+  "name": "typescript-firestore-realworld-backend",
+  "version": "0.0.0",
+  "description": "TypeScript codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the RealWorld spec and API.",
+  "author": "Marcus Vinicius Monteiro de Souza",
+  "license": "MIT",
+  "private": true,
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "typescript",
+    "cloudflare-workers",
+    "durable-objects",
+    "realworld",
+    "realworld-backend"
+  ],
+  "scripts": {
+    "start": "wrangler dev",
+    "test": "jest --runInBand",
+    "posttest": "npm run compile && npm run lint",
+    "deploy": "wrangler deploy",
+    "format": "prettier --write .",
+    "lint": "gts lint",
+    "fix": "gts fix",
+    "clean": "gts clean",
+    "compile": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^7.6.0",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/jest": "^29.2.3",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/supertest": "^2.0.12",
+    "dotenv": "^16.6.1",
+    "dotenv-expand": "^9.0.0",
+    "gts": "^3.1.1",
+    "jest": "^29.3.1",
+    "jest-extended": "^3.1.0",
+    "prettier": "^2.7.1",
+    "supertest": "^6.3.1",
+    "ts-jest": "^29.0.3",
+    "typescript": "~4.7.0",
+    "wrangler": "^4.147.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "celebrate": "^15.0.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "http-status-codes": "^2.2.0",
+    "jsonwebtoken": "^8.5.1",
+    "slugify": "^1.6.5"
+  }
+}

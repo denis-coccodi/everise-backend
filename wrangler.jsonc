@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "conduit",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Joi's browser build (picked by default) disables email TLD validation.
+  "alias": {"joi": "./node_modules/joi/lib/index.js"},
+
+  // Served by Cloudflare before the Worker runs, e.g. /assets/images/avatar-profile.png
+  "assets": {"directory": "./public"},
+
+  // The database: one Durable Object with SQLite-backed storage (free plan).
+  "durable_objects": {
+    "bindings": [{"name": "DB", "class_name": "ConduitDb"}]
+  },
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["ConduitDb"]}],
+
+  // Production values. `wrangler dev` overrides them with .dev.vars.
+  // JWT_SECRET_KEY is a secret: it is uploaded by the deploy workflow.
+  "vars": {
+    // Replace with your Worker URL after the first deploy.
+    "BASE_URL": "https://conduit.example.workers.dev",
+    "CORS_ORIGINS": "http://localhost:4200,http://127.0.0.1:4200",
+    "COOKIE_SAME_SITE": "none",
+    "JWT_ISSUER": "https://conduit.com",
+    "JWT_SECONDS_TO_EXPIRATION": "86400"
+  },
+
+  "observability": {"enabled": true},
+
+  "dev": {"port": 8080}
+}

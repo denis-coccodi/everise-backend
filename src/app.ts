@@ -1,0 +1,78 @@
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
+import {ArticlesRouter, ArticlesService} from './articles';
+import {config} from './config';
+import {Db} from './db';
+import {errorHandler} from './error-handler';
+import {Auth} from './middleware';
+import {ProfilesRouter, ProfilesService} from './profiles';
+import {JWTService, UsersRouter, UsersService} from './users';
+
+function createApp(db: Db) {
+  const usersService = new UsersService(db);
+
+  const jwtService = new JWTService(usersService, config.jwt.secretKey, {
+    issuer: config.jwt.issuer,
+    secondsToExpiration: config.jwt.secondsToExpiration,
+  });
+
+  const profilesService = new ProfilesService(db, usersService);
+
+  const articlesService = new ArticlesService(
+    db,
+    usersService,
+    profilesService
+  );
+
+  const auth = new Auth(jwtService);
+
+  const usersRouter = new UsersRouter(auth, usersService, jwtService).router;
+
+  const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
+    .router;
+
+  const articlesRouter = new ArticlesRouter(
+    auth,
+    articlesService,
+    usersService,
+    profilesService
+  ).router;
+
+  const app = express();
+
+  app.use(
+    cors({
+      origin: config.corsOrigins,
+      credentials: true,
+    })
+  );
+
+  app.use(express.json());
+  app.use(cookieParser());
+
+  // Files under public/ (e.g. /assets/images/*) are served by Cloudflare's
+  // static assets before a request ever reaches this app.
+
+  app.use('/api', usersRouter);
+
+  app.use('/api', profilesRouter);
+
+  app.use('/api', articlesRouter);
+
+  app.use(
+    async (
+      err: Error,
+      _req: express.Request,
+      res: express.Response,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _next: express.NextFunction
+    ) => {
+      await errorHandler.handleError(err, res);
+    }
+  );
+
+  return app;
+}
+
+export {createApp};
