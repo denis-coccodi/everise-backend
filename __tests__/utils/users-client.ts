@@ -2,7 +2,6 @@ import {faker} from '@faker-js/faker';
 import * as assert from 'node:assert';
 import request from 'supertest';
 import {app} from './app';
-import {config} from '../../src/config';
 
 interface UpdateUserParams {
   email?: string;
@@ -43,9 +42,9 @@ class UsersClient {
 
     const updateUserParams = {
       bio: faker.lorem.paragraphs(),
-      image:
-        faker.internet.url() ||
-        `${config.baseUrl}/assets/images/avatar-profile.png`,
+      // internet.url() can return non-ASCII hosts (e.g. "jalapeño.com"),
+      // which fail the API's URI validation.
+      image: faker.internet.avatar(),
     };
 
     const updatedUser = await this.updateUser(

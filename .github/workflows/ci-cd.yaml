@@ -20,8 +20,8 @@ jobs:
       JWT_ISSUER: https://conduit.com
       JWT_SECONDS_TO_EXPIRATION: 86400
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -37,8 +37,8 @@ jobs:
       name: production
       url: https://conduit.denis-coccodi.workers.dev
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
