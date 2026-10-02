@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="830" viewBox="0 0 1200 830" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+      .title { font-size: 16px; font-weight: 700; fill: #ffffff; }
+      .key { font-size: 11px; fill: #e2e8f0; font-family: Consolas, Menlo, monospace; }
+      .field { font-size: 13px; fill: #0f172a; font-family: Consolas, Menlo, monospace; }
+      .type { font-size: 12px; fill: #64748b; font-family: Consolas, Menlo, monospace; }
+      .pk { fill: #fef3c7; stroke: #f59e0b; }
+      .fk { fill: #dbeafe; stroke: #3b82f6; }
+      .badge { font-size: 9px; font-weight: 700; fill: #334155; }
+      .rel { fill: none; stroke: #475569; stroke-width: 1.6; }
+      .rel-label { font-size: 12px; fill: #334155; font-family: Consolas, Menlo, monospace; }
+      .card { font-size: 11px; fill: #64748b; }
+      .note-title { font-size: 14px; font-weight: 700; fill: #0f172a; }
+      .note { font-size: 12.5px; fill: #334155; }
+      .mono { font-family: Consolas, Menlo, monospace; font-size: 12px; fill: #0f172a; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="830" fill="#f8fafc"/>
+
+  <!-- Heading -->
+  <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Conduit database structure</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">ConduitDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: 4 collections, no fixed schema.</text>
+
+  <!-- Storage notes panel -->
+  <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="58" y="128" class="note-title">How documents are stored</text>
+  <text x="58" y="152" class="note">Each document is one key-value entry:</text>
+  <rect x="58" y="162" width="304" height="26" rx="5" fill="#f1f5f9"/>
+  <text x="68" y="180" class="mono">&lt;collection&gt;/&lt;id&gt;  →  JSON document</text>
+  <text x="58" y="210" class="mono" fill="#475569">users/2f1c…    articles/9a7e…</text>
+  <text x="58" y="240" class="note">• id (UUID), createdAt and updatedAt are</text>
+  <text x="70" y="257" class="note">added by the store to every document.</text>
+  <text x="58" y="280" class="note">• Queries scan a collection's key prefix and</text>
+  <text x="70" y="297" class="note">filter / sort / paginate in memory.</text>
+  <text x="58" y="320" class="note">• Tags and favorites have no collection: they</text>
+  <text x="70" y="337" class="note">are arrays inside each article document.</text>
+  <text x="58" y="358" class="note">• Requests are serialized: no write races.</text>
+
+  <!-- users -->
+  <g>
+    <rect x="440" y="100" width="320" height="262" rx="10" class="box"/>
+    <path d="M450,100 h300 a10,10 0 0 1 10,10 v30 h-320 v-30 a10,10 0 0 1 10,-10 z" fill="#7c3aed"/>
+    <text x="456" y="126" class="title">users</text>
+    <text x="744" y="126" class="key" text-anchor="end">users/&lt;id&gt;</text>
+    <rect x="452" y="149" width="26" height="16" rx="3" class="pk"/><text x="465" y="161" class="badge" text-anchor="middle">PK</text>
+    <text x="488" y="161" class="field">id</text><text x="744" y="161" class="type" text-anchor="end">uuid</text>
+    <text x="488" y="187" class="field">email</text><text x="744" y="187" class="type" text-anchor="end">string</text>
+    <text x="488" y="213" class="field">username</text><text x="744" y="213" class="type" text-anchor="end">string</text>
+    <text x="488" y="239" class="field">passwordHash</text><text x="744" y="239" class="type" text-anchor="end">string (bcrypt)</text>
+    <text x="488" y="265" class="field">bio</text><text x="744" y="265" class="type" text-anchor="end">string?</text>
+    <text x="488" y="291" class="field">image</text><text x="744" y="291" class="type" text-anchor="end">string?</text>
+    <text x="488" y="317" class="field">createdAt</text><text x="744" y="317" class="type" text-anchor="end">Date</text>
+    <text x="488" y="343" class="field">updatedAt</text><text x="744" y="343" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- follows -->
+  <g>
+    <rect x="860" y="100" width="300" height="184" rx="10" class="box"/>
+    <path d="M870,100 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#0891b2"/>
+    <text x="876" y="126" class="title">follows</text>
+    <text x="1144" y="126" class="key" text-anchor="end">follows/&lt;id&gt;</text>
+    <rect x="872" y="149" width="26" height="16" rx="3" class="pk"/><text x="885" y="161" class="badge" text-anchor="middle">PK</text>
+    <text x="908" y="161" class="field">id</text><text x="1144" y="161" class="type" text-anchor="end">uuid</text>
+    <rect x="872" y="175" width="26" height="16" rx="3" class="fk"/><text x="885" y="187" class="badge" text-anchor="middle">FK</text>
+    <text x="908" y="187" class="field">followerId</text><text x="1144" y="187" class="type" text-anchor="end">users.id</text>
+    <rect x="872" y="201" width="26" height="16" rx="3" class="fk"/><text x="885" y="213" class="badge" text-anchor="middle">FK</text>
+    <text x="908" y="213" class="field">followeeId</text><text x="1144" y="213" class="type" text-anchor="end">users.id</text>
+    <text x="908" y="239" class="field">createdAt</text><text x="1144" y="239" class="type" text-anchor="end">Date</text>
+    <text x="908" y="265" class="field">updatedAt</text><text x="1144" y="265" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- articles -->
+  <g>
+    <rect x="440" y="440" width="320" height="314" rx="10" class="box"/>
+    <path d="M450,440 h300 a10,10 0 0 1 10,10 v30 h-320 v-30 a10,10 0 0 1 10,-10 z" fill="#059669"/>
+    <text x="456" y="466" class="title">articles</text>
+    <text x="744" y="466" class="key" text-anchor="end">articles/&lt;id&gt;</text>
+    <rect x="452" y="489" width="26" height="16" rx="3" class="pk"/><text x="465" y="501" class="badge" text-anchor="middle">PK</text>
+    <text x="488" y="501" class="field">id</text><text x="744" y="501" class="type" text-anchor="end">uuid</text>
+    <rect x="452" y="515" width="26" height="16" rx="3" class="fk"/><text x="465" y="527" class="badge" text-anchor="middle">FK</text>
+    <text x="488" y="527" class="field">authorId</text><text x="744" y="527" class="type" text-anchor="end">users.id</text>
+    <text x="488" y="553" class="field">slug</text><text x="744" y="553" class="type" text-anchor="end">string (unique)</text>
+    <text x="488" y="579" class="field">title</text><text x="744" y="579" class="type" text-anchor="end">string</text>
+    <text x="488" y="605" class="field">description</text><text x="744" y="605" class="type" text-anchor="end">string</text>
+    <text x="488" y="631" class="field">body</text><text x="744" y="631" class="type" text-anchor="end">string</text>
+    <text x="488" y="657" class="field">tags</text><text x="744" y="657" class="type" text-anchor="end">string[]</text>
+    <rect x="452" y="671" width="26" height="16" rx="3" class="fk"/><text x="465" y="683" class="badge" text-anchor="middle">FK</text>
+    <text x="488" y="683" class="field">favoritedBy</text><text x="744" y="683" class="type" text-anchor="end">users.id[]</text>
+    <text x="488" y="709" class="field">createdAt</text><text x="744" y="709" class="type" text-anchor="end">Date</text>
+    <text x="488" y="735" class="field">updatedAt</text><text x="744" y="735" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- comments -->
+  <g>
+    <rect x="40" y="470" width="300" height="210" rx="10" class="box"/>
+    <path d="M50,470 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#ea580c"/>
+    <text x="56" y="496" class="title">comments</text>
+    <text x="324" y="496" class="key" text-anchor="end">comments/&lt;id&gt;</text>
+    <rect x="52" y="519" width="26" height="16" rx="3" class="pk"/><text x="65" y="531" class="badge" text-anchor="middle">PK</text>
+    <text x="88" y="531" class="field">id</text><text x="324" y="531" class="type" text-anchor="end">uuid</text>
+    <rect x="52" y="545" width="26" height="16" rx="3" class="fk"/><text x="65" y="557" class="badge" text-anchor="middle">FK</text>
+    <text x="88" y="557" class="field">articleId</text><text x="324" y="557" class="type" text-anchor="end">articles.id</text>
+    <rect x="52" y="571" width="26" height="16" rx="3" class="fk"/><text x="65" y="583" class="badge" text-anchor="middle">FK</text>
+    <text x="88" y="583" class="field">authorId</text><text x="324" y="583" class="type" text-anchor="end">users.id</text>
+    <text x="88" y="609" class="field">body</text><text x="324" y="609" class="type" text-anchor="end">string</text>
+    <text x="88" y="635" class="field">createdAt</text><text x="324" y="635" class="type" text-anchor="end">Date</text>
+    <text x="88" y="661" class="field">updatedAt</text><text x="324" y="661" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- Relationships (arrow points at the referenced document) -->
+  <!-- follows -> users -->
+  <path d="M860,183 H762" class="rel" marker-end="url(#arrow)"/>
+  <text x="810" y="176" class="rel-label" text-anchor="middle">followerId</text>
+  <path d="M860,209 H762" class="rel" marker-end="url(#arrow)"/>
+  <text x="810" y="228" class="rel-label" text-anchor="middle">followeeId</text>
+
+  <!-- articles -> users -->
+  <path d="M530,440 V364" class="rel" marker-end="url(#arrow)"/>
+  <text x="540" y="398" class="rel-label">authorId</text>
+  <text x="540" y="414" class="card">N : 1</text>
+  <path d="M670,440 V364" class="rel" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="680" y="398" class="rel-label">favoritedBy[]</text>
+  <text x="680" y="414" class="card">N : N</text>
+
+  <!-- comments -> articles -->
+  <path d="M340,553 H438" class="rel" marker-end="url(#arrow)"/>
+  <text x="390" y="545" class="rel-label" text-anchor="middle">articleId</text>
+  <text x="390" y="571" class="card" text-anchor="middle">N : 1</text>
+
+  <!-- comments -> users -->
+  <path d="M190,470 V428 Q190,410 208,410 H402 Q420,410 420,392 V253 Q420,235 438,235" class="rel" marker-end="url(#arrow)"/>
+  <text x="250" y="402" class="rel-label">authorId</text>
+  <text x="318" y="402" class="card">N : 1</text>
+
+  <!-- Legend -->
+  <rect x="860" y="470" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="878" y="498" class="note-title">Legend</text>
+  <rect x="878" y="511" width="26" height="16" rx="3" class="pk"/><text x="891" y="523" class="badge" text-anchor="middle">PK</text>
+  <text x="914" y="523" class="note">document id, also the key suffix</text>
+  <rect x="878" y="537" width="26" height="16" rx="3" class="fk"/><text x="891" y="549" class="badge" text-anchor="middle">FK</text>
+  <text x="914" y="549" class="note">holds another document's id</text>
+  <path d="M878,572 H904" class="rel" marker-end="url(#arrow)"/>
+  <text x="914" y="576" class="note">reference (points at target)</text>
+  <path d="M878,598 H904" class="rel" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="914" y="602" class="note">array of ids (many-to-many)</text>
+  <text x="878" y="622" class="card">References are not enforced by the database.</text>
+
+  <!-- Footer -->
+  <text x="40" y="800" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts</text>
+</svg>

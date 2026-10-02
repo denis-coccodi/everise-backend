@@ -18,10 +18,9 @@
   "migrations": [{"tag": "v1", "new_sqlite_classes": ["ConduitDb"]}],
 
   // Production values. `wrangler dev` overrides them with .dev.vars.
-  // JWT_SECRET_KEY is a secret: it is uploaded by the deploy workflow.
+  // JWT_SECRET_KEY is a secret, set once with `wrangler secret put JWT_SECRET_KEY`.
   "vars": {
-    // Replace with your Worker URL after the first deploy.
-    "BASE_URL": "https://conduit.example.workers.dev",
+    "BASE_URL": "https://conduit.denis-coccodi.workers.dev",
     "CORS_ORIGINS": "http://localhost:4200,http://127.0.0.1:4200",
     "COOKIE_SAME_SITE": "none",
     "JWT_ISSUER": "https://conduit.com",

@@ -283,3 +283,7 @@ build
 
 # Legacy Firestore emulator data (no longer used)
 firestore-data/
+
+# Local settings (see README)
+.env
+.dev.vars
