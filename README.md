@@ -132,9 +132,15 @@ The API is deployed at https://conduit.denis-coccodi.workers.dev.
 A GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) runs on every push and pull request:
 
 1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
-1. **deploy**: on pushes to `main` only, and only if the tests pass, runs `wrangler deploy`.
+1. **deploy**: on pushes to `main` only, and only if the tests pass, runs `wrangler deploy`. It waits for manual approval first (see below).
 
 It can also be started by hand from the Actions tab (**Run workflow**).
+
+### Approving a deploy
+
+The deploy job uses the `production` GitHub environment, which requires approval from a reviewer and only accepts the `main` branch. When a run reaches it, GitHub emails the reviewer and the run shows **Review deployments**. Open the run (from the email or the Actions tab), click **Review deployments**, tick `production` and click **Approve and deploy**. Rejecting it, or leaving it for 30 days, skips the deploy.
+
+Reviewers are managed under Settings → Environments → production.
 
 ## One-time setup
 

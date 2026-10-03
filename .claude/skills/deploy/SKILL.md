@@ -11,7 +11,7 @@ Repo: `denis-coccodi/typescript-cloudflare-conduit-backend`, branch `main`. Work
 
 `.github/workflows/ci-cd.yaml` has two jobs:
 - **test** (every push and PR): `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
-- **deploy** (push to `main` only, after test passes): `npx wrangler deploy` with repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+- **deploy** (push to `main` only, after test passes): `npx wrangler deploy` with repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. It runs in the `production` GitHub environment, which requires approval from denis-coccodi and only allows `main`. A run sitting at `waiting` is not stuck: tell the user to approve it (email link or **Review deployments** on the run page). Do not approve it yourself.
 
 Before pushing, run `npm test` locally; it must end with exit code 0, not just passing Jest.
 
