@@ -21,7 +21,7 @@
   // JWT_SECRET_KEY is a secret, set once with `wrangler secret put JWT_SECRET_KEY`.
   "vars": {
     "BASE_URL": "https://conduit.denis-coccodi.workers.dev",
-    "CORS_ORIGINS": "http://localhost:4200,http://127.0.0.1:4200",
+    "CORS_ORIGINS": "https://conduit-web.denis-coccodi.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
     "COOKIE_SAME_SITE": "none",
     "JWT_ISSUER": "https://conduit.com",
     "JWT_SECONDS_TO_EXPIRATION": "86400"
@@ -42,7 +42,7 @@
       },
       "vars": {
         "BASE_URL": "https://conduit-staging.denis-coccodi.workers.dev",
-        "CORS_ORIGINS": "http://localhost:4200,http://127.0.0.1:4200",
+        "CORS_ORIGINS": "https://conduit-web-staging.denis-coccodi.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
         "COOKIE_SAME_SITE": "none",
         "JWT_ISSUER": "https://conduit.com",
         "JWT_SECONDS_TO_EXPIRATION": "86400"
