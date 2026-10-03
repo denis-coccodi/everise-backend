@@ -56,6 +56,7 @@ Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploy
 ## Known failure causes
 
 - **Missing secrets**: a deploy step fails with "it's necessary to set a CLOUDFLARE_API_TOKEN". Fix on GitHub, then `gh run rerun --failed`.
+- **Staging smoke test gets `302` to `*.cloudflareaccess.com`**: Cloudflare Access rejected the request; the smoke output says whether a service token was sent and accepted. The policy list that Access enforces is the one in Zero Trust → Access controls → Applications → `<worker> - Cloudflare Workers` → Policies, and it can differ from what the Worker's Access tab shows: saving that application's Additional settings (CORS, cookies) from a stale page once dropped the `CI service token` (Service Auth) policy. Ask the user for a screenshot of that Policies tab first. To see which Access application handles a host, decode the `aud` in the redirect's `meta` token and compare it with the AUD tag on the Worker's Access tab.
 - **Smoke test gets `404` / `error code: 1042`**: a brand-new `workers.dev` hostname is not live yet. Only happens on a Worker's first deploy; re-run the job after a minute.
 - **Thousands of `Delete ␍` prettier errors locally**: Windows CRLF checkout. `.gitattributes` forces LF; if files still have CR, after committing run `git rm -rq --cached . && git reset -q --hard`.
 - **Random 422 in tests**: faker data failing Joi validation (e.g. `faker.internet.url()` producing a non-ASCII host). Use ASCII-safe generators such as `faker.internet.avatar()`.
