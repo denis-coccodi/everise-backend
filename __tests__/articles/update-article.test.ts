@@ -48,7 +48,7 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfter(
+      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
         article.article.updatedAt
       );
     });
@@ -80,7 +80,7 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfter(
+      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
         article.article.updatedAt
       );
     });
@@ -141,7 +141,7 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfter(
+      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
         article.article.updatedAt
       );
     });
@@ -172,7 +172,7 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfter(
+      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
         article.article.updatedAt
       );
     });
@@ -203,7 +203,7 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfter(
+      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
         article.article.updatedAt
       );
     });

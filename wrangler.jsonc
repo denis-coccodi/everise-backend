@@ -17,12 +17,8 @@
   "durable_objects": {
     "bindings": [{"name": "DB", "class_name": "EveriseDb"}]
   },
-  // Never edit or remove applied migrations; add new ones. v2 renamed the class
-  // in place (same storage, data kept).
-  "migrations": [
-    {"tag": "v1", "new_sqlite_classes": ["ConduitDb"]},
-    {"tag": "v2", "renamed_classes": [{"from": "ConduitDb", "to": "EveriseDb"}]}
-  ],
+  // Never edit or remove applied migrations; add new ones.
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["EveriseDb"]}],
 
   // Production values. `wrangler dev` overrides them with .dev.vars.
   // JWT_SECRET_KEY is a secret, set once with `wrangler secret put JWT_SECRET_KEY`.

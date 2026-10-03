@@ -71,7 +71,7 @@ The database is a single instance, named `everise`, of the `EveriseDb` Durable O
 
 Data is stored durably by Cloudflare. Locally it lives in `.wrangler/state`.
 
-**Renaming.** The class and instance were called `ConduitDb` and `conduit` until October 2026. The class was renamed in place by the `v2` migration in `wrangler.jsonc` (same storage). Data was moved to the new `everise` instance by a one-time copy: the first database call after the deploy copies everything from the old instance, which is kept as a backup (see `src/db/everise-db.ts`). Never edit or remove applied migrations. Every deploy also counts articles before and after and fails if any were lost.
+The instance name selects the storage: a different name is a different, empty database. Every deploy counts articles before and after and fails if any were lost.
 
 ## Authentication
 
