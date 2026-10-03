@@ -103,7 +103,7 @@ curl http://localhost:8080/api/tags
 | Variable                    | Description                                                        |
 | --------------------------- | ------------------------------------------------------------------ |
 | `BASE_URL`                  | Public URL of the API, used to build default avatar URLs           |
-| `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API           |
+| `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API with the user's cookie. Production lists only the deployed frontend; localhost is for local and staging use |
 | `COOKIE_SAME_SITE`          | `none` (default), `lax` or `strict`                                |
 | `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret |
 | `JWT_ISSUER`                | JWT issuer                                                         |
