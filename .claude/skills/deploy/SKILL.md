@@ -56,4 +56,5 @@ Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploy
 - **Smoke test gets `404` / `error code: 1042`**: a brand-new `workers.dev` hostname is not live yet. Only happens on a Worker's first deploy; re-run the job after a minute.
 - **Thousands of `Delete ␍` prettier errors locally**: Windows CRLF checkout. `.gitattributes` forces LF; if files still have CR, after committing run `git rm -rq --cached . && git reset -q --hard`.
 - **Random 422 in tests**: faker data failing Joi validation (e.g. `faker.internet.url()` producing a non-ASCII host). Use ASCII-safe generators such as `faker.internet.avatar()`.
+- **Other one-off test failures**: usually random faker data colliding (e.g. two random articles sharing a tag, which the API deduplicates). Fix the test's expectation, not the API, and check the failure is not reproducible before blaming the change being pushed.
 - **Free-plan caps**: daily request limits are shared by both Workers. A sudden 429/1027 on both points at quota, not code.
