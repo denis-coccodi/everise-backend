@@ -12,8 +12,8 @@ Browsers don't call it directly: the [frontend](https://github.com/denis-coccodi
 
 ```
 Browser ──> frontend Worker "prod" ──/api/*, service binding──> Worker "be-prod"
-                                                                      ├─ /assets/*  static files from public/
-                                                                      └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb"
+                                                                ├─ /assets/*  static files from public/
+                                                                └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb"
 ```
 
 | Folder               | Contents                                                           |
