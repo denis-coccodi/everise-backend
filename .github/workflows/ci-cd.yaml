@@ -21,7 +21,7 @@ jobs:
       BASE_URL: http://localhost:8080
       CORS_ORIGINS: http://localhost:4200,http://127.0.0.1:4200
       JWT_SECRET_KEY: dummy-jwt-secret-key
-      JWT_ISSUER: https://conduit.com
+      JWT_ISSUER: https://everisefc.com
       JWT_SECONDS_TO_EXPIRATION: 86400
     steps:
       - uses: actions/checkout@v5
@@ -45,7 +45,7 @@ jobs:
       cancel-in-progress: false
     environment:
       name: staging
-      url: https://conduit-staging.denis-coccodi.workers.dev
+      url: https://be-staging.everisefc.workers.dev
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -61,7 +61,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       # Exercises the deployed API: register, auth, create and read back data.
       - name: Smoke test staging
-        run: sh scripts/smoke.sh create https://conduit-staging.denis-coccodi.workers.dev "$RUNNER_TEMP/jar.txt"
+        run: sh scripts/smoke.sh create https://be-staging.everisefc.workers.dev "$RUNNER_TEMP/jar.txt"
         # Staging is behind Cloudflare Access; this service token lets CI through.
         # While the secrets are unset, no Access headers are sent.
         env:
@@ -70,7 +70,7 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "Staging is live at https://conduit-staging.denis-coccodi.workers.dev with \`${GITHUB_REF_NAME}\` @ \`${GITHUB_SHA::7}\`."
+            echo "Staging is live at https://be-staging.everisefc.workers.dev with \`${GITHUB_REF_NAME}\` @ \`${GITHUB_SHA::7}\`."
             echo
             if [ "$GITHUB_REF" = refs/heads/main ]; then
               echo "To ship this commit to production, open [Deploy production](${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy-production.yaml) and click **Run workflow**."

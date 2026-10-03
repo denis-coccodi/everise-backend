@@ -1,5 +1,5 @@
 #!/bin/sh
-# Smoke test against a running Conduit API.
+# Smoke test against a running Everise API.
 #
 # Usage: scripts/smoke.sh create|verify <base-url> <cookie-jar>
 #   create: register a random user, create an article, list it.

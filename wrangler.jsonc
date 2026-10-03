@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "conduit",
+  // Production Worker. The name must match the Worker in Cloudflare exactly:
+  // a different name makes `wrangler deploy` create a new Worker with an empty database.
+  "name": "be-prod",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -22,14 +24,14 @@
   "vars": {
     // The site users open: the frontend forwards /api here over a service binding
     // and serves the default avatar (BASE_URL/assets/images/avatar-profile.png).
-    "BASE_URL": "https://conduit-web.denis-coccodi.workers.dev",
+    "BASE_URL": "https://prod.everisefc.workers.dev",
     // Only the deployed frontend. Requests carry the auth cookie, so any origin
     // listed here can act as a logged-in user: never add localhost to production.
     // Browsers now reach the API same-origin through the frontend; this stays for
     // frontend builds that still call the API directly.
-    "CORS_ORIGINS": "https://conduit-web.denis-coccodi.workers.dev",
+    "CORS_ORIGINS": "https://prod.everisefc.workers.dev",
     "COOKIE_SAME_SITE": "none",
-    "JWT_ISSUER": "https://conduit.com",
+    "JWT_ISSUER": "https://everisefc.com",
     "JWT_SECONDS_TO_EXPIRATION": "86400"
   },
 
@@ -37,21 +39,23 @@
 
   "dev": {"port": 8080},
 
-  // `wrangler deploy --env staging` deploys a separate Worker, "conduit-staging",
+  // `wrangler deploy --env staging` deploys a separate Worker, "be-staging",
   // with its own Durable Object and so its own data. Bindings and vars are not
   // inherited from the top level, so they are repeated here.
   // Its JWT_SECRET_KEY is set once with `wrangler secret put JWT_SECRET_KEY --env staging`.
   "env": {
     "staging": {
+      // Set explicitly: the default would be "be-prod-staging".
+      "name": "be-staging",
       "durable_objects": {
         "bindings": [{"name": "DB", "class_name": "ConduitDb"}]
       },
       "vars": {
-        "BASE_URL": "https://conduit-web-staging.denis-coccodi.workers.dev",
+        "BASE_URL": "https://staging.everisefc.workers.dev",
         // localhost is allowed here so a local frontend can use staging; staging only holds test data.
-        "CORS_ORIGINS": "https://conduit-web-staging.denis-coccodi.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
+        "CORS_ORIGINS": "https://staging.everisefc.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
         "COOKIE_SAME_SITE": "none",
-        "JWT_ISSUER": "https://conduit.com",
+        "JWT_ISSUER": "https://everisefc.com",
         "JWT_SECONDS_TO_EXPIRATION": "86400"
       }
     }
