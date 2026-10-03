@@ -62,6 +62,11 @@ jobs:
       # Exercises the deployed API: register, auth, create and read back data.
       - name: Smoke test staging
         run: sh scripts/smoke.sh create https://conduit-staging.denis-coccodi.workers.dev "$RUNNER_TEMP/jar.txt"
+        # Staging is behind Cloudflare Access; this service token lets CI through.
+        # While the secrets are unset, no Access headers are sent.
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       - name: Summary
         run: |
           {

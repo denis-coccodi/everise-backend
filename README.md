@@ -175,6 +175,32 @@ sh scripts/smoke.sh create <base-url> /tmp/jar.txt   # register, create an artic
 sh scripts/smoke.sh verify <base-url> /tmp/jar.txt   # after a restart or redeploy: is the data still there?
 ```
 
+Against staging, export `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` first (see [Staging access](#staging-access)).
+
+## Staging access
+
+Staging (backend `conduit-staging` and frontend `conduit-web-staging`) is restricted with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust Free plan): only allowed email addresses can open it, after logging in with a one-time code sent by email. Production is public.
+
+- **Browser**: open https://conduit-staging.denis-coccodi.workers.dev once and log in, then use the staging frontend (log in there too). Access's cookie lets the frontend's requests through.
+- **CI**: the staging smoke test authenticates with an Access service token, stored as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` repository secrets.
+- **Scripts**: export the same two variables before running `scripts/smoke.sh` against staging.
+
+### Setting it up
+
+In the Cloudflare dashboard (menu names may differ slightly):
+
+1. **Service token for CI**: Zero Trust → Access controls → Service credentials → Service tokens → **Create service token**, e.g. `github-actions-staging`, no expiry or a long one. Copy the Client ID and Client Secret (the secret is shown once) and add them to this repository as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` secrets.
+1. **Protect the backend**: Workers & Pages → `conduit-staging` → Domains → **Enable Access** on the workers.dev URL (and on Preview URLs). Then open the Access application it created (Zero Trust → Access controls → Applications) and set its policies:
+   - Allow: Include → Emails → the allowed addresses.
+   - Service Auth: Include → Service Token → `github-actions-staging`.
+1. **Let the staging frontend call it**: in the same application's settings:
+   - Cross-Origin Resource Sharing: allowed origin `https://conduit-web-staging.denis-coccodi.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
+   - Cookie settings: SameSite attribute **None**.
+1. **Protect the frontend**: `conduit-web-staging` → Domains → **Enable Access**, with the same Allow policy.
+1. Re-run the latest CI/CD run on `main` and check the smoke test still passes.
+
+Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or the next staging smoke test fails.
+
 ## One-time setup
 
 1. Create a free [Cloudflare account](https://dash.cloudflare.com/sign-up) and pick a `workers.dev` subdomain (Workers & Pages → Overview).

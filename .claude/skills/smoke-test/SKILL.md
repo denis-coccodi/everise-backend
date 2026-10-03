@@ -20,7 +20,7 @@ sh scripts/smoke.sh verify <base-url> <scratchpad>/jar.txt
 | Target | Base URL | May write test data? |
 | --- | --- | --- |
 | local | http://localhost:8080 | yes |
-| staging | https://conduit-staging.denis-coccodi.workers.dev | yes; CI already does on every push to `main` |
+| staging | https://conduit-staging.denis-coccodi.workers.dev | yes; CI already does on every merge to `main`. Behind Cloudflare Access: needs `CF_ACCESS_CLIENT_ID`/`CF_ACCESS_CLIENT_SECRET` exported (a service token the user holds), otherwise expect a 302 to the Access login or a 403 |
 | production | https://conduit.denis-coccodi.workers.dev | ask the user first; read-only `curl .../api/tags` is always fine |
 
 ## Local
