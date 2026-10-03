@@ -101,6 +101,49 @@ class DocumentStore implements Db {
     await this.storage.deleteAll();
   }
 
+  // Every stored entry (documents and internal markers), for copying a whole
+  // database into another store.
+  async exportAll() {
+    return [...(await this.storage.list<unknown>({prefix: ''})).entries()];
+  }
+
+  // Copies the entries returned by `source` (another store's exportAll) into
+  // this store, once. A store that already holds documents is never
+  // overwritten. If a previous copy was interrupted, it is redone. The caller
+  // must keep other requests out while this runs (blockConcurrencyWhile).
+  // Returns how many entries were copied.
+  async importOnce(marker: string, source: () => Promise<[string, unknown][]>) {
+    const key = this.markerKey(marker);
+    const state = await this.storage.get<{status: string}>(key);
+
+    if (state?.status === 'done') return 0;
+
+    if (!state && (await this.storage.list({prefix: ''})).size > 0) {
+      await this.storage.put(key, {status: 'done', at: new Date(), copied: 0});
+      return 0;
+    }
+
+    await this.storage.put(key, {status: 'copying', at: new Date()});
+
+    const entries = await source();
+    for (const [entryKey, value] of entries) {
+      await this.storage.put(entryKey, value);
+    }
+
+    await this.storage.put(key, {
+      status: 'done',
+      at: new Date(),
+      copied: entries.length,
+    });
+
+    return entries.length;
+  }
+
+  // Internal markers live outside any collection's "<collection>/" prefix.
+  private markerKey(marker: string) {
+    return `_meta:${marker}`;
+  }
+
   private key(collection: string, id: string) {
     return `${collection}/${id}`;
   }

@@ -24,7 +24,7 @@ interface FindOptions {
 }
 
 // A minimal NoSQL document store. Implemented by `DocumentStore`, which runs
-// inside the `ConduitDb` Durable Object in production and in memory in tests.
+// inside the `EveriseDb` Durable Object in production and in memory in tests.
 interface Db {
   get<T extends Doc>(collection: string, id: string): Promise<T | undefined>;
   find<T extends Doc>(collection: string, options?: FindOptions): Promise<T[]>;

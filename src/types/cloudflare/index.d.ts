@@ -12,6 +12,7 @@ declare module 'cloudflare:workers' {
 
   interface DurableObjectState {
     readonly storage: DurableObjectStorage;
+    blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>;
   }
 
   interface DurableObjectNamespace<T> {

@@ -53,12 +53,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Compared after the deploy: a drop means data was lost.
+      - name: Count staging data before deploying
+        run: echo "ARTICLES_BEFORE=$(sh scripts/count-articles.sh https://be-staging.everisefc.workers.dev)" >> "$GITHUB_ENV"
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       # JWT_SECRET_KEY is a Worker secret set once with
       # `wrangler secret put JWT_SECRET_KEY --env staging`; it is kept across deploys.
       - run: npx wrangler deploy --env staging --message "${GITHUB_REF_NAME}@${GITHUB_SHA::7}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Check staging data survived the deploy
+        run: |
+          after=$(sh scripts/count-articles.sh https://be-staging.everisefc.workers.dev)
+          echo "Articles before: $ARTICLES_BEFORE, after: $after"
+          if [ "$after" -lt "$ARTICLES_BEFORE" ]; then
+            echo "::error::Staging lost articles in the deploy ($ARTICLES_BEFORE -> $after)."
+            exit 1
+          fi
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       # Exercises the deployed API: register, auth, create and read back data.
       - name: Smoke test staging
         run: sh scripts/smoke.sh create https://be-staging.everisefc.workers.dev "$RUNNER_TEMP/jar.txt"

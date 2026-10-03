@@ -1,6 +1,6 @@
 ---
 name: smoke-test
-description: Check that the Everise API responds and that data persists in the ConduitDb Durable Object, locally (wrangler dev), on staging, or on production. Use when asked whether the API is up, whether data is stored, or to verify a change in the running app rather than in Jest.
+description: Check that the Everise API responds and that data persists in the EveriseDb Durable Object, locally (wrangler dev), on staging, or on production. Use when asked whether the API is up, whether data is stored, or to verify a change in the running app rather than in Jest.
 ---
 
 # Smoke-test the Everise API
