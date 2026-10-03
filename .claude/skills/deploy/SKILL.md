@@ -16,9 +16,10 @@ Each Worker has its own Durable Object, so its own data. Staging is defined unde
 
 ## Normal path: push to main
 
-`.github/workflows/ci-cd.yaml` (**CI/CD**, every push and PR):
+`.github/workflows/ci-cd.yaml` (**CI/CD**: push to `main`, PRs, and `workflow_dispatch` on any branch):
 - **test**: `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
-- **deploy-staging** (push to `main`, after test): deploys staging, runs `scripts/smoke.sh create` against it, and writes a link to the production workflow in the run summary. GitHub environment `staging`, limited to `main`.
+- **deploy-staging** (after test, on push to `main` or a manual run): deploys staging with message `<branch>@<sha>`, runs `scripts/smoke.sh create` against it, and writes a summary (on `main`, with a link to the production workflow). GitHub environment `staging`, any branch. Job-level `concurrency: deploy-staging` serializes deploys.
+- Deploy another branch to staging: `gh workflow run ci-cd.yaml --ref <branch>` (or Actions → CI/CD → Run workflow). There is one staging Worker, so this replaces what is there until the next push to `main`. Tell the user which branch staging is now running.
 
 `.github/workflows/deploy-production.yaml` (**Deploy production**, `workflow_dispatch` only):
 - First checks that `GITHUB_SHA` has a successful CI/CD push run (`gh run list --commit ... --status success`); otherwise fails without deploying.

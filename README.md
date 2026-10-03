@@ -129,7 +129,7 @@ There are two environments, each a separate Worker with its own Durable Object, 
 
 | Environment | URL                                              | Deployed                         |
 | ----------- | ------------------------------------------------ | -------------------------------- |
-| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every push to `main` |
+| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every push to `main`; by hand from any branch |
 | production  | https://conduit.denis-coccodi.workers.dev         | by hand, once a commit has passed staging |
 
 Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
@@ -138,12 +138,14 @@ Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requ
 
 Two GitHub Actions workflows:
 
-**CI/CD** (`.github/workflows/ci-cd.yaml`) runs on every push and pull request:
+**CI/CD** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
 
 1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
-1. **deploy-staging**: on pushes to `main` only, after the tests pass. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user, creates an article and reads it back, and fails the run on any unexpected status code. The run's summary page links to the production deploy.
+1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user, creates an article and reads it back, and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
 
 Pull requests only run **test**. Each staging run leaves one smoke-test user and article in the staging database.
+
+To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next push to `main` puts `main` back.
 
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
 
@@ -179,6 +181,6 @@ sh scripts/smoke.sh verify <base-url> /tmp/jar.txt   # after a restart or redepl
 1. In the GitHub repository go to Settings → Secrets and variables → Actions and add these repository secrets:
    - `CLOUDFLARE_API_TOKEN`: the token from the previous step.
    - `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard (Workers & Pages → Overview).
-1. Under Settings → Environments, create `staging` and `production`, limit both to the `main` branch.
+1. Under Settings → Environments, create `staging` (any branch) and `production` (limited to the `main` branch).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.
