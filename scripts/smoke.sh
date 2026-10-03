@@ -7,13 +7,22 @@
 #           e.g. after a restart or redeploy, to check the data persisted.
 #
 # Exits non-zero if any request returns an unexpected status code.
+#
+# If the target is behind Cloudflare Access (staging), set CF_ACCESS_CLIENT_ID
+# and CF_ACCESS_CLIENT_SECRET to an Access service token; they are sent as
+# headers on every request.
 set -u
 MODE=${1:-}; B=${2:-}; J=${3:-}
 FAILED=0
+CF_ACCESS_CLIENT_ID=${CF_ACCESS_CLIENT_ID:-}
+CF_ACCESS_CLIENT_SECRET=${CF_ACCESS_CLIENT_SECRET:-}
 
 # req <expected-status> <label> <curl args...>
 req() {
   expected=$1; label=$2; shift 2
+  if [ -n "$CF_ACCESS_CLIENT_ID" ]; then
+    set -- -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
+  fi
   out=$(curl -s -b "$J" -c "$J" -w '\n%{http_code}' -H 'Content-Type: application/json' "$@")
   code=$(printf '%s' "$out" | tail -n 1)
   if [ "$code" = "$expected" ]; then
