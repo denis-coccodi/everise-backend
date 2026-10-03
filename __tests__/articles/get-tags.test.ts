@@ -27,8 +27,14 @@ describe('GET /api/tags', () => {
       const response = await request(app).get(getTagsUrl).send();
 
       expect(response.status).toBe(200);
+      // Random tags can repeat across articles; the API lists each tag once.
       expect(response.body).toStrictEqual({
-        tags: [...article1.article.tagList, ...article2.article.tagList].sort(),
+        tags: [
+          ...new Set([
+            ...article1.article.tagList,
+            ...article2.article.tagList,
+          ]),
+        ].sort(),
       });
     });
   });
