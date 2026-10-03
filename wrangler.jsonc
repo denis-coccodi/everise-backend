@@ -20,9 +20,13 @@
   // Production values. `wrangler dev` overrides them with .dev.vars.
   // JWT_SECRET_KEY is a secret, set once with `wrangler secret put JWT_SECRET_KEY`.
   "vars": {
-    "BASE_URL": "https://conduit.denis-coccodi.workers.dev",
+    // The site users open: the frontend forwards /api here over a service binding
+    // and serves the default avatar (BASE_URL/assets/images/avatar-profile.png).
+    "BASE_URL": "https://conduit-web.denis-coccodi.workers.dev",
     // Only the deployed frontend. Requests carry the auth cookie, so any origin
     // listed here can act as a logged-in user: never add localhost to production.
+    // Browsers now reach the API same-origin through the frontend; this stays for
+    // frontend builds that still call the API directly.
     "CORS_ORIGINS": "https://conduit-web.denis-coccodi.workers.dev",
     "COOKIE_SAME_SITE": "none",
     "JWT_ISSUER": "https://conduit.com",
@@ -43,7 +47,7 @@
         "bindings": [{"name": "DB", "class_name": "ConduitDb"}]
       },
       "vars": {
-        "BASE_URL": "https://conduit-staging.denis-coccodi.workers.dev",
+        "BASE_URL": "https://conduit-web-staging.denis-coccodi.workers.dev",
         // localhost is allowed here so a local frontend can use staging; staging only holds test data.
         "CORS_ORIGINS": "https://conduit-web-staging.denis-coccodi.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
         "COOKIE_SAME_SITE": "none",

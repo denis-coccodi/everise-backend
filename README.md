@@ -8,10 +8,12 @@ It covers users and authentication, profiles and follows, articles, comments, fa
 
 The API is an [Express](https://expressjs.com/) app that runs inside a Cloudflare Worker through Cloudflare's [Node.js HTTP server support](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/). It serves a JSON REST API under `/api`.
 
+Browsers don't call it directly: the [frontend](../nx-angular-social) Worker forwards its own `/api/*` to this Worker over a [service binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/), so the site is a single origin (no CORS, first-party cookies). This Worker's own `workers.dev` address still works for local development, scripts and CI.
+
 ```
-Browser ──HTTPS──> Cloudflare Worker "conduit"
-                    ├─ /assets/*  static files from public/ (served before the Worker runs)
-                    └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb" (document store)
+Browser ──> frontend Worker "conduit-web" ──/api/*, service binding──> Worker "conduit"
+                                                                      ├─ /assets/*  static files from public/
+                                                                      └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb"
 ```
 
 | Folder               | Contents                                                           |
@@ -102,7 +104,7 @@ curl http://localhost:8080/api/tags
 
 | Variable                    | Description                                                        |
 | --------------------------- | ------------------------------------------------------------------ |
-| `BASE_URL`                  | Public URL of the API, used to build default avatar URLs           |
+| `BASE_URL`                  | URL of the site users open (the frontend), used to build the default avatar URL; locally the API itself |
 | `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API with the user's cookie. Production lists only the deployed frontend; localhost is for local and staging use |
 | `COOKIE_SAME_SITE`          | `none` (default), `lax` or `strict`                                |
 | `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret |
@@ -204,7 +206,7 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
 ## One-time setup
 
 1. Create a free [Cloudflare account](https://dash.cloudflare.com/sign-up) and pick a `workers.dev` subdomain (Workers & Pages → Overview).
-1. In `wrangler.jsonc`, set `BASE_URL` (top level and under `env.staging`) to your Workers' URLs and add your frontend's origin to `CORS_ORIGINS`. Update the URLs in `.github/workflows/ci-cd.yaml` to match.
+1. In `wrangler.jsonc`, set `BASE_URL` (top level and under `env.staging`) to your frontend Workers' URLs and add your frontend's origin to `CORS_ORIGINS`. Update the URLs in `.github/workflows/ci-cd.yaml` to match.
 1. Set a JWT secret on each Worker, using a different long random string for each. They are kept across deploys:
    ```
    npx wrangler login
