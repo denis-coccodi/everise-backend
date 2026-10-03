@@ -23,15 +23,36 @@ req() {
   if [ -n "$CF_ACCESS_CLIENT_ID" ]; then
     set -- -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
   fi
-  out=$(curl -s -b "$J" -c "$J" -w '\n%{http_code}' -H 'Content-Type: application/json' "$@")
+  out=$(curl -s -b "$J" -c "$J" -w '\n%{redirect_url}\n%{http_code}' -H 'Content-Type: application/json' "$@")
   code=$(printf '%s' "$out" | tail -n 1)
+  redirect=$(printf '%s' "$out" | tail -n 2 | head -n 1)
   if [ "$code" = "$expected" ]; then
     echo "ok   [$code] $label"
   else
     echo "FAIL [$code, expected $expected] $label"
-    printf '%s\n' "$out" | sed '$d' | sed 's/"token":"[^"]*"/"token":"…"/' | head -c 500
-    echo
+    case "$redirect" in
+      *cloudflareaccess.com*) access_hint "$redirect" ;;
+      *) printf '%s\n' "$out" | sed '$d' | sed '$d' | sed 's/"token":"[^"]*"/"token":"…"/' | head -c 500; echo ;;
+    esac
     FAILED=1
+  fi
+}
+
+# Explains a redirect to the Cloudflare Access login, using the flags Access
+# puts in the redirect's "meta" token (no secrets are printed).
+access_hint() {
+  echo "     Blocked by Cloudflare Access (redirected to its login page)."
+  meta=$(printf '%s' "$1" | sed -n 's/.*[?&]meta=\([^&]*\).*/\1/p' | cut -d. -f2 | tr '_-' '/+')
+  while [ $(( ${#meta} % 4 )) -ne 0 ]; do meta="$meta="; done
+  flags=$(printf '%s' "$meta" | base64 -d 2>/dev/null | grep -oE '"(service_token_status|auth_status)":("[^"]*"|true|false)' | sort -u | tr '\n' ' ')
+  [ -n "$flags" ] && echo "     Access says: $flags"
+  if [ -z "$CF_ACCESS_CLIENT_ID" ]; then
+    echo "     No service token sent: set CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET."
+  else
+    case "$flags" in
+      *'"service_token_status":true'*) echo "     The token is valid, but no Service Auth policy on this app includes it." ;;
+      *) echo "     The token was not accepted: check the secrets hold only the values (no 'CF-Access-Client-...:' prefix or spaces) and the token is not revoked." ;;
+    esac
   fi
 }
 
