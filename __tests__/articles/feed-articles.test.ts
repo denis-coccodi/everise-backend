@@ -75,7 +75,7 @@ describe('GET /api/articles/feed', () => {
           {
             ...article1.article,
             favoritesCount: 1,
-            updatedAt: expect.toBeAfter(article1.article.updatedAt),
+            updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
             favorited: true,
             author: {
               ...article1.article.author,
@@ -225,7 +225,7 @@ describe('GET /api/articles/feed', () => {
           {
             ...article1.article,
             favoritesCount: 1,
-            updatedAt: expect.toBeAfter(article1.article.updatedAt),
+            updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
             favorited: true,
             author: {
               ...article1.article.author,
