@@ -14,12 +14,14 @@ Repo: `denis-coccodi/typescript-cloudflare-conduit-backend`, branch `main`. Clou
 
 Each Worker has its own Durable Object, so its own data. Staging is defined under `env.staging` in `wrangler.jsonc`; `durable_objects` and `vars` are not inherited from the top level, so any new binding or var must be added in both places.
 
-## Normal path: push to main
+## Normal path: merge a PR into main
+
+Changes reach `main` only through pull requests (see the `feature-branch` skill); direct pushes are rejected. Merging is the "push to `main`" that triggers the staging deploy.
 
 `.github/workflows/ci-cd.yaml` (**CI/CD**: push to `main`, PRs, and `workflow_dispatch` on any branch):
 - **test**: `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
 - **deploy-staging** (after test, on push to `main` or a manual run): deploys staging with message `<branch>@<sha>`, runs `scripts/smoke.sh create` against it, and writes a summary (on `main`, with a link to the production workflow). GitHub environment `staging`, any branch. Job-level `concurrency: deploy-staging` serializes deploys.
-- Deploy another branch to staging: `gh workflow run ci-cd.yaml --ref <branch>` (or Actions → CI/CD → Run workflow). There is one staging Worker, so this replaces what is there until the next push to `main`. Tell the user which branch staging is now running.
+- Deploy another branch to staging: `gh workflow run ci-cd.yaml --ref <branch>` (or Actions → CI/CD → Run workflow). There is one staging Worker, so this replaces what is there until the next merge to `main`. Tell the user which branch staging is now running.
 
 `.github/workflows/deploy-production.yaml` (**Deploy production**, `workflow_dispatch` only):
 - First checks that `GITHUB_SHA` has a successful CI/CD push run (`gh run list --commit ... --status success`); otherwise fails without deploying.
@@ -29,7 +31,7 @@ Production deploys are the user's decision: they start it from Actions → Deplo
 
 Before pushing, run `npm test` locally; it must end with exit code 0, not just passing Jest.
 
-After pushing, wait for the run and report each job:
+After merging, wait for the run on `main` and report each job:
 ```
 gh run list --limit 1
 gh run view <id>                                   # job summary
