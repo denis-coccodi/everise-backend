@@ -16,14 +16,15 @@ Each Worker has its own Durable Object, so its own data. Staging is defined unde
 
 ## Normal path: push to main
 
-`.github/workflows/ci-cd.yaml`:
-- **test** (every push and PR): `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
-- **deploy-staging** (push to `main`, after test): deploys staging, then runs `scripts/smoke.sh create` against it. GitHub environment `staging`, limited to `main`, no approval.
-- **deploy-production** (after deploy-staging): GitHub environment `production`, which requires approval from denis-coccodi and only allows `main`. Deploys, then curls `/api/tags`.
+`.github/workflows/ci-cd.yaml` (**CI/CD**, every push and PR):
+- **test**: `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
+- **deploy-staging** (push to `main`, after test): deploys staging, runs `scripts/smoke.sh create` against it, and writes a link to the production workflow in the run summary. GitHub environment `staging`, limited to `main`.
 
-A run with `deploy-production` at `waiting` is not stuck: tell the user to approve it (email link or **Review deployments** on the run page), ideally after checking staging. Never approve it yourself.
+`.github/workflows/deploy-production.yaml` (**Deploy production**, `workflow_dispatch` only):
+- First checks that `GITHUB_SHA` has a successful CI/CD push run (`gh run list --commit ... --status success`); otherwise fails without deploying.
+- Then `wrangler deploy` and a curl of `/api/tags`. GitHub environment `production`, limited to `main`, no reviewers.
 
-The workflow uses `concurrency: cancel-in-progress`, so a new push to `main` cancels an older run that is still waiting for approval. That is expected.
+Production deploys are the user's decision: they start it from Actions → Deploy production → **Run workflow**. Only start it yourself (`gh workflow run deploy-production.yaml --ref main`) when the user explicitly asks for a production deploy, and only after the commit's CI/CD run is green.
 
 Before pushing, run `npm test` locally; it must end with exit code 0, not just passing Jest.
 
@@ -39,7 +40,7 @@ The Jest log is noisy (expected `console.error` output from error-path tests). S
 
 ## Manual deploy
 
-Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploying production by hand bypasses the approval gate, so only do it when the user explicitly asks for a manual production deploy.
+Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploying production by hand skips the "passed staging" check, so only do it when the user explicitly asks for a manual production deploy.
 
 ## Secrets
 

@@ -1,0 +1,49 @@
+name: Deploy production
+
+# Started by hand: Actions → Deploy production → Run workflow.
+# Deploys the latest commit on main, but only if that commit's CI/CD run
+# (tests + staging deploy + smoke test) succeeded.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://conduit.denis-coccodi.workers.dev
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check this commit passed staging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci-cd.yaml \
+            --commit "$GITHUB_SHA" --event push --status success --limit 1 \
+            --json conclusion -q '.[0].conclusion')
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::Commit ${GITHUB_SHA::7} has no successful CI/CD run (tests + staging). Wait for it to pass, or fix it, before deploying to production."
+            exit 1
+          fi
+          echo "Commit ${GITHUB_SHA::7} passed tests and staging."
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # JWT_SECRET_KEY is a Worker secret set once with `wrangler secret put`;
+      # it is kept across deploys.
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Check production responds
+        run: curl -sf -o /dev/null https://conduit.denis-coccodi.workers.dev/api/tags
