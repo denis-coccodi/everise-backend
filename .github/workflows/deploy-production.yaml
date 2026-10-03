@@ -12,7 +12,8 @@ concurrency:
 
 jobs:
   deploy-production:
-    if: github.ref == 'refs/heads/main'
+    # The production environment only accepts main: started from any other
+    # branch, the job fails before any step runs.
     runs-on: ubuntu-latest
     environment:
       name: production
