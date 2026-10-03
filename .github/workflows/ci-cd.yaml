@@ -59,6 +59,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # TEMPORARY experiment: does Access treat requests with an Origin header differently?
+      - name: Access experiment
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          A=https://conduit-staging.denis-coccodi.workers.dev/api/tags
+          T1="CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID"; T2="CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+          echo "no origin:          $(curl -s -o /dev/null -w '%{http_code}' -H "$T1" -H "$T2" $A)"
+          echo "staging FE origin:  $(curl -s -o /dev/null -w '%{http_code}' -H "$T1" -H "$T2" -H 'Origin: https://conduit-web-staging.denis-coccodi.workers.dev' $A)"
+          echo "other origin:       $(curl -s -o /dev/null -w '%{http_code}' -H "$T1" -H "$T2" -H 'Origin: https://example.com' $A)"
+          curl -s -o /dev/null -D - -H "$T1" -H "$T2" -H 'Origin: https://conduit-web-staging.denis-coccodi.workers.dev' $A | grep -iE '^HTTP|^location|^cf-|^www-auth' | sed -E 's/(meta=)[^&]*/\1…/' | cut -c1-160
       # Exercises the deployed API: register, auth, create and read back data.
       - name: Smoke test staging
         run: sh scripts/smoke.sh create https://conduit-staging.denis-coccodi.workers.dev "$RUNNER_TEMP/jar.txt"
