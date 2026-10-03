@@ -129,7 +129,7 @@ There are two environments, each a separate Worker with its own Durable Object, 
 
 | Environment | URL                                              | Deployed                         |
 | ----------- | ------------------------------------------------ | -------------------------------- |
-| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every push to `main`; by hand from any branch |
+| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every merge to `main`; by hand from any branch |
 | production  | https://conduit.denis-coccodi.workers.dev         | by hand, once a commit has passed staging |
 
 Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
@@ -143,15 +143,24 @@ Two GitHub Actions workflows:
 1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
 1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user, creates an article and reads it back, and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
 
-Pull requests only run **test**. Each staging run leaves one smoke-test user and article in the staging database.
+Pull requests only run **test**, and it must pass before the PR can be merged. Each staging run leaves one smoke-test user and article in the staging database.
 
-To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next push to `main` puts `main` back.
+To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
 
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
 
+### Contributing
+
+`main` is protected: changes can't be pushed to it directly, admins included. Every change goes through a pull request:
+
+1. Create a branch from `main` named `feature/<feature-name>`, e.g. `feature/staging-environment`.
+1. Push to it as often as you like; pushing a feature branch deploys nothing.
+1. Open a pull request to `main`. CI/CD runs **test** on it, and again on every push.
+1. Merge once **test** passes (the branch must be up to date with `main`). The merge deploys to staging.
+
 ### Deploying to production
 
-1. Push to `main` and wait for the CI/CD run to go green.
+1. Merge a pull request into `main` and wait for the CI/CD run to go green.
 1. Optionally try the change on staging.
 1. Open Actions → **Deploy production** (or follow the link on the CI/CD run's summary page), click **Run workflow**, keep branch `main`, and confirm.
 
