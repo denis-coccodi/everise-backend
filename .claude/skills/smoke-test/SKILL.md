@@ -1,9 +1,9 @@
 ---
 name: smoke-test
-description: Check that the Conduit API responds and that data persists in the ConduitDb Durable Object, locally (wrangler dev), on staging, or on production. Use when asked whether the API is up, whether data is stored, or to verify a change in the running app rather than in Jest.
+description: Check that the Everise API responds and that data persists in the ConduitDb Durable Object, locally (wrangler dev), on staging, or on production. Use when asked whether the API is up, whether data is stored, or to verify a change in the running app rather than in Jest.
 ---
 
-# Smoke-test the Conduit API
+# Smoke-test the Everise API
 
 `scripts/smoke.sh` (in the repo root, also run by CI against staging) drives the real HTTP API with curl and a cookie jar. It prints `ok`/`FAIL` per request with the status code, masks JWTs, and exits non-zero on any unexpected status.
 
@@ -20,8 +20,8 @@ sh scripts/smoke.sh verify <base-url> <scratchpad>/jar.txt
 | Target | Base URL | May write test data? |
 | --- | --- | --- |
 | local | http://localhost:8080 | yes |
-| staging | https://conduit-staging.denis-coccodi.workers.dev | yes; CI already does on every merge to `main`. Behind Cloudflare Access: needs `CF_ACCESS_CLIENT_ID`/`CF_ACCESS_CLIENT_SECRET` exported (a service token the user holds), otherwise expect a 302 to the Access login or a 403 |
-| production | https://conduit.denis-coccodi.workers.dev | ask the user first; read-only `curl .../api/tags` is always fine |
+| staging | https://be-staging.everisefc.workers.dev | yes; CI already does on every merge to `main`. Behind Cloudflare Access: needs `CF_ACCESS_CLIENT_ID`/`CF_ACCESS_CLIENT_SECRET` exported (a service token the user holds), otherwise expect a 302 to the Access login or a 403 |
+| production | https://be-prod.everisefc.workers.dev | ask the user first; read-only `curl .../api/tags` is always fine |
 
 ## Local
 

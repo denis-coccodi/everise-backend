@@ -1,7 +1,7 @@
 {
-  "name": "typescript-cloudflare-conduit-backend",
+  "name": "everise-backend",
   "version": "0.0.0",
-  "description": "TypeScript backend for Conduit, a Medium-like social blogging app, running on Cloudflare Workers with a Durable Object database.",
+  "description": "TypeScript backend for Everise, the Everise FC community site, running on Cloudflare Workers with a Durable Object database.",
   "author": "Marcus Vinicius Monteiro de Souza",
   "license": "MIT",
   "private": true,

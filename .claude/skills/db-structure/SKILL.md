@@ -3,7 +3,7 @@ name: db-structure
 description: How the ConduitDb document store is laid out (collections, fields, references, query model) and how to update the database diagram in docs/. Use when answering questions about the data model, adding or changing a collection or field, or when the diagram or the README's Database section needs to change.
 ---
 
-# Conduit database structure
+# Everise database structure
 
 The whole database is one Durable Object, `ConduitDb` (SQLite-backed, `src/db/conduit-db.ts`), wrapping `DocumentStore` (`src/db/document-store.ts`).
 
@@ -30,9 +30,10 @@ Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls 
 
 `docs/db-structure.svg` is hand-written SVG (1200×830) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
-1. Render the PNG with headless Edge from PowerShell (Bash quoting of the Edge path fails):
+1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
-   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,830 "--screenshot=C:\dev\conduit-social\typescript-cloudflare-backend\docs\db-structure.png" "file:///C:/dev/conduit-social/typescript-cloudflare-backend/docs/db-structure.svg"
+   $repo = (Get-Location).Path
+   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,830 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.

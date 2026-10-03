@@ -24,7 +24,7 @@
   <rect width="1200" height="830" fill="#f8fafc"/>
 
   <!-- Heading -->
-  <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Conduit database structure</text>
+  <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
   <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">ConduitDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: 4 collections, no fixed schema.</text>
 
   <!-- Storage notes panel -->

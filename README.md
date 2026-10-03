@@ -1,6 +1,6 @@
-# Conduit backend
+# Everise backend
 
-A [TypeScript](https://www.typescriptlang.org/) backend for **Conduit**, a Medium-like social blogging app. It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) with a [Durable Object](https://developers.cloudflare.com/durable-objects/) as its database, all on the free plan.
+A [TypeScript](https://www.typescriptlang.org/) backend for **Everise**, the Everise FC community site. It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) with a [Durable Object](https://developers.cloudflare.com/durable-objects/) as its database, all on the free plan.
 
 It covers users and authentication, profiles and follows, articles, comments, favorites, tags, feeds and pagination.
 
@@ -8,10 +8,10 @@ It covers users and authentication, profiles and follows, articles, comments, fa
 
 The API is an [Express](https://expressjs.com/) app that runs inside a Cloudflare Worker through Cloudflare's [Node.js HTTP server support](https://developers.cloudflare.com/workers/runtime-apis/nodejs/http/). It serves a JSON REST API under `/api`.
 
-Browsers don't call it directly: the [frontend](../nx-angular-social) Worker forwards its own `/api/*` to this Worker over a [service binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/), so the site is a single origin (no CORS, first-party cookies). This Worker's own `workers.dev` address still works for local development, scripts and CI.
+Browsers don't call it directly: the [frontend](https://github.com/denis-coccodi/everise-frontend) Worker forwards its own `/api/*` to this Worker over a [service binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/), so the site is a single origin (no CORS, first-party cookies). This Worker's own `workers.dev` address still works for local development, scripts and CI.
 
 ```
-Browser ──> frontend Worker "conduit-web" ──/api/*, service binding──> Worker "conduit"
+Browser ──> frontend Worker "prod" ──/api/*, service binding──> Worker "be-prod"
                                                                       ├─ /assets/*  static files from public/
                                                                       └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb"
 ```
@@ -118,7 +118,7 @@ curl http://localhost:8080/api/tags
    BASE_URL=http://localhost:8080
    CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
    JWT_SECRET_KEY=dummy-jwt-secret-key
-   JWT_ISSUER=https://conduit.com
+   JWT_ISSUER=https://everisefc.com
    JWT_SECONDS_TO_EXPIRATION=86400
    ```
 1. Run `npm test`.
@@ -131,8 +131,8 @@ There are two environments, each a separate Worker with its own Durable Object, 
 
 | Environment | URL                                              | Deployed                         |
 | ----------- | ------------------------------------------------ | -------------------------------- |
-| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every merge to `main`; by hand from any branch |
-| production  | https://conduit.denis-coccodi.workers.dev         | by hand, once a commit has passed staging |
+| staging     | https://be-staging.everisefc.workers.dev | automatically on every merge to `main`; by hand from any branch |
+| production  | https://be-prod.everisefc.workers.dev         | by hand, once a commit has passed staging |
 
 Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
 
@@ -181,9 +181,9 @@ Against staging, export `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` firs
 
 ## Staging access
 
-Staging (backend `conduit-staging` and frontend `conduit-web-staging`) is restricted with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust Free plan): only allowed email addresses can open it, after logging in with a one-time code sent by email. Production is public.
+Staging (backend `be-staging` and frontend `staging`) is restricted with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust Free plan): only allowed email addresses can open it, after logging in with a one-time code sent by email. Production is public.
 
-- **Browser**: open https://conduit-staging.denis-coccodi.workers.dev once and log in, then use the staging frontend (log in there too). Access's cookie lets the frontend's requests through.
+- **Browser**: open https://be-staging.everisefc.workers.dev once and log in, then use the staging frontend (log in there too). Access's cookie lets the frontend's requests through.
 - **CI**: the staging smoke test authenticates with an Access service token, stored as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` repository secrets.
 - **Scripts**: export the same two variables before running `scripts/smoke.sh` against staging.
 
@@ -192,13 +192,13 @@ Staging (backend `conduit-staging` and frontend `conduit-web-staging`) is restri
 In the Cloudflare dashboard (menu names may differ slightly):
 
 1. **Service token for CI**: Zero Trust → Access controls → Service credentials → Service tokens → **Create service token**, e.g. `github-actions-staging`, no expiry or a long one. Copy the Client ID and Client Secret (the secret is shown once) and add them to this repository as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` secrets.
-1. **Protect the backend**: Workers & Pages → `conduit-staging` → Domains → **Enable Access** on the workers.dev URL (and on Preview URLs). Then open the Access application it created (Zero Trust → Access controls → Applications) and set its policies:
+1. **Protect the backend**: Workers & Pages → `be-staging` → Domains → **Enable Access** on the workers.dev URL (and on Preview URLs). Then open the Access application it created (Zero Trust → Access controls → Applications) and set its policies:
    - Allow: Include → Emails → the allowed addresses.
    - Service Auth: Include → Service Token → `github-actions-staging`.
 1. **Let the staging frontend call it**: in the same application's settings:
-   - Cross-Origin Resource Sharing: allowed origin `https://conduit-web-staging.denis-coccodi.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
+   - Cross-Origin Resource Sharing: allowed origin `https://staging.everisefc.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
    - Cookie settings: SameSite attribute **None**.
-1. **Protect the frontend**: `conduit-web-staging` → Domains → **Enable Access**, with the same Allow policy.
+1. **Protect the frontend**: `staging` → Domains → **Enable Access**, with the same Allow policy.
 1. Re-run the latest CI/CD run on `main` and check the smoke test still passes.
 
 Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or the next staging smoke test fails.

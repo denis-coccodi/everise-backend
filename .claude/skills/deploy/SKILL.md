@@ -3,14 +3,14 @@ name: deploy
 description: Ship this repo to Cloudflare Workers (staging, then production) through the GitHub Actions pipeline, or by hand with wrangler, and diagnose failing CI/CD runs. Use when asked to deploy, push and deploy, check or re-run the pipeline, or fix a red build.
 ---
 
-# Deploy the Conduit backend
+# Deploy the Everise backend
 
-Repo: `denis-coccodi/typescript-cloudflare-conduit-backend`, branch `main`. Cloudflare account ID: `ba2955b2991a5a38d46bc4144212e9cc`.
+Repo: `denis-coccodi/everise-backend`, branch `main`. Cloudflare account ID: `ba2955b2991a5a38d46bc4144212e9cc`.
 
 | Environment | Worker | URL | wrangler |
 | --- | --- | --- | --- |
-| staging | `conduit-staging` | https://conduit-staging.denis-coccodi.workers.dev | `npx wrangler deploy --env staging` |
-| production | `conduit` | https://conduit.denis-coccodi.workers.dev | `npx wrangler deploy` (`npm run deploy`) |
+| staging | `be-staging` | https://be-staging.everisefc.workers.dev | `npx wrangler deploy --env staging` |
+| production | `be-prod` | https://be-prod.everisefc.workers.dev | `npx wrangler deploy` (`npm run deploy`) |
 
 Each Worker has its own Durable Object, so its own data. Staging is defined under `env.staging` in `wrangler.jsonc`; `durable_objects` and `vars` are not inherited from the top level, so any new binding or var must be added in both places.
 
