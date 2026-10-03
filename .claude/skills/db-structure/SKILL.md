@@ -8,7 +8,7 @@ description: How the EveriseDb document store is laid out (collections, fields, 
 The whole database is one Durable Object instance, named `everise`, of the class `EveriseDb` (SQLite-backed, `src/db/everise-db.ts`), wrapping `DocumentStore` (`src/db/document-store.ts`).
 
 - The instance name selects the storage: a different name is a different, empty database. Never change `DB_NAME` without a data copy.
-- Until October 2026 the class was `ConduitDb` and the instance `conduit`. `wrangler.jsonc` migration `v2` renamed the class in place; `EveriseDb.ready()` copies the old instance into `everise` once (`DocumentStore.importOnce`, marker key `_meta:copied-from-conduit`), and the old instance stays as a backup. Once both environments are migrated and checked, the legacy constants, `exportAll` and the copy can be removed. Applied migrations in `wrangler.jsonc` must never be edited or removed.
+- Both environments' databases were recreated empty in October 2026 (namespaces `be-prod_EveriseDb`, `be-staging_EveriseDb`); `wrangler.jsonc` has one migration, `v1`. Applied migrations must never be edited or removed: add new ones.
 
 - Key: `<collection>/<id>`; value: the JSON document.
 - The store adds `id` (UUID), `createdAt`, `updatedAt` to every document. An update that changes no field keeps `updatedAt`.
