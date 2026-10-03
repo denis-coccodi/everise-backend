@@ -55,6 +55,8 @@ Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploy
 
 ## Known failure causes
 
+- **"Staging/Production lost articles in the deploy"**: `scripts/count-articles.sh` counted fewer articles after the deploy than before. Usual causes: the Worker name in `wrangler.jsonc` does not match the Worker in Cloudflare (a new, empty Worker was created), or the Durable Object instance name (`DB_NAME` in `src/db/everise-db.ts`) changed without a data copy. Do not redeploy over it; roll back the Worker version in the dashboard and investigate. Cloudflare keeps 30 days of point-in-time recovery for the database.
+
 - **Missing secrets**: a deploy step fails with "it's necessary to set a CLOUDFLARE_API_TOKEN". Fix on GitHub, then `gh run rerun --failed`.
 - **Staging smoke test gets `302` to `*.cloudflareaccess.com`**: Cloudflare Access rejected the request; the smoke output says whether a service token was sent and accepted. The policy list that Access enforces is the one in Zero Trust → Access controls → Applications → `<worker> - Cloudflare Workers` → Policies, and it can differ from what the Worker's Access tab shows: saving that application's Additional settings (CORS, cookies) from a stale page once dropped the `CI service token` (Service Auth) policy. Ask the user for a screenshot of that Policies tab first. To see which Access application handles a host, decode the `aud` in the redirect's `meta` token and compare it with the AUD tag on the Worker's Access tab.
 - **Smoke test gets `404` / `error code: 1042`**: a brand-new `workers.dev` hostname is not live yet. Only happens on a Worker's first deploy; re-run the job after a minute.

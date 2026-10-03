@@ -13,18 +13,18 @@ Browsers don't call it directly: the [frontend](https://github.com/denis-coccodi
 ```
 Browser ──> frontend Worker "prod" ──/api/*, service binding──> Worker "be-prod"
                                                                 ├─ /assets/*  static files from public/
-                                                                └─ /api/*     Express app ──RPC──> Durable Object "ConduitDb"
+                                                                └─ /api/*     Express app ──RPC──> Durable Object "EveriseDb"
 ```
 
 | Folder               | Contents                                                           |
 | -------------------- | ------------------------------------------------------------------ |
-| `src/worker.ts`      | Worker entry point: starts the Express app and exports `ConduitDb` |
+| `src/worker.ts`      | Worker entry point: starts the Express app and exports `EveriseDb` |
 | `src/app.ts`         | Express setup: CORS, JSON, cookies, routers, error handler         |
 | `src/users`          | Registration, login, logout, current user, JWTs                    |
 | `src/profiles`       | Profiles and follows                                               |
 | `src/articles`       | Articles, comments, favorites, tags and feeds                      |
 | `src/middleware`     | Authentication (`requireAuth` / `optionalAuth`)                    |
-| `src/db`             | The document store and the `ConduitDb` Durable Object              |
+| `src/db`             | The document store and the `EveriseDb` Durable Object              |
 | `__tests__`          | API tests, one file per endpoint                                   |
 | `public`             | Static assets, e.g. the default avatar                             |
 
@@ -59,7 +59,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 
 ![Database structure](docs/db-structure.svg)
 
-The database is a single Durable Object, `ConduitDb`, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
+The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
 - **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`.
 - **Common fields.** The store gives every new document an `id` (a UUID), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
@@ -70,6 +70,8 @@ The database is a single Durable Object, `ConduitDb`, with SQLite-backed storage
 - **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `DocumentStore` on an in-memory storage, so they exercise the real query logic.
 
 Data is stored durably by Cloudflare. Locally it lives in `.wrangler/state`.
+
+**Renaming.** The class and instance were called `ConduitDb` and `conduit` until October 2026. The class was renamed in place by the `v2` migration in `wrangler.jsonc` (same storage). Data was moved to the new `everise` instance by a one-time copy: the first database call after the deploy copies everything from the old instance, which is kept as a backup (see `src/db/everise-db.ts`). Never edit or remove applied migrations. Every deploy also counts articles before and after and fails if any were lost.
 
 ## Authentication
 
