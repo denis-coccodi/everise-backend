@@ -29,5 +29,24 @@
 
   "observability": {"enabled": true},
 
-  "dev": {"port": 8080}
+  "dev": {"port": 8080},
+
+  // `wrangler deploy --env staging` deploys a separate Worker, "conduit-staging",
+  // with its own Durable Object and so its own data. Bindings and vars are not
+  // inherited from the top level, so they are repeated here.
+  // Its JWT_SECRET_KEY is set once with `wrangler secret put JWT_SECRET_KEY --env staging`.
+  "env": {
+    "staging": {
+      "durable_objects": {
+        "bindings": [{"name": "DB", "class_name": "ConduitDb"}]
+      },
+      "vars": {
+        "BASE_URL": "https://conduit-staging.denis-coccodi.workers.dev",
+        "CORS_ORIGINS": "http://localhost:4200,http://127.0.0.1:4200",
+        "COOKIE_SAME_SITE": "none",
+        "JWT_ISSUER": "https://conduit.com",
+        "JWT_SECONDS_TO_EXPIRATION": "86400"
+      }
+    }
+  }
 }

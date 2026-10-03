@@ -125,36 +125,57 @@ The tests run the Express app in Node against an in-memory document store, so th
 
 # Deployment
 
-The API is deployed at https://conduit.denis-coccodi.workers.dev.
+There are two environments, each a separate Worker with its own Durable Object, so their data never mixes:
+
+| Environment | URL                                              | Deployed                         |
+| ----------- | ------------------------------------------------ | -------------------------------- |
+| staging     | https://conduit-staging.denis-coccodi.workers.dev | automatically on every push to `main` |
+| production  | https://conduit.denis-coccodi.workers.dev         | after staging passes and a manual approval |
+
+Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
 
 ## CI/CD
 
 A GitHub Actions workflow (`.github/workflows/ci-cd.yaml`) runs on every push and pull request:
 
 1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
-1. **deploy**: on pushes to `main` only, and only if the tests pass, runs `wrangler deploy`. It waits for manual approval first (see below).
+1. **deploy-staging**: on pushes to `main` only, after the tests pass. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user, creates an article and reads it back, and fails the run on any unexpected status code.
+1. **deploy-production**: after staging passes and after manual approval (see below). Runs `wrangler deploy` and checks the API responds.
 
-It can also be started by hand from the Actions tab (**Run workflow**).
+Pull requests only run **test**. The workflow can also be started by hand from the Actions tab (**Run workflow**).
 
-### Approving a deploy
+Each run leaves one smoke-test user and article in the staging database.
 
-The deploy job uses the `production` GitHub environment, which requires approval from a reviewer and only accepts the `main` branch. When a run reaches it, GitHub emails the reviewer and the run shows **Review deployments**. Open the run (from the email or the Actions tab), click **Review deployments**, tick `production` and click **Approve and deploy**. Rejecting it, or leaving it for 30 days, skips the deploy.
+### Approving a production deploy
+
+The production job uses the `production` GitHub environment, which requires approval from a reviewer and only accepts the `main` branch. When a run reaches it, GitHub emails the reviewer and the run shows **Review deployments**. Open the run (from the email or the Actions tab), click **Review deployments**, tick `production` and click **Approve and deploy**. Rejecting it, or leaving it for 30 days, skips the deploy. Try the change on staging before approving.
 
 Reviewers are managed under Settings → Environments → production.
+
+## Smoke test
+
+`scripts/smoke.sh` can be run against any running instance:
+
+```
+sh scripts/smoke.sh create <base-url> /tmp/jar.txt   # register, create an article, read it back
+sh scripts/smoke.sh verify <base-url> /tmp/jar.txt   # after a restart or redeploy: is the data still there?
+```
 
 ## One-time setup
 
 1. Create a free [Cloudflare account](https://dash.cloudflare.com/sign-up) and pick a `workers.dev` subdomain (Workers & Pages → Overview).
-1. In `wrangler.jsonc`, set `BASE_URL` to `https://conduit.<your-subdomain>.workers.dev` and add your frontend's origin to `CORS_ORIGINS`.
-1. Set the JWT secret on the Worker, using a long random string. It is kept across deploys:
+1. In `wrangler.jsonc`, set `BASE_URL` (top level and under `env.staging`) to your Workers' URLs and add your frontend's origin to `CORS_ORIGINS`. Update the URLs in `.github/workflows/ci-cd.yaml` to match.
+1. Set a JWT secret on each Worker, using a different long random string for each. They are kept across deploys:
    ```
    npx wrangler login
    npx wrangler secret put JWT_SECRET_KEY
+   npx wrangler secret put JWT_SECRET_KEY --env staging
    ```
-   One way to generate it: `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`.
+   One way to generate one: `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`.
 1. Create an [API token](https://dash.cloudflare.com/profile/api-tokens) from the **Edit Cloudflare Workers** template.
 1. In the GitHub repository go to Settings → Secrets and variables → Actions and add these repository secrets:
    - `CLOUDFLARE_API_TOKEN`: the token from the previous step.
    - `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard (Workers & Pages → Overview).
+1. Under Settings → Environments, create `staging` and `production`, limit both to the `main` branch, and add required reviewers to `production`.
 
-To deploy from your machine instead, run `npm run deploy` after `npx wrangler login`.
+To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.
