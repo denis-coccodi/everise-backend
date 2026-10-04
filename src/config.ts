@@ -10,6 +10,8 @@ const envVarsSchema = Joi.object()
     JWT_SECRET_KEY: Joi.string().required(),
     JWT_ISSUER: Joi.string().uri().required(),
     JWT_SECONDS_TO_EXPIRATION: Joi.number().integer().required(),
+    // Allows POST /api/duties/refresh; when unset, refreshing is disabled.
+    DUTIES_REFRESH_KEY: Joi.string().allow(''),
   })
   .unknown();
 
@@ -28,6 +30,7 @@ const config = {
     issuer: envVars.JWT_ISSUER,
     secondsToExpiration: envVars.JWT_SECONDS_TO_EXPIRATION,
   },
+  dutiesRefreshKey: envVars.DUTIES_REFRESH_KEY as string | undefined,
 };
 
 export {config};

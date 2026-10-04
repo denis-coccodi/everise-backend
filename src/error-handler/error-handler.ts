@@ -2,7 +2,12 @@ import * as util from 'util';
 import {Response} from 'express';
 import {isCelebrateError} from 'celebrate';
 import {StatusCodes} from 'http-status-codes';
-import {AlreadyExistsError, NotFoundError, UnauthorizedError} from '../errors';
+import {
+  AlreadyExistsError,
+  NotFoundError,
+  UnauthorizedError,
+  UpstreamError,
+} from '../errors';
 import {JsonWebTokenError} from 'jsonwebtoken';
 
 class ErrorsDto {
@@ -56,6 +61,12 @@ class ErrorHandler {
       return res
         .status(StatusCodes.UNAUTHORIZED)
         .json(new ErrorsDto(['unauthorized']));
+    }
+
+    if (error instanceof UpstreamError) {
+      return res
+        .status(StatusCodes.BAD_GATEWAY)
+        .json(new ErrorsDto([error.message]));
     }
 
     return res

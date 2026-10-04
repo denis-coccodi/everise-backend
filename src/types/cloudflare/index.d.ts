@@ -30,3 +30,10 @@ declare module 'cloudflare:workers' {
 declare module 'cloudflare:node' {
   function httpServerHandler(options: {port: number}): unknown;
 }
+
+// The Worker's global fetch, reduced to what the app uses.
+declare function fetch(url: string): Promise<{
+  ok: boolean;
+  status: number;
+  json(): Promise<unknown>;
+}>;
