@@ -26,6 +26,8 @@ interface Duty {
   // Roulette flags, e.g. "LevelingRoulette", "ExpertRoulette".
   roulettes: string[];
   sortKey: number;
+  // The duty's banner, an image id for GET /api/images/:id; null without one.
+  image: number | null;
 }
 
 // A duty as the API returns it, with state that changes over time. It is
@@ -38,6 +40,8 @@ interface DutyStatus extends Duty {
 interface DutyGroup<T extends Duty = Duty> {
   name: string;
   order: number;
+  // The duty type's icon (image id).
+  icon: number | null;
   duties: T[];
 }
 
@@ -57,6 +61,36 @@ interface Roulette {
   goldSaucer: boolean;
   description: string;
   sortKey: number;
+  // The roulette's banner (image id).
+  image: number | null;
+}
+
+// The party roles, in the game's order.
+type Role =
+  | 'Tank'
+  | 'Healer'
+  | 'Melee DPS'
+  | 'Physical Ranged DPS'
+  | 'Magical Ranged DPS';
+
+// A Disciple of War or Magic job (classes and crafters/gatherers are left out).
+interface Job {
+  id: number;
+  name: string;
+  abbreviation: string;
+  role: Role;
+  // The level the job starts at, e.g. 80 for Viper and Pictomancer.
+  startingLevel: number;
+  // Limited jobs (Blue Mage, Beastmaster) can't queue for regular duties.
+  limited: boolean;
+  // The job's framed, role-coloured icon (image id).
+  icon: number;
+}
+
+// A game image to download: its icon id, and the format it is stored in.
+interface ImageRef {
+  id: number;
+  format: 'png' | 'jpg';
 }
 
 interface DutyData {
@@ -64,6 +98,22 @@ interface DutyData {
   dataVersion: string;
   groups: DutyGroup[];
   roulettes: Roulette[];
+  // The Duty Roulettes type's icon (image id).
+  rouletteIcon: number | null;
+  jobs: Job[];
+  // Every image the data above refers to.
+  images: ImageRef[];
 }
 
-export {Duty, DutyData, DutyGroup, DutyStatus, Finder, PvpType, Roulette};
+export {
+  Duty,
+  DutyData,
+  DutyGroup,
+  DutyStatus,
+  Finder,
+  ImageRef,
+  Job,
+  PvpType,
+  Role,
+  Roulette,
+};

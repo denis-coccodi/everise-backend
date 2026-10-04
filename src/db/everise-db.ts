@@ -25,6 +25,10 @@ class EveriseDb extends DurableObject {
     return this.store.create(collection, data);
   }
 
+  set(collection: string, id: string, data: DocData) {
+    return this.store.set(collection, id, data);
+  }
+
   update(collection: string, id: string, data: DocData) {
     return this.store.update(collection, id, data);
   }
@@ -57,6 +61,9 @@ class DurableObjectDb implements Db {
 
   create: Db['create'] = (collection, data) =>
     this.stub.create(collection, data);
+
+  set: Db['set'] = (collection, id, data) =>
+    this.stub.set(collection, id, data);
 
   update: Db['update'] = (collection, id, data) =>
     this.stub.update(collection, id, data);

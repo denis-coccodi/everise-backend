@@ -32,6 +32,8 @@ function duty(
       PvP: false,
       IsInDutyFinder: true,
       SortKey: row_id,
+      // A banner per duty, numbered after the row.
+      'Image@as(raw)': 112000 + row_id,
       ...extra,
     },
   };
@@ -40,13 +42,14 @@ function duty(
 function defaultSheets(): Record<string, Row[]> {
   return {
     ContentType: [
-      {row_id: 2, fields: {Name: 'Dungeons'}},
-      {row_id: 4, fields: {Name: 'Trials'}},
-      {row_id: 5, fields: {Name: 'Raids'}},
-      {row_id: 6, fields: {Name: 'PvP'}},
-      {row_id: 7, fields: {Name: 'Quest Battles'}},
-      {row_id: 9, fields: {Name: 'Treasure Hunt'}},
-      {row_id: 28, fields: {Name: 'Ultimate Raids'}},
+      {row_id: 1, fields: {Name: 'Duty Roulette', 'Icon@as(raw)': 61807}},
+      {row_id: 2, fields: {Name: 'Dungeons', 'Icon@as(raw)': 61801}},
+      {row_id: 4, fields: {Name: 'Trials', 'Icon@as(raw)': 61804}},
+      {row_id: 5, fields: {Name: 'Raids', 'Icon@as(raw)': 61802}},
+      {row_id: 6, fields: {Name: 'PvP', 'Icon@as(raw)': 61806}},
+      {row_id: 7, fields: {Name: 'Quest Battles', 'Icon@as(raw)': 61805}},
+      {row_id: 9, fields: {Name: 'Treasure Hunt', 'Icon@as(raw)': 0}},
+      {row_id: 28, fields: {Name: 'Ultimate Raids', 'Icon@as(raw)': 61832}},
     ],
     ExVersion: [
       {row_id: 0, fields: {Name: 'A Realm Reborn'}},
@@ -128,34 +131,125 @@ function defaultSheets(): Record<string, Row[]> {
           IsPvP: false,
           IsGoldSaucer: false,
           SortKey: 4,
+          'Image@as(raw)': 112034,
         },
       },
       {row_id: 2, fields: {Name: 'Hidden roulette', IsInDutyFinder: false}},
     ],
+    // A class, a crafter, jobs of each discipline listed out of order, and a
+    // limited job.
+    ClassJob: [
+      job(1, 'gladiator', 'GLA', {JobIndex: 0, Role: 1, UIPriority: 2}),
+      job(8, 'carpenter', 'CRP', {
+        JobIndex: 0,
+        Role: 0,
+        'ClassJobCategory@as(raw)': 33,
+        UIPriority: 101,
+      }),
+      job(25, 'black mage', 'BLM', {
+        Role: 3,
+        'ClassJobCategory@as(raw)': 31,
+        UIPriority: 41,
+      }),
+      job(19, 'paladin', 'PLD', {Role: 1, UIPriority: 1}),
+      job(41, 'viper', 'VPR', {Role: 2, StartingLevel: 80, UIPriority: 29}),
+      job(23, 'bard', 'BRD', {Role: 3, UIPriority: 31}),
+      job(24, 'white mage', 'WHM', {
+        Role: 4,
+        'ClassJobCategory@as(raw)': 31,
+        UIPriority: 11,
+      }),
+      job(36, 'blue mage', 'BLU', {
+        Role: 3,
+        'ClassJobCategory@as(raw)': 31,
+        IsLimitedJob: true,
+        UIPriority: 47,
+      }),
+    ],
   };
 }
 
-// Serves /sheet/<name>?after=<row id> from in-memory rows, like XIVAPI v2.
+function job(
+  row_id: number,
+  name: string,
+  abbreviation: string,
+  extra: Record<string, unknown>
+): Row {
+  return {
+    row_id,
+    fields: {
+      Name: name,
+      Abbreviation: abbreviation,
+      JobIndex: row_id,
+      IsLimitedJob: false,
+      StartingLevel: 1,
+      'ClassJobCategory@as(raw)': 30,
+      ...extra,
+    },
+  };
+}
+
+// The bytes the fake serves for an image: its path and format as text.
+function imageBytes(path: string, format: string) {
+  return new Uint8Array(Buffer.from(`${path} as ${format}`));
+}
+
+// Serves /sheet/<name>?after=<row id> from in-memory rows, and
+// /asset?path=<game file>&format=<png|jpg> images, like XIVAPI v2.
 class FakeXivApi {
   sheets = defaultSheets();
   failing = false;
+  // Image ids XIVAPI answers 404 for.
+  missingImages = new Set<number>();
+  // Image ids XIVAPI answers 503 for.
+  failingImages = new Set<number>();
   requests: string[] = [];
 
   reset() {
     this.sheets = defaultSheets();
     this.failing = false;
+    this.missingImages = new Set();
+    this.failingImages = new Set();
     this.requests = [];
   }
 
   readonly httpGet: HttpGet = async url => {
     this.requests.push(url);
 
+    const asset = /\/asset\?path=([^&]+)&format=(\w+)/.exec(url);
+    if (asset) {
+      const path = decodeURIComponent(asset[1]);
+      const id = Number(/(\d+)_hr1\.tex$/.exec(path)?.[1]);
+      const status = this.failing || this.failingImages.has(id) ? 503 : 200;
+      if (this.missingImages.has(id) || status !== 200) {
+        const missing = this.missingImages.has(id);
+        return {
+          ok: false,
+          status: missing ? 404 : status,
+          json: async () => ({}),
+          arrayBuffer: async () => new ArrayBuffer(0),
+        };
+      }
+      const bytes = imageBytes(path, asset[2]);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+        arrayBuffer: async () => bytes.slice().buffer,
+      };
+    }
+
     const sheet = /\/sheet\/(\w+)/.exec(url)?.[1] ?? '';
     const after = Number(/[?&]after=(\d+)/.exec(url)?.[1] ?? -1);
     const rows = this.sheets[sheet];
 
     if (this.failing || !rows) {
-      return {ok: false, status: 503, json: async () => ({})};
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+        arrayBuffer: async () => new ArrayBuffer(0),
+      };
     }
 
     // Like XIVAPI, rows come in row id order.
@@ -167,8 +261,9 @@ class FakeXivApi {
       ok: true,
       status: 200,
       json: async () => ({version: 'test-version', rows: page}),
+      arrayBuffer: async () => new ArrayBuffer(0),
     };
   };
 }
 
-export {FakeXivApi, duty};
+export {FakeXivApi, duty, imageBytes};

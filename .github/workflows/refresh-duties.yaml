@@ -1,8 +1,9 @@
 name: Refresh FFXIV duties
 
 # Started by hand: Actions → Refresh FFXIV duties → Run workflow → pick the
-# target. Asks the backend to re-download the duty and roulette lists from
-# XIVAPI (POST /api/duties/refresh). Nothing is deployed.
+# target. Asks the backend to re-download the game data from XIVAPI (duties,
+# roulettes, jobs: POST /api/duties/refresh), then every image it refers to
+# (POST /api/duties/refresh/images, a batch per call). Nothing is deployed.
 #
 # Needs a DUTIES_REFRESH_KEY secret in each GitHub environment (staging,
 # production), equal to the Worker secret of the same name:
@@ -51,17 +52,57 @@ jobs:
           if [ "$TARGET" = staging ] && [ -n "$CF_ACCESS_CLIENT_ID" ]; then
             set -- "$@" -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
           fi
-          status=$(curl -s -o response.json -w '%{http_code}' -X POST "$@" "$url/api/duties/refresh")
+
+          # POSTs to $1, saving the body to response.json; prints the HTTP status.
+          post() {
+            path=$1; shift
+            curl -s -o response.json -w '%{http_code}' -X POST "$@" "$url$path"
+          }
+          fail_on() {
+            case "$1" in
+              200) ;;
+              401) echo "::error::The backend rejected the key: the GitHub and Worker DUTIES_REFRESH_KEY secrets differ, or the Worker secret is unset."; exit 1 ;;
+              302) echo "::error::Cloudflare Access blocked the request: check the CI service token policy on $TARGET."; exit 1 ;;
+              *) echo "::error::$2 failed with HTTP $1."; exit 1 ;;
+            esac
+          }
+
+          # 1. The game data: duties, roulettes and jobs.
+          status=$(post /api/duties/refresh "$@")
           cat response.json; echo
-          case "$status" in
-            200) ;;
-            401) echo "::error::The backend rejected the key: the GitHub and Worker DUTIES_REFRESH_KEY secrets differ, or the Worker secret is unset."; exit 1 ;;
-            302) echo "::error::Cloudflare Access blocked the request: check the CI service token policy on $TARGET."; exit 1 ;;
-            *) echo "::error::Refresh failed with HTTP $status."; exit 1 ;;
-          esac
+          fail_on "$status" Refresh
+          cp response.json refresh.json
+
+          # 2. The images it refers to, a batch per call (a Worker may only
+          #    make so many outbound requests per call). A failed batch stays
+          #    pending, so it is retried a few times.
+          retries=0
+          for call in $(seq 1 200); do
+            status=$(post /api/duties/refresh/images "$@")
+            if [ "$status" != 200 ] && [ "$retries" -lt 3 ]; then
+              retries=$((retries + 1))
+              echo "Image batch failed with HTTP $status; retrying."
+              sleep 10
+              continue
+            fi
+            fail_on "$status" "Image download"
+            jq -c . response.json
+            [ "$(jq .pending response.json)" = 0 ] && break
+          done
+          if [ "$(jq .pending response.json)" != 0 ]; then
+            echo "::error::Image downloads didn't finish."
+            exit 1
+          fi
+          failed=$(jq -r '.failed | join(", ")' response.json)
+          if [ -n "$failed" ]; then
+            echo "::warning::XIVAPI has no image for ids $failed."
+          fi
+
           {
             echo "Refreshed **$TARGET** ($url):"
             echo
-            jq -r '"- \(.dutyCount) duties, \(.rouletteCount) roulettes (data \(.dataVersion), fetched \(.fetchedAt))"' response.json
-            jq -r '.groups[] | "  - \(.name): \(.count)"' response.json
+            jq -r '"- \(.dutyCount) duties, \(.rouletteCount) roulettes, \(.jobCount) jobs (data \(.dataVersion), fetched \(.fetchedAt))"' refresh.json
+            jq -r '.groups[] | "  - \(.name): \(.count)"' refresh.json
+            jq -r '"- \(.total - (.failed | length)) of \(.total) images downloaded"' response.json
+            if [ -n "$failed" ]; then echo "  - Not on XIVAPI: $failed"; fi
           } >> "$GITHUB_STEP_SUMMARY"
