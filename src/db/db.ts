@@ -29,6 +29,8 @@ interface Db {
   get<T extends Doc>(collection: string, id: string): Promise<T | undefined>;
   find<T extends Doc>(collection: string, options?: FindOptions): Promise<T[]>;
   create<T extends Doc>(collection: string, data: DocData): Promise<T>;
+  // Creates or replaces the document with the given id.
+  set<T extends Doc>(collection: string, id: string, data: DocData): Promise<T>;
   update<T extends Doc>(
     collection: string,
     id: string,

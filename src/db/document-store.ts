@@ -62,6 +62,22 @@ class DocumentStore implements Db {
     return doc;
   }
 
+  async set<T extends Doc>(collection: string, id: string, data: DocData) {
+    const existing = await this.get<T>(collection, id);
+    const now = new Date();
+
+    const doc = {
+      ...data,
+      id,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    } as unknown as T;
+
+    await this.storage.put(this.key(collection, id), doc);
+
+    return doc;
+  }
+
   async update<T extends Doc>(collection: string, id: string, data: DocData) {
     const existing = await this.get<T>(collection, id);
 

@@ -57,18 +57,24 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | GET      | `/api/duties`                              |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties)) |
 | GET      | `/api/roulettes`                           |          | FFXIV duty roulettes                              |
 | GET      | `/api/frontline`                           |          | Today's Frontline map and the next days' maps     |
-| POST     | `/api/duties/refresh`                      | key      | Re-download both lists from XIVAPI (`X-Refresh-Key` header) |
+| GET      | `/api/jobs`                                |          | FFXIV combat jobs, with role and icon             |
+| GET      | `/api/images/:id`                          |          | A game image the data refers to (icons, banners)  |
+| POST     | `/api/duties/refresh`                      | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header) |
+| POST     | `/api/duties/refresh/images`               | key      | Download the next batch of game images            |
 
 ## FFXIV duties
 
-The backend keeps a copy of every Final Fantasy XIV duty and duty roulette, read from [XIVAPI](https://v2.xivapi.com/api/docs), which serves the game's own data sheets (`ContentFinderCondition` and `ContentRoulette`).
+The backend keeps a copy of Final Fantasy XIV game data, read from [XIVAPI](https://v2.xivapi.com/api/docs), which serves the game's own data sheets: every duty and duty roulette (`ContentFinderCondition`, `ContentRoulette`), the combat jobs (`ClassJob`), and the images they refer to.
 
 - **`GET /api/duties`** returns `{dataVersion, fetchedAt, groups}`. Each group (Dungeons, Trials — Extreme, Raids — Savage, Alliance Raids, Deep Dungeons, …) lists its duties with level and item level requirements, expansion, `finder` (`Duty Finder`, `Raid Finder`, or `""` for neither), the Duty Finder settings it allows (`joinPartyInProgress`, `unrestrictedParty`, `minimumIL`, `explorerMode`, `dutyRecorder`) and the roulettes it belongs to. PvP duties have a `pvpType` (`Frontline`, `Rival Wings` or `Crystalline Conflict`; `""` for other duties), and `activeFrontline` is `true` for the one Frontline map in today's daily challenge.
-- **`GET /api/roulettes`** returns `{dataVersion, fetchedAt, roulettes}`.
+- **`GET /api/roulettes`** returns `{dataVersion, fetchedAt, icon, roulettes}`; `icon` is the Duty Roulettes type's icon.
+- **`GET /api/jobs`** returns `{dataVersion, fetchedAt, jobs}`: the Disciple of War and Magic jobs in the game's order (tanks, healers, melee, ranged), each with `name`, `abbreviation`, `role` (`Tank`, `Healer`, `Melee DPS`, `Physical Ranged DPS` or `Magical Ranged DPS`), `startingLevel`, `limited` (`true` for Blue Mage and Beastmaster, which can't queue for regular duties) and `icon`. Classes, crafters and gatherers are left out.
+- **Images.** Duty groups have an `icon` (the duty type's), duties and roulettes an `image` (the game's banner), and jobs an `icon` (the framed, role-coloured one). Each is an image id, or `null` without one; **`GET /api/images/:id`** serves it (PNG for icons, JPEG for banners), cached by browsers for a week. Ids are the game's own icon ids.
 - **`GET /api/frontline`** returns `{active, schedule}`: today's Frontline map and the full 8-day cycle from today, each as `{map, dutyId, from, until}`. `dutyId` links to the duty in `/api/duties` (null before the first refresh).
-- **`POST /api/duties/refresh`** downloads both lists again and replaces the cached copies. It needs the `DUTIES_REFRESH_KEY` secret in an `X-Refresh-Key` header, and is disabled when the secret is unset. A failed download returns 502 and leaves the cached lists unchanged. Run it after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)).
+- **`POST /api/duties/refresh`** downloads the duties, roulettes and jobs again and replaces the cached copies. It needs the `DUTIES_REFRESH_KEY` secret in an `X-Refresh-Key` header, and is disabled when the secret is unset. A failed download returns 502 and leaves the cached data unchanged. Its response's `images` (`{total, pending, failed}`) starts the image downloads.
+- **`POST /api/duties/refresh/images`** (same key) downloads the next 25 images; call it until `pending` is 0. A Worker on the free plan may make only 50 outbound requests per call, so the roughly 530 images take about 22 calls. Every refresh downloads all of them again; until a batch replaces an image, the old copy is still served, and after the last batch images the new data no longer refers to are deleted. Images XIVAPI doesn't have are listed in `failed`; a batch that fails on an XIVAPI error returns 502 and stays pending for the next call.
 
-Before the first refresh both lists are empty, with `fetchedAt: null`.
+Run both after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)), which makes all the calls. Before the first refresh the lists are empty, with `fetchedAt: null`.
 
 Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. A duty anyone can enter at level 1 but that syncs to a level (treasure dungeons) takes the sync level as its `level`, and duties outside the Duty Finder and Raid Finder report no Duty Finder settings (the game marks them anyway). `src/duties/xivapi-client.ts` has the rules.
 
@@ -80,8 +86,8 @@ The Frontline daily map isn't in the game data, so it is computed without any AP
 
 The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`. The cached FFXIV lists add `dutyGroups` (one document per duty group), `dutyRoulettes` and `dutyRefreshes` (one document each), which every refresh replaces.
-- **Common fields.** The store gives every new document an `id` (a UUID), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
+- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`. The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
+- **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
 - **Queries.** `find` lists a collection by key prefix, then filters (`==` or `array-contains`), sorts and paginates in memory. This is fine at this app's scale but would need indexes for large data.
@@ -173,7 +179,7 @@ To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pi
 
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
 
-**Refresh FFXIV duties** (`.github/workflows/refresh-duties.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh FFXIV duties** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend and lists the new counts on the run's summary page. It deploys nothing.
+**Refresh FFXIV duties** (`.github/workflows/refresh-duties.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh FFXIV duties** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
 
 ### Contributing
 

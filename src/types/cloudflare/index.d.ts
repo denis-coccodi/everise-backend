@@ -36,4 +36,5 @@ declare function fetch(url: string): Promise<{
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
+  arrayBuffer(): Promise<ArrayBuffer>;
 }>;

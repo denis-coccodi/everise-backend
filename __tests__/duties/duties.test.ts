@@ -2,7 +2,7 @@ import 'jest-extended';
 import request from 'supertest';
 import {app} from '../utils/app';
 import {clearDb, clock, xivApi} from '../utils';
-import {duty} from '../utils/fake-xivapi';
+import {duty, imageBytes} from '../utils/fake-xivapi';
 import {frontlineMapAt} from '../../src/duties/frontline-rotation';
 
 const REFRESH_KEY = process.env.DUTIES_REFRESH_KEY!;
@@ -15,6 +15,37 @@ function refresh(key: string | null = REFRESH_KEY) {
 function groupNames(body: {groups: {name: string}[]}) {
   return body.groups.map(g => g.name);
 }
+
+function downloadImages(key: string | null = REFRESH_KEY) {
+  const req = request(app).post('/api/duties/refresh/images');
+  return key === null ? req.send() : req.set('X-Refresh-Key', key).send();
+}
+
+// Calls the image download until nothing is pending, like the workflow.
+async function downloadAllImages() {
+  for (let call = 0; call < 20; call++) {
+    const response = await downloadImages();
+    expect(response.status).toBe(200);
+    if (response.body.pending === 0) return response;
+  }
+  throw new Error('image downloads never finished');
+}
+
+function getImage(id: number) {
+  return request(app)
+    .get(`/api/images/${id}`)
+    .buffer(true)
+    .parse((res, done) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      res.on('end', () => done(null, Buffer.concat(chunks)));
+    })
+    .send();
+}
+
+// The images in the fake game data: the job icons (62100 + job id), the duty
+// type icons, and the roulette and duty banners (112000 + duty row).
+const IMAGE_COUNT = 6 + 5 + 1 + 1 + 9;
 
 describe('FFXIV duties', () => {
   beforeEach(async () => {
@@ -42,8 +73,26 @@ describe('FFXIV duties', () => {
       expect(response.body).toStrictEqual({
         dataVersion: null,
         fetchedAt: null,
+        icon: null,
         roulettes: [],
       });
+    });
+
+    test('GET /api/jobs should return an empty list', async () => {
+      const response = await request(app).get('/api/jobs').send();
+
+      expect(response.status).toBe(200);
+      expect(response.body).toStrictEqual({
+        dataVersion: null,
+        fetchedAt: null,
+        jobs: [],
+      });
+    });
+
+    test('GET /api/images/:id should return 404', async () => {
+      const response = await getImage(62119);
+
+      expect(response.status).toBe(404);
     });
   });
 
@@ -71,6 +120,7 @@ describe('FFXIV duties', () => {
         fetchedAt: expect.any(String),
         dutyCount: 9,
         rouletteCount: 1,
+        jobCount: 6,
         groups: [
           {name: 'Dungeons', count: 1},
           {name: 'Trials — Extreme', count: 1},
@@ -79,6 +129,7 @@ describe('FFXIV duties', () => {
           {name: 'Treasure Hunt', count: 1},
           {name: 'PvP', count: 4},
         ],
+        images: {total: IMAGE_COUNT, pending: IMAGE_COUNT, failed: []},
       });
     });
 
@@ -142,6 +193,7 @@ describe('FFXIV duties', () => {
       expect(response.body.groups[0]).toStrictEqual({
         name: 'Dungeons',
         order: 0,
+        icon: 61801,
         duties: [
           {
             id: 1,
@@ -162,6 +214,7 @@ describe('FFXIV duties', () => {
             pvpType: '',
             roulettes: ['LevelingRoulette'],
             sortKey: 1,
+            image: 112001,
             activeFrontline: false,
           },
         ],
@@ -215,6 +268,7 @@ describe('FFXIV duties', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.dataVersion).toBe('test-version');
+      expect(response.body.icon).toBe(61807);
       expect(response.body.roulettes).toStrictEqual([
         {
           id: 1,
@@ -232,8 +286,177 @@ describe('FFXIV duties', () => {
           goldSaucer: false,
           description: 'A dungeon or trial will be selected at random.',
           sortKey: 4,
+          image: 112034,
         },
       ]);
+    });
+
+    test('duty groups should take the icon of their content type', async () => {
+      const response = await request(app).get('/api/duties').send();
+
+      expect(
+        response.body.groups.map((g: {name: string; icon: number | null}) => [
+          g.name,
+          g.icon,
+        ])
+      ).toStrictEqual([
+        ['Dungeons', 61801],
+        ['Trials — Extreme', 61804],
+        ['Raids — Ultimate', 61832],
+        ['Alliance Raids', 61802],
+        // The fake content type has no icon.
+        ['Treasure Hunt', null],
+        ['PvP', 61806],
+      ]);
+    });
+
+    test("GET /api/jobs should return the combat jobs in the game's order", async () => {
+      const response = await request(app).get('/api/jobs').send();
+
+      expect(response.status).toBe(200);
+      expect(response.body.dataVersion).toBe('test-version');
+      // Classes and crafters are left out; ranged jobs are split by discipline.
+      expect(response.body.jobs).toStrictEqual([
+        {
+          id: 19,
+          name: 'Paladin',
+          abbreviation: 'PLD',
+          role: 'Tank',
+          startingLevel: 1,
+          limited: false,
+          icon: 62119,
+        },
+        expect.objectContaining({name: 'White Mage', role: 'Healer'}),
+        expect.objectContaining({
+          name: 'Viper',
+          role: 'Melee DPS',
+          startingLevel: 80,
+        }),
+        expect.objectContaining({name: 'Bard', role: 'Physical Ranged DPS'}),
+        expect.objectContaining({
+          name: 'Black Mage',
+          role: 'Magical Ranged DPS',
+        }),
+        expect.objectContaining({name: 'Blue Mage', limited: true}),
+      ]);
+    });
+  });
+
+  describe('game images', () => {
+    beforeEach(async () => {
+      await refresh();
+    });
+
+    test.each([
+      ['no key', null],
+      ['a wrong key', 'wrong-key'],
+    ])(
+      'POST /api/duties/refresh/images given %s should return 401',
+      async (_label, key) => {
+        xivApi.requests = [];
+
+        const response = await downloadImages(key);
+
+        expect(response.status).toBe(401);
+        expect(xivApi.requests).toBeEmpty();
+      }
+    );
+
+    test('should be downloaded in batches until none are pending', async () => {
+      // Enough extra duties, each with its own banner, for several batches.
+      for (let row = 1000; row < 1060; row++) {
+        xivApi.sheets.ContentFinderCondition.push(
+          duty(row, `Dungeon ${row}`, 2)
+        );
+      }
+      const started = await refresh();
+      const total = IMAGE_COUNT + 60;
+      expect(started.body.images).toStrictEqual({
+        total,
+        pending: total,
+        failed: [],
+      });
+
+      const first = await downloadImages();
+      expect(first.body).toStrictEqual({
+        total,
+        pending: total - 25,
+        failed: [],
+        downloaded: 25,
+      });
+
+      const last = await downloadAllImages();
+      expect(last.body).toMatchObject({total, pending: 0, failed: []});
+
+      // Nothing left to do.
+      const after = await downloadImages();
+      expect(after.body).toMatchObject({pending: 0, downloaded: 0});
+    });
+
+    test('GET /api/images/:id should serve a downloaded image', async () => {
+      await downloadAllImages();
+
+      const icon = await getImage(62119);
+      expect(icon.status).toBe(200);
+      expect(icon.headers['content-type']).toBe('image/png');
+      expect(icon.headers['cache-control']).toBe('public, max-age=604800');
+      expect(icon.body).toStrictEqual(
+        Buffer.from(imageBytes('ui/icon/062000/062119_hr1.tex', 'png'))
+      );
+
+      const banner = await getImage(112001);
+      expect(banner.headers['content-type']).toBe('image/jpeg');
+      expect(banner.body).toStrictEqual(
+        Buffer.from(imageBytes('ui/icon/112000/112001_hr1.tex', 'jpg'))
+      );
+    });
+
+    test('images XIVAPI does not have should be reported, not retried', async () => {
+      xivApi.missingImages.add(112003);
+
+      const response = await downloadAllImages();
+
+      expect(response.body).toMatchObject({pending: 0, failed: [112003]});
+      expect((await getImage(112003)).status).toBe(404);
+      expect((await getImage(112001)).status).toBe(200);
+    });
+
+    test('given XIVAPI fails, should return 502 and keep the batch pending', async () => {
+      xivApi.failingImages.add(62119);
+
+      const failed = await downloadImages();
+      expect(failed.status).toBe(502);
+
+      xivApi.failingImages.clear();
+      const response = await downloadAllImages();
+      expect(response.body).toMatchObject({pending: 0, failed: []});
+      expect((await getImage(62119)).status).toBe(200);
+    });
+
+    test('a refresh should download every image again and remove unused ones', async () => {
+      await downloadAllImages();
+
+      // Sastasha loses its banner.
+      xivApi.sheets.ContentFinderCondition =
+        xivApi.sheets.ContentFinderCondition.map(row =>
+          row.row_id === 1
+            ? {...row, fields: {...row.fields, 'Image@as(raw)': 0}}
+            : row
+        );
+      const started = await refresh();
+      expect(started.body.images.pending).toBe(IMAGE_COUNT - 1);
+
+      // Until the downloads finish, the old images are still served.
+      expect((await getImage(112001)).status).toBe(200);
+
+      xivApi.requests = [];
+      await downloadAllImages();
+
+      expect(
+        xivApi.requests.filter(url => url.includes('/asset?'))
+      ).toHaveLength(IMAGE_COUNT - 1);
+      expect((await getImage(112001)).status).toBe(404);
+      expect((await getImage(112002)).status).toBe(200);
     });
   });
 

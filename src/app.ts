@@ -4,7 +4,13 @@ import express from 'express';
 import {ArticlesRouter, ArticlesService} from './articles';
 import {config} from './config';
 import {Db} from './db';
-import {DutiesRouter, DutiesService, HttpGet, XivApiClient} from './duties';
+import {
+  DutiesRouter,
+  DutiesService,
+  HttpGet,
+  ImagesService,
+  XivApiClient,
+} from './duties';
 import {errorHandler} from './error-handler';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
@@ -45,10 +51,17 @@ function createApp(
     profilesService
   ).router;
 
-  const dutiesService = new DutiesService(db, new XivApiClient(httpGet), now);
+  const xivApiClient = new XivApiClient(httpGet);
 
-  const dutiesRouter = new DutiesRouter(dutiesService, config.dutiesRefreshKey)
-    .router;
+  const imagesService = new ImagesService(db, xivApiClient);
+
+  const dutiesService = new DutiesService(db, xivApiClient, imagesService, now);
+
+  const dutiesRouter = new DutiesRouter(
+    dutiesService,
+    imagesService,
+    config.dutiesRefreshKey
+  ).router;
 
   const app = express();
 

@@ -1,14 +1,19 @@
 import {createHash, timingSafeEqual} from 'crypto';
 import * as express from 'express';
-import {UnauthorizedError} from '../errors';
+import {NotFoundError, UnauthorizedError} from '../errors';
 import {DutiesService} from './duties-service';
+import {ImagesService} from './images-service';
 
 // Header carrying the key that allows a refresh (the DUTIES_REFRESH_KEY secret).
 const REFRESH_KEY_HEADER = 'x-refresh-key';
 
+// An image id's picture doesn't change, so browsers may keep it for a week.
+const IMAGE_CACHE_CONTROL = 'public, max-age=604800';
+
 class DutiesRouter {
   constructor(
     private readonly dutiesService: DutiesService,
+    private readonly imagesService: ImagesService,
     private readonly refreshKey: string | undefined
   ) {}
 
@@ -39,12 +44,36 @@ class DutiesRouter {
       }
     });
 
-    // Re-downloads both lists from XIVAPI and replaces the cached copies.
+    router.get('/jobs', async (_req, res, next) => {
+      try {
+        return res.json(await this.dutiesService.getJobs());
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    // A game image the data refers to by id (job icons, banners...).
+    router.get('/images/:id', async (req, res, next) => {
+      try {
+        const image = await this.imagesService.getImage(req.params.id);
+        if (!image) {
+          throw new NotFoundError('image');
+        }
+
+        return res
+          .type(image.contentType)
+          .set('Cache-Control', IMAGE_CACHE_CONTROL)
+          .send(Buffer.from(image.data));
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    // Re-downloads the game data from XIVAPI and replaces the cached copy.
+    // The images follow through /duties/refresh/images.
     router.post('/duties/refresh', async (req, res, next) => {
       try {
-        if (!this.isRefreshKey(req.header(REFRESH_KEY_HEADER))) {
-          throw new UnauthorizedError('invalid refresh key');
-        }
+        this.checkRefreshKey(req);
 
         return res.json(await this.dutiesService.refresh());
       } catch (err) {
@@ -52,7 +81,24 @@ class DutiesRouter {
       }
     });
 
+    // Downloads the next batch of images; call until `pending` is 0.
+    router.post('/duties/refresh/images', async (req, res, next) => {
+      try {
+        this.checkRefreshKey(req);
+
+        return res.json(await this.imagesService.downloadBatch());
+      } catch (err) {
+        return next(err);
+      }
+    });
+
     return router;
+  }
+
+  private checkRefreshKey(req: express.Request) {
+    if (!this.isRefreshKey(req.header(REFRESH_KEY_HEADER))) {
+      throw new UnauthorizedError('invalid refresh key');
+    }
   }
 
   // Without a configured key, refreshing is disabled.

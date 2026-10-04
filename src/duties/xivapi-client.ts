@@ -1,5 +1,15 @@
 import {UpstreamError} from '../errors';
-import {Duty, DutyData, DutyGroup, Finder, PvpType, Roulette} from './duty';
+import {
+  Duty,
+  DutyData,
+  DutyGroup,
+  Finder,
+  ImageRef,
+  Job,
+  PvpType,
+  Role,
+  Roulette,
+} from './duty';
 
 const XIVAPI_URL = 'https://v2.xivapi.com/api';
 
@@ -8,6 +18,7 @@ type HttpGet = (url: string) => Promise<{
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
+  arrayBuffer(): Promise<ArrayBuffer>;
 }>;
 
 interface SheetPage {
@@ -55,6 +66,7 @@ const DUTY_FIELDS = [
   'PvP',
   'IsInDutyFinder',
   'SortKey',
+  'Image@as(raw)',
   ...ROULETTE_FLAGS,
 ];
 
@@ -74,7 +86,32 @@ const ROULETTE_FIELDS = [
   'IsPvP',
   'IsGoldSaucer',
   'SortKey',
+  'Image@as(raw)',
 ];
+
+const CLASS_JOB_FIELDS = [
+  'Name',
+  'Abbreviation',
+  'Role',
+  'JobIndex',
+  'IsLimitedJob',
+  'StartingLevel',
+  'ClassJobCategory@as(raw)',
+  'UIPriority',
+];
+
+// ClassJobCategory rows of the Disciples of War and Magic.
+const DISCIPLE_OF_WAR = 30;
+const DISCIPLE_OF_MAGIC = 31;
+
+// The ClassJob sheet's Role numbers. Ranged jobs (3) are split by discipline.
+const ROLES: Record<number, Role> = {1: 'Tank', 2: 'Melee DPS', 4: 'Healer'};
+
+// Each job's framed, role-coloured icon is this id plus the job's row id.
+const JOB_ICON_BASE = 62100;
+
+// The ContentType row of duty roulettes, whose icon the roulette type uses.
+const ROULETTE_CONTENT_TYPE = 'Duty Roulette';
 
 // The game's IsInDutyFinder flag is unreliable (Ultimates and the current
 // Savage tier are false), so duties are picked by content type instead. For
@@ -125,6 +162,11 @@ interface RawDuty extends Duty {
   memberType: number;
 }
 
+interface ContentType {
+  name: string;
+  icon: number | null;
+}
+
 // Reads the FFXIV duty and roulette lists from XIVAPI (v2), which serves the
 // game's own data sheets.
 class XivApiClient {
@@ -134,17 +176,22 @@ class XivApiClient {
   ) {}
 
   async fetchDutyData(): Promise<DutyData> {
-    const [contentTypes, expansions, dutyRows, rouletteRows] =
+    const [contentTypes, expansions, dutyRows, rouletteRows, jobRows] =
       await Promise.all([
-        this.readNames('ContentType'),
+        this.readContentTypes(),
         this.readNames('ExVersion'),
         this.readSheet('ContentFinderCondition', DUTY_FIELDS),
         this.readSheet('ContentRoulette', ROULETTE_FIELDS),
+        this.readSheet('ClassJob', CLASS_JOB_FIELDS),
       ]);
+    const typeNames = new Map(
+      [...contentTypes].map(([id, type]) => [id, type.name])
+    );
+    const typeIcons = iconsByName(contentTypes);
 
     const duties = dutyRows.rows
       .filter(({fields: f}) => f.Name)
-      .map(({row_id, fields: f}) => toDuty(row_id, f, contentTypes, expansions))
+      .map(({row_id, fields: f}) => toDuty(row_id, f, typeNames, expansions))
       .filter(
         d =>
           KEEP_TYPES.has(d.contentType) ||
@@ -156,11 +203,40 @@ class XivApiClient {
       .map(({row_id, fields: f}) => toRoulette(row_id, f, expansions))
       .sort((a, b) => a.sortKey - b.sortKey);
 
+    const groups = groupDuties(duties, typeIcons);
+    const rouletteIcon = typeIcons.get(ROULETTE_CONTENT_TYPE) ?? null;
+    const jobs = jobRows.rows
+      .filter(({fields: f}) => isCombatJob(f))
+      .sort((a, b) => Number(a.fields.UIPriority) - Number(b.fields.UIPriority))
+      .map(({row_id, fields: f}) => toJob(row_id, f));
+
     return {
       dataVersion: dutyRows.version,
-      groups: groupDuties(duties),
+      groups,
       roulettes,
+      rouletteIcon,
+      jobs,
+      images: imagesOf(groups, roulettes, rouletteIcon, jobs),
     };
+  }
+
+  // Downloads one game image, converted by XIVAPI. Null when XIVAPI has no
+  // such image.
+  async fetchImage(image: ImageRef): Promise<Uint8Array | null> {
+    const path = encodeURIComponent(iconPath(image.id));
+    const response = await this.httpGet(
+      `${this.baseUrl}/asset?path=${path}&format=${image.format}`
+    );
+
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new UpstreamError(
+        `XIVAPI image ${image.id} returned HTTP ${response.status}`
+      );
+    }
+    return new Uint8Array(await response.arrayBuffer());
   }
 
   // Reads a whole sheet, following the `after` pagination.
@@ -195,6 +271,19 @@ class XivApiClient {
       rows.push(...page.rows);
       after = page.rows[page.rows.length - 1].row_id;
     }
+  }
+
+  private async readContentTypes() {
+    const {rows} = await this.readSheet('ContentType', [
+      'Name',
+      'Icon@as(raw)',
+    ]);
+    return new Map<number, ContentType>(
+      rows.map(({row_id, fields: f}) => [
+        row_id,
+        {name: String(f.Name), icon: imageId(f['Icon@as(raw)'])},
+      ])
+    );
   }
 
   private async readNames(sheet: string) {
@@ -248,6 +337,7 @@ function toDuty(
     pvpType: '',
     roulettes: ROULETTE_FLAGS.filter(flag => f[flag]),
     sortKey: Number(f.SortKey),
+    image: imageId(f['Image@as(raw)']),
   };
 }
 
@@ -272,7 +362,80 @@ function toRoulette(
     goldSaucer: Boolean(f.IsGoldSaucer),
     description: String(f.Description).trim(),
     sortKey: Number(f.SortKey),
+    image: imageId(f['Image@as(raw)']),
   };
+}
+
+// Jobs only: classes have no JobIndex, and crafters and gatherers aren't
+// Disciples of War or Magic.
+function isCombatJob(f: Record<string, unknown>) {
+  const category = Number(f['ClassJobCategory@as(raw)']);
+  return (
+    Number(f.JobIndex) > 0 &&
+    (category === DISCIPLE_OF_WAR || category === DISCIPLE_OF_MAGIC)
+  );
+}
+
+function toJob(id: number, f: Record<string, unknown>): Job {
+  const magic = Number(f['ClassJobCategory@as(raw)']) === DISCIPLE_OF_MAGIC;
+  const role =
+    ROLES[Number(f.Role)] ??
+    (magic ? 'Magical Ranged DPS' : 'Physical Ranged DPS');
+
+  return {
+    id,
+    // The sheet's names are lower case ("white mage").
+    name: String(f.Name).replace(/\b\w/g, c => c.toUpperCase()),
+    abbreviation: String(f.Abbreviation),
+    role,
+    startingLevel: Number(f.StartingLevel),
+    limited: Boolean(f.IsLimitedJob),
+    icon: JOB_ICON_BASE + id,
+  };
+}
+
+// Icon id 0 means no image.
+function imageId(value: unknown) {
+  const id = Number(value);
+  return id > 0 ? id : null;
+}
+
+// The game file of an icon, in its high-resolution version: icon 112005 is
+// ui/icon/112000/112005_hr1.tex.
+function iconPath(id: number) {
+  const pad = (n: number) => String(n).padStart(6, '0');
+  return `ui/icon/${pad(Math.floor(id / 1000) * 1000)}/${pad(id)}_hr1.tex`;
+}
+
+// Content type names to their icons; the first row wins for repeated names.
+function iconsByName(contentTypes: Map<number, ContentType>) {
+  const icons = new Map<string, number>();
+  for (const {name, icon} of contentTypes.values()) {
+    if (icon !== null && !icons.has(name)) icons.set(name, icon);
+  }
+  return icons;
+}
+
+// Every image the data refers to, once. Icons are kept as PNG for their
+// transparency; banners as JPEG, a tenth of the size.
+function imagesOf(
+  groups: DutyGroup[],
+  roulettes: Roulette[],
+  rouletteIcon: number | null,
+  jobs: Job[]
+): ImageRef[] {
+  const images = new Map<number, ImageRef>();
+  const add = (id: number | null, format: ImageRef['format']) => {
+    if (id !== null && !images.has(id)) images.set(id, {id, format});
+  };
+
+  jobs.forEach(job => add(job.icon, 'png'));
+  groups.forEach(group => add(group.icon, 'png'));
+  add(rouletteIcon, 'png');
+  roulettes.forEach(roulette => add(roulette.image, 'jpg'));
+  groups.forEach(group => group.duties.forEach(duty => add(duty.image, 'jpg')));
+
+  return [...images.values()];
 }
 
 // The HighEndDuty flag isn't set on Extreme trials, so difficulty comes from
@@ -315,13 +478,18 @@ function pvpTypeOf(
   return '';
 }
 
-function groupDuties(duties: RawDuty[]): DutyGroup[] {
+function groupDuties(
+  duties: RawDuty[],
+  typeIcons: Map<string, number>
+): DutyGroup[] {
   const memberTypeOf = (name: string) =>
     duties.find(d => d.name === name)?.memberType;
   const allianceMemberType = memberTypeOf(KNOWN_ALLIANCE_RAID);
   const rivalWingsMemberType = memberTypeOf(KNOWN_RIVAL_WINGS);
 
   const groups = new Map<string, Duty[]>();
+  // Each group takes the icon of the content type its duties come from.
+  const icons = new Map<string, number | null>();
   const seen = new Set<string>();
 
   for (const raw of duties) {
@@ -334,6 +502,9 @@ function groupDuties(duties: RawDuty[]): DutyGroup[] {
     const {contentType, memberType, ...duty} = raw;
     duty.pvpType = pvpTypeOf(raw, rivalWingsMemberType);
     groups.set(group, [...(groups.get(group) ?? []), duty]);
+    if (!icons.has(group)) {
+      icons.set(group, typeIcons.get(raw.contentType) ?? null);
+    }
   }
 
   const rank = (name: string) => {
@@ -346,6 +517,7 @@ function groupDuties(duties: RawDuty[]): DutyGroup[] {
     .map(([name, list], order) => ({
       name,
       order,
+      icon: icons.get(name) ?? null,
       duties: list.sort(
         (a, b) =>
           a.level - b.level ||
