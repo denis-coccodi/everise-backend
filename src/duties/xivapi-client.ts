@@ -1,5 +1,5 @@
 import {UpstreamError} from '../errors';
-import {Duty, DutyData, DutyGroup, Finder, Roulette} from './duty';
+import {Duty, DutyData, DutyGroup, Finder, PvpType, Roulette} from './duty';
 
 const XIVAPI_URL = 'https://v2.xivapi.com/api';
 
@@ -116,7 +116,9 @@ const GROUP_ORDER = [
 ];
 
 // Alliance raids share a party-size type, found from a known alliance raid.
+// Rival Wings maps likewise, from a known Rival Wings map.
 const KNOWN_ALLIANCE_RAID = 'the Labyrinth of the Ancients';
+const KNOWN_RIVAL_WINGS = 'Hidden Gorge';
 
 interface RawDuty extends Duty {
   contentType: string;
@@ -232,6 +234,7 @@ function toDuty(
     dutyRecorder: Boolean(f.DutyRecorderAllowed),
     highEnd: Boolean(f.HighEndDuty),
     pvp: Boolean(f.PvP),
+    pvpType: '',
     roulettes: ROULETTE_FLAGS.filter(flag => f[flag]),
     sortKey: Number(f.SortKey),
   };
@@ -290,10 +293,22 @@ function groupOf(d: RawDuty, allianceMemberType: number | undefined) {
   }
 }
 
+function pvpTypeOf(
+  d: RawDuty,
+  rivalWingsMemberType: number | undefined
+): PvpType {
+  if (d.contentType !== 'PvP') return '';
+  if (d.roulettes.includes('DailyFrontlineChallenge')) return 'Frontline';
+  if (d.name.startsWith('Crystalline Conflict')) return 'Crystalline Conflict';
+  if (d.memberType === rivalWingsMemberType) return 'Rival Wings';
+  return '';
+}
+
 function groupDuties(duties: RawDuty[]): DutyGroup[] {
-  const allianceMemberType = duties.find(
-    d => d.name === KNOWN_ALLIANCE_RAID
-  )?.memberType;
+  const memberTypeOf = (name: string) =>
+    duties.find(d => d.name === name)?.memberType;
+  const allianceMemberType = memberTypeOf(KNOWN_ALLIANCE_RAID);
+  const rivalWingsMemberType = memberTypeOf(KNOWN_RIVAL_WINGS);
 
   const groups = new Map<string, Duty[]>();
   const seen = new Set<string>();
@@ -306,6 +321,7 @@ function groupDuties(duties: RawDuty[]): DutyGroup[] {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const {contentType, memberType, ...duty} = raw;
+    duty.pvpType = pvpTypeOf(raw, rivalWingsMemberType);
     groups.set(group, [...(groups.get(group) ?? []), duty]);
   }
 

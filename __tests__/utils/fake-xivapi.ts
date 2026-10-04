@@ -43,6 +43,7 @@ function defaultSheets(): Record<string, Row[]> {
       {row_id: 2, fields: {Name: 'Dungeons'}},
       {row_id: 4, fields: {Name: 'Trials'}},
       {row_id: 5, fields: {Name: 'Raids'}},
+      {row_id: 6, fields: {Name: 'PvP'}},
       {row_id: 7, fields: {Name: 'Quest Battles'}},
       {row_id: 28, fields: {Name: 'Ultimate Raids'}},
     ],
@@ -73,6 +74,31 @@ function defaultSheets(): Record<string, Row[]> {
       }),
       duty(5, 'a Spectacle for the Ages', 7),
       duty(6, 'Sastasha', 2),
+      // PvP: two Frontline maps, a Rival Wings map, a Crystalline Conflict
+      // custom match, and a ranked-match row left out for not being flagged.
+      duty(130, 'Seal Rock (Seize)', 6, {
+        'ContentMemberType@as(raw)': 7,
+        PvP: true,
+        DailyFrontlineChallenge: true,
+      }),
+      duty(127, 'the Borderland Ruins (Secure)', 6, {
+        'ContentMemberType@as(raw)': 7,
+        PvP: true,
+        DailyFrontlineChallenge: true,
+      }),
+      duty(599, 'Hidden Gorge', 6, {
+        'ContentMemberType@as(raw)': 18,
+        PvP: true,
+      }),
+      duty(835, 'the Palaistra', 6, {
+        'ContentMemberType@as(raw)': 29,
+        PvP: true,
+        IsInDutyFinder: false,
+      }),
+      duty(862, 'Crystalline Conflict (Custom Match - The Palaistra)', 6, {
+        'ContentMemberType@as(raw)': 30,
+        PvP: true,
+      }),
     ],
     ContentRoulette: [
       {
@@ -123,7 +149,11 @@ class FakeXivApi {
       return {ok: false, status: 503, json: async () => ({})};
     }
 
-    const page = rows.filter(row => row.row_id > after).slice(0, PAGE_SIZE);
+    // Like XIVAPI, rows come in row id order.
+    const page = [...rows]
+      .sort((a, b) => a.row_id - b.row_id)
+      .filter(row => row.row_id > after)
+      .slice(0, PAGE_SIZE);
     return {
       ok: true,
       status: 200,

@@ -10,8 +10,12 @@ import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {JWTService, UsersRouter, UsersService} from './users';
 
-// httpGet is how the app reaches XIVAPI; tests pass a fake.
-function createApp(db: Db, httpGet: HttpGet = url => fetch(url)) {
+// httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
+function createApp(
+  db: Db,
+  httpGet: HttpGet = url => fetch(url),
+  now: () => Date = () => new Date()
+) {
   const usersService = new UsersService(db);
 
   const jwtService = new JWTService(usersService, config.jwt.secretKey, {
@@ -41,7 +45,7 @@ function createApp(db: Db, httpGet: HttpGet = url => fetch(url)) {
     profilesService
   ).router;
 
-  const dutiesService = new DutiesService(db, new XivApiClient(httpGet));
+  const dutiesService = new DutiesService(db, new XivApiClient(httpGet), now);
 
   const dutiesRouter = new DutiesRouter(dutiesService, config.dutiesRefreshKey)
     .router;

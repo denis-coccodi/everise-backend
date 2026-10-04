@@ -23,6 +23,14 @@ class DutiesRouter {
       }
     });
 
+    router.get('/frontline', async (_req, res, next) => {
+      try {
+        return res.json(await this.dutiesService.getFrontline());
+      } catch (err) {
+        return next(err);
+      }
+    });
+
     router.get('/roulettes', async (_req, res, next) => {
       try {
         return res.json(await this.dutiesService.getRoulettes());

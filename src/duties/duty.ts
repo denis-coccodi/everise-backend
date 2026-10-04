@@ -2,6 +2,9 @@
 // NPC or an item, or not queueable at all).
 type Finder = 'Duty Finder' | 'Raid Finder' | '';
 
+// The kind of PvP match: "" for duties that aren't PvP.
+type PvpType = 'Frontline' | 'Rival Wings' | 'Crystalline Conflict' | '';
+
 interface Duty {
   id: number;
   name: string;
@@ -19,15 +22,23 @@ interface Duty {
   dutyRecorder: boolean;
   highEnd: boolean;
   pvp: boolean;
+  pvpType: PvpType;
   // Roulette flags, e.g. "LevelingRoulette", "ExpertRoulette".
   roulettes: string[];
   sortKey: number;
 }
 
-interface DutyGroup {
+// A duty as the API returns it, with state that changes over time. It is
+// computed on each request, not stored.
+interface DutyStatus extends Duty {
+  // True for the one Frontline map in today's daily challenge.
+  activeFrontline: boolean;
+}
+
+interface DutyGroup<T extends Duty = Duty> {
   name: string;
   order: number;
-  duties: Duty[];
+  duties: T[];
 }
 
 interface Roulette {
@@ -55,4 +66,4 @@ interface DutyData {
   roulettes: Roulette[];
 }
 
-export {Duty, DutyData, DutyGroup, Finder, Roulette};
+export {Duty, DutyData, DutyGroup, DutyStatus, Finder, PvpType, Roulette};

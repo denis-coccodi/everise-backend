@@ -7,10 +7,14 @@ const db = new DocumentStore(new MemoryStorage());
 
 const xivApi = new FakeXivApi();
 
-const app = createApp(db, xivApi.httpGet);
+// The app's clock. Tests that depend on the date set `clock.now`; undefined
+// means the real time.
+const clock: {now?: Date} = {};
+
+const app = createApp(db, xivApi.httpGet, () => clock.now ?? new Date());
 
 async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, xivApi};
+export {app, clearDb, clock, xivApi};

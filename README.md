@@ -56,19 +56,23 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | GET      | `/api/tags`                                |          | List tags                                         |
 | GET      | `/api/duties`                              |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties)) |
 | GET      | `/api/roulettes`                           |          | FFXIV duty roulettes                              |
+| GET      | `/api/frontline`                           |          | Today's Frontline map and the next days' maps     |
 | POST     | `/api/duties/refresh`                      | key      | Re-download both lists from XIVAPI (`X-Refresh-Key` header) |
 
 ## FFXIV duties
 
 The backend keeps a copy of every Final Fantasy XIV duty and duty roulette, read from [XIVAPI](https://v2.xivapi.com/api/docs), which serves the game's own data sheets (`ContentFinderCondition` and `ContentRoulette`).
 
-- **`GET /api/duties`** returns `{dataVersion, fetchedAt, groups}`. Each group (Dungeons, Trials — Extreme, Raids — Savage, Alliance Raids, Deep Dungeons, …) lists its duties with level and item level requirements, expansion, `finder` (`Duty Finder`, `Raid Finder`, or `""` for neither), the Duty Finder settings it allows (`joinPartyInProgress`, `unrestrictedParty`, `minimumIL`, `explorerMode`, `dutyRecorder`) and the roulettes it belongs to.
+- **`GET /api/duties`** returns `{dataVersion, fetchedAt, groups}`. Each group (Dungeons, Trials — Extreme, Raids — Savage, Alliance Raids, Deep Dungeons, …) lists its duties with level and item level requirements, expansion, `finder` (`Duty Finder`, `Raid Finder`, or `""` for neither), the Duty Finder settings it allows (`joinPartyInProgress`, `unrestrictedParty`, `minimumIL`, `explorerMode`, `dutyRecorder`) and the roulettes it belongs to. PvP duties have a `pvpType` (`Frontline`, `Rival Wings` or `Crystalline Conflict`; `""` for other duties), and `activeFrontline` is `true` for the one Frontline map in today's daily challenge.
 - **`GET /api/roulettes`** returns `{dataVersion, fetchedAt, roulettes}`.
+- **`GET /api/frontline`** returns `{active, schedule}`: today's Frontline map and the full 8-day cycle from today, each as `{map, dutyId, from, until}`. `dutyId` links to the duty in `/api/duties` (null before the first refresh).
 - **`POST /api/duties/refresh`** downloads both lists again and replaces the cached copies. It needs the `DUTIES_REFRESH_KEY` secret in an `X-Refresh-Key` header, and is disabled when the secret is unset. A failed download returns 502 and leaves the cached lists unchanged. Run it after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)).
 
 Before the first refresh both lists are empty, with `fetchedAt: null`.
 
 Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. `src/duties/xivapi-client.ts` has the rules.
+
+The Frontline daily map isn't in the game data, so it is computed without any API call from a fixed rotation in `src/duties/frontline-rotation.ts`. The map changes at the daily reset, 15:00 UTC, through an 8-day cycle taken from the [community wiki](https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map). When a patch changes the rotation, update the list and its start date there; the tests check it against the wiki's formula.
 
 ## Database
 
