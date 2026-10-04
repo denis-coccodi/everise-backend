@@ -69,13 +69,14 @@ describe('FFXIV duties', () => {
       expect(response.body).toStrictEqual({
         dataVersion: 'test-version',
         fetchedAt: expect.any(String),
-        dutyCount: 8,
+        dutyCount: 9,
         rouletteCount: 1,
         groups: [
           {name: 'Dungeons', count: 1},
           {name: 'Trials — Extreme', count: 1},
           {name: 'Raids — Ultimate', count: 1},
           {name: 'Alliance Raids', count: 1},
+          {name: 'Treasure Hunt', count: 1},
           {name: 'PvP', count: 4},
         ],
       });
@@ -107,6 +108,7 @@ describe('FFXIV duties', () => {
         'Trials — Extreme',
         'Raids — Ultimate',
         'Alliance Raids',
+        'Treasure Hunt',
         'PvP',
       ]);
       expect(
@@ -133,6 +135,7 @@ describe('FFXIV duties', () => {
         'Trials — Extreme',
         'Raids — Ultimate',
         'Alliance Raids',
+        'Treasure Hunt',
         'PvP',
       ]);
 
@@ -175,6 +178,35 @@ describe('FFXIV duties', () => {
         expansion: 'Dawntrail',
         unrestrictedParty: false,
         itemLevel: 760,
+      });
+    });
+
+    test('a duty entered at level 1 that syncs to a level should take the sync level', async () => {
+      const response = await request(app).get('/api/duties').send();
+
+      const treasure = response.body.groups.find(
+        (g: {name: string}) => g.name === 'Treasure Hunt'
+      );
+      expect(treasure.duties[0]).toMatchObject({
+        name: 'the Excitatron 6000',
+        level: 90,
+        levelSync: 90,
+      });
+    });
+
+    test('duties outside the Duty Finder and Raid Finder should allow no Duty Finder settings', async () => {
+      const response = await request(app).get('/api/duties').send();
+
+      const treasure = response.body.groups.find(
+        (g: {name: string}) => g.name === 'Treasure Hunt'
+      );
+      // The fake game data marks all four as allowed.
+      expect(treasure.duties[0]).toMatchObject({
+        finder: '',
+        joinPartyInProgress: false,
+        unrestrictedParty: false,
+        minimumIL: false,
+        explorerMode: false,
       });
     });
 
