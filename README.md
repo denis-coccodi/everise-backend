@@ -70,7 +70,7 @@ The backend keeps a copy of every Final Fantasy XIV duty and duty roulette, read
 
 Before the first refresh both lists are empty, with `fetchedAt: null`.
 
-Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. `src/duties/xivapi-client.ts` has the rules.
+Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. A duty anyone can enter at level 1 but that syncs to a level (treasure dungeons) takes the sync level as its `level`, and duties outside the Duty Finder and Raid Finder report no Duty Finder settings (the game marks them anyway). `src/duties/xivapi-client.ts` has the rules.
 
 The Frontline daily map isn't in the game data, so it is computed without any API call from a fixed rotation in `src/duties/frontline-rotation.ts`. The map changes at the daily reset, 15:00 UTC, through an 8-day cycle taken from the [community wiki](https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map). When a patch changes the rotation, update the list and its start date there; the tests check it against the wiki's formula.
 

@@ -45,6 +45,7 @@ function defaultSheets(): Record<string, Row[]> {
       {row_id: 5, fields: {Name: 'Raids'}},
       {row_id: 6, fields: {Name: 'PvP'}},
       {row_id: 7, fields: {Name: 'Quest Battles'}},
+      {row_id: 9, fields: {Name: 'Treasure Hunt'}},
       {row_id: 28, fields: {Name: 'Ultimate Raids'}},
     ],
     ExVersion: [
@@ -74,6 +75,14 @@ function defaultSheets(): Record<string, Row[]> {
       }),
       duty(5, 'a Spectacle for the Ages', 7),
       duty(6, 'Sastasha', 2),
+      // A treasure dungeon: anyone can enter (level 1) but it syncs to 90, and
+      // the game marks Duty Finder settings it can't use (it isn't queued).
+      duty(7, 'the Excitatron 6000', 9, {
+        IsInDutyFinder: false,
+        ClassJobLevelRequired: 1,
+        ClassJobLevelSync: 90,
+        AllowExplorerMode: true,
+      }),
       // PvP: two Frontline maps, a Rival Wings map, a Crystalline Conflict
       // custom match, and a ranked-match row left out for not being flagged.
       duty(130, 'Seal Rock (Seize)', 6, {

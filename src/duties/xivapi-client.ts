@@ -216,6 +216,17 @@ function toDuty(
     finder = 'Duty Finder';
   }
 
+  // Duty Finder settings only apply to duties queued through a finder. The
+  // game sets them on others too (treasure dungeons, field operations,
+  // Variant dungeons), where they mean nothing.
+  const queued = finder !== '';
+
+  // Some duties anyone can enter (level 1) but that sync to a level, like
+  // treasure dungeons: their real level is the sync level.
+  const levelRequired = Number(f.ClassJobLevelRequired);
+  const levelSync = Number(f.ClassJobLevelSync);
+  const level = levelRequired <= 1 && levelSync > 1 ? levelSync : levelRequired;
+
   return {
     id,
     name: String(f.Name),
@@ -223,14 +234,14 @@ function toDuty(
     contentType: contentTypes.get(Number(f['ContentType@as(raw)'])) ?? '',
     memberType: Number(f['ContentMemberType@as(raw)']),
     expansion: expansions.get(Number(f['RequiredExVersion@as(raw)'])) ?? '',
-    level: Number(f.ClassJobLevelRequired),
-    levelSync: Number(f.ClassJobLevelSync),
+    level,
+    levelSync,
     itemLevel: Number(f.ItemLevelRequired),
     itemLevelSync: Number(f.ItemLevelSync),
-    joinPartyInProgress: Boolean(f.AllowReplacement),
-    unrestrictedParty: Boolean(f.AllowUndersized),
-    minimumIL: Boolean(f.AllowMinimumIL),
-    explorerMode: Boolean(f.AllowExplorerMode),
+    joinPartyInProgress: queued && Boolean(f.AllowReplacement),
+    unrestrictedParty: queued && Boolean(f.AllowUndersized),
+    minimumIL: queued && Boolean(f.AllowMinimumIL),
+    explorerMode: queued && Boolean(f.AllowExplorerMode),
     dutyRecorder: Boolean(f.DutyRecorderAllowed),
     highEnd: Boolean(f.HighEndDuty),
     pvp: Boolean(f.PvP),
