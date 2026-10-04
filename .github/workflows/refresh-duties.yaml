@@ -1,0 +1,67 @@
+name: Refresh FFXIV duties
+
+# Started by hand: Actions → Refresh FFXIV duties → Run workflow → pick the
+# target. Asks the backend to re-download the duty and roulette lists from
+# XIVAPI (POST /api/duties/refresh). Nothing is deployed.
+#
+# Needs a DUTIES_REFRESH_KEY secret in each GitHub environment (staging,
+# production), equal to the Worker secret of the same name:
+#   wrangler secret put DUTIES_REFRESH_KEY              # production
+#   wrangler secret put DUTIES_REFRESH_KEY --env staging
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which backend to refresh
+        type: choice
+        options: [staging, production]
+        default: staging
+
+concurrency:
+  group: refresh-duties-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # Only the repository owner may run it; for anyone else the job is skipped.
+    if: github.actor == 'denis-coccodi'
+    runs-on: ubuntu-latest
+    # The production environment only accepts main.
+    environment: ${{ inputs.target }}
+    permissions: {}
+    steps:
+      - name: Refresh the cached lists
+        env:
+          TARGET: ${{ inputs.target }}
+          DUTIES_REFRESH_KEY: ${{ secrets.DUTIES_REFRESH_KEY }}
+          # Staging is behind Cloudflare Access; this service token lets CI through.
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          if [ -z "$DUTIES_REFRESH_KEY" ]; then
+            echo "::error::DUTIES_REFRESH_KEY is not set in the $TARGET environment's secrets."
+            exit 1
+          fi
+          if [ "$TARGET" = production ]; then
+            url=https://be-prod.everisefc.workers.dev
+          else
+            url=https://be-staging.everisefc.workers.dev
+          fi
+          set -- -H "X-Refresh-Key: $DUTIES_REFRESH_KEY"
+          if [ "$TARGET" = staging ] && [ -n "$CF_ACCESS_CLIENT_ID" ]; then
+            set -- "$@" -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"
+          fi
+          status=$(curl -s -o response.json -w '%{http_code}' -X POST "$@" "$url/api/duties/refresh")
+          cat response.json; echo
+          case "$status" in
+            200) ;;
+            401) echo "::error::The backend rejected the key: the GitHub and Worker DUTIES_REFRESH_KEY secrets differ, or the Worker secret is unset."; exit 1 ;;
+            302) echo "::error::Cloudflare Access blocked the request: check the CI service token policy on $TARGET."; exit 1 ;;
+            *) echo "::error::Refresh failed with HTTP $status."; exit 1 ;;
+          esac
+          {
+            echo "Refreshed **$TARGET** ($url):"
+            echo
+            jq -r '"- \(.dutyCount) duties, \(.rouletteCount) roulettes (data \(.dataVersion), fetched \(.fetchedAt))"' response.json
+            jq -r '.groups[] | "  - \(.name): \(.count)"' response.json
+          } >> "$GITHUB_STEP_SUMMARY"

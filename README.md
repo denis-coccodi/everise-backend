@@ -54,6 +54,21 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | POST     | `/api/articles/:slug/comments`             | required | Add a comment                                     |
 | DELETE   | `/api/articles/:slug/comments/:commentId`  | required | Delete your comment                               |
 | GET      | `/api/tags`                                |          | List tags                                         |
+| GET      | `/api/duties`                              |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties)) |
+| GET      | `/api/roulettes`                           |          | FFXIV duty roulettes                              |
+| POST     | `/api/duties/refresh`                      | key      | Re-download both lists from XIVAPI (`X-Refresh-Key` header) |
+
+## FFXIV duties
+
+The backend keeps a copy of every Final Fantasy XIV duty and duty roulette, read from [XIVAPI](https://v2.xivapi.com/api/docs), which serves the game's own data sheets (`ContentFinderCondition` and `ContentRoulette`).
+
+- **`GET /api/duties`** returns `{dataVersion, fetchedAt, groups}`. Each group (Dungeons, Trials — Extreme, Raids — Savage, Alliance Raids, Deep Dungeons, …) lists its duties with level and item level requirements, expansion, `finder` (`Duty Finder`, `Raid Finder`, or `""` for neither), the Duty Finder settings it allows (`joinPartyInProgress`, `unrestrictedParty`, `minimumIL`, `explorerMode`, `dutyRecorder`) and the roulettes it belongs to.
+- **`GET /api/roulettes`** returns `{dataVersion, fetchedAt, roulettes}`.
+- **`POST /api/duties/refresh`** downloads both lists again and replaces the cached copies. It needs the `DUTIES_REFRESH_KEY` secret in an `X-Refresh-Key` header, and is disabled when the secret is unset. A failed download returns 502 and leaves the cached lists unchanged. Run it after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)).
+
+Before the first refresh both lists are empty, with `fetchedAt: null`.
+
+Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. `src/duties/xivapi-client.ts` has the rules.
 
 ## Database
 
@@ -61,7 +76,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 
 The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`.
+- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`. The cached FFXIV lists add `dutyGroups` (one document per duty group), `dutyRoulettes` and `dutyRefreshes` (one document each), which every refresh replaces.
 - **Common fields.** The store gives every new document an `id` (a UUID), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
@@ -112,6 +127,7 @@ curl http://localhost:8080/api/tags
 | `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret |
 | `JWT_ISSUER`                | JWT issuer                                                         |
 | `JWT_SECONDS_TO_EXPIRATION` | JWT and cookie lifetime in seconds                                 |
+| `DUTIES_REFRESH_KEY`        | Key that allows `POST /api/duties/refresh`; refreshing is disabled when unset. In production, set it as a Worker secret |
 
 ## Testing
 
@@ -140,7 +156,7 @@ Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requ
 
 ## CI/CD
 
-Two GitHub Actions workflows:
+Three GitHub Actions workflows:
 
 **CI/CD** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
 
@@ -152,6 +168,8 @@ Pull requests only run **test**, and it must pass before the PR can be merged. E
 To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
 
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
+
+**Refresh FFXIV duties** (`.github/workflows/refresh-duties.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh FFXIV duties** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend and lists the new counts on the run's summary page. It deploys nothing.
 
 ### Contributing
 
@@ -221,5 +239,6 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    - `CLOUDFLARE_API_TOKEN`: the token from the previous step.
    - `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard (Workers & Pages → Overview).
 1. Under Settings → Environments, create `staging` (any branch) and `production` (limited to the `main` branch).
+1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.

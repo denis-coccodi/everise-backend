@@ -4,12 +4,14 @@ import express from 'express';
 import {ArticlesRouter, ArticlesService} from './articles';
 import {config} from './config';
 import {Db} from './db';
+import {DutiesRouter, DutiesService, HttpGet, XivApiClient} from './duties';
 import {errorHandler} from './error-handler';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {JWTService, UsersRouter, UsersService} from './users';
 
-function createApp(db: Db) {
+// httpGet is how the app reaches XIVAPI; tests pass a fake.
+function createApp(db: Db, httpGet: HttpGet = url => fetch(url)) {
   const usersService = new UsersService(db);
 
   const jwtService = new JWTService(usersService, config.jwt.secretKey, {
@@ -39,6 +41,11 @@ function createApp(db: Db) {
     profilesService
   ).router;
 
+  const dutiesService = new DutiesService(db, new XivApiClient(httpGet));
+
+  const dutiesRouter = new DutiesRouter(dutiesService, config.dutiesRefreshKey)
+    .router;
+
   const app = express();
 
   app.use(
@@ -59,6 +66,8 @@ function createApp(db: Db) {
   app.use('/api', profilesRouter);
 
   app.use('/api', articlesRouter);
+
+  app.use('/api', dutiesRouter);
 
   app.use(
     async (
