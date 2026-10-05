@@ -42,6 +42,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | PUT      | `/api/user/image`                          | required | Upload a profile picture ([Profile pictures](#profile-pictures)) |
 | DELETE   | `/api/user/image`                          | required | Remove the profile picture                        |
 | GET      | `/api/profile-images/:id`                  |          | An uploaded profile picture                       |
+| GET      | `/api/live` (WebSocket)                    |          | Live updates: new posts ([Live updates](#live-updates)) |
 | POST     | `/api/roulette-results`                    | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results)) |
 | GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
 | POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
@@ -75,6 +76,16 @@ People upload a profile picture instead of typing a URL.
 - **`DELETE /api/user/image`** goes back to the default picture and deletes the upload.
 - **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
 - `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
+
+## Live updates
+
+`GET /api/live` with a WebSocket upgrade subscribes to live updates. The backend isn't a plain Node server but Express inside a Cloudflare Worker, which can't hold connections open, so the sockets live in a separate Durable Object, `LiveHub` (`src/live/live-hub.ts`), using Cloudflare's **WebSocket Hibernation API**: the object sleeps between events with the sockets kept open, so idle connections cost nothing.
+
+- **Events** are JSON, one per message. So far one kind: `{"type": "article-created", "slug", "author", "tags"}`, sent when any article is created (roulette results included). Events say what changed, not what to show: pages fetch what they need, so nothing personal (favourites, follows) is broadcast. Publishing is best effort: a post is saved even when the hub is unreachable.
+- **Heartbeat:** a client sends `ping` and gets `pong`, answered by the runtime without waking the hub. Clients only listen; anything else they send is ignored.
+- **Origins:** browsers send the page's `Origin` with a WebSocket and no CORS check applies, so only `BASE_URL`'s origin and `CORS_ORIGINS` may connect (403 otherwise).
+- **Routing:** `src/worker.ts` sends WebSocket requests for `/api/live` to the hub before Express sees them; through the frontend Worker's service binding, browsers connect same-origin (`wss://<site>/api/live`).
+- **Config:** the `LIVE` Durable Object binding, in both environments, and the `v2` migration that adds the `LiveHub` class.
 
 ## Roulette results
 

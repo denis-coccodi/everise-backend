@@ -7,6 +7,7 @@ import {randomBytes} from 'crypto';
 import {Article, RouletteCard} from './article';
 import {Comment} from './comment';
 import {ProfilesService} from '../profiles';
+import {LiveFeed, noLiveFeed} from '../live/live-feed';
 
 interface CreateArticleParams {
   title: string;
@@ -104,14 +105,16 @@ class ArticlesService {
   constructor(
     private readonly db: Db,
     private readonly usersService: UsersService,
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
+    private readonly liveFeed: LiveFeed = noLiveFeed
   ) {}
 
   async createArticle(
     authorId: string,
     params: CreateArticleParams
   ): Promise<Article> {
-    if (!(await this.usersService.getUserById(authorId))) {
+    const author = await this.usersService.getUserById(authorId);
+    if (!author) {
       throw new NotFoundError(`user "${authorId}" not found`);
     }
 
@@ -149,6 +152,8 @@ class ArticlesService {
       this.articlesCollection,
       articleData
     );
+
+    await this.announce(articleDoc, author.username);
 
     return toArticle(articleDoc);
   }
@@ -479,6 +484,21 @@ class ArticlesService {
     }
 
     await this.db.delete(this.commentsCollection, comment.id);
+  }
+
+  // Tells the live feeds about a new article. The article is saved either
+  // way: live updates are a convenience, and pages catch up on reload.
+  private async announce(article: ArticleDoc, author: string) {
+    try {
+      await this.liveFeed.publish({
+        type: 'article-created',
+        slug: article.slug,
+        author,
+        tags: article.tags,
+      });
+    } catch (err) {
+      console.error('live update failed', err);
+    }
   }
 
   private prepareSlug(title: string): string {
