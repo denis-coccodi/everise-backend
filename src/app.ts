@@ -14,7 +14,12 @@ import {
 import {errorHandler} from './error-handler';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
-import {JWTService, UsersRouter, UsersService} from './users';
+import {
+  JWTService,
+  ProfileImagesService,
+  UsersRouter,
+  UsersService,
+} from './users';
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
 function createApp(
@@ -39,7 +44,12 @@ function createApp(
 
   const auth = new Auth(jwtService);
 
-  const usersRouter = new UsersRouter(auth, usersService, jwtService).router;
+  const usersRouter = new UsersRouter(
+    auth,
+    usersService,
+    jwtService,
+    new ProfileImagesService(db)
+  ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
     .router;

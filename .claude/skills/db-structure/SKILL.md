@@ -24,6 +24,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
 | `articles` | authorId → users, slug (unique), title, description, body, tags[], favoritedBy[] → users | `src/articles/articles-service.ts` (`ArticleDoc`) |
 | `comments` | articleId → articles, authorId → users, body | `src/articles/articles-service.ts` (`CommentDoc`) |
+| `profileImages` | userId → users, contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
 
 Tags and favorites have no collection of their own; they are arrays on articles.
 

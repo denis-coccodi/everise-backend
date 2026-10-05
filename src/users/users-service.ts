@@ -97,7 +97,7 @@ class UsersService {
       userData.passwordHash = passwordHash;
     }
 
-    if (params.bio && params.bio !== userData.bio) {
+    if (params.bio !== undefined && params.bio !== userData.bio) {
       userData.bio = params.bio;
     }
 
@@ -119,6 +119,24 @@ class UsersService {
     );
 
     return toUser(updatedData!);
+  }
+
+  // Sets the user's picture to a stored upload's URL, or back to the default
+  // with undefined. Not validated like a user-entered URL: the app makes it.
+  async setImage(userId: string, image: string | undefined): Promise<User> {
+    const updated = await this.db.update<UserDoc>(
+      this.usersCollection,
+      userId,
+      {
+        image,
+      }
+    );
+
+    if (!updated) {
+      throw new NotFoundError(`user "${userId}" not found`);
+    }
+
+    return toUser(updated);
   }
 
   async verifyPassword(email: string, password: string): Promise<boolean> {
@@ -144,19 +162,21 @@ class UsersService {
     const validatedEmail = await Joi.string().email().validateAsync(email);
 
     if (await this.getUserByEmail(validatedEmail)) {
-      throw new AlreadyExistsError('"email" is taken');
+      throw new AlreadyExistsError(
+        'That email address is already registered. Sign in instead?'
+      );
     }
   }
 
   private async validateUsernameOrThrow(username: string) {
     if (await this.getUserByUsername(username)) {
-      throw new AlreadyExistsError('"username" is taken');
+      throw new AlreadyExistsError('That username is taken. Try another one.');
     }
   }
 
   private validatePasswordOrThrow(password: string) {
     if (password.length < 8) {
-      throw new RangeError('"password" must contain at least 8 characters');
+      throw new RangeError('Your password needs at least 8 characters.');
     }
   }
 

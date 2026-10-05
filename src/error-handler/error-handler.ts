@@ -4,6 +4,8 @@ import {isCelebrateError} from 'celebrate';
 import {StatusCodes} from 'http-status-codes';
 import {
   AlreadyExistsError,
+  InvalidCredentialsError,
+  InvalidImageError,
   NotFoundError,
   UnauthorizedError,
   UpstreamError,
@@ -26,8 +28,11 @@ class ErrorHandler {
       util.inspect(error, {showHidden: false, depth: null, colors: true})
     );
 
+    // Every message, also when a schema reports several (abortEarly: false).
     if (isCelebrateError(error)) {
-      const errors = Array.from(error.details, ([, value]) => value.message);
+      const errors = Array.from(error.details.values()).flatMap(value =>
+        value.details.map(detail => detail.message)
+      );
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json(new ErrorsDto(errors));
@@ -37,6 +42,16 @@ class ErrorHandler {
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)
         .json(new ErrorsDto([error.message]));
+    }
+
+    if (error instanceof InvalidCredentialsError) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json(new ErrorsDto([error.message]));
+    }
+
+    if (error instanceof InvalidImageError) {
+      return res.status(error.status).json(new ErrorsDto([error.message]));
     }
 
     if (error instanceof JsonWebTokenError) {

@@ -319,6 +319,18 @@ describe('PUT /api/user', () => {
     });
   });
 
+  test('given an empty bio should clear it', async () => {
+    const user = await usersClient.registerRandomUser();
+
+    const response = await request(app)
+      .put(updateUserUrl)
+      .set('authorization', `Token ${user.user.token}`)
+      .send({user: {bio: ''}});
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.bio).toBeNull();
+  });
+
   describe('email validation', () => {
     test('given an invalid email should return http status code 422 and an errors object', async () => {
       const user = await usersClient.registerRandomUser();
@@ -337,7 +349,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.email" must be a valid email'],
+          body: ['Enter a valid email address, like name@example.com.'],
         },
       });
     });
@@ -360,7 +372,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"email" is taken'],
+          body: ['That email address is already registered. Sign in instead?'],
         },
       });
     });
@@ -385,7 +397,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"username" is taken'],
+          body: ['That username is taken. Try another one.'],
         },
       });
     });
