@@ -1,19 +1,10 @@
 import {createHash} from 'crypto';
 import {Article, ArticlesService} from '../articles';
-import {config} from '../config';
 import {Db, Doc} from '../db';
 import {DutiesService} from '../duties';
 import {InvalidRouletteResultError, TooManyRequestsError} from '../errors';
-import {User, UsersService} from '../users';
+import {TataruAccount, User} from '../users';
 import {RouletteResultInput, buildRouletteCard} from './roulette-result';
-
-// The account that posts results for people who aren't signed in.
-const TATARU = {
-  username: 'Tataru',
-  email: 'tataru@everise.invalid',
-  bio: 'Receptionist, accountant and keeper of the books. I post roulette results for adventurers who forget to sign in. For a modest fee.',
-  image: () => `${config.baseUrl}/assets/images/tataru.png`,
-};
 
 // Tataru's first line on a guest's result.
 const GUEST_LINES = [
@@ -50,7 +41,8 @@ class RoulettePostsService {
     private readonly db: Db,
     private readonly dutiesService: DutiesService,
     private readonly articlesService: ArticlesService,
-    private readonly usersService: UsersService,
+    // The account that posts results for people who aren't signed in.
+    private readonly tataru: TataruAccount,
     private readonly now: () => Date = () => new Date(),
     private readonly random: () => number = Math.random
   ) {}
@@ -79,12 +71,7 @@ class RoulettePostsService {
     const limitKey = user ? `user-${user.id}` : `guest-${hash(clientAddress)}`;
     await this.checkLimits(limitKey, guest);
 
-    const author =
-      user ??
-      (await this.usersService.getOrCreateSystemUser({
-        ...TATARU,
-        image: TATARU.image(),
-      }));
+    const author = user ?? (await this.tataru.get());
     const article = await this.articlesService.createArticle(author.id, {
       title: `Duty Found: ${card.name}`,
       description: `${card.type} · ${card.mode}`,
@@ -169,4 +156,4 @@ function hash(value: string) {
   return createHash('sha256').update(value).digest('hex').slice(0, 32);
 }
 
-export {GUEST_LINES, MAX_COMMENT_LENGTH, RoulettePostsService, TATARU};
+export {GUEST_LINES, MAX_COMMENT_LENGTH, RoulettePostsService};

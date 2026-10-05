@@ -11,7 +11,7 @@
   "alias": {"joi": "./node_modules/joi/lib/index.js"},
 
   // Served by Cloudflare before the Worker runs, e.g. /assets/images/avatar-profile.png
-  "assets": {"directory": "./public"},
+  "assets": {"directory": "./public", "binding": "ASSETS"},
 
   // The database: one Durable Object with SQLite-backed storage (free plan).
   "durable_objects": {

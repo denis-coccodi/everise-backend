@@ -15,7 +15,20 @@ const PORT = 8080;
 const db = new DurableObjectDb(env.DB as DurableObjectNamespace<Db>);
 const hubs = env.LIVE as DurableObjectNamespace<LiveHub>;
 
-createApp(db, undefined, undefined, new HubLiveFeed(hubs)).listen(PORT);
+// The files in public/, e.g. Tataru's first picture, stored as her upload.
+const assets = env.ASSETS as {
+  fetch(
+    request: string
+  ): Promise<{ok: boolean; arrayBuffer(): Promise<ArrayBuffer>}>;
+};
+async function loadBundledPicture(path: string) {
+  const response = await assets.fetch(`https://assets.invalid${path}`);
+  return response.ok ? new Uint8Array(await response.arrayBuffer()) : undefined;
+}
+
+createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
+  loadBundledPicture,
+}).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {
   fetch(request: WorkerRequest, env: unknown, ctx: unknown): Promise<Response>;

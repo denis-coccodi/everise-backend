@@ -1,9 +1,10 @@
 import * as bcrypt from 'bcryptjs';
 import {randomBytes} from 'crypto';
 import {Joi} from 'celebrate';
+import {config} from '../config';
 import {Db, Doc} from '../db';
-import {AlreadyExistsError, NotFoundError} from '../errors';
-import {User} from './user';
+import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
+import {AssignableRole, Role, User} from './user';
 
 interface UpdateUserParams {
   email?: string;
@@ -21,6 +22,8 @@ interface UserDoc extends Doc {
   bio?: string;
   image?: string;
   darkMode?: boolean;
+  // Given by an admin; admins themselves come from ADMIN_EMAILS.
+  role?: AssignableRole;
   // An account the app posts as, e.g. Tataru for guests. Nobody can sign in
   // as it: its password is random and never stored anywhere else.
   system?: boolean;
@@ -30,11 +33,20 @@ interface SystemUserParams {
   username: string;
   email: string;
   bio: string;
-  image: string;
+  image?: string;
 }
 
 // Usernames kept for system accounts, compared without case.
 const RESERVED_USERNAMES = ['tataru'];
+
+function isAdminEmail(email: string) {
+  return config.adminEmails.includes(email.toLowerCase());
+}
+
+function roleOf(doc: UserDoc): Role {
+  if (doc.system) return 'user';
+  return isAdminEmail(doc.email) ? 'admin' : doc.role ?? 'user';
+}
 
 function toUser(doc: UserDoc): User {
   return new User(
@@ -43,7 +55,9 @@ function toUser(doc: UserDoc): User {
     doc.username,
     doc.bio,
     doc.image,
-    doc.darkMode
+    doc.darkMode,
+    roleOf(doc),
+    !!doc.system
   );
 }
 
@@ -197,6 +211,46 @@ class UsersService {
     }
 
     return await bcrypt.compare(password, userDoc.passwordHash);
+  }
+
+  // Everyone who registered, without the system accounts, by username.
+  async listMembers(): Promise<User[]> {
+    const docs = await this.db.find<UserDoc>(this.usersCollection);
+    return docs
+      .filter(doc => !doc.system)
+      .map(toUser)
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }
+
+  // Gives a member a role. Admins come from the configuration, and system
+  // accounts have none.
+  async setRole(username: string, role: AssignableRole): Promise<User> {
+    const doc = await this.findUserDoc('username', username);
+    if (!doc || doc.system) {
+      throw new NotFoundError(`user "${username}" not found`);
+    }
+    if (isAdminEmail(doc.email)) {
+      throw new InvalidRoleError(
+        `${doc.username} is an admin. Admins are set in the backend's ADMIN_EMAILS setting.`
+      );
+    }
+
+    const updated = await this.db.update<UserDoc>(
+      this.usersCollection,
+      doc.id,
+      {
+        role,
+      }
+    );
+    return toUser(updated!);
+  }
+
+  // Who may open the staging site: the admins and the staging testers.
+  async stagingAccessEmails(): Promise<string[]> {
+    const testers = (await this.listMembers())
+      .filter(user => user.role === 'staging-tester')
+      .map(user => user.email.toLowerCase());
+    return [...new Set([...config.adminEmails, ...testers])].sort();
   }
 
   private async findUserDoc(field: 'email' | 'username', value: string) {

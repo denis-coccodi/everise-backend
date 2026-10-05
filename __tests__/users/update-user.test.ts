@@ -35,6 +35,7 @@ describe('PUT /api/user', () => {
           bio: requestBody.user.bio,
           image: requestBody.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
 
@@ -50,6 +51,7 @@ describe('PUT /api/user', () => {
         bio: requestBody.user.bio,
         image: requestBody.user.image,
         darkMode: true,
+        role: 'user',
       });
     });
 
@@ -76,6 +78,7 @@ describe('PUT /api/user', () => {
           bio: user.user.bio,
           image: user.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
 
@@ -91,6 +94,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       });
     });
 
@@ -117,6 +121,7 @@ describe('PUT /api/user', () => {
           bio: user.user.bio,
           image: user.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
 
@@ -132,6 +137,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       });
     });
 
@@ -158,6 +164,7 @@ describe('PUT /api/user', () => {
           bio: user.user.bio,
           image: user.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
 
@@ -173,6 +180,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       });
     });
 
@@ -199,6 +207,7 @@ describe('PUT /api/user', () => {
           bio: user.user.bio,
           image: user.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
 
@@ -214,6 +223,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       });
     });
   });
@@ -241,6 +251,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       },
     });
 
@@ -256,6 +267,7 @@ describe('PUT /api/user', () => {
       bio: user.user.bio,
       image: user.user.image,
       darkMode: true,
+      role: 'user',
     });
   });
 
@@ -282,6 +294,7 @@ describe('PUT /api/user', () => {
         bio: requestBody.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       },
     });
 
@@ -294,6 +307,7 @@ describe('PUT /api/user', () => {
       bio: requestBody.user.bio,
       image: user.user.image,
       darkMode: true,
+      role: 'user',
     });
   });
 
@@ -320,6 +334,7 @@ describe('PUT /api/user', () => {
         bio: user.user.bio,
         image: requestBody.user.image,
         darkMode: true,
+        role: 'user',
       },
     });
 
@@ -332,6 +347,7 @@ describe('PUT /api/user', () => {
       bio: user.user.bio,
       image: requestBody.user.image,
       darkMode: true,
+      role: 'user',
     });
   });
 

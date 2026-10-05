@@ -1,4 +1,5 @@
 import {randomUUID} from 'crypto';
+import {config} from '../config';
 import {Db, Doc} from '../db';
 import {InvalidImageError} from '../errors';
 import {ImageType, readImageInfo} from './image-info';
@@ -62,6 +63,19 @@ class ProfileImagesService {
   }
 }
 
+// Where an uploaded picture is served. Stored as the user's image URL.
+const profileImagePrefix = () => `${config.baseUrl}/api/profile-images/`;
+
+function profileImageUrl(id: string) {
+  return profileImagePrefix() + id;
+}
+
+// The id of an uploaded picture, if this image URL is one.
+function uploadedImageId(image: string | undefined) {
+  const prefix = profileImagePrefix();
+  return image?.startsWith(prefix) ? image.slice(prefix.length) : undefined;
+}
+
 function tooLarge() {
   return new InvalidImageError(
     `The picture is too large: it can be at most ${MAX_IMAGE_KB} KB.`,
@@ -69,4 +83,11 @@ function tooLarge() {
   );
 }
 
-export {MAX_IMAGE_BYTES, MAX_IMAGE_SIDE, ProfileImagesService, tooLarge};
+export {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_SIDE,
+  ProfileImagesService,
+  profileImageUrl,
+  tooLarge,
+  uploadedImageId,
+};
