@@ -15,10 +15,17 @@
 
   // The database: one Durable Object with SQLite-backed storage (free plan).
   "durable_objects": {
-    "bindings": [{"name": "DB", "class_name": "EveriseDb"}]
+    "bindings": [
+      {"name": "DB", "class_name": "EveriseDb"},
+      // The live updates' WebSockets (src/live/live-hub.ts).
+      {"name": "LIVE", "class_name": "LiveHub"}
+    ]
   },
   // Never edit or remove applied migrations; add new ones.
-  "migrations": [{"tag": "v1", "new_sqlite_classes": ["EveriseDb"]}],
+  "migrations": [
+    {"tag": "v1", "new_sqlite_classes": ["EveriseDb"]},
+    {"tag": "v2", "new_sqlite_classes": ["LiveHub"]}
+  ],
 
   // Production values. `wrangler dev` overrides them with .dev.vars.
   // JWT_SECRET_KEY is a secret, set once with `wrangler secret put JWT_SECRET_KEY`.
@@ -49,7 +56,10 @@
       // Set explicitly: the default would be "be-prod-staging".
       "name": "be-staging",
       "durable_objects": {
-        "bindings": [{"name": "DB", "class_name": "EveriseDb"}]
+        "bindings": [
+          {"name": "DB", "class_name": "EveriseDb"},
+          {"name": "LIVE", "class_name": "LiveHub"}
+        ]
       },
       "vars": {
         "BASE_URL": "https://staging.everisefc.workers.dev",

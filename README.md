@@ -42,6 +42,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | PUT      | `/api/user/image`                          | required | Upload a profile picture ([Profile pictures](#profile-pictures)) |
 | DELETE   | `/api/user/image`                          | required | Remove the profile picture                        |
 | GET      | `/api/profile-images/:id`                  |          | An uploaded profile picture                       |
+| GET      | `/api/live` (WebSocket)                    |          | Live updates: new posts ([Live updates](#live-updates)) |
 | POST     | `/api/roulette-results`                    | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results)) |
 | GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
 | POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
@@ -76,13 +77,23 @@ People upload a profile picture instead of typing a URL.
 - **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
 - `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
 
+## Live updates
+
+`GET /api/live` with a WebSocket upgrade subscribes to live updates. The backend isn't a plain Node server but Express inside a Cloudflare Worker, which can't hold connections open, so the sockets live in a separate Durable Object, `LiveHub` (`src/live/live-hub.ts`), using Cloudflare's **WebSocket Hibernation API**: the object sleeps between events with the sockets kept open, so idle connections cost nothing.
+
+- **Events** are JSON, one per message. So far one kind: `{"type": "article-created", "article": {…}}`, pushed when any article is created (roulette results included), with the article exactly as `GET /api/articles` returns it to someone who isn't signed in (`favorited` and `author.following` are false): nothing personal is broadcast, and pages insert it into their lists as it is. Publishing is best effort: a post is saved even when the hub is unreachable.
+- **Heartbeat:** a client sends `ping` every 25 seconds and gets `pong`, answered by the runtime without waking the hub. It only keeps the connection open: Cloudflare closes WebSockets that stay silent for about 100 seconds. Clients only listen; anything else they send is ignored.
+- **Origins:** browsers send the page's `Origin` with a WebSocket and no CORS check applies, so only `BASE_URL`'s origin and `CORS_ORIGINS` may connect (403 otherwise).
+- **Routing:** `src/worker.ts` sends WebSocket requests for `/api/live` to the hub before Express sees them; through the frontend Worker's service binding, browsers connect same-origin (`wss://<site>/api/live`).
+- **Config:** the `LIVE` Durable Object binding, in both environments, and the `v2` migration that adds the `LiveHub` class.
+
 ## Roulette results
 
 An accepted roulette result is posted to the feeds as an article tagged `roulette`, with a `roulette` card (`type`, `name`, `detail`, `mode`, `dutyUnknown`, `image`, `job`, `guest`) that the frontend shows like the roulette's "Duty Found" window. Other articles don't have the field.
 
 - **`POST /api/roulette-results`** takes `{result: {type, candidate: {kind, id}, mode, jobId?}, comment?}`: only what the reels landed on, as ids. The backend checks it's a result the roulette can produce (the duty belongs to that type, the party settings are possible for it, dealer's choice deals a job that can queue) against its cached duty data, and builds the card itself. Anything else is refused with 422 and a message.
 - **Signed in**, the result is posted as the user, with their optional comment (up to 280 characters) as the body.
-- **Not signed in**, it's posted by **Tataru**, a system account (`system: true`, random unknown password, so nobody can sign in as her; the username is reserved), with one of her lines about catching a guest sneaking a spin. Guests can't add text. Her picture is `public/assets/images/tataru.png`, the "dress-up Tataru" minion portrait from the game's data (via XIVAPI), used under Square Enix's fan site materials licence like the other game images.
+- **Not signed in**, it's posted by **Tataru**, a system account (`system: true`, random unknown password, so nobody can sign in as her; the username is reserved), with one of her lines about catching a guest sneaking a spin. Guests can't add text. Her picture is `<BASE_URL>/assets/images/tataru.png`: like the default avatar, it's served by the frontend's assets (the site), with a copy in `public/assets/images/` for local runs, where `BASE_URL` is the backend. It's the "dress-up Tataru" minion portrait from the game's data (via XIVAPI), used under Square Enix's fan site materials licence like the other game images.
 - **Limits:** one result every 15 seconds per user, one a minute per guest address (`CF-Connecting-IP`, stored hashed), and 60 guest results an hour in all. Over a limit: 429 with `Retry-After` and a message.
 - `POST /api/articles` still needs a signed-in user: this endpoint can only ever post a real result card.
 

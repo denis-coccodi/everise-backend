@@ -6,36 +6,9 @@ import {NotFoundError, UnauthorizedError} from '../errors';
 import {Auth} from '../middleware';
 import {Profile, ProfilesService} from '../profiles';
 import {UsersService} from '../users';
-import {Article} from './article';
+import {ArticleDto} from './article-dto';
 import {ArticlesService} from './articles-service';
 import {Comment} from './comment';
-
-class ArticleDto {
-  readonly article;
-
-  constructor(article: Article, favorited: boolean, author: Profile) {
-    this.article = {
-      slug: article.slug,
-      title: article.title,
-      description: article.description,
-      body: article.body,
-      tagList: article.tags,
-      createdAt: article.createdAt.toISOString(),
-      updatedAt: article.updatedAt.toISOString(),
-      favorited: favorited,
-      favoritesCount: article.favoritedBy.length,
-      // Only on roulette results, so other articles keep the RealWorld shape.
-      ...(article.roulette ? {roulette: article.roulette} : {}),
-      author: {
-        username: author.username,
-        bio: author.bio,
-        image:
-          author.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
-        following: author.following,
-      },
-    };
-  }
-}
 
 class MultipleArticlesDto {
   readonly articles;
@@ -611,4 +584,4 @@ class ArticlesRouter {
   }
 }
 
-export {ArticleDto, ArticlesRouter};
+export {ArticlesRouter};

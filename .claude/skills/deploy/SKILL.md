@@ -12,7 +12,7 @@ Repo: `denis-coccodi/everise-backend`, branch `main`. Cloudflare account ID: `ba
 | staging | `be-staging` | https://be-staging.everisefc.workers.dev | `npx wrangler deploy --env staging` |
 | production | `be-prod` | https://be-prod.everisefc.workers.dev | `npx wrangler deploy` (`npm run deploy`) |
 
-Each Worker has its own Durable Object, so its own data. Staging is defined under `env.staging` in `wrangler.jsonc`; `durable_objects` and `vars` are not inherited from the top level, so any new binding or var must be added in both places.
+Each Worker has its own Durable Objects: `EveriseDb` (`DB`, the data) and `LiveHub` (`LIVE`, the live updates' WebSockets, holding no data). Staging is defined under `env.staging` in `wrangler.jsonc`; `durable_objects` and `vars` are not inherited from the top level, so any new binding or var must be added in both places.
 
 ## Normal path: merge a PR into main
 

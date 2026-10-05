@@ -12,6 +12,7 @@ import {
   XivApiClient,
 } from './duties';
 import {errorHandler} from './error-handler';
+import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
@@ -26,7 +27,8 @@ import {
 function createApp(
   db: Db,
   httpGet: HttpGet = url => fetch(url),
-  now: () => Date = () => new Date()
+  now: () => Date = () => new Date(),
+  liveFeed: LiveFeed = noLiveFeed
 ) {
   const usersService = new UsersService(db);
 
@@ -40,7 +42,8 @@ function createApp(
   const articlesService = new ArticlesService(
     db,
     usersService,
-    profilesService
+    profilesService,
+    liveFeed
   );
 
   const auth = new Auth(jwtService);

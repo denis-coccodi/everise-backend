@@ -5,8 +5,10 @@ import {AlreadyExistsError, NotFoundError} from '../errors';
 import {UsersService} from '../users';
 import {randomBytes} from 'crypto';
 import {Article, RouletteCard} from './article';
+import {ArticleDto} from './article-dto';
 import {Comment} from './comment';
 import {ProfilesService} from '../profiles';
+import {LiveFeed, noLiveFeed} from '../live/live-feed';
 
 interface CreateArticleParams {
   title: string;
@@ -104,14 +106,16 @@ class ArticlesService {
   constructor(
     private readonly db: Db,
     private readonly usersService: UsersService,
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
+    private readonly liveFeed: LiveFeed = noLiveFeed
   ) {}
 
   async createArticle(
     authorId: string,
     params: CreateArticleParams
   ): Promise<Article> {
-    if (!(await this.usersService.getUserById(authorId))) {
+    const author = await this.usersService.getUserById(authorId);
+    if (!author) {
       throw new NotFoundError(`user "${authorId}" not found`);
     }
 
@@ -149,6 +153,8 @@ class ArticlesService {
       this.articlesCollection,
       articleData
     );
+
+    await this.announce(articleDoc);
 
     return toArticle(articleDoc);
   }
@@ -479,6 +485,21 @@ class ArticlesService {
     }
 
     await this.db.delete(this.commentsCollection, comment.id);
+  }
+
+  // Tells the live feeds about a new article. The article is saved either
+  // way: live updates are a convenience, and pages catch up on reload.
+  private async announce(doc: ArticleDoc) {
+    try {
+      // As anyone who isn't signed in sees it.
+      const author = await this.profilesService.getProfile(doc.authorId);
+      await this.liveFeed.publish({
+        type: 'article-created',
+        article: new ArticleDto(toArticle(doc), false, author).article,
+      });
+    } catch (err) {
+      console.error('live update failed', err);
+    }
   }
 
   private prepareSlug(title: string): string {
