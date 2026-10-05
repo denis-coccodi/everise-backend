@@ -27,6 +27,7 @@ import {
   SocialLoginRouter,
   SocialLoginSettings,
 } from './social-login';
+import {GifFetch, GifSearch, MediaRouter, MediaService} from './media';
 import {
   DiscordAnnouncer,
   DiscordFetch,
@@ -53,6 +54,8 @@ interface AppOptions {
   socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
   // Announcements in a Discord channel and the server's widget.
   discord?: {webhookUrl?: string; guildId?: string; fetch?: DiscordFetch};
+  // The GIF search: GIPHY's key, and how the app reaches it.
+  gifSearch?: {apiKey?: string; fetch?: GifFetch};
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -66,6 +69,7 @@ function createApp(
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
     socialLogin = {settings: config.socialLogin},
     discord = config.discord,
+    gifSearch = {apiKey: config.giphyApiKey},
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -116,13 +120,21 @@ function createApp(
     new DiscordWidgetReader(discord.guildId, now, discord.fetch)
   ).router;
 
+  const mediaService = new MediaService(db, now);
+
+  const mediaRouter = new MediaRouter(
+    auth,
+    mediaService,
+    new GifSearch(gifSearch.apiKey, gifSearch.fetch)
+  ).router;
+
   const adminRouter = new AdminRouter(
     auth,
     usersService,
     profileImagesService,
     tataru,
     stagingAccess,
-    new MemberDeletion(db, usersService, profileImagesService)
+    new MemberDeletion(db, usersService, profileImagesService, mediaService)
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
@@ -173,6 +185,7 @@ function createApp(
   app.use('/api', socialLoginRouter);
 
   app.use('/api', discordRouter);
+  app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);
 

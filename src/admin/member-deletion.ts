@@ -1,6 +1,7 @@
 import {Db, Doc} from '../db';
 import {Write} from '../db/db';
 import {InvalidRoleError, NotFoundError} from '../errors';
+import {MediaService} from '../media';
 import {ProfileImagesService, UsersService} from '../users';
 
 interface ArticleDoc extends Doc {
@@ -28,13 +29,14 @@ interface DeletedMember {
 
 // Deletes a member and everything they leave behind: their posts (with the
 // comments on them), their comments elsewhere, their favourites, follows in
-// both directions, uploaded pictures and roulette posting limit. The privacy
+// both directions, uploaded pictures and images, and roulette posting limit. The privacy
 // policy promises this. The collections are those the services define.
 class MemberDeletion {
   constructor(
     private readonly db: Db,
     private readonly usersService: UsersService,
-    private readonly profileImagesService: ProfileImagesService
+    private readonly profileImagesService: ProfileImagesService,
+    private readonly mediaService: MediaService
   ) {}
 
   async delete(username: string): Promise<DeletedMember> {
@@ -84,6 +86,7 @@ class MemberDeletion {
       ...(await this.profileImagesService.idsOf(user.id)).map(id =>
         remove('profileImages', id)
       ),
+      ...(await this.mediaService.deletionsFor(user.id)),
       remove('postLimits', `user-${user.id}`),
       remove('users', user.id),
     ];

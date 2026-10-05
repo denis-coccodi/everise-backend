@@ -40,6 +40,9 @@ const envVarsSchema = Joi.object()
     DISCORD_WEBHOOK_URL: Joi.string().uri().allow(''),
     // The Discord server whose widget the home page shows.
     DISCORD_GUILD_ID: Joi.string().allow(''),
+    // The GIF search in posts and comments (GIPHY's API key); without it the
+    // search isn't offered.
+    GIPHY_API_KEY: Joi.string().allow(''),
   })
   .unknown();
 
@@ -85,6 +88,7 @@ const config = {
     webhookUrl: envVars.DISCORD_WEBHOOK_URL as string | undefined,
     guildId: envVars.DISCORD_GUILD_ID as string | undefined,
   },
+  giphyApiKey: envVars.GIPHY_API_KEY as string | undefined,
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,

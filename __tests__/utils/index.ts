@@ -3,6 +3,7 @@ export {
   clearDb,
   clock,
   discord,
+  giphy,
   live,
   providers,
   staging,
