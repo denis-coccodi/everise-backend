@@ -1,4 +1,5 @@
 export {AdminRouter} from './admin-router';
+export {MemberDeletion} from './member-deletion';
 export {
   CloudflareStagingAccess,
   Fetch,
