@@ -97,6 +97,8 @@ describe('sign-in with Google and Facebook', () => {
       email: 'new.person@example.com',
       username: 'NewPerson',
       role: 'user',
+      // No password: Google is the only way in.
+      signInMethods: ['google'],
     });
     // The code was traded with the app's secret, server to server.
     expect(providers.calls[0]).toMatchObject({
@@ -136,6 +138,7 @@ describe('sign-in with Google and Facebook', () => {
     const first = await signIn('facebook');
     const user = await currentUser(sessionToken(first)!);
     expect(user.username).toBe(existing.user.username);
+    expect(user.signInMethods).toEqual(['password', 'facebook']);
 
     // Tied: the Facebook account finds it even under another email now, and
     // the password still works.

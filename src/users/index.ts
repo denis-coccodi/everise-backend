@@ -1,4 +1,10 @@
-export {ASSIGNABLE_ROLES, AssignableRole, Role, User} from './user';
+export {
+  ASSIGNABLE_ROLES,
+  AssignableRole,
+  Role,
+  SignInMethod,
+  User,
+} from './user';
 export {UsersService} from './users-service';
 export {JWTService} from './jwt-service';
 export {UsersRouter} from './users-router';

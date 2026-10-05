@@ -25,6 +25,7 @@ describe('GET /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       },
     });
   });

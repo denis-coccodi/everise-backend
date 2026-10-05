@@ -49,6 +49,7 @@ describe('POST /api/users', () => {
           image: `${config.baseUrl}/assets/images/avatar-profile.png`,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
     });

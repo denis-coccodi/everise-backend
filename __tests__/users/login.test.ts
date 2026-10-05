@@ -30,6 +30,7 @@ describe('POST /api/users/login', () => {
           image: user.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
     });

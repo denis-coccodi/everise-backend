@@ -9,7 +9,7 @@ import {
   MissingEmailError,
   NotFoundError,
 } from '../errors';
-import {AssignableRole, Role, User} from './user';
+import {AssignableRole, Role, SignInMethod, User} from './user';
 
 interface UpdateUserParams {
   email?: string;
@@ -70,6 +70,14 @@ function roleOf(doc: UserDoc): Role {
   return isAdminEmail(doc.email) ? 'admin' : doc.role ?? 'user';
 }
 
+function signInMethodsOf(doc: UserDoc): SignInMethod[] {
+  const methods: SignInMethod[] = [];
+  if (doc.passwordHash) methods.push('password');
+  if (doc.googleId) methods.push('google');
+  if (doc.facebookId) methods.push('facebook');
+  return methods;
+}
+
 function toUser(doc: UserDoc): User {
   return new User(
     doc.id,
@@ -79,7 +87,8 @@ function toUser(doc: UserDoc): User {
     doc.image,
     doc.darkMode,
     roleOf(doc),
-    !!doc.system
+    !!doc.system,
+    signInMethodsOf(doc)
   );
 }
 

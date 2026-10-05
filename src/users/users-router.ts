@@ -41,6 +41,9 @@ class UserDto {
       // Saved with the other settings; dark until the person turns it off.
       darkMode: user.darkMode ?? true,
       role: user.role,
+      // How this account can be signed in to, e.g. ["password", "google"]:
+      // the settings show the Google and Facebook accounts tied to it.
+      signInMethods: user.signInMethods,
     };
   }
 }

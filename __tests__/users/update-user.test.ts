@@ -36,6 +36,7 @@ describe('PUT /api/user', () => {
           image: requestBody.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
 
@@ -52,6 +53,7 @@ describe('PUT /api/user', () => {
         image: requestBody.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       });
     });
 
@@ -79,6 +81,7 @@ describe('PUT /api/user', () => {
           image: user.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
 
@@ -95,6 +98,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       });
     });
 
@@ -122,6 +126,7 @@ describe('PUT /api/user', () => {
           image: user.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
 
@@ -138,6 +143,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       });
     });
 
@@ -165,6 +171,7 @@ describe('PUT /api/user', () => {
           image: user.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
 
@@ -181,6 +188,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       });
     });
 
@@ -208,6 +216,7 @@ describe('PUT /api/user', () => {
           image: user.user.image,
           darkMode: true,
           role: 'user',
+          signInMethods: ['password'],
         },
       });
 
@@ -224,6 +233,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       });
     });
   });
@@ -252,6 +262,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       },
     });
 
@@ -268,6 +279,7 @@ describe('PUT /api/user', () => {
       image: user.user.image,
       darkMode: true,
       role: 'user',
+      signInMethods: ['password'],
     });
   });
 
@@ -295,6 +307,7 @@ describe('PUT /api/user', () => {
         image: user.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       },
     });
 
@@ -308,6 +321,7 @@ describe('PUT /api/user', () => {
       image: user.user.image,
       darkMode: true,
       role: 'user',
+      signInMethods: ['password'],
     });
   });
 
@@ -335,6 +349,7 @@ describe('PUT /api/user', () => {
         image: requestBody.user.image,
         darkMode: true,
         role: 'user',
+        signInMethods: ['password'],
       },
     });
 
@@ -348,6 +363,7 @@ describe('PUT /api/user', () => {
       image: requestBody.user.image,
       darkMode: true,
       role: 'user',
+      signInMethods: ['password'],
     });
   });
 
