@@ -183,6 +183,8 @@ One button per provider both signs in and signs up (`src/social-login`), with th
 1. The backend trades the code for the person's profile, server to server with the app's secret, and picks the account: the one already tied to that Google or Facebook account (`googleId` / `facebookId` on the user), else the one with the same email, which is then tied to it, else a new one. A new account's username is the person's name without spaces or symbols, with a number added when taken; it has no password until one is set in Settings.
 1. It sets the usual `token` cookie and redirects to the site, which loads the user as on any visit. Problems redirect to `/login?social=<problem>` (`cancelled`, `expired`, `no-email`, `failed`, `unavailable`), which the sign-in page explains.
 
+The user (sign-in, sign-up, `GET` and `PUT /api/user`) carries `signInMethods`, e.g. `["password", "google"]`: how the account can be signed in to, which the site's settings show.
+
 Only confirmed email addresses are used: Google's `email_verified`, and Facebook only shares confirmed ones. A Facebook account made with a phone number has none and can't sign in. Tying by email trusts that whoever registered an Everise account with a password owns that address; registration doesn't confirm addresses, so someone could register a victim's address first and keep a password to the account the victim later reaches through Google. Confirming emails at registration would close that.
 
 The cookie's `SameSite` value comes from `COOKIE_SAME_SITE`:

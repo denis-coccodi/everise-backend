@@ -7,6 +7,10 @@ type Role = 'admin' | 'staging-tester' | 'user';
 const ASSIGNABLE_ROLES = ['user', 'staging-tester'] as const;
 type AssignableRole = typeof ASSIGNABLE_ROLES[number];
 
+// The ways someone can sign in to an account: its password, and the Google
+// or Facebook accounts tied to it.
+type SignInMethod = 'password' | 'google' | 'facebook';
+
 class User {
   constructor(
     readonly id: string,
@@ -18,8 +22,9 @@ class User {
     readonly darkMode?: boolean,
     readonly role: Role = 'user',
     // An account the app posts as (Tataru), which nobody can sign in to.
-    readonly system = false
+    readonly system = false,
+    readonly signInMethods: SignInMethod[] = ['password']
   ) {}
 }
 
-export {ASSIGNABLE_ROLES, AssignableRole, Role, User};
+export {ASSIGNABLE_ROLES, AssignableRole, Role, SignInMethod, User};
