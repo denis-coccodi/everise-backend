@@ -5,6 +5,7 @@ import {AlreadyExistsError, NotFoundError} from '../errors';
 import {UsersService} from '../users';
 import {randomBytes} from 'crypto';
 import {Article, RouletteCard} from './article';
+import {ArticleDto} from './article-dto';
 import {Comment} from './comment';
 import {ProfilesService} from '../profiles';
 import {LiveFeed, noLiveFeed} from '../live/live-feed';
@@ -153,7 +154,7 @@ class ArticlesService {
       articleData
     );
 
-    await this.announce(articleDoc, author.username);
+    await this.announce(articleDoc);
 
     return toArticle(articleDoc);
   }
@@ -488,13 +489,13 @@ class ArticlesService {
 
   // Tells the live feeds about a new article. The article is saved either
   // way: live updates are a convenience, and pages catch up on reload.
-  private async announce(article: ArticleDoc, author: string) {
+  private async announce(doc: ArticleDoc) {
     try {
+      // As anyone who isn't signed in sees it.
+      const author = await this.profilesService.getProfile(doc.authorId);
       await this.liveFeed.publish({
         type: 'article-created',
-        slug: article.slug,
-        author,
-        tags: article.tags,
+        article: new ArticleDto(toArticle(doc), false, author).article,
       });
     } catch (err) {
       console.error('live update failed', err);

@@ -1,11 +1,12 @@
-// Events pushed to everyone connected to GET /api/live. They say what
-// changed, not what to show: a page fetches what it needs, so nothing
-// personal (favourites, follows) is ever broadcast.
+import {ArticleDto} from '../articles/article-dto';
+
+// Events pushed to everyone connected to GET /api/live.
 type LiveEvent = {
+  // A new post, as the API returns it to someone who isn't signed in
+  // (favorited and author.following are false): nothing personal is ever
+  // broadcast. Pages insert it into their lists as it is.
   type: 'article-created';
-  slug: string;
-  author: string;
-  tags: string[];
+  article: ArticleDto['article'];
 };
 
 // Sends an event to every connected client.

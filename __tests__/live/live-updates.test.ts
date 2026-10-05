@@ -23,7 +23,7 @@ describe('live updates', () => {
   });
 
   describe('publishing', () => {
-    test('a new article should be announced, with nothing personal', async () => {
+    test('a new article should be pushed as the public sees it', async () => {
       const {user} = await usersClient.registerRandomUser();
 
       const response = await request(app)
@@ -39,17 +39,19 @@ describe('live updates', () => {
         });
 
       expect(response.status).toBe(201);
+      // The post itself, as anyone who isn't signed in would get it.
       expect(live.events).toStrictEqual([
-        {
-          type: 'article-created',
-          slug: response.body.article.slug,
-          author: user.username,
-          tags: ['news'],
-        },
+        {type: 'article-created', article: response.body.article},
       ]);
+      expect(live.events[0].article).toMatchObject({
+        title: 'Live news',
+        tagList: ['news'],
+        favorited: false,
+        author: {username: user.username, following: false},
+      });
     });
 
-    test('a roulette result Tataru posts for a guest should be announced', async () => {
+    test('a roulette result Tataru posts for a guest should be pushed', async () => {
       await request(app)
         .post('/api/duties/refresh')
         .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!)
@@ -68,13 +70,12 @@ describe('live updates', () => {
 
       expect(response.status).toBe(201);
       expect(live.events).toStrictEqual([
-        {
-          type: 'article-created',
-          slug: response.body.article.slug,
-          author: 'Tataru',
-          tags: ['roulette'],
-        },
+        {type: 'article-created', article: response.body.article},
       ]);
+      expect(live.events[0].article).toMatchObject({
+        author: {username: 'Tataru'},
+        roulette: {name: 'Sastasha', guest: true},
+      });
     });
 
     test('an article should still be saved when the live updates are down', async () => {
