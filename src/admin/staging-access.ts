@@ -16,11 +16,12 @@ interface SyncResult {
   message: string;
 }
 
-// Keeps who may open the staging site in Cloudflare Access: an Access group
-// (Zero Trust → Access → Groups) whose members are the admins' and staging
-// testers' emails, used by the staging applications' Allow policy. Each sync
-// writes the whole list, so the database's roles are the source of truth and
-// a missed sync is fixed by the next one.
+// Keeps who may open the staging site in Cloudflare Access. The target is
+// either an Access group (Access controls → Access groups) used by the
+// staging applications' Allow policy, or that reusable policy itself (Access
+// controls → Policies). Its Include becomes the admins' and staging testers'
+// emails. Each sync writes the whole list, so the database's roles are the
+// source of truth and a missed sync is fixed by the next one.
 interface StagingAccess {
   // Whether this backend can update the Access group at all.
   readonly connected: boolean;
@@ -31,7 +32,7 @@ interface StagingAccess {
 const STAGING_ACCESS_SETTINGS = {
   apiToken: 'CF_ACCESS_API_TOKEN',
   accountId: 'CF_ACCOUNT_ID',
-  // The group's id, or its name.
+  // The Access group's or reusable policy's id, or its name.
   groupId: 'CF_ACCESS_GROUP_ID',
 } as const;
 
@@ -64,56 +65,66 @@ class CloudflareStagingAccess implements StagingAccess {
       };
     }
 
-    const groups = `https://api.cloudflare.com/client/v4/accounts/${accountId}/access/groups`;
+    const access = `https://api.cloudflare.com/client/v4/accounts/${accountId}/access`;
     const headers = {
       Authorization: `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
     };
-    try {
-      // CF_ACCESS_GROUP_ID may hold the group's id or its name, as shown in
-      // the dashboard; spaces, quotes and case don't matter.
-      const listed = await this.fetchFn(`${groups}?per_page=1000`, {headers});
-      if (!listed.ok) {
-        return failed(
-          `listing the Access groups answered ${listed.status}${await reason(
-            listed
-          )}`
-        );
-      }
-      const {result} = (await listed.json()) as {result?: AccessGroup[]};
-      const all = result ?? [];
-      const wanted = clean(groupId);
-      const group = all.find(
-        g =>
-          g.id === wanted ||
-          g.name.trim().toLowerCase() === wanted.toLowerCase()
-      );
-      if (!group) {
-        const seen = all.map(g => `"${g.name}" (${g.id})`).join(', ');
-        return failed(
-          `no Access group matches CF_ACCESS_GROUP_ID "${wanted}" on account ${accountId}; the groups there are ${
-            seen || 'none'
-          }`
-        );
-      }
+    const include = emails.map(email => ({email: {email}}));
+    // CF_ACCESS_GROUP_ID may hold an id or a name, as shown in the dashboard;
+    // spaces, quotes and case don't matter.
+    const wanted = clean(groupId);
+    const matches = (item: {id: string; name: string}) =>
+      item.id === wanted ||
+      item.name.trim().toLowerCase() === wanted.toLowerCase();
 
-      // The group's name and other rules are kept as they are.
-      const updated = await this.fetchFn(`${groups}/${group.id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          name: group.name,
-          include: emails.map(email => ({email: {email}})),
-          exclude: group.exclude ?? [],
-          require: group.require ?? [],
-        }),
-      });
-      if (!updated.ok) {
-        return failed(
-          `updating "${group.name}" answered ${updated.status}${await reason(
-            updated
-          )}`
+    try {
+      const groups = await this.list<AccessGroup>(`${access}/groups`, headers);
+      const group = groups.items.find(matches);
+      if (group) {
+        // The group's name and other rules are kept as they are.
+        const updated = await this.fetchFn(`${access}/groups/${group.id}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            name: group.name,
+            include,
+            exclude: group.exclude ?? [],
+            require: group.require ?? [],
+          }),
+        });
+        if (!updated.ok) {
+          return failed(
+            `updating the group "${group.name}" answered ${
+              updated.status
+            }${await reason(updated)}`
+          );
+        }
+      } else {
+        const policies = await this.list<AccessPolicy>(
+          `${access}/policies`,
+          headers
         );
+        const policy = policies.items.find(matches);
+        if (!policy) {
+          return failed(notFound(wanted, accountId, groups, policies));
+        }
+        // Only the Include changes: the policy's name, action and other
+        // settings are sent back as they are.
+        const updated = await this.fetchFn(`${access}/policies/${policy.id}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({...writable(policy), include}),
+        });
+        if (!updated.ok) {
+          return failed(
+            `updating the policy "${policy.name}" answered ${
+              updated.status
+            }${await reason(updated)}${
+              updated.status === 403 ? POLICY_PERMISSION_HINT : ''
+            }`
+          );
+        }
       }
       return {
         synced: true,
@@ -124,6 +135,23 @@ class CloudflareStagingAccess implements StagingAccess {
     } catch (err) {
       return failed((err as Error).message);
     }
+  }
+
+  // Lists Access groups or reusable policies. A refused list counts as
+  // empty, with Cloudflare's reason kept for the message.
+  private async list<T>(
+    url: string,
+    headers: Record<string, string>
+  ): Promise<{items: T[]; refused?: string}> {
+    const response = await this.fetchFn(`${url}?per_page=1000`, {headers});
+    if (!response.ok) {
+      return {
+        items: [],
+        refused: `${response.status}${await reason(response)}`,
+      };
+    }
+    const {result} = (await response.json()) as {result?: T[]};
+    return {items: result ?? []};
   }
 
   // The names of the settings this backend lacks to update the group.
@@ -139,6 +167,63 @@ interface AccessGroup {
   name: string;
   exclude?: unknown[];
   require?: unknown[];
+}
+
+// A reusable Access policy: its id and name, and the settings Cloudflare
+// accepts when updating it.
+type AccessPolicy = {id: string; name: string} & Record<string, unknown>;
+
+const POLICY_FIELDS = [
+  'name',
+  'decision',
+  'include',
+  'exclude',
+  'require',
+  'session_duration',
+  'approval_required',
+  'approval_groups',
+  'isolation_required',
+  'purpose_justification_required',
+  'purpose_justification_prompt',
+  'connection_rules',
+  'mfa_config',
+];
+
+// Updating a reusable policy takes this permission, besides the groups' one.
+const POLICY_PERMISSION_HINT =
+  ' (the API token needs "Access: Apps and Policies → Edit")';
+
+// The policy's settings that an update sends back unchanged.
+function writable(policy: AccessPolicy) {
+  const settings: Record<string, unknown> = {};
+  for (const field of POLICY_FIELDS) {
+    if (policy[field] !== undefined) settings[field] = policy[field];
+  }
+  return settings;
+}
+
+// No group or policy matches: say what the token can see, and why a list
+// was refused.
+function notFound(
+  wanted: string,
+  accountId: string,
+  groups: {items: AccessGroup[]; refused?: string},
+  policies: {items: AccessPolicy[]; refused?: string}
+) {
+  const seen = (
+    kind: string,
+    list: {items: {id: string; name: string}[]; refused?: string},
+    hint = ''
+  ) =>
+    list.refused
+      ? `listing the ${kind} answered ${list.refused}${hint}`
+      : `the ${kind} there are ${
+          list.items.map(i => `"${i.name}" (${i.id})`).join(', ') || 'none'
+        }`;
+  return `no Access group or policy matches CF_ACCESS_GROUP_ID "${wanted}" on account ${accountId}; ${seen(
+    'Access groups',
+    groups
+  )}; ${seen('policies', policies, POLICY_PERMISSION_HINT)}`;
 }
 
 // A setting as pasted: without surrounding spaces or quotes.
