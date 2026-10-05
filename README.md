@@ -87,6 +87,10 @@ People upload a profile picture instead of typing a URL.
 - **Routing:** `src/worker.ts` sends WebSocket requests for `/api/live` to the hub before Express sees them; through the frontend Worker's service binding, browsers connect same-origin (`wss://<site>/api/live`).
 - **Config:** the `LIVE` Durable Object binding, in both environments, and the `v2` migration that adds the `LiveHub` class.
 
+## Dark mode
+
+The user returned by sign-up, sign-in, `GET /api/user` and `PUT /api/user` has a `darkMode` flag: the site's colour mode, saved with the other settings so it follows the person to every browser. It's `true` until they turn it off with `PUT /api/user` `{"user": {"darkMode": false}}`; other updates leave it as it is.
+
 ## Roulette results
 
 An accepted roulette result is posted to the feeds as an article tagged `roulette`, with a `roulette` card (`type`, `name`, `detail`, `mode`, `dutyUnknown`, `image`, `job`, `guest`) that the frontend shows like the roulette's "Duty Found" window. Other articles don't have the field.

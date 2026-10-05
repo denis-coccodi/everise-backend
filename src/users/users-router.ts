@@ -29,19 +29,15 @@ import {UsersService} from './users-service';
 class UserDto {
   readonly user;
 
-  constructor(
-    email: string,
-    username: string,
-    token: string,
-    bio?: string,
-    image?: string
-  ) {
+  constructor(user: User, token: string) {
     this.user = {
-      email,
-      username,
+      email: user.email,
+      username: user.username,
       token,
-      bio: bio || null,
-      image: image || `${config.baseUrl}/assets/images/avatar-profile.png`,
+      bio: user.bio || null,
+      image: user.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
+      // Saved with the other settings; dark until the person turns it off.
+      darkMode: user.darkMode ?? true,
     };
   }
 }
@@ -117,13 +113,7 @@ class UsersRouter {
 
           const token = this.jwtService.getToken(user);
 
-          const userDto = new UserDto(
-            user.email,
-            user.username,
-            token,
-            user.bio,
-            user.image
-          );
+          const userDto = new UserDto(user, token);
 
           res.cookie(COOKIE_NAME, token, {
             ...COOKIE_OPTIONS,
@@ -178,13 +168,7 @@ class UsersRouter {
 
           const token = this.jwtService.getToken(user);
 
-          const userDto = new UserDto(
-            user.email,
-            user.username,
-            token,
-            user.bio,
-            user.image
-          );
+          const userDto = new UserDto(user, token);
 
           res.cookie(COOKIE_NAME, token, {
             ...COOKIE_OPTIONS,
@@ -208,13 +192,7 @@ class UsersRouter {
 
       const token = this.jwtService.getToken(user);
 
-      const userDto = new UserDto(
-        user.email,
-        user.username,
-        token,
-        user.bio,
-        user.image
-      );
+      const userDto = new UserDto(user, token);
 
       return res.json(userDto);
     });
@@ -232,6 +210,7 @@ class UsersRouter {
                   password: newPassword(),
                   bio: bio(),
                   image: image(),
+                  darkMode: Joi.boolean(),
                 })
                 .required(),
             })
@@ -253,13 +232,7 @@ class UsersRouter {
 
           const token = this.jwtService.getToken(updatedUser);
 
-          const userDto = new UserDto(
-            updatedUser.email,
-            updatedUser.username,
-            token,
-            updatedUser.bio,
-            updatedUser.image
-          );
+          const userDto = new UserDto(updatedUser, token);
 
           return res.json(userDto);
         } catch (err) {
@@ -348,13 +321,7 @@ class UsersRouter {
   }
 
   private toDto(user: User) {
-    return new UserDto(
-      user.email,
-      user.username,
-      this.jwtService.getToken(user),
-      user.bio,
-      user.image
-    );
+    return new UserDto(user, this.jwtService.getToken(user));
   }
 }
 

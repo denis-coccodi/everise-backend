@@ -33,7 +33,8 @@ const signInPassword = () =>
     'string.base': 'Enter your password.',
   });
 
-const bio = () => Joi.string().allow('');
+// The API returns no bio as null, so clients may send that back: it clears it.
+const bio = () => Joi.string().allow('', null);
 
 const image = () =>
   Joi.string()

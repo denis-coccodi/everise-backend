@@ -9,8 +9,9 @@ interface UpdateUserParams {
   email?: string;
   username?: string;
   password?: string;
-  bio?: string;
+  bio?: string | null;
   image?: string;
+  darkMode?: boolean;
 }
 
 interface UserDoc extends Doc {
@@ -19,6 +20,7 @@ interface UserDoc extends Doc {
   passwordHash: string;
   bio?: string;
   image?: string;
+  darkMode?: boolean;
   // An account the app posts as, e.g. Tataru for guests. Nobody can sign in
   // as it: its password is random and never stored anywhere else.
   system?: boolean;
@@ -35,7 +37,14 @@ interface SystemUserParams {
 const RESERVED_USERNAMES = ['tataru'];
 
 function toUser(doc: UserDoc): User {
-  return new User(doc.id, doc.email, doc.username, doc.bio, doc.image);
+  return new User(
+    doc.id,
+    doc.email,
+    doc.username,
+    doc.bio,
+    doc.image,
+    doc.darkMode
+  );
 }
 
 class UsersService {
@@ -112,7 +121,11 @@ class UsersService {
     }
 
     if (params.bio !== undefined && params.bio !== userData.bio) {
-      userData.bio = params.bio;
+      userData.bio = params.bio ?? '';
+    }
+
+    if (params.darkMode !== undefined) {
+      userData.darkMode = params.darkMode;
     }
 
     if (params.image && params.image !== userData.image) {
@@ -129,6 +142,7 @@ class UsersService {
         passwordHash: userData.passwordHash,
         bio: userData.bio,
         image: userData.image,
+        darkMode: userData.darkMode,
       }
     );
 

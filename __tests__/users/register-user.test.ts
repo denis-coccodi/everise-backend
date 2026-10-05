@@ -47,6 +47,7 @@ describe('POST /api/users', () => {
           token: expect.not.toBeEmpty(),
           bio: null,
           image: `${config.baseUrl}/assets/images/avatar-profile.png`,
+          darkMode: true,
         },
       });
     });
