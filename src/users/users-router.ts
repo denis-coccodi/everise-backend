@@ -64,6 +64,18 @@ const COOKIE_OPTIONS = {
   sameSite: config.cookieSameSite,
 };
 
+// Signs the browser in: the session cookie, valid as long as the token.
+function setSessionCookie(
+  res: express.Response,
+  token: string,
+  secondsToExpiration: number
+) {
+  res.cookie(COOKIE_NAME, token, {
+    ...COOKIE_OPTIONS,
+    maxAge: 1000 * secondsToExpiration,
+  });
+}
+
 class UsersRouter {
   constructor(
     private readonly auth: Auth,
@@ -107,10 +119,7 @@ class UsersRouter {
 
           const userDto = new UserDto(user, token);
 
-          res.cookie(COOKIE_NAME, token, {
-            ...COOKIE_OPTIONS,
-            maxAge: 1000 * this.jwtService.secondsToExpiration,
-          });
+          setSessionCookie(res, token, this.jwtService.secondsToExpiration);
 
           return res.status(StatusCodes.CREATED).json(userDto);
         } catch (err) {
@@ -162,10 +171,7 @@ class UsersRouter {
 
           const userDto = new UserDto(user, token);
 
-          res.cookie(COOKIE_NAME, token, {
-            ...COOKIE_OPTIONS,
-            maxAge: 1000 * this.jwtService.secondsToExpiration,
-          });
+          setSessionCookie(res, token, this.jwtService.secondsToExpiration);
 
           return res.json(userDto);
         } catch (err) {
@@ -317,4 +323,4 @@ class UsersRouter {
   }
 }
 
-export {UsersRouter, UserDto, readImageBody};
+export {UsersRouter, UserDto, readImageBody, setSessionCookie};

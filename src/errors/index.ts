@@ -4,6 +4,7 @@ export {InvalidCredentialsError} from './invalid-credentials-error';
 export {InvalidImageError} from './invalid-image-error';
 export {InvalidRoleError} from './invalid-role-error';
 export {InvalidRouletteResultError} from './invalid-roulette-result-error';
+export {MissingEmailError} from './missing-email-error';
 export {NotFoundError} from './not-found-error';
 export {TooManyRequestsError} from './too-many-requests-error';
 export {UnauthorizedError} from './unauthorized-error';

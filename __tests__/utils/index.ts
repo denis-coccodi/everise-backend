@@ -1,4 +1,4 @@
-export {app, clearDb, clock, live, staging, xivApi} from './app';
+export {app, clearDb, clock, live, providers, staging, xivApi} from './app';
 export {usersClient} from './users-client';
 export {profilesClient} from './profiles-client';
 export {articlesClient} from './articles-client';

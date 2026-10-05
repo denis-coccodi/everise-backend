@@ -18,6 +18,11 @@ import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
+  OAuthFetch,
+  SocialLoginRouter,
+  SocialLoginSettings,
+} from './social-login';
+import {
   JWTService,
   LoadBundledPicture,
   ProfileImagesService,
@@ -31,6 +36,9 @@ interface AppOptions {
   loadBundledPicture?: LoadBundledPicture;
   // Where staging testers are given access to the staging site.
   stagingAccess?: StagingAccess;
+  // Sign-in with Google and Facebook: the apps' settings, and how the app
+  // reaches the providers.
+  socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -42,6 +50,7 @@ function createApp(
   {
     loadBundledPicture = async () => undefined,
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
+    socialLogin = {settings: config.socialLogin},
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -75,6 +84,14 @@ function createApp(
     usersService,
     jwtService,
     profileImagesService
+  ).router;
+
+  const socialLoginRouter = new SocialLoginRouter(
+    usersService,
+    jwtService,
+    socialLogin.settings,
+    config.baseUrl,
+    socialLogin.fetch
   ).router;
 
   const adminRouter = new AdminRouter(
@@ -129,6 +146,8 @@ function createApp(
   // static assets before a request ever reaches this app.
 
   app.use('/api', usersRouter);
+
+  app.use('/api', socialLoginRouter);
 
   app.use('/api', profilesRouter);
 
