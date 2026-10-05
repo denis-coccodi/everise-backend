@@ -1,4 +1,5 @@
 import {LiveEvent, LiveFeed} from '../live/live-feed';
+import {firstYouTubeLink} from './youtube';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
@@ -81,12 +82,19 @@ class DiscordAnnouncer implements LiveFeed {
         : {}),
       ...imageOf(article, this.siteUrl),
     };
+    // Discord only plays a video from a link in the message itself: the
+    // post's first one goes there, and Discord shows it under the card.
+    const video = firstYouTubeLink(article.body);
+    const headline = roulette
+      ? `🎲 **${escape(author)}** spun the duty roulette!`
+      : `📜 New post by **${escape(author)}**`;
     return {
       username: 'Everise',
       avatar_url: `${this.siteUrl}/assets/images/everise-crest.png`,
-      content: roulette
-        ? `🎲 **${escape(author)}** spun the duty roulette!`
-        : `📜 New post by **${escape(author)}**`,
+      content: video
+        ? `${headline}
+${video}`
+        : headline,
       embeds: [embed],
       // Never ping anyone, whatever a post says.
       allowed_mentions: {parse: []},
