@@ -3,9 +3,12 @@ import {Db, Doc} from '../db';
 import {InvalidImageError} from '../errors';
 import {ImageType, readImageInfo} from './image-info';
 
-// The limits on an uploaded profile picture.
-const MAX_IMAGE_BYTES = 1024 * 1024;
-const MAX_IMAGE_SIDE = 1024;
+// The limits on an uploaded profile picture. Pictures are kept as uploaded
+// (not resized) and shown at most about 100 px wide, so 500 px is sharp even
+// on high-density screens.
+const MAX_IMAGE_KB = 300;
+const MAX_IMAGE_BYTES = MAX_IMAGE_KB * 1024;
+const MAX_IMAGE_SIDE = 500;
 
 interface ProfileImageDoc extends Doc {
   userId: string;
@@ -61,9 +64,7 @@ class ProfileImagesService {
 
 function tooLarge() {
   return new InvalidImageError(
-    `The picture is too large: it can be at most ${
-      MAX_IMAGE_BYTES / 1024 / 1024
-    } MB.`,
+    `The picture is too large: it can be at most ${MAX_IMAGE_KB} KB.`,
     413
   );
 }

@@ -149,7 +149,7 @@
     <rect x="872" y="385" width="26" height="16" rx="3" class="fk"/><text x="885" y="397" class="badge" text-anchor="middle">FK</text>
     <text x="908" y="397" class="field">userId</text><text x="1144" y="397" class="type" text-anchor="end">users.id</text>
     <text x="908" y="423" class="field">contentType</text><text x="1144" y="423" class="type" text-anchor="end">string</text>
-    <text x="908" y="449" class="field">data</text><text x="1144" y="449" class="type" text-anchor="end">bytes (≤ 1 MB)</text>
+    <text x="908" y="449" class="field">data</text><text x="1144" y="449" class="type" text-anchor="end">bytes (≤ 300 KB)</text>
     <text x="908" y="475" class="field">createdAt</text><text x="1144" y="475" class="type" text-anchor="end">Date</text>
     <text x="908" y="501" class="field">updatedAt</text><text x="1144" y="501" class="type" text-anchor="end">Date</text>
   </g>

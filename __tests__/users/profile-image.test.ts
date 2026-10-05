@@ -97,16 +97,16 @@ describe('profile pictures', () => {
 
   test.each([
     [
-      'wider than 1024 pixels',
+      'wider than 500 pixels',
       fixture('too-wide.png'),
       422,
-      'The picture is 1025 × 10 pixels; it can be at most 1024 × 1024.',
+      'The picture is 501 × 10 pixels; it can be at most 500 × 500.',
     ],
     [
-      'over 1 MB',
-      Buffer.concat([fixture('small.png'), Buffer.alloc(1024 * 1024)]),
+      'over 300 KB',
+      Buffer.concat([fixture('small.png'), Buffer.alloc(300 * 1024)]),
       413,
-      'The picture is too large: it can be at most 1 MB.',
+      'The picture is too large: it can be at most 300 KB.',
     ],
     [
       'not a picture',

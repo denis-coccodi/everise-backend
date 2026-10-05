@@ -70,7 +70,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 People upload a profile picture instead of typing a URL.
 
 - **`PUT /api/user/image`** takes the file itself as the request body (any content type) and returns the updated user, whose `image` is the picture's URL, `<BASE_URL>/api/profile-images/<id>`. The previous upload is deleted.
-- **Limits:** at most **1 MB** and **1024 × 1024 pixels**, PNG, JPEG, WebP or GIF. The format and size are read from the file's bytes, never from the client's content type, so nothing else (an SVG, a script) is ever stored or served. Breaking a limit returns 413 (size) or 422 (pixels, format) with a message saying what to change.
+- **Limits:** at most **300 KB** and **500 × 500 pixels** (pictures are kept as uploaded and shown at most about 100 px wide), PNG, JPEG, WebP or GIF. The format and size are read from the file's bytes, never from the client's content type, so nothing else (an SVG, a script) is ever stored or served. Breaking a limit returns 413 (size) or 422 (pixels, format) with a message saying what to change.
 - **`DELETE /api/user/image`** goes back to the default picture and deletes the upload.
 - **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
 - `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
