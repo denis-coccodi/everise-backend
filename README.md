@@ -33,50 +33,54 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
 
 Auth: **required** endpoints return 401 without a valid token, and **admin** ones also 403 for anyone who isn't an admin; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
 
-| Method | Path                                      | Auth     | Description                                                                                          |
-| ------ | ----------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| POST   | `/api/users`                              |          | Register                                                                                             |
-| POST   | `/api/users/login`                        |          | Log in                                                                                               |
-| POST   | `/api/users/logout`                       |          | Clear the auth cookie                                                                                |
-| GET    | `/api/auth/providers`                     |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                  |
-| GET    | `/api/auth/:provider`                     |          | Start signing in with `google` or `facebook` (a browser redirect)                                    |
-| GET    | `/api/auth/:provider/callback`            |          | The provider's redirect back; signs in and redirects to the site                                     |
-| GET    | `/api/user`                               | required | Current user                                                                                         |
-| PUT    | `/api/user`                               | required | Update the current user                                                                              |
-| PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                     |
-| DELETE | `/api/user/image`                         | required | Remove the profile picture                                                                           |
-| GET    | `/api/profile-images/:id`                 |          | An uploaded profile picture                                                                          |
-| GET    | `/api/live` (WebSocket)                   |          | Live updates: new posts ([Live updates](#live-updates))                                              |
-| POST   | `/api/roulette-results`                   | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results))                |
-| GET    | `/api/profiles/:username`                 | optional | Get a profile                                                                                        |
-| POST   | `/api/profiles/:username/follow`          | required | Follow a user                                                                                        |
-| DELETE | `/api/profiles/:username/follow`          | required | Unfollow a user                                                                                      |
-| GET    | `/api/articles`                           | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`)                                      |
-| GET    | `/api/articles/feed`                      | required | Articles by followed users (`limit`, `offset`)                                                       |
-| POST   | `/api/articles`                           | required | Create an article                                                                                    |
-| GET    | `/api/articles/:slug`                     | optional | Get an article                                                                                       |
-| PUT    | `/api/articles/:slug`                     | required | Update your article                                                                                  |
-| DELETE | `/api/articles/:slug`                     | required | Delete your article                                                                                  |
-| POST   | `/api/articles/:slug/favorite`            | required | Favorite an article                                                                                  |
-| DELETE | `/api/articles/:slug/favorite`            | required | Unfavorite an article                                                                                |
-| GET    | `/api/articles/:slug/comments`            | optional | List comments                                                                                        |
-| POST   | `/api/articles/:slug/comments`            | required | Add a comment                                                                                        |
-| DELETE | `/api/articles/:slug/comments/:commentId` | required | Delete your comment                                                                                  |
-| GET    | `/api/tags`                               |          | List tags                                                                                            |
-| GET    | `/api/admin/users`                        | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin)) |
-| PUT    | `/api/admin/users/:username/role`         | admin    | Make a member a `staging-tester` or a `user`; syncs staging access                                   |
-| DELETE | `/api/admin/users/:username`              | admin    | Delete a member and everything they posted, for good                                                 |
-| POST   | `/api/admin/staging-access`               | admin    | Write the staging testers to Cloudflare Access again                                                 |
-| GET    | `/api/admin/tataru`                       | admin    | Tataru's profile                                                                                     |
-| PUT    | `/api/admin/tataru`                       | admin    | Edit Tataru's bio                                                                                    |
-| PUT    | `/api/admin/tataru/image`                 | admin    | Upload Tataru's picture                                                                              |
-| GET    | `/api/duties`                             |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties))                                        |
-| GET    | `/api/roulettes`                          |          | FFXIV duty roulettes                                                                                 |
-| GET    | `/api/frontline`                          |          | Today's Frontline map and the next days' maps                                                        |
-| GET    | `/api/jobs`                               |          | FFXIV combat jobs, with role and icon                                                                |
-| GET    | `/api/images/:id`                         |          | A game image the data refers to (icons, banners)                                                     |
-| POST   | `/api/duties/refresh`                     | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header)                                       |
-| POST   | `/api/duties/refresh/images`              | key      | Download the next batch of game images                                                               |
+| Method | Path                                      | Auth     | Description                                                                                                 |
+| ------ | ----------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/users`                              |          | Register                                                                                                    |
+| POST   | `/api/users/login`                        |          | Log in                                                                                                      |
+| POST   | `/api/users/logout`                       |          | Clear the auth cookie                                                                                       |
+| GET    | `/api/auth/providers`                     |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                         |
+| GET    | `/api/auth/:provider`                     |          | Start signing in with `google` or `facebook` (a browser redirect)                                           |
+| GET    | `/api/auth/:provider/callback`            |          | The provider's redirect back; signs in and redirects to the site                                            |
+| GET    | `/api/user`                               | required | Current user                                                                                                |
+| PUT    | `/api/user`                               | required | Update the current user                                                                                     |
+| PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
+| DELETE | `/api/user/image`                         | required | Remove the profile picture                                                                                  |
+| GET    | `/api/profile-images/:id`                 |          | An uploaded profile picture                                                                                 |
+| POST   | `/api/media`                              | required | Upload an image or GIF for a post or comment (the file as the body) ([Media](#media-in-posts-and-comments)) |
+| GET    | `/api/media/:id`                          |          | An uploaded image or GIF                                                                                    |
+| GET    | `/api/gifs/available`                     |          | Whether the GIF search is set up: `{available}`                                                             |
+| GET    | `/api/gifs`                               | required | A page of GIFs from GIPHY (`q`, `offset`): `{gifs, next}`                                                   |
+| GET    | `/api/live` (WebSocket)                   |          | Live updates: new posts ([Live updates](#live-updates))                                                     |
+| POST   | `/api/roulette-results`                   | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results))                       |
+| GET    | `/api/profiles/:username`                 | optional | Get a profile                                                                                               |
+| POST   | `/api/profiles/:username/follow`          | required | Follow a user                                                                                               |
+| DELETE | `/api/profiles/:username/follow`          | required | Unfollow a user                                                                                             |
+| GET    | `/api/articles`                           | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`)                                             |
+| GET    | `/api/articles/feed`                      | required | Articles by followed users (`limit`, `offset`)                                                              |
+| POST   | `/api/articles`                           | required | Create an article                                                                                           |
+| GET    | `/api/articles/:slug`                     | optional | Get an article                                                                                              |
+| PUT    | `/api/articles/:slug`                     | required | Update your article                                                                                         |
+| DELETE | `/api/articles/:slug`                     | required | Delete your article                                                                                         |
+| POST   | `/api/articles/:slug/favorite`            | required | Favorite an article                                                                                         |
+| DELETE | `/api/articles/:slug/favorite`            | required | Unfavorite an article                                                                                       |
+| GET    | `/api/articles/:slug/comments`            | optional | List comments                                                                                               |
+| POST   | `/api/articles/:slug/comments`            | required | Add a comment                                                                                               |
+| DELETE | `/api/articles/:slug/comments/:commentId` | required | Delete your comment                                                                                         |
+| GET    | `/api/tags`                               |          | List tags                                                                                                   |
+| GET    | `/api/admin/users`                        | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin))        |
+| PUT    | `/api/admin/users/:username/role`         | admin    | Make a member a `staging-tester` or a `user`; syncs staging access                                          |
+| DELETE | `/api/admin/users/:username`              | admin    | Delete a member and everything they posted, for good                                                        |
+| POST   | `/api/admin/staging-access`               | admin    | Write the staging testers to Cloudflare Access again                                                        |
+| GET    | `/api/admin/tataru`                       | admin    | Tataru's profile                                                                                            |
+| PUT    | `/api/admin/tataru`                       | admin    | Edit Tataru's bio                                                                                           |
+| PUT    | `/api/admin/tataru/image`                 | admin    | Upload Tataru's picture                                                                                     |
+| GET    | `/api/duties`                             |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties))                                               |
+| GET    | `/api/roulettes`                          |          | FFXIV duty roulettes                                                                                        |
+| GET    | `/api/frontline`                          |          | Today's Frontline map and the next days' maps                                                               |
+| GET    | `/api/jobs`                               |          | FFXIV combat jobs, with role and icon                                                                       |
+| GET    | `/api/images/:id`                         |          | A game image the data refers to (icons, banners)                                                            |
+| POST   | `/api/duties/refresh`                     | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header)                                              |
+| POST   | `/api/duties/refresh/images`              | key      | Download the next batch of game images                                                                      |
 
 ## Profile pictures
 
@@ -87,6 +91,13 @@ People upload a profile picture instead of typing a URL.
 - **`DELETE /api/user/image`** goes back to the default picture and deletes the upload.
 - **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
 - `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
+
+## Media in posts and comments
+
+Posts and comments are Markdown, so images go in as `![description](address)` and a YouTube link on a line of its own shows as a video preview (the site does that). The backend stores uploads and searches GIFs (`src/media`):
+
+- **Uploads** (`POST /api/media`, the file as the body): PNG, JPEG, WebP or GIF, read from the file's bytes, up to **1 MB** and 4096 × 4096 pixels (the site shrinks larger pictures before uploading; a GIF keeps its animation, so it must already fit), and **30 a day** per person (429 with `Retry-After` after that). Each upload is one `media` document holding its bytes. The answer is `{"media": {id, url, contentType, width, height}}`; `GET /api/media/:id` serves it with the same headers as profile pictures (cached for good, `nosniff`, sandboxed). Deleting a member deletes their uploads.
+- **GIF search** (`GET /api/gifs?q=…&offset=…`, signed in): GIPHY's search, or trending GIFs without `q`, rated PG-13 at most, 24 a page. The backend calls GIPHY with `GIPHY_API_KEY` so the key stays secret, and answers `{"gifs": [{id, title, previewUrl, url, width, height}], "next": <offset or null>}`; `url` is GIPHY's "downsized medium" rendition. Without the key, `GET /api/gifs/available` says `false` and the site hides the search.
 
 ## Live updates
 
@@ -158,7 +169,7 @@ The Frontline daily map isn't in the game data, so it is computed without any AP
 
 The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments`, `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`) and `postLimits` (when each person last posted a roulette result, and the guests' hourly count). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
+- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments`, `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`), `media` (images and GIFs uploaded for posts and comments, one document each with the bytes and the uploader's `userId`) and `postLimits` (when each person last posted a roulette result, and the guests' hourly count). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
 - **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
@@ -235,6 +246,7 @@ curl http://localhost:8080/api/tags
 | `MICROSOFT_CLIENT_SECRET`   | The Microsoft sign-in app's client secret value. A Worker secret; it expires (24 months at most), so renew it in time                                                                                                                                              |
 | `DISCORD_CLIENT_ID`         | The Discord sign-in app's client id; without it and the secret, the Discord button isn't shown                                                                                                                                                                     |
 | `DISCORD_CLIENT_SECRET`     | The Discord sign-in app's client secret. A Worker secret                                                                                                                                                                                                           |
+| `GIPHY_API_KEY`             | GIPHY's API key for the GIF search in posts and comments ([One-time setup](#one-time-setup)); without it the search isn't offered. A Worker secret                                                                                                                 |
 
 ## Testing
 
@@ -358,6 +370,7 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    1. **Microsoft:** [Azure portal](https://portal.azure.com/) → Microsoft Entra ID → App registrations → **New registration**, supported account types "Personal Microsoft accounts only", redirect URI (Web) `<site>/api/auth/microsoft/callback`. Then Certificates & secrets → **New client secret** and copy its **Value**. Set `MICROSOFT_CLIENT_ID` (the Application (client) ID on the Overview page) and `MICROSOFT_CLIENT_SECRET`. The secret expires; add a new one before it does.
    1. **Discord:** [Discord Developer Portal](https://discord.com/developers/applications) → **New Application** → OAuth2: copy the Client ID, **Reset Secret** for the Client Secret, and add the redirect `<site>/api/auth/discord/callback`. Set `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
    1. One app per provider can serve both environments: list both redirect URIs.
+1. **GIF search:** [GIPHY for Developers](https://developers.giphy.com/dashboard/) → **Create an App** → **API** (not SDK), name it and describe it, and copy its API key. Set it on each Worker: `npx wrangler secret put GIPHY_API_KEY` (and `--env staging`). A new key is a beta key, limited to 100 searches an hour; request a production key from the app's page once the site uses it (GIPHY reviews it, and wants its "Powered by GIPHY" mark shown, which the site's GIF picker does).
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.

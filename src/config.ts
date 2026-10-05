@@ -35,6 +35,9 @@ const envVarsSchema = Joi.object()
     MICROSOFT_CLIENT_SECRET: Joi.string().allow(''),
     DISCORD_CLIENT_ID: Joi.string().allow(''),
     DISCORD_CLIENT_SECRET: Joi.string().allow(''),
+    // The GIF search in posts and comments (GIPHY's API key); without it the
+    // search isn't offered.
+    GIPHY_API_KEY: Joi.string().allow(''),
   })
   .unknown();
 
@@ -76,6 +79,7 @@ const config = {
       clientSecret: envVars.DISCORD_CLIENT_SECRET as string | undefined,
     },
   },
+  giphyApiKey: envVars.GIPHY_API_KEY as string | undefined,
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,
