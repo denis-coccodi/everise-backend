@@ -16,62 +16,62 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
                                                                 └─ /api/*     Express app ──RPC──> Durable Object "EveriseDb"
 ```
 
-| Folder               | Contents                                                           |
-| -------------------- | ------------------------------------------------------------------ |
-| `src/worker.ts`      | Worker entry point: starts the Express app and exports `EveriseDb` |
-| `src/app.ts`         | Express setup: CORS, JSON, cookies, routers, error handler         |
-| `src/users`          | Registration, login, logout, current user, JWTs                    |
-| `src/profiles`       | Profiles and follows                                               |
-| `src/articles`       | Articles, comments, favorites, tags and feeds                      |
-| `src/middleware`     | Authentication (`requireAuth` / `optionalAuth`)                    |
-| `src/db`             | The document store and the `EveriseDb` Durable Object              |
-| `__tests__`          | API tests, one file per endpoint                                   |
-| `public`             | Static assets, e.g. the default avatar                             |
+| Folder           | Contents                                                           |
+| ---------------- | ------------------------------------------------------------------ |
+| `src/worker.ts`  | Worker entry point: starts the Express app and exports `EveriseDb` |
+| `src/app.ts`     | Express setup: CORS, JSON, cookies, routers, error handler         |
+| `src/users`      | Registration, login, logout, current user, JWTs                    |
+| `src/profiles`   | Profiles and follows                                               |
+| `src/articles`   | Articles, comments, favorites, tags and feeds                      |
+| `src/middleware` | Authentication (`requireAuth` / `optionalAuth`)                    |
+| `src/db`         | The document store and the `EveriseDb` Durable Object              |
+| `__tests__`      | API tests, one file per endpoint                                   |
+| `public`         | Static assets, e.g. the default avatar                             |
 
 ## Endpoints
 
 Auth: **required** endpoints return 401 without a valid token, and **admin** ones also 403 for anyone who isn't an admin; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
 
-| Method   | Path                                       | Auth     | Description                                       |
-| -------- | ------------------------------------------ | -------- | ------------------------------------------------- |
-| POST     | `/api/users`                               |          | Register                                          |
-| POST     | `/api/users/login`                         |          | Log in                                            |
-| POST     | `/api/users/logout`                        |          | Clear the auth cookie                             |
-| GET      | `/api/user`                                | required | Current user                                      |
-| PUT      | `/api/user`                                | required | Update the current user                           |
-| PUT      | `/api/user/image`                          | required | Upload a profile picture ([Profile pictures](#profile-pictures)) |
-| DELETE   | `/api/user/image`                          | required | Remove the profile picture                        |
-| GET      | `/api/profile-images/:id`                  |          | An uploaded profile picture                       |
-| GET      | `/api/live` (WebSocket)                    |          | Live updates: new posts ([Live updates](#live-updates)) |
-| POST     | `/api/roulette-results`                    | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results)) |
-| GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
-| POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
-| DELETE   | `/api/profiles/:username/follow`           | required | Unfollow a user                                   |
-| GET      | `/api/articles`                            | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`) |
-| GET      | `/api/articles/feed`                       | required | Articles by followed users (`limit`, `offset`)    |
-| POST     | `/api/articles`                            | required | Create an article                                 |
-| GET      | `/api/articles/:slug`                      | optional | Get an article                                    |
-| PUT      | `/api/articles/:slug`                      | required | Update your article                               |
-| DELETE   | `/api/articles/:slug`                      | required | Delete your article                               |
-| POST     | `/api/articles/:slug/favorite`             | required | Favorite an article                               |
-| DELETE   | `/api/articles/:slug/favorite`             | required | Unfavorite an article                             |
-| GET      | `/api/articles/:slug/comments`             | optional | List comments                                     |
-| POST     | `/api/articles/:slug/comments`             | required | Add a comment                                     |
-| DELETE   | `/api/articles/:slug/comments/:commentId`  | required | Delete your comment                               |
-| GET      | `/api/tags`                                |          | List tags                                         |
-| GET      | `/api/admin/users`                         | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin)) |
-| PUT      | `/api/admin/users/:username/role`          | admin    | Make a member a `staging-tester` or a `user`; syncs staging access |
-| POST     | `/api/admin/staging-access`                | admin    | Write the staging testers to Cloudflare Access again |
-| GET      | `/api/admin/tataru`                        | admin    | Tataru's profile                                  |
-| PUT      | `/api/admin/tataru`                        | admin    | Edit Tataru's bio                                 |
-| PUT      | `/api/admin/tataru/image`                  | admin    | Upload Tataru's picture                           |
-| GET      | `/api/duties`                              |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties)) |
-| GET      | `/api/roulettes`                           |          | FFXIV duty roulettes                              |
-| GET      | `/api/frontline`                           |          | Today's Frontline map and the next days' maps     |
-| GET      | `/api/jobs`                                |          | FFXIV combat jobs, with role and icon             |
-| GET      | `/api/images/:id`                          |          | A game image the data refers to (icons, banners)  |
-| POST     | `/api/duties/refresh`                      | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header) |
-| POST     | `/api/duties/refresh/images`               | key      | Download the next batch of game images            |
+| Method | Path                                      | Auth     | Description                                                                                          |
+| ------ | ----------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| POST   | `/api/users`                              |          | Register                                                                                             |
+| POST   | `/api/users/login`                        |          | Log in                                                                                               |
+| POST   | `/api/users/logout`                       |          | Clear the auth cookie                                                                                |
+| GET    | `/api/user`                               | required | Current user                                                                                         |
+| PUT    | `/api/user`                               | required | Update the current user                                                                              |
+| PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                     |
+| DELETE | `/api/user/image`                         | required | Remove the profile picture                                                                           |
+| GET    | `/api/profile-images/:id`                 |          | An uploaded profile picture                                                                          |
+| GET    | `/api/live` (WebSocket)                   |          | Live updates: new posts ([Live updates](#live-updates))                                              |
+| POST   | `/api/roulette-results`                   | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results))                |
+| GET    | `/api/profiles/:username`                 | optional | Get a profile                                                                                        |
+| POST   | `/api/profiles/:username/follow`          | required | Follow a user                                                                                        |
+| DELETE | `/api/profiles/:username/follow`          | required | Unfollow a user                                                                                      |
+| GET    | `/api/articles`                           | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`)                                      |
+| GET    | `/api/articles/feed`                      | required | Articles by followed users (`limit`, `offset`)                                                       |
+| POST   | `/api/articles`                           | required | Create an article                                                                                    |
+| GET    | `/api/articles/:slug`                     | optional | Get an article                                                                                       |
+| PUT    | `/api/articles/:slug`                     | required | Update your article                                                                                  |
+| DELETE | `/api/articles/:slug`                     | required | Delete your article                                                                                  |
+| POST   | `/api/articles/:slug/favorite`            | required | Favorite an article                                                                                  |
+| DELETE | `/api/articles/:slug/favorite`            | required | Unfavorite an article                                                                                |
+| GET    | `/api/articles/:slug/comments`            | optional | List comments                                                                                        |
+| POST   | `/api/articles/:slug/comments`            | required | Add a comment                                                                                        |
+| DELETE | `/api/articles/:slug/comments/:commentId` | required | Delete your comment                                                                                  |
+| GET    | `/api/tags`                               |          | List tags                                                                                            |
+| GET    | `/api/admin/users`                        | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin)) |
+| PUT    | `/api/admin/users/:username/role`         | admin    | Make a member a `staging-tester` or a `user`; syncs staging access                                   |
+| POST   | `/api/admin/staging-access`               | admin    | Write the staging testers to Cloudflare Access again                                                 |
+| GET    | `/api/admin/tataru`                       | admin    | Tataru's profile                                                                                     |
+| PUT    | `/api/admin/tataru`                       | admin    | Edit Tataru's bio                                                                                    |
+| PUT    | `/api/admin/tataru/image`                 | admin    | Upload Tataru's picture                                                                              |
+| GET    | `/api/duties`                             |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties))                                        |
+| GET    | `/api/roulettes`                          |          | FFXIV duty roulettes                                                                                 |
+| GET    | `/api/frontline`                          |          | Today's Frontline map and the next days' maps                                                        |
+| GET    | `/api/jobs`                               |          | FFXIV combat jobs, with role and icon                                                                |
+| GET    | `/api/images/:id`                         |          | A game image the data refers to (icons, banners)                                                     |
+| POST   | `/api/duties/refresh`                     | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header)                                       |
+| POST   | `/api/duties/refresh/images`              | key      | Download the next batch of game images                                                               |
 
 ## Profile pictures
 
@@ -106,9 +106,9 @@ Admins can (all under `/api/admin`, 403 for everyone else):
 - **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out; `search` keeps those whose username or email contains it, in any case; `limit` (1–100, default 20) and `offset` page through them; `usersCount` is how many match, and `stagingAccessConnected` says whether role changes reach Cloudflare Access) and **change a role** (`PUT /api/admin/users/:username/role` `{"role": "staging-tester" | "user"}`).
 - **Edit Tataru** ([below](#roulette-results)): her bio (`PUT /api/admin/tataru` `{"tataru": {"bio": "…"}}`) and her picture (`PUT /api/admin/tataru/image`, the file as the body, with the same checks as anyone's upload).
 
-**Staging access.** Staging is behind Cloudflare Access. Its Allow policy includes an Access group of staging testers, and the backend keeps that group in step with the roles: after every role change it writes the admins' and staging testers' emails into the group (`src/admin/staging-access.ts`, through the Cloudflare API), and `POST /api/admin/staging-access` writes them again, e.g. after setting it up or after a failed attempt. The role is saved even if Cloudflare can't be reached; the answer's `stagingAccess` (`{synced, message}`) says what happened. A tester then opens staging and signs in to Access with the one-time code sent to the email of their Everise account.
+**Staging access.** Staging is behind Cloudflare Access. Both staging applications use one reusable Allow policy of staging testers, and the backend keeps that policy in step with the roles: after every role change it writes the admins' and staging testers' emails into the policy's Include (`src/admin/staging-access.ts`, through the Cloudflare API), and `POST /api/admin/staging-access` writes them again, e.g. after setting it up or after a failed attempt. The role is saved even if Cloudflare can't be reached; the answer's `stagingAccess` (`{synced, message}`) says what happened. A tester then opens staging and signs in to Access with the one-time code sent to the email of their Everise account.
 
-Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_ACCESS_GROUP_ID`): production holds the real members, and a second backend writing its own testers into the same group would undo the first. Without them the roles still work, and the answer says which settings are missing ("Staging access isn't connected on this backend (missing CF_ACCESS_API_TOKEN, …)"): an Access policy alone isn't enough, the backend needs the API token and the group's ids to edit it. On staging that message is expected: manage roles from production. Setting it up: [One-time setup](#one-time-setup).
+Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_ACCESS_POLICY_ID`): production holds the real members, and a second backend writing its own testers into the same policy would undo the first. Without them the roles still work, and the answer says which settings are missing ("Staging access isn't connected on this backend (missing CF_ACCESS_API_TOKEN, …)"). On staging that message is expected: manage roles from production. Setting it up: [One-time setup](#one-time-setup).
 
 ## Dark mode
 
@@ -195,19 +195,19 @@ curl http://localhost:8080/api/tags
 
 ## Configuration
 
-| Variable                    | Description                                                        |
-| --------------------------- | ------------------------------------------------------------------ |
-| `BASE_URL`                  | URL of the site users open (the frontend), used to build the default avatar URL; locally the API itself |
-| `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API with the user's cookie. Production lists only the deployed frontend; localhost is for local and staging use |
-| `COOKIE_SAME_SITE`          | `none` (default), `lax` or `strict`                                |
-| `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret |
-| `JWT_ISSUER`                | JWT issuer                                                         |
-| `JWT_SECONDS_TO_EXPIRATION` | JWT and cookie lifetime in seconds                                 |
-| `DUTIES_REFRESH_KEY`        | Key that allows `POST /api/duties/refresh`; refreshing is disabled when unset. In production, set it as a Worker secret |
-| `ADMIN_EMAILS`              | Comma-separated emails of the admins ([Roles and admin](#roles-and-admin)). A Worker secret, so the addresses stay out of the repository; without it nobody is an admin |
-| `CF_ACCESS_API_TOKEN`       | Production only: a Cloudflare API token that may edit Access groups and policies, to keep the staging testers' list in step. A Worker secret |
-| `CF_ACCOUNT_ID`             | Production only: the Cloudflare account of the Access group |
-| `CF_ACCESS_GROUP_ID`        | Production only: what holds the staging testers' emails, an Access group or a reusable Access policy, by its id or its name as the dashboard shows it (e.g. `Staging Testers`; case, spaces and quotes don't matter). Groups are looked up first |
+| Variable                    | Description                                                                                                                                                                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BASE_URL`                  | URL of the site users open (the frontend), used to build the default avatar URL; locally the API itself                                                                                                                                                            |
+| `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API with the user's cookie. Production lists only the deployed frontend; localhost is for local and staging use                                                                                               |
+| `COOKIE_SAME_SITE`          | `none` (default), `lax` or `strict`                                                                                                                                                                                                                                |
+| `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret                                                                                                                                                                                                 |
+| `JWT_ISSUER`                | JWT issuer                                                                                                                                                                                                                                                         |
+| `JWT_SECONDS_TO_EXPIRATION` | JWT and cookie lifetime in seconds                                                                                                                                                                                                                                 |
+| `DUTIES_REFRESH_KEY`        | Key that allows `POST /api/duties/refresh`; refreshing is disabled when unset. In production, set it as a Worker secret                                                                                                                                            |
+| `ADMIN_EMAILS`              | Comma-separated emails of the admins ([Roles and admin](#roles-and-admin)). A Worker secret, so the addresses stay out of the repository; without it nobody is an admin                                                                                            |
+| `CF_ACCESS_API_TOKEN`       | Production only: a Cloudflare API token with **Access: Apps and Policies → Edit**, to keep the staging testers' policy in step. A Worker secret                                                                                                                    |
+| `CF_ACCOUNT_ID`             | Production only: the Cloudflare account of the Access policy                                                                                                                                                                                                       |
+| `CF_ACCESS_POLICY_ID`       | Production only: the reusable Access policy that holds the staging testers' emails, by its **Policy ID** or its name as the dashboard shows it (e.g. `Staging Testers`; case, spaces and quotes don't matter). Its earlier name, `CF_ACCESS_GROUP_ID`, still works |
 
 ## Testing
 
@@ -227,10 +227,10 @@ The tests run the Express app in Node against an in-memory document store, so th
 
 There are two environments, each a separate Worker with its own Durable Object, so their data never mixes:
 
-| Environment | URL                                              | Deployed                         |
-| ----------- | ------------------------------------------------ | -------------------------------- |
+| Environment | URL                                      | Deployed                                                        |
+| ----------- | ---------------------------------------- | --------------------------------------------------------------- |
 | staging     | https://be-staging.everisefc.workers.dev | automatically on every merge to `main`; by hand from any branch |
-| production  | https://be-prod.everisefc.workers.dev         | by hand, once a commit has passed staging |
+| production  | https://be-prod.everisefc.workers.dev    | by hand, once a commit has passed staging                       |
 
 Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
 
@@ -321,10 +321,10 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
 1. Under Settings → Environments, create `staging` (any branch) and `production` (limited to the `main` branch).
 1. **Admins:** set your email (comma-separated for several) on each Worker: `npx wrangler secret put ADMIN_EMAILS` and again with `--env staging`.
 1. **Staging testers' access:**
-   1. Zero Trust → Access controls → Access groups → **Add a group**, e.g. `Staging testers`, with Include → Emails → your own email for now. Copy its id from the group's URL or overview.
-   1. In both staging Access applications (`staging` and `be-staging`), add to the Allow policy: Include → Access groups → `Staging testers` (alongside the emails already there).
-   1. My Profile → API Tokens → **Create token** → Custom token, permissions **Account → Access: Organizations, Identity Providers, and Groups → Edit** and **Account → Access: Apps and Policies → Edit** (the second for a reusable policy), for your account. Then on the production Worker only (`--name be-prod`, or from this folder with `--env=""`): `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_GROUP_ID` (the group's or reusable policy's name, e.g. `Staging Testers`, or its id: a policy's is its **Policy ID** under Access controls → Policies). A sync replaces only the Include of the group or policy with the emails; its name, action and other rules stay. If a sync fails, its message carries Cloudflare's reason, and when nothing matches it lists the groups and policies the token can see.
-   1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the group now lists the admins and staging testers.
+   1. Zero Trust → Access controls → Policies → **Add a policy**, e.g. `Staging Testers`, action Allow, with Include → Emails → your own email for now.
+   1. Use that policy in both staging Access applications (`staging` and `be-staging`), in place of their own email lists.
+   1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Apps and Policies → Edit**, for your account. Then on the production Worker only (`--name be-prod`, or from this folder with `--env=""`): `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_POLICY_ID` (the policy's name, e.g. `Staging Testers`, or its **Policy ID** from Access controls → Policies). A sync replaces only the policy's Include with the emails; its name, action and other settings stay. If a sync fails, its message carries Cloudflare's reason, and when nothing matches it lists the policies the token can see.
+   1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the policy now lists the admins and staging testers.
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.
