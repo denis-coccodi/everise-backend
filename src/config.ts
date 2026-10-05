@@ -35,6 +35,11 @@ const envVarsSchema = Joi.object()
     MICROSOFT_CLIENT_SECRET: Joi.string().allow(''),
     DISCORD_CLIENT_ID: Joi.string().allow(''),
     DISCORD_CLIENT_SECRET: Joi.string().allow(''),
+    // Announces new posts in a Discord channel (the channel's webhook
+    // address, a secret); without it nothing is announced.
+    DISCORD_WEBHOOK_URL: Joi.string().uri().allow(''),
+    // The Discord server whose widget the home page shows.
+    DISCORD_GUILD_ID: Joi.string().allow(''),
   })
   .unknown();
 
@@ -75,6 +80,10 @@ const config = {
       clientId: envVars.DISCORD_CLIENT_ID as string | undefined,
       clientSecret: envVars.DISCORD_CLIENT_SECRET as string | undefined,
     },
+  },
+  discord: {
+    webhookUrl: envVars.DISCORD_WEBHOOK_URL as string | undefined,
+    guildId: envVars.DISCORD_GUILD_ID as string | undefined,
   },
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,

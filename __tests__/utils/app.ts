@@ -4,6 +4,7 @@ import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
+import {DiscordFetch} from '../../src/discord';
 import {OAuthFetch} from '../../src/social-login';
 import {FakeXivApi} from './fake-xivapi';
 import {MemoryStorage} from './memory-storage';
@@ -79,6 +80,32 @@ const socialLogin = {
   fetch: oauthFetch,
 };
 
+// Discord: what the app sent to the webhook, and the widget it answers.
+// `webhookStatus` and `widgetStatus` are its next answers' statuses.
+const discord = {
+  webhookStatus: 204,
+  widgetStatus: 200,
+  widget: {} as unknown,
+  sent: [] as {url: string; body: Record<string, unknown>}[],
+  widgetReads: 0,
+};
+const discordFetch: DiscordFetch = async (url, init) => {
+  if (url.includes('/widget.json')) {
+    discord.widgetReads++;
+    return {
+      ok: discord.widgetStatus < 300,
+      status: discord.widgetStatus,
+      json: async () => discord.widget,
+    };
+  }
+  discord.sent.push({url, body: JSON.parse(init?.body ?? '{}')});
+  return {
+    ok: discord.webhookStatus < 300,
+    status: discord.webhookStatus,
+    json: async () => ({}),
+  };
+};
+
 // The Worker reads public/ through its assets binding; tests read the files.
 async function loadBundledPicture(path: string) {
   return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
@@ -89,11 +116,20 @@ const app = createApp(
   xivApi.httpGet,
   () => clock.now ?? new Date(),
   liveFeed,
-  {loadBundledPicture, stagingAccess, socialLogin}
+  {
+    loadBundledPicture,
+    stagingAccess,
+    socialLogin,
+    discord: {
+      webhookUrl: 'https://discord.test/api/webhooks/1/secret',
+      guildId: 'guild-1',
+      fetch: discordFetch,
+    },
+  }
 );
 
 async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, live, providers, staging, xivApi};
+export {app, clearDb, clock, discord, live, providers, staging, xivApi};

@@ -28,6 +28,13 @@ import {
   SocialLoginSettings,
 } from './social-login';
 import {
+  DiscordAnnouncer,
+  DiscordFetch,
+  DiscordRouter,
+  DiscordWidgetReader,
+  allFeeds,
+} from './discord';
+import {
   JWTService,
   LoadBundledPicture,
   ProfileImagesService,
@@ -44,6 +51,8 @@ interface AppOptions {
   // Sign-in with Google and Facebook: the apps' settings, and how the app
   // reaches the providers.
   socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
+  // Announcements in a Discord channel and the server's widget.
+  discord?: {webhookUrl?: string; guildId?: string; fetch?: DiscordFetch};
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -56,6 +65,7 @@ function createApp(
     loadBundledPicture = async () => undefined,
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
     socialLogin = {settings: config.socialLogin},
+    discord = config.discord,
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -71,7 +81,10 @@ function createApp(
     db,
     usersService,
     profilesService,
-    liveFeed
+    allFeeds(
+      liveFeed,
+      new DiscordAnnouncer(discord.webhookUrl, config.baseUrl, discord.fetch)
+    )
   );
 
   const auth = new Auth(jwtService);
@@ -97,6 +110,10 @@ function createApp(
     socialLogin.settings,
     config.baseUrl,
     socialLogin.fetch
+  ).router;
+
+  const discordRouter = new DiscordRouter(
+    new DiscordWidgetReader(discord.guildId, now, discord.fetch)
   ).router;
 
   const adminRouter = new AdminRouter(
@@ -154,6 +171,8 @@ function createApp(
   app.use('/api', usersRouter);
 
   app.use('/api', socialLoginRouter);
+
+  app.use('/api', discordRouter);
 
   app.use('/api', profilesRouter);
 

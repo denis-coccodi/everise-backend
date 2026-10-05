@@ -40,7 +40,9 @@
     "CORS_ORIGINS": "https://prod.everisefc.workers.dev",
     "COOKIE_SAME_SITE": "none",
     "JWT_ISSUER": "https://everisefc.com",
-    "JWT_SECONDS_TO_EXPIRATION": "86400"
+    "JWT_SECONDS_TO_EXPIRATION": "86400",
+    // The EVERISE Discord server, whose widget the home page shows.
+    "DISCORD_GUILD_ID": "1019343461960384623"
   },
 
   "observability": {"enabled": true},
@@ -67,7 +69,9 @@
         "CORS_ORIGINS": "https://staging.everisefc.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
         "COOKIE_SAME_SITE": "none",
         "JWT_ISSUER": "https://everisefc.com",
-        "JWT_SECONDS_TO_EXPIRATION": "86400"
+        "JWT_SECONDS_TO_EXPIRATION": "86400",
+        // The EVERISE Discord server, whose widget the home page shows.
+        "DISCORD_GUILD_ID": "1019343461960384623"
       }
     }
   }

@@ -1,0 +1,129 @@
+import {LiveEvent, LiveFeed} from '../live/live-feed';
+
+// How the app calls Discord (the parts of fetch it uses); tests pass a fake.
+type DiscordFetch = (
+  url: string,
+  init?: {method?: string; headers?: Record<string, string>; body?: string}
+) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
+
+type ArticleEvent = LiveEvent['article'];
+
+// The crest's red, the colour of the line beside each announcement.
+const EVERISE_RED = 0xb3362f;
+// A post isn't held up for long by a slow Discord.
+const TIMEOUT_MS = 3000;
+
+// Announces every new post and roulette result in a Discord channel,
+// through the channel's webhook (Channel settings → Integrations →
+// Webhooks). Without a webhook address it announces nothing.
+class DiscordAnnouncer implements LiveFeed {
+  constructor(
+    private readonly webhookUrl: string | undefined,
+    // The site people use: the links and pictures point there.
+    private readonly siteUrl: string,
+    private readonly fetchFn: DiscordFetch = (url, init) =>
+      (fetch as unknown as DiscordFetch)(url, init)
+  ) {}
+
+  async publish(event: LiveEvent): Promise<void> {
+    if (!this.webhookUrl || event.type !== 'article-created') return;
+    const message = this.message(event.article);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const sent = await Promise.race([
+        this.fetchFn(this.webhookUrl, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(message),
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('timed out')), TIMEOUT_MS);
+        }),
+      ]);
+      if (!sent.ok) {
+        console.error(`Discord announcement answered ${sent.status}`);
+      }
+    } catch (err) {
+      // The post is saved either way; only the announcement is lost.
+      console.error('Discord announcement failed', err);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private message(article: ArticleEvent) {
+    const link = `${this.siteUrl}/article/${encodeURIComponent(article.slug)}`;
+    const author = article.author.username;
+    const roulette = article.roulette;
+    const embed = {
+      title: truncate(article.title, 256),
+      url: link,
+      description: truncate(article.description, 350),
+      color: EVERISE_RED,
+      timestamp: article.createdAt,
+      author: {
+        name: author,
+        url: `${this.siteUrl}/profile/${encodeURIComponent(author)}`,
+        icon_url: article.author.image,
+      },
+      ...(roulette
+        ? {
+            fields: [
+              {name: roulette.type, value: roulette.name, inline: true},
+              ...(roulette.detail
+                ? [{name: 'Details', value: roulette.detail, inline: true}]
+                : []),
+              ...(roulette.mode
+                ? [{name: 'Party', value: roulette.mode, inline: false}]
+                : []),
+            ],
+          }
+        : {}),
+      ...imageOf(article, this.siteUrl),
+    };
+    return {
+      username: 'Everise',
+      avatar_url: `${this.siteUrl}/assets/images/everise-crest.png`,
+      content: roulette
+        ? `🎲 **${escape(author)}** spun the duty roulette!`
+        : `📜 New post by **${escape(author)}**`,
+      embeds: [embed],
+      // Never ping anyone, whatever a post says.
+      allowed_mentions: {parse: []},
+    };
+  }
+}
+
+// The picture for the announcement: the roulette's banner, or the post's
+// first image.
+function imageOf(article: ArticleEvent, siteUrl: string) {
+  if (article.roulette?.image) {
+    return {image: {url: `${siteUrl}/api/images/${article.roulette.image}`}};
+  }
+  const first = /!\[[^\]]*\]\((https:\/\/[^)\s]+)\)/.exec(article.body);
+  return first ? {image: {url: first[1]}} : {};
+}
+
+function truncate(text: string, length: number) {
+  return text.length > length ? `${text.slice(0, length - 1)}…` : text;
+}
+
+// Usernames with * or _ would otherwise turn into bold or italics.
+function escape(text: string) {
+  return text.replace(/([*_~`|\\>])/g, '\\$1');
+}
+
+// Sends each event to several feeds; one failing doesn't stop the others.
+function allFeeds(...feeds: LiveFeed[]): LiveFeed {
+  return {
+    async publish(event) {
+      await Promise.all(
+        feeds.map(feed =>
+          feed.publish(event).catch(err => console.error('feed failed', err))
+        )
+      );
+    },
+  };
+}
+
+export {DiscordAnnouncer, DiscordFetch, allFeeds};
