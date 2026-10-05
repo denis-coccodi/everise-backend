@@ -1,11 +1,27 @@
 import 'jest-extended';
 import {CloudflareStagingAccess, Fetch} from '../../src/admin';
 
-const settings = {apiToken: 'token', accountId: 'acc', groupId: 'grp'};
-const groupUrl =
-  'https://api.cloudflare.com/client/v4/accounts/acc/access/groups/grp';
+const groupsUrl =
+  'https://api.cloudflare.com/client/v4/accounts/acc/access/groups';
+const GROUPS = [
+  {id: 'grp-other', name: 'Admins', exclude: [], require: []},
+  {
+    id: 'grp-1',
+    name: 'Staging Testers',
+    exclude: [{email: {email: 'no@x.test'}}],
+    require: [],
+  },
+];
+const settings = (groupId = 'grp-1') => ({
+  apiToken: 'token',
+  accountId: 'acc',
+  groupId,
+});
 
-function fakeCloudflare(status = {get: 200, put: 200}) {
+function fakeCloudflare(
+  status = {list: 200, put: 200},
+  errors: {message: string}[] = []
+) {
   const calls: {url: string; method: string; body?: unknown; auth?: string}[] =
     [];
   const fetchFn: Fetch = async (url, init) => {
@@ -16,23 +32,22 @@ function fakeCloudflare(status = {get: 200, put: 200}) {
       body: init?.body ? JSON.parse(init.body) : undefined,
       auth: init?.headers?.Authorization,
     });
-    const code = method === 'GET' ? status.get : status.put;
+    const code = method === 'GET' ? status.list : status.put;
     return {
       ok: code < 300,
       status: code,
-      json: async () => ({
-        result: {name: 'Staging testers', exclude: [], require: []},
-      }),
+      json: async () =>
+        code < 300 ? {result: GROUPS} : {success: false, errors},
     };
   };
   return {calls, fetchFn};
 }
 
 describe('CloudflareStagingAccess', () => {
-  test('writes every email into the Access group, keeping its name', async () => {
+  test('finds the group by id and writes every email into it, keeping its name and rules', async () => {
     const {calls, fetchFn} = fakeCloudflare();
 
-    const result = await new CloudflareStagingAccess(settings, fetchFn).sync([
+    const result = await new CloudflareStagingAccess(settings(), fetchFn).sync([
       'a@x.test',
       'b@x.test',
     ]);
@@ -42,22 +57,59 @@ describe('CloudflareStagingAccess', () => {
       message: 'Staging access updated: 2 people can open staging.',
     });
     expect(calls).toStrictEqual([
-      {url: groupUrl, method: 'GET', body: undefined, auth: 'Bearer token'},
       {
-        url: groupUrl,
+        url: `${groupsUrl}?per_page=1000`,
+        method: 'GET',
+        body: undefined,
+        auth: 'Bearer token',
+      },
+      {
+        url: `${groupsUrl}/grp-1`,
         method: 'PUT',
         auth: 'Bearer token',
         body: {
-          name: 'Staging testers',
+          name: 'Staging Testers',
           include: [{email: {email: 'a@x.test'}}, {email: {email: 'b@x.test'}}],
-          exclude: [],
+          exclude: [{email: {email: 'no@x.test'}}],
           require: [],
         },
       },
     ]);
   });
 
-  test('says when it is not set up, without calling Cloudflare', async () => {
+  test.each([
+    ' staging testers ',
+    '"Staging Testers"',
+    'STAGING TESTERS',
+    ' "grp-1" ',
+  ])('finds the group by name or id as pasted: %s', async groupId => {
+    const {calls, fetchFn} = fakeCloudflare();
+
+    const result = await new CloudflareStagingAccess(
+      settings(groupId),
+      fetchFn
+    ).sync(['a@x.test']);
+
+    expect(result.synced).toBe(true);
+    expect(calls[1].url).toBe(`${groupsUrl}/grp-1`);
+  });
+
+  test("lists the account's groups when none matches", async () => {
+    const {calls, fetchFn} = fakeCloudflare();
+
+    const result = await new CloudflareStagingAccess(
+      settings('policy-123'),
+      fetchFn
+    ).sync(['a@x.test']);
+
+    expect(result.synced).toBe(false);
+    expect(result.message).toContain(
+      'no Access group matches CF_ACCESS_GROUP_ID "policy-123" on account acc; the groups there are "Admins" (grp-other), "Staging Testers" (grp-1)'
+    );
+    expect(calls).toHaveLength(1);
+  });
+
+  test("says when it is not set up, naming what's missing, without calling Cloudflare", async () => {
     const {calls, fetchFn} = fakeCloudflare();
 
     const result = await new CloudflareStagingAccess({}, fetchFn).sync([
@@ -78,24 +130,39 @@ describe('CloudflareStagingAccess', () => {
     expect((await partly.sync(['a@x.test'])).message).toContain(
       '(missing CF_ACCESS_GROUP_ID)'
     );
-    expect(new CloudflareStagingAccess(settings, fetchFn).connected).toBe(true);
+    expect(new CloudflareStagingAccess(settings(), fetchFn).connected).toBe(
+      true
+    );
   });
 
-  test('reports a refusal from Cloudflare', async () => {
-    const {fetchFn} = fakeCloudflare({get: 200, put: 403});
-
-    const result = await new CloudflareStagingAccess(settings, fetchFn).sync([
-      'a@x.test',
+  test("reports Cloudflare's own reason for a refusal", async () => {
+    const listing = fakeCloudflare({list: 403, put: 200}, [
+      {message: 'Authentication error'},
     ]);
+    const refused = await new CloudflareStagingAccess(
+      settings(),
+      listing.fetchFn
+    ).sync(['a@x.test']);
+    expect(refused.message).toContain(
+      'listing the Access groups answered 403: Authentication error'
+    );
 
-    expect(result.synced).toBe(false);
-    expect(result.message).toContain('updating the group answered 403');
+    const updating = fakeCloudflare({list: 200, put: 400}, [
+      {message: 'include is invalid'},
+    ]);
+    const failed = await new CloudflareStagingAccess(
+      settings(),
+      updating.fetchFn
+    ).sync(['a@x.test']);
+    expect(failed.message).toContain(
+      'updating "Staging Testers" answered 400: include is invalid'
+    );
   });
 
   test('never empties the group', async () => {
     const {calls, fetchFn} = fakeCloudflare();
 
-    const result = await new CloudflareStagingAccess(settings, fetchFn).sync(
+    const result = await new CloudflareStagingAccess(settings(), fetchFn).sync(
       []
     );
 

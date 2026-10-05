@@ -207,7 +207,7 @@ curl http://localhost:8080/api/tags
 | `ADMIN_EMAILS`              | Comma-separated emails of the admins ([Roles and admin](#roles-and-admin)). A Worker secret, so the addresses stay out of the repository; without it nobody is an admin |
 | `CF_ACCESS_API_TOKEN`       | Production only: a Cloudflare API token that may edit Access groups, to keep the staging testers' group in step. A Worker secret |
 | `CF_ACCOUNT_ID`             | Production only: the Cloudflare account of the Access group |
-| `CF_ACCESS_GROUP_ID`        | Production only: the id of the staging testers' Access group |
+| `CF_ACCESS_GROUP_ID`        | Production only: the staging testers' Access group, by its id or its name as the dashboard shows it (e.g. `Staging Testers`; case, spaces and quotes don't matter) |
 
 ## Testing
 
@@ -323,7 +323,7 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
 1. **Staging testers' access:**
    1. Zero Trust → Access controls → Access groups → **Add a group**, e.g. `Staging testers`, with Include → Emails → your own email for now. Copy its id from the group's URL or overview.
    1. In both staging Access applications (`staging` and `be-staging`), add to the Allow policy: Include → Access groups → `Staging testers` (alongside the emails already there).
-   1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Organizations, Identity Providers, and Groups → Edit**, for your account. Then on the production Worker only: `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_GROUP_ID`.
+   1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Organizations, Identity Providers, and Groups → Edit**, for your account. Then on the production Worker only (`--name be-prod`, or from this folder with `--env=""`): `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_GROUP_ID` (the group's name, e.g. `Staging Testers`, or its id). If a sync fails, its message carries Cloudflare's reason, and when no group matches it lists the groups the token can see.
    1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the group now lists the admins and staging testers.
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 

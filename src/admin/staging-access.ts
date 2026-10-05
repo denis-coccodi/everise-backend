@@ -31,6 +31,7 @@ interface StagingAccess {
 const STAGING_ACCESS_SETTINGS = {
   apiToken: 'CF_ACCESS_API_TOKEN',
   accountId: 'CF_ACCOUNT_ID',
+  // The group's id, or its name.
   groupId: 'CF_ACCESS_GROUP_ID',
 } as const;
 
@@ -63,22 +64,41 @@ class CloudflareStagingAccess implements StagingAccess {
       };
     }
 
-    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/access/groups/${groupId}`;
+    const groups = `https://api.cloudflare.com/client/v4/accounts/${accountId}/access/groups`;
     const headers = {
       Authorization: `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
     };
     try {
-      // The group's name and other rules are kept as they are.
-      const current = await this.fetchFn(url, {headers});
-      if (!current.ok) {
-        return failed(`reading the group answered ${current.status}`);
+      // CF_ACCESS_GROUP_ID may hold the group's id or its name, as shown in
+      // the dashboard; spaces, quotes and case don't matter.
+      const listed = await this.fetchFn(`${groups}?per_page=1000`, {headers});
+      if (!listed.ok) {
+        return failed(
+          `listing the Access groups answered ${listed.status}${await reason(
+            listed
+          )}`
+        );
       }
-      const {result: group} = (await current.json()) as {
-        result: {name: string; exclude?: unknown[]; require?: unknown[]};
-      };
+      const {result} = (await listed.json()) as {result?: AccessGroup[]};
+      const all = result ?? [];
+      const wanted = clean(groupId);
+      const group = all.find(
+        g =>
+          g.id === wanted ||
+          g.name.trim().toLowerCase() === wanted.toLowerCase()
+      );
+      if (!group) {
+        const seen = all.map(g => `"${g.name}" (${g.id})`).join(', ');
+        return failed(
+          `no Access group matches CF_ACCESS_GROUP_ID "${wanted}" on account ${accountId}; the groups there are ${
+            seen || 'none'
+          }`
+        );
+      }
 
-      const updated = await this.fetchFn(url, {
+      // The group's name and other rules are kept as they are.
+      const updated = await this.fetchFn(`${groups}/${group.id}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
@@ -89,7 +109,11 @@ class CloudflareStagingAccess implements StagingAccess {
         }),
       });
       if (!updated.ok) {
-        return failed(`updating the group answered ${updated.status}`);
+        return failed(
+          `updating "${group.name}" answered ${updated.status}${await reason(
+            updated
+          )}`
+        );
       }
       return {
         synced: true,
@@ -107,6 +131,32 @@ class CloudflareStagingAccess implements StagingAccess {
     return Object.entries(STAGING_ACCESS_SETTINGS)
       .filter(([key]) => !this.settings[key as keyof StagingAccessSettings])
       .map(([, name]) => name);
+  }
+}
+
+interface AccessGroup {
+  id: string;
+  name: string;
+  exclude?: unknown[];
+  require?: unknown[];
+}
+
+// A setting as pasted: without surrounding spaces or quotes.
+function clean(value: string) {
+  return value
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
+}
+
+// Cloudflare's own explanation of a refusal, e.g. ": Authentication error".
+async function reason(response: {json(): Promise<unknown>}) {
+  try {
+    const body = (await response.json()) as {errors?: {message?: string}[]};
+    const messages = (body.errors ?? []).map(e => e.message).filter(Boolean);
+    return messages.length ? `: ${messages.join('; ')}` : '';
+  } catch {
+    return '';
   }
 }
 
