@@ -31,8 +31,12 @@ const liveFeed: LiveFeed = {
 const staging = {
   syncs: [] as string[][],
   result: {synced: true, message: 'Staging access updated.'} as SyncResult,
+  connected: true,
 };
 const stagingAccess: StagingAccess = {
+  get connected() {
+    return staging.connected;
+  },
   async sync(emails) {
     staging.syncs.push(emails);
     return staging.result;

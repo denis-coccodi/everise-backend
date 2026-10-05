@@ -59,7 +59,7 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | POST     | `/api/articles/:slug/comments`             | required | Add a comment                                     |
 | DELETE   | `/api/articles/:slug/comments/:commentId`  | required | Delete your comment                               |
 | GET      | `/api/tags`                                |          | List tags                                         |
-| GET      | `/api/admin/users`                         | admin    | Members with their roles ([Roles](#roles-and-admin)) |
+| GET      | `/api/admin/users`                         | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin)) |
 | PUT      | `/api/admin/users/:username/role`          | admin    | Make a member a `staging-tester` or a `user`; syncs staging access |
 | POST     | `/api/admin/staging-access`                | admin    | Write the staging testers to Cloudflare Access again |
 | GET      | `/api/admin/tataru`                        | admin    | Tataru's profile                                  |
@@ -103,12 +103,12 @@ Every user has a `role`, returned with the user (sign-up, sign-in, `GET` and `PU
 
 Admins can (all under `/api/admin`, 403 for everyone else):
 
-- **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out) and **change a role** (`PUT /api/admin/users/:username/role` `{"role": "staging-tester" | "user"}`).
+- **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out; `search` keeps those whose username or email contains it, in any case; `limit` (1–100, default 20) and `offset` page through them; `usersCount` is how many match, and `stagingAccessConnected` says whether role changes reach Cloudflare Access) and **change a role** (`PUT /api/admin/users/:username/role` `{"role": "staging-tester" | "user"}`).
 - **Edit Tataru** ([below](#roulette-results)): her bio (`PUT /api/admin/tataru` `{"tataru": {"bio": "…"}}`) and her picture (`PUT /api/admin/tataru/image`, the file as the body, with the same checks as anyone's upload).
 
 **Staging access.** Staging is behind Cloudflare Access. Its Allow policy includes an Access group of staging testers, and the backend keeps that group in step with the roles: after every role change it writes the admins' and staging testers' emails into the group (`src/admin/staging-access.ts`, through the Cloudflare API), and `POST /api/admin/staging-access` writes them again, e.g. after setting it up or after a failed attempt. The role is saved even if Cloudflare can't be reached; the answer's `stagingAccess` (`{synced, message}`) says what happened. A tester then opens staging and signs in to Access with the one-time code sent to the email of their Everise account.
 
-Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_ACCESS_GROUP_ID`): production holds the real members, and a second backend writing its own testers into the same group would undo the first. Without them the roles still work and the answer says to update Access by hand. Setting it up: [One-time setup](#one-time-setup).
+Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_ACCESS_GROUP_ID`): production holds the real members, and a second backend writing its own testers into the same group would undo the first. Without them the roles still work, and the answer says which settings are missing ("Staging access isn't connected on this backend (missing CF_ACCESS_API_TOKEN, …)"): an Access policy alone isn't enough, the backend needs the API token and the group's ids to edit it. On staging that message is expected: manage roles from production. Setting it up: [One-time setup](#one-time-setup).
 
 ## Dark mode
 
