@@ -62,6 +62,12 @@ describe('DELETE /api/admin/users/:username', () => {
       .send(readFileSync(join(__dirname, '../fixtures/images/pixel.gif')));
     expect(upload.status).toBe(200);
     const picture = new URL(upload.body.user.image).pathname;
+    // And an image for a post.
+    const media = await request(app)
+      .post('/api/media')
+      .set('authorization', `Token ${gone.token}`)
+      .send(readFileSync(join(__dirname, '../fixtures/images/pixel.gif')));
+    expect(media.status).toBe(201);
 
     const response = await deleteMember(admin, gone.username);
 
@@ -93,6 +99,9 @@ describe('DELETE /api/admin/users/:username', () => {
       (await request(app).get(`/api/articles/${theirs.slug}`)).status
     ).toBe(404);
     expect((await request(app).get(picture)).status).toBe(404);
+    expect(
+      (await request(app).get(`/api/media/${media.body.media.id}`)).status
+    ).toBe(404);
     // The other post stays, without their comment or favourite.
     const article = await request(app)
       .get(`/api/articles/${kept.slug}`)

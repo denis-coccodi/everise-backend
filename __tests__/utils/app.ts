@@ -4,6 +4,7 @@ import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
+import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
 import {FakeXivApi} from './fake-xivapi';
 import {MemoryStorage} from './memory-storage';
@@ -79,6 +80,22 @@ const socialLogin = {
   fetch: oauthFetch,
 };
 
+// GIPHY: `status` and `body` are its next answer; `calls` what the app
+// asked it.
+const giphy = {
+  status: 200,
+  body: {data: [], pagination: {total_count: 0, offset: 0}} as unknown,
+  calls: [] as string[],
+};
+const gifFetch: GifFetch = async url => {
+  giphy.calls.push(url);
+  return {
+    ok: giphy.status < 300,
+    status: giphy.status,
+    json: async () => giphy.body,
+  };
+};
+
 // The Worker reads public/ through its assets binding; tests read the files.
 async function loadBundledPicture(path: string) {
   return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
@@ -89,11 +106,16 @@ const app = createApp(
   xivApi.httpGet,
   () => clock.now ?? new Date(),
   liveFeed,
-  {loadBundledPicture, stagingAccess, socialLogin}
+  {
+    loadBundledPicture,
+    stagingAccess,
+    socialLogin,
+    gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
+  }
 );
 
 async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, live, providers, staging, xivApi};
+export {app, clearDb, clock, giphy, live, providers, staging, xivApi};

@@ -27,6 +27,7 @@ import {
   SocialLoginRouter,
   SocialLoginSettings,
 } from './social-login';
+import {GifFetch, GifSearch, MediaRouter, MediaService} from './media';
 import {
   JWTService,
   LoadBundledPicture,
@@ -44,6 +45,8 @@ interface AppOptions {
   // Sign-in with Google and Facebook: the apps' settings, and how the app
   // reaches the providers.
   socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
+  // The GIF search: GIPHY's key, and how the app reaches it.
+  gifSearch?: {apiKey?: string; fetch?: GifFetch};
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -56,6 +59,7 @@ function createApp(
     loadBundledPicture = async () => undefined,
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
     socialLogin = {settings: config.socialLogin},
+    gifSearch = {apiKey: config.giphyApiKey},
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -99,13 +103,21 @@ function createApp(
     socialLogin.fetch
   ).router;
 
+  const mediaService = new MediaService(db, now);
+
+  const mediaRouter = new MediaRouter(
+    auth,
+    mediaService,
+    new GifSearch(gifSearch.apiKey, gifSearch.fetch)
+  ).router;
+
   const adminRouter = new AdminRouter(
     auth,
     usersService,
     profileImagesService,
     tataru,
     stagingAccess,
-    new MemberDeletion(db, usersService, profileImagesService)
+    new MemberDeletion(db, usersService, profileImagesService, mediaService)
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
@@ -154,6 +166,8 @@ function createApp(
   app.use('/api', usersRouter);
 
   app.use('/api', socialLoginRouter);
+
+  app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);
 
