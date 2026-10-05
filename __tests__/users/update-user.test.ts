@@ -580,3 +580,19 @@ describe('PUT /api/user darkMode', () => {
     expect(response.status).toBe(422);
   });
 });
+
+describe('PUT /api/user bio', () => {
+  test('takes back the null it returns for no bio: it clears the bio', async () => {
+    const user = await usersClient.registerRandomUser();
+    expect(user.user.bio).not.toBeNull();
+
+    const response = await request(app)
+      .put('/api/user')
+      .set('authorization', `Token ${user.user.token}`)
+      .send({user: {bio: null, darkMode: false}});
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.bio).toBeNull();
+    expect(response.body.user.darkMode).toBe(false);
+  });
+});

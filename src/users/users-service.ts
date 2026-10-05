@@ -9,7 +9,7 @@ interface UpdateUserParams {
   email?: string;
   username?: string;
   password?: string;
-  bio?: string;
+  bio?: string | null;
   image?: string;
   darkMode?: boolean;
 }
@@ -121,7 +121,7 @@ class UsersService {
     }
 
     if (params.bio !== undefined && params.bio !== userData.bio) {
-      userData.bio = params.bio;
+      userData.bio = params.bio ?? '';
     }
 
     if (params.darkMode !== undefined) {
