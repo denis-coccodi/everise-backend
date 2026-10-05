@@ -139,6 +139,38 @@ describe('DiscordAnnouncer', () => {
     });
   });
 
+  test("a post's first YouTube video goes in the message, where Discord plays it", async () => {
+    const {sent, announcer: discordAnnouncer} = announcer();
+
+    await discordAnnouncer.publish(
+      event({
+        body: [
+          'Look:',
+          '',
+          'https://youtu.be/dQw4w9WgXcQ?t=42',
+          '',
+          'Not this one https://youtu.be/aaaaaaaaaaa',
+        ].join('\n'),
+      })
+    );
+
+    expect((sent[0] as {content: string}).content).toBe(
+      '📜 New post by **snek\\_lord**\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    );
+  });
+
+  test('a post without a video has just the headline', async () => {
+    const {sent, announcer: discordAnnouncer} = announcer();
+
+    await discordAnnouncer.publish(
+      event({body: 'A link in text: https://youtu.be/dQw4w9WgXcQ here'})
+    );
+
+    expect((sent[0] as {content: string}).content).toBe(
+      '📜 New post by **snek\\_lord**'
+    );
+  });
+
   test('announces nothing without a webhook', async () => {
     const fetchFn = jest.fn();
 
