@@ -6,7 +6,9 @@ import {
   AlreadyExistsError,
   InvalidCredentialsError,
   InvalidImageError,
+  InvalidRouletteResultError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthorizedError,
   UpstreamError,
 } from '../errors';
@@ -52,6 +54,19 @@ class ErrorHandler {
 
     if (error instanceof InvalidImageError) {
       return res.status(error.status).json(new ErrorsDto([error.message]));
+    }
+
+    if (error instanceof InvalidRouletteResultError) {
+      return res
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
+        .json(new ErrorsDto([error.message]));
+    }
+
+    if (error instanceof TooManyRequestsError) {
+      return res
+        .status(StatusCodes.TOO_MANY_REQUESTS)
+        .set('Retry-After', String(error.retryAfterSeconds))
+        .json(new ErrorsDto([error.message]));
     }
 
     if (error instanceof JsonWebTokenError) {

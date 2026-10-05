@@ -24,6 +24,8 @@ class ArticleDto {
       updatedAt: article.updatedAt.toISOString(),
       favorited: favorited,
       favoritesCount: article.favoritedBy.length,
+      // Only on roulette results, so other articles keep the RealWorld shape.
+      ...(article.roulette ? {roulette: article.roulette} : {}),
       author: {
         username: author.username,
         bio: author.bio,
@@ -609,4 +611,4 @@ class ArticlesRouter {
   }
 }
 
-export {ArticlesRouter};
+export {ArticleDto, ArticlesRouter};

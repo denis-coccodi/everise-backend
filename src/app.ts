@@ -14,6 +14,7 @@ import {
 import {errorHandler} from './error-handler';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
+import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
   JWTService,
   ProfileImagesService,
@@ -73,6 +74,18 @@ function createApp(
     config.dutiesRefreshKey
   ).router;
 
+  const roulettePostsRouter = new RoulettePostsRouter(
+    auth,
+    new RoulettePostsService(
+      db,
+      dutiesService,
+      articlesService,
+      usersService,
+      now
+    ),
+    profilesService
+  ).router;
+
   const app = express();
 
   app.use(
@@ -95,6 +108,8 @@ function createApp(
   app.use('/api', articlesRouter);
 
   app.use('/api', dutiesRouter);
+
+  app.use('/api', roulettePostsRouter);
 
   app.use(
     async (

@@ -42,6 +42,7 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | PUT      | `/api/user/image`                          | required | Upload a profile picture ([Profile pictures](#profile-pictures)) |
 | DELETE   | `/api/user/image`                          | required | Remove the profile picture                        |
 | GET      | `/api/profile-images/:id`                  |          | An uploaded profile picture                       |
+| POST     | `/api/roulette-results`                    | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results)) |
 | GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
 | POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
 | DELETE   | `/api/profiles/:username/follow`           | required | Unfollow a user                                   |
@@ -75,6 +76,16 @@ People upload a profile picture instead of typing a URL.
 - **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
 - `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
 
+## Roulette results
+
+An accepted roulette result is posted to the feeds as an article tagged `roulette`, with a `roulette` card (`type`, `name`, `detail`, `mode`, `dutyUnknown`, `image`, `job`, `guest`) that the frontend shows like the roulette's "Duty Found" window. Other articles don't have the field.
+
+- **`POST /api/roulette-results`** takes `{result: {type, candidate: {kind, id}, mode, jobId?}, comment?}`: only what the reels landed on, as ids. The backend checks it's a result the roulette can produce (the duty belongs to that type, the party settings are possible for it, dealer's choice deals a job that can queue) against its cached duty data, and builds the card itself. Anything else is refused with 422 and a message.
+- **Signed in**, the result is posted as the user, with their optional comment (up to 280 characters) as the body.
+- **Not signed in**, it's posted by **Tataru**, a system account (`system: true`, random unknown password, so nobody can sign in as her; the username is reserved), with one of her lines about catching a guest sneaking a spin. Guests can't add text. Her picture is `public/assets/images/tataru.png`, the "dress-up Tataru" minion portrait from the game's data (via XIVAPI), used under Square Enix's fan site materials licence like the other game images.
+- **Limits:** one result every 15 seconds per user, one a minute per guest address (`CF-Connecting-IP`, stored hashed), and 60 guest results an hour in all. Over a limit: 429 with `Retry-After` and a message.
+- `POST /api/articles` still needs a signed-in user: this endpoint can only ever post a real result card.
+
 ## Error messages
 
 Errors keep the RealWorld shape, `{"errors": {"body": ["…"]}}`. The sign-up, sign-in and settings endpoints return messages written for the person filling in the form (`src/users/user-fields.ts`), all of them at once: "Enter a valid email address, like name@example.com.", "That username is taken. Try another one.", "Wrong email or password." (which never says whether the email exists).
@@ -103,7 +114,7 @@ The Frontline daily map isn't in the game data, so it is computed without any AP
 
 The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments` and `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
+- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments`, `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`) and `postLimits` (when each person last posted a roulette result, and the guests' hourly count). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
 - **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.

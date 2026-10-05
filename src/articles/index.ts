@@ -1,2 +1,3 @@
+export {Article, RouletteCard} from './article';
 export {ArticlesService} from './articles-service';
-export {ArticlesRouter} from './articles-router';
+export {ArticleDto, ArticlesRouter} from './articles-router';
