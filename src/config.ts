@@ -23,13 +23,18 @@ const envVarsSchema = Joi.object()
     CF_ACCESS_POLICY_ID: Joi.string().allow(''),
     // The setting's earlier name, still read when CF_ACCESS_POLICY_ID isn't set.
     CF_ACCESS_GROUP_ID: Joi.string().allow(''),
-    // Sign-in with Google and Facebook: each needs its app's id and secret
-    // (Google Cloud console, Meta for Developers); without them, that
-    // button isn't shown.
+    // Sign-in with Google, Facebook, Microsoft and Discord: each needs its
+    // app's id and secret (Google Cloud console, Meta for Developers,
+    // Microsoft Entra, Discord Developer Portal); without them, that button
+    // isn't shown.
     GOOGLE_CLIENT_ID: Joi.string().allow(''),
     GOOGLE_CLIENT_SECRET: Joi.string().allow(''),
     FACEBOOK_APP_ID: Joi.string().allow(''),
     FACEBOOK_APP_SECRET: Joi.string().allow(''),
+    MICROSOFT_CLIENT_ID: Joi.string().allow(''),
+    MICROSOFT_CLIENT_SECRET: Joi.string().allow(''),
+    DISCORD_CLIENT_ID: Joi.string().allow(''),
+    DISCORD_CLIENT_SECRET: Joi.string().allow(''),
   })
   .unknown();
 
@@ -61,6 +66,14 @@ const config = {
     facebook: {
       clientId: envVars.FACEBOOK_APP_ID as string | undefined,
       clientSecret: envVars.FACEBOOK_APP_SECRET as string | undefined,
+    },
+    microsoft: {
+      clientId: envVars.MICROSOFT_CLIENT_ID as string | undefined,
+      clientSecret: envVars.MICROSOFT_CLIENT_SECRET as string | undefined,
+    },
+    discord: {
+      clientId: envVars.DISCORD_CLIENT_ID as string | undefined,
+      clientSecret: envVars.DISCORD_CLIENT_SECRET as string | undefined,
     },
   },
   stagingAccess: {

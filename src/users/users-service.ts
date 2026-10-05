@@ -23,12 +23,15 @@ interface UpdateUserParams {
 interface UserDoc extends Doc {
   email: string;
   username: string;
-  // Unset for someone who only ever signed in with Google or Facebook.
+  // Unset for someone who only ever signed in with a provider (Google,
+  // Facebook, Microsoft, Discord).
   passwordHash?: string;
-  // The Google and Facebook accounts that sign in to this one, by the
-  // provider's id for the person.
+  // The provider accounts that sign in to this one, by the provider's id for
+  // the person.
   googleId?: string;
   facebookId?: string;
+  microsoftId?: string;
+  discordId?: string;
   bio?: string;
   image?: string;
   darkMode?: boolean;
@@ -46,17 +49,29 @@ interface SystemUserParams {
   image?: string;
 }
 
-// Someone signing in with Google or Facebook, as the provider vouches for
-// them; email is only set when the provider confirmed it.
+// Someone signing in with a provider, as the provider vouches for them;
+// email is only set when the provider confirmed it.
 interface ProviderSignIn {
-  provider: 'google' | 'facebook';
+  provider: SignInProvider;
   id: string;
   email?: string;
   name?: string;
 }
 
-const PROVIDER_FIELDS = {google: 'googleId', facebook: 'facebookId'} as const;
-const PROVIDER_NAMES = {google: 'Google', facebook: 'Facebook'} as const;
+type SignInProvider = Exclude<SignInMethod, 'password'>;
+
+const PROVIDER_FIELDS = {
+  google: 'googleId',
+  facebook: 'facebookId',
+  microsoft: 'microsoftId',
+  discord: 'discordId',
+} as const;
+const PROVIDER_NAMES = {
+  google: 'Google',
+  facebook: 'Facebook',
+  microsoft: 'Microsoft',
+  discord: 'Discord',
+} as const;
 
 // Usernames kept for system accounts, compared without case.
 const RESERVED_USERNAMES = ['tataru'];
@@ -73,8 +88,9 @@ function roleOf(doc: UserDoc): Role {
 function signInMethodsOf(doc: UserDoc): SignInMethod[] {
   const methods: SignInMethod[] = [];
   if (doc.passwordHash) methods.push('password');
-  if (doc.googleId) methods.push('google');
-  if (doc.facebookId) methods.push('facebook');
+  for (const [provider, field] of Object.entries(PROVIDER_FIELDS)) {
+    if (doc[field]) methods.push(provider as SignInProvider);
+  }
   return methods;
 }
 
@@ -285,7 +301,7 @@ class UsersService {
       throw new NotFoundError('"email" not found');
     }
 
-    // Someone who signed up with Google or Facebook has no password.
+    // Someone who signed up through a provider has no password.
     if (!userDoc.passwordHash) {
       return false;
     }

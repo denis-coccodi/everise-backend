@@ -20,7 +20,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |
-| `users` | email, username, passwordHash? (unset: signs in only with Google or Facebook), googleId?, facebookId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru) | `src/users/users-service.ts` (`UserDoc`) |
+| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru) | `src/users/users-service.ts` (`UserDoc`) |
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
 | `articles` | authorId → users, slug (unique), title, description, body, tags[], favoritedBy[] → users, roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
 | `comments` | articleId → articles, authorId → users, body | `src/articles/articles-service.ts` (`CommentDoc`) |

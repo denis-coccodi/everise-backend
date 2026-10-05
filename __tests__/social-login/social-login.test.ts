@@ -21,7 +21,9 @@ async function start(provider: string) {
 }
 
 // A whole sign-in: off to the provider, and back with its code.
-async function signIn(provider: 'google' | 'facebook') {
+async function signIn(
+  provider: 'google' | 'facebook' | 'microsoft' | 'discord'
+) {
   const {location, cookie} = await start(provider);
   const state = location.searchParams.get('state')!;
   return request(app)
@@ -44,24 +46,35 @@ async function currentUser(token: string) {
   return response.body.user;
 }
 
-describe('sign-in with Google and Facebook', () => {
+describe('sign-in with Google, Facebook, Microsoft and Discord', () => {
   beforeEach(async () => {
     await clearDb();
     providers.calls = [];
     providers.profiles.google = undefined;
     providers.profiles.facebook = undefined;
+    providers.profiles.microsoft = undefined;
+    providers.profiles.discord = undefined;
   });
 
   test('GET /api/auth/providers lists the providers set up', async () => {
     const response = await request(app).get('/api/auth/providers');
 
     expect(response.status).toBe(200);
-    expect(response.body).toStrictEqual({providers: ['google', 'facebook']});
+    expect(response.body).toStrictEqual({
+      providers: ['google', 'facebook', 'microsoft', 'discord'],
+    });
   });
 
   test.each([
     ['google', 'https://accounts.google.com/o/oauth2/v2/auth', 'google-client'],
     ['facebook', 'https://www.facebook.com/v23.0/dialog/oauth', 'facebook-app'],
+    [
+      'microsoft',
+      // Personal Microsoft accounts only.
+      'https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize',
+      'microsoft-app',
+    ],
+    ['discord', 'https://discord.com/oauth2/authorize', 'discord-app'],
   ])(
     'starting with %s sends the browser to its sign-in page',
     async (provider, page, clientId) => {
@@ -107,6 +120,48 @@ describe('sign-in with Google and Facebook', () => {
     });
     expect(providers.calls[0].body).toContain('client_secret=google-secret');
     expect(providers.calls[0].body).toContain('code=the-code');
+  });
+
+  test('a new Microsoft account signs up, trading the code with the app secret', async () => {
+    providers.profiles.microsoft = {
+      sub: 'ms-1',
+      email: 'xbox.player@outlook.com',
+      name: 'Xbox Player',
+    };
+
+    const user = await currentUser(sessionToken(await signIn('microsoft'))!);
+
+    expect(user).toMatchObject({
+      email: 'xbox.player@outlook.com',
+      username: 'XboxPlayer',
+      signInMethods: ['microsoft'],
+    });
+    expect(providers.calls[0]).toMatchObject({
+      url: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+      method: 'POST',
+    });
+    expect(providers.calls[0].body).toContain('client_secret=microsoft-secret');
+    expect(providers.calls[1].url).toBe(
+      'https://graph.microsoft.com/oidc/userinfo'
+    );
+  });
+
+  test('a Discord account with a confirmed email ties to the account with that email', async () => {
+    const existing = await usersClient.registerRandomUser();
+    providers.profiles.discord = {
+      id: 'dc-1',
+      username: 'snek_lord',
+      global_name: 'Snek Lord',
+      email: existing.user.email,
+      verified: true,
+    };
+
+    const user = await currentUser(sessionToken(await signIn('discord'))!);
+
+    expect(user.username).toBe(existing.user.username);
+    expect(user.signInMethods).toEqual(['password', 'discord']);
+    expect(providers.calls[0].url).toBe('https://discord.com/api/oauth2/token');
+    expect(providers.calls[1].url).toBe('https://discord.com/api/users/@me');
   });
 
   test('the same Google account signs in to the same account next time', async () => {
@@ -192,6 +247,12 @@ describe('sign-in with Google and Facebook', () => {
       'no-email',
     ],
     ['no email', 'facebook', {id: 'fb-2', name: 'Phone Only'}, 'no-email'],
+    [
+      'an unconfirmed email',
+      'discord',
+      {id: 'dc-2', username: 'new', email: 'x@example.com', verified: false},
+      'no-email',
+    ],
     ['no profile', 'facebook', undefined, 'failed'],
   ] as const)(
     'with %s from %s, nobody is signed in and the sign-in page says why',

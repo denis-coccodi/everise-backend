@@ -44,20 +44,23 @@ const stagingAccess: StagingAccess = {
   },
 };
 
-// Google and Facebook. `profiles` is who signs in next with each (undefined
+// The sign-in providers. `profiles` is who signs in next with each (undefined
 // fails the profile read); `calls` what the app asked them.
 const providers = {
   profiles: {
     google: undefined as Record<string, unknown> | undefined,
     facebook: undefined as Record<string, unknown> | undefined,
+    microsoft: undefined as Record<string, unknown> | undefined,
+    discord: undefined as Record<string, unknown> | undefined,
   },
   calls: [] as {url: string; method: string; body?: string}[],
 };
 const oauthFetch: OAuthFetch = async (url, init) => {
   providers.calls.push({url, method: init?.method ?? 'GET', body: init?.body});
-  const profile = url.includes('google')
-    ? providers.profiles.google
-    : providers.profiles.facebook;
+  const provider = (['google', 'microsoft', 'discord'] as const).find(name =>
+    url.includes(name)
+  );
+  const profile = providers.profiles[provider ?? 'facebook'];
   const isToken = /\/(token|oauth\/access_token)\?|\/token$/.test(url);
   const ok = isToken || !!profile;
   return {
@@ -70,6 +73,8 @@ const socialLogin = {
   settings: {
     google: {clientId: 'google-client', clientSecret: 'google-secret'},
     facebook: {clientId: 'facebook-app', clientSecret: 'facebook-secret'},
+    microsoft: {clientId: 'microsoft-app', clientSecret: 'microsoft-secret'},
+    discord: {clientId: 'discord-app', clientSecret: 'discord-secret'},
   },
   fetch: oauthFetch,
 };
