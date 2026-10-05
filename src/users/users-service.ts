@@ -3,7 +3,12 @@ import {randomBytes} from 'crypto';
 import {Joi} from 'celebrate';
 import {config} from '../config';
 import {Db, Doc} from '../db';
-import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
+import {
+  AlreadyExistsError,
+  InvalidRoleError,
+  MissingEmailError,
+  NotFoundError,
+} from '../errors';
 import {AssignableRole, Role, User} from './user';
 
 interface UpdateUserParams {
@@ -18,7 +23,12 @@ interface UpdateUserParams {
 interface UserDoc extends Doc {
   email: string;
   username: string;
-  passwordHash: string;
+  // Unset for someone who only ever signed in with Google or Facebook.
+  passwordHash?: string;
+  // The Google and Facebook accounts that sign in to this one, by the
+  // provider's id for the person.
+  googleId?: string;
+  facebookId?: string;
   bio?: string;
   image?: string;
   darkMode?: boolean;
@@ -35,6 +45,18 @@ interface SystemUserParams {
   bio: string;
   image?: string;
 }
+
+// Someone signing in with Google or Facebook, as the provider vouches for
+// them; email is only set when the provider confirmed it.
+interface ProviderSignIn {
+  provider: 'google' | 'facebook';
+  id: string;
+  email?: string;
+  name?: string;
+}
+
+const PROVIDER_FIELDS = {google: 'googleId', facebook: 'facebookId'} as const;
+const PROVIDER_NAMES = {google: 'Google', facebook: 'Facebook'} as const;
 
 // Usernames kept for system accounts, compared without case.
 const RESERVED_USERNAMES = ['tataru'];
@@ -91,6 +113,50 @@ class UsersService {
     );
 
     return toUser(userDoc);
+  }
+
+  // Signs in with a provider's account: the account it was tied to before,
+  // else the one with the same email (tying them together from now on),
+  // else a new one. `created` says which.
+  async signInWithProvider(
+    signIn: ProviderSignIn
+  ): Promise<{user: User; created: boolean}> {
+    const field = PROVIDER_FIELDS[signIn.provider];
+    const [tied] = await this.db.find<UserDoc>(this.usersCollection, {
+      where: [{field, op: '==', value: signIn.id}],
+      limit: 1,
+    });
+    if (tied) {
+      return {user: toUser(tied), created: false};
+    }
+
+    if (!signIn.email) {
+      throw new MissingEmailError(PROVIDER_NAMES[signIn.provider]);
+    }
+    const email = signIn.email.toLowerCase();
+    const sameEmail = (await this.db.find<UserDoc>(this.usersCollection)).find(
+      doc => doc.email.toLowerCase() === email
+    );
+    if (sameEmail) {
+      if (sameEmail.system) {
+        throw new AlreadyExistsError(
+          'That email belongs to an account nobody can sign in to.'
+        );
+      }
+      const linked = await this.db.update<UserDoc>(
+        this.usersCollection,
+        sameEmail.id,
+        {[field]: signIn.id}
+      );
+      return {user: toUser(linked!), created: false};
+    }
+
+    const userDoc = await this.db.create<UserDoc>(this.usersCollection, {
+      email,
+      username: await this.freeUsername(signIn.name, email),
+      [field]: signIn.id,
+    });
+    return {user: toUser(userDoc), created: true};
   }
 
   async getUserById(userId: string): Promise<User | undefined> {
@@ -210,6 +276,11 @@ class UsersService {
       throw new NotFoundError('"email" not found');
     }
 
+    // Someone who signed up with Google or Facebook has no password.
+    if (!userDoc.passwordHash) {
+      return false;
+    }
+
     return await bcrypt.compare(password, userDoc.passwordHash);
   }
 
@@ -269,6 +340,24 @@ class UsersService {
     return [...new Set([...config.adminEmails, ...testers])].sort();
   }
 
+  // A username for a new account made through a provider: the person's
+  // name without spaces or symbols (else their email's first part), with a
+  // number added when it's taken. They can change it in Settings.
+  private async freeUsername(name: string | undefined, email: string) {
+    const tidy = (text: string) =>
+      text.replace(/[^\p{L}\p{N}._-]/gu, '').slice(0, 30);
+    const base = tidy(name ?? '') || tidy(email.split('@')[0]) || 'adventurer';
+    for (let n = 1; ; n++) {
+      const candidate = n === 1 ? base : `${base}${n}`;
+      if (
+        !RESERVED_USERNAMES.includes(candidate.toLowerCase()) &&
+        !(await this.getUserByUsername(candidate))
+      ) {
+        return candidate;
+      }
+    }
+  }
+
   private async findUserDoc(field: 'email' | 'username', value: string) {
     const [userDoc] = await this.db.find<UserDoc>(this.usersCollection, {
       where: [{field, op: '==', value}],
@@ -312,4 +401,4 @@ class UsersService {
   }
 }
 
-export {UsersService};
+export {ProviderSignIn, UsersService};

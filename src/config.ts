@@ -23,6 +23,13 @@ const envVarsSchema = Joi.object()
     CF_ACCESS_POLICY_ID: Joi.string().allow(''),
     // The setting's earlier name, still read when CF_ACCESS_POLICY_ID isn't set.
     CF_ACCESS_GROUP_ID: Joi.string().allow(''),
+    // Sign-in with Google and Facebook: each needs its app's id and secret
+    // (Google Cloud console, Meta for Developers); without them, that
+    // button isn't shown.
+    GOOGLE_CLIENT_ID: Joi.string().allow(''),
+    GOOGLE_CLIENT_SECRET: Joi.string().allow(''),
+    FACEBOOK_APP_ID: Joi.string().allow(''),
+    FACEBOOK_APP_SECRET: Joi.string().allow(''),
   })
   .unknown();
 
@@ -46,6 +53,16 @@ const config = {
     .split(',')
     .map(email => email.trim().toLowerCase())
     .filter(Boolean),
+  socialLogin: {
+    google: {
+      clientId: envVars.GOOGLE_CLIENT_ID as string | undefined,
+      clientSecret: envVars.GOOGLE_CLIENT_SECRET as string | undefined,
+    },
+    facebook: {
+      clientId: envVars.FACEBOOK_APP_ID as string | undefined,
+      clientSecret: envVars.FACEBOOK_APP_SECRET as string | undefined,
+    },
+  },
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,

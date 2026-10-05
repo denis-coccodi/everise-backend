@@ -4,6 +4,7 @@ import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
+import {OAuthFetch} from '../../src/social-login';
 import {FakeXivApi} from './fake-xivapi';
 import {MemoryStorage} from './memory-storage';
 
@@ -43,6 +44,36 @@ const stagingAccess: StagingAccess = {
   },
 };
 
+// Google and Facebook. `profiles` is who signs in next with each (undefined
+// fails the profile read); `calls` what the app asked them.
+const providers = {
+  profiles: {
+    google: undefined as Record<string, unknown> | undefined,
+    facebook: undefined as Record<string, unknown> | undefined,
+  },
+  calls: [] as {url: string; method: string; body?: string}[],
+};
+const oauthFetch: OAuthFetch = async (url, init) => {
+  providers.calls.push({url, method: init?.method ?? 'GET', body: init?.body});
+  const profile = url.includes('google')
+    ? providers.profiles.google
+    : providers.profiles.facebook;
+  const isToken = /\/(token|oauth\/access_token)\?|\/token$/.test(url);
+  const ok = isToken || !!profile;
+  return {
+    ok,
+    status: ok ? 200 : 401,
+    json: async () => (isToken ? {access_token: 'access'} : profile),
+  };
+};
+const socialLogin = {
+  settings: {
+    google: {clientId: 'google-client', clientSecret: 'google-secret'},
+    facebook: {clientId: 'facebook-app', clientSecret: 'facebook-secret'},
+  },
+  fetch: oauthFetch,
+};
+
 // The Worker reads public/ through its assets binding; tests read the files.
 async function loadBundledPicture(path: string) {
   return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
@@ -53,11 +84,11 @@ const app = createApp(
   xivApi.httpGet,
   () => clock.now ?? new Date(),
   liveFeed,
-  {loadBundledPicture, stagingAccess}
+  {loadBundledPicture, stagingAccess, socialLogin}
 );
 
 async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, live, staging, xivApi};
+export {app, clearDb, clock, live, providers, staging, xivApi};

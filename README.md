@@ -16,17 +16,18 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
                                                                 └─ /api/*     Express app ──RPC──> Durable Object "EveriseDb"
 ```
 
-| Folder           | Contents                                                           |
-| ---------------- | ------------------------------------------------------------------ |
-| `src/worker.ts`  | Worker entry point: starts the Express app and exports `EveriseDb` |
-| `src/app.ts`     | Express setup: CORS, JSON, cookies, routers, error handler         |
-| `src/users`      | Registration, login, logout, current user, JWTs                    |
-| `src/profiles`   | Profiles and follows                                               |
-| `src/articles`   | Articles, comments, favorites, tags and feeds                      |
-| `src/middleware` | Authentication (`requireAuth` / `optionalAuth`)                    |
-| `src/db`         | The document store and the `EveriseDb` Durable Object              |
-| `__tests__`      | API tests, one file per endpoint                                   |
-| `public`         | Static assets, e.g. the default avatar                             |
+| Folder             | Contents                                                           |
+| ------------------ | ------------------------------------------------------------------ |
+| `src/worker.ts`    | Worker entry point: starts the Express app and exports `EveriseDb` |
+| `src/app.ts`       | Express setup: CORS, JSON, cookies, routers, error handler         |
+| `src/users`        | Registration, login, logout, current user, JWTs                    |
+| `src/social-login` | Sign-in and sign-up with Google and Facebook                       |
+| `src/profiles`     | Profiles and follows                                               |
+| `src/articles`     | Articles, comments, favorites, tags and feeds                      |
+| `src/middleware`   | Authentication (`requireAuth` / `optionalAuth`)                    |
+| `src/db`           | The document store and the `EveriseDb` Durable Object              |
+| `__tests__`        | API tests, one file per endpoint                                   |
+| `public`           | Static assets, e.g. the default avatar                             |
 
 ## Endpoints
 
@@ -37,6 +38,9 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | POST   | `/api/users`                              |          | Register                                                                                             |
 | POST   | `/api/users/login`                        |          | Log in                                                                                               |
 | POST   | `/api/users/logout`                       |          | Clear the auth cookie                                                                                |
+| GET    | `/api/auth/providers`                     |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                  |
+| GET    | `/api/auth/:provider`                     |          | Start signing in with `google` or `facebook` (a browser redirect)                                    |
+| GET    | `/api/auth/:provider/callback`            |          | The provider's redirect back; signs in and redirects to the site                                     |
 | GET    | `/api/user`                               | required | Current user                                                                                         |
 | PUT    | `/api/user`                               | required | Update the current user                                                                              |
 | PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                     |
@@ -168,6 +172,17 @@ The instance name selects the storage: a different name is a different, empty da
 
 Registering or logging in returns a JWT in the response body and also sets it in an `httpOnly`, `Secure` cookie named `token`. Protected endpoints accept either that cookie or an `Authorization: Token <jwt>` (or `Bearer <jwt>`) header. `POST /api/users/logout` clears the cookie.
 
+### Google and Facebook
+
+One button per provider both signs in and signs up (`src/social-login`), with the standard OAuth authorization code flow run entirely by the backend, so the site loads no Google or Facebook scripts:
+
+1. The site links to `GET /api/auth/google` (or `facebook`). The backend sets a short-lived `social_login` cookie holding a random state and redirects to the provider's sign-in page.
+1. The provider sends the browser back to `BASE_URL/api/auth/<provider>/callback` with a one-time code and the state. A state that doesn't match the browser's cookie is refused, so nobody can slip their own account into someone else's browser.
+1. The backend trades the code for the person's profile, server to server with the app's secret, and picks the account: the one already tied to that Google or Facebook account (`googleId` / `facebookId` on the user), else the one with the same email, which is then tied to it, else a new one. A new account's username is the person's name without spaces or symbols, with a number added when taken; it has no password until one is set in Settings.
+1. It sets the usual `token` cookie and redirects to the site, which loads the user as on any visit. Problems redirect to `/login?social=<problem>` (`cancelled`, `expired`, `no-email`, `failed`, `unavailable`), which the sign-in page explains.
+
+Only confirmed email addresses are used: Google's `email_verified`, and Facebook only shares confirmed ones. A Facebook account made with a phone number has none and can't sign in. Tying by email trusts that whoever registered an Everise account with a password owns that address; registration doesn't confirm addresses, so someone could register a victim's address first and keep a password to the account the victim later reaches through Google. Confirming emails at registration would close that.
+
 The cookie's `SameSite` value comes from `COOKIE_SAME_SITE`:
 
 - `none` (default): needed while the frontend runs on another site, e.g. `localhost:4200` or another `*.workers.dev` subdomain. Every `*.workers.dev` subdomain counts as a separate site.
@@ -208,6 +223,10 @@ curl http://localhost:8080/api/tags
 | `CF_ACCESS_API_TOKEN`       | Production only: a Cloudflare API token with **Access: Apps and Policies → Edit**, to keep the staging testers' policy in step. A Worker secret                                                                                                                    |
 | `CF_ACCOUNT_ID`             | Production only: the Cloudflare account of the Access policy                                                                                                                                                                                                       |
 | `CF_ACCESS_POLICY_ID`       | Production only: the reusable Access policy that holds the staging testers' emails, by its **Policy ID** or its name as the dashboard shows it (e.g. `Staging Testers`; case, spaces and quotes don't matter). Its earlier name, `CF_ACCESS_GROUP_ID`, still works |
+| `GOOGLE_CLIENT_ID`          | The Google sign-in app's client id ([One-time setup](#one-time-setup)); without it and the secret, the Google button isn't shown                                                                                                                                   |
+| `GOOGLE_CLIENT_SECRET`      | The Google sign-in app's client secret. A Worker secret                                                                                                                                                                                                            |
+| `FACEBOOK_APP_ID`           | The Facebook sign-in app's id; without it and the secret, the Facebook button isn't shown                                                                                                                                                                          |
+| `FACEBOOK_APP_SECRET`       | The Facebook sign-in app's secret. A Worker secret                                                                                                                                                                                                                 |
 
 ## Testing
 
@@ -325,6 +344,10 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    1. Use that policy in both staging Access applications (`staging` and `be-staging`), in place of their own email lists.
    1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Apps and Policies → Edit**, for your account. Then on the production Worker only (`--name be-prod`, or from this folder with `--env=""`): `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_POLICY_ID` (the policy's name, e.g. `Staging Testers`, or its **Policy ID** from Access controls → Policies). A sync replaces only the policy's Include with the emails; its name, action and other settings stay. If a sync fails, its message carries Cloudflare's reason, and when nothing matches it lists the policies the token can see.
    1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the policy now lists the admins and staging testers.
+1. **Sign-in with Google and Facebook** (per environment; the return address is the site's, `https://prod.everisefc.workers.dev` or `https://staging.everisefc.workers.dev`):
+   1. **Google:** [Google Cloud console](https://console.cloud.google.com/) → APIs & Services → OAuth consent screen: set it up as External, with the app name and support email, and publish it. Then Credentials → **Create credentials** → OAuth client ID → Web application, with the authorised redirect URI `<site>/api/auth/google/callback`. Set the client id and secret on the Worker: `npx wrangler secret put GOOGLE_CLIENT_ID` and `npx wrangler secret put GOOGLE_CLIENT_SECRET` (add `--env staging` for staging).
+   1. **Facebook:** [Meta for Developers](https://developers.facebook.com/apps/) → **Create app** → use case "Authenticate and request data from users with Facebook Login", and add the `email` permission. Under Facebook Login → Settings, add the valid OAuth redirect URI `<site>/api/auth/facebook/callback`. Under App settings → Basic, fill in the privacy policy URL and user data deletion instructions (required to go Live), then switch the app to Live. Set `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` the same way.
+   1. One app per provider can serve both environments: list both redirect URIs.
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.
