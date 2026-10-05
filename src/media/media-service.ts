@@ -5,13 +5,12 @@ import {Write} from '../db/db';
 import {InvalidImageError, TooManyRequestsError} from '../errors';
 import {ImageType, readImageInfo} from '../users/image-info';
 
-// Images and GIFs people upload for their posts and comments. A GIF can be
-// several megabytes, more than one database value may hold (2 MiB), so each
-// upload is stored in 1 MiB chunks next to a document describing it.
-const MAX_MEDIA_MB = 5;
-const MAX_MEDIA_BYTES = MAX_MEDIA_MB * 1024 * 1024;
+// Images and GIFs people upload for their posts and comments, one document
+// each with the bytes. The site shrinks large pictures to fit before
+// uploading; GIFs keep their animation, so they must already be small enough.
+const MAX_MEDIA_KB = 1024;
+const MAX_MEDIA_BYTES = MAX_MEDIA_KB * 1024;
 const MAX_MEDIA_SIDE = 4096;
-const CHUNK_BYTES = 1024 * 1024;
 // Uploads per person per day, so nobody fills the free plan's storage.
 const DAILY_UPLOADS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,14 +20,9 @@ interface MediaDoc extends Doc {
   contentType: ImageType;
   width: number;
   height: number;
-  size: number;
-  chunks: number;
+  data: Uint8Array;
   // When it was uploaded (ms), by the app's clock, for the daily limit.
   uploadedAt: number;
-}
-
-interface MediaChunkDoc extends Doc {
-  data: Uint8Array;
 }
 
 interface StoredMedia {
@@ -41,7 +35,6 @@ interface StoredMedia {
 
 class MediaService {
   private readonly collection = 'media';
-  private readonly chunksCollection = 'mediaChunks';
 
   constructor(
     private readonly db: Db,
@@ -65,21 +58,12 @@ class MediaService {
     await this.checkDailyLimit(userId);
 
     const id = randomUUID();
-    const chunks = Math.ceil(data.byteLength / CHUNK_BYTES);
-    for (let i = 0; i < chunks; i++) {
-      await this.db.set(this.chunksCollection, chunkId(id, i), {
-        data: data.slice(i * CHUNK_BYTES, (i + 1) * CHUNK_BYTES),
-      });
-    }
-    // Written last: an upload cut short leaves no document pointing at
-    // missing chunks.
     await this.db.set(this.collection, id, {
       userId,
       contentType: info.type,
       width: info.width,
       height: info.height,
-      size: data.byteLength,
-      chunks,
+      data,
       uploadedAt: this.now().getTime(),
     });
     return {
@@ -93,40 +77,17 @@ class MediaService {
 
   async get(id: string) {
     const doc = await this.db.get<MediaDoc>(this.collection, id);
-    if (!doc) return undefined;
-    const parts: Uint8Array[] = [];
-    for (let i = 0; i < doc.chunks; i++) {
-      const chunk = await this.db.get<MediaChunkDoc>(
-        this.chunksCollection,
-        chunkId(id, i)
-      );
-      if (!chunk) return undefined;
-      parts.push(new Uint8Array(chunk.data));
-    }
-    const data = new Uint8Array(doc.size);
-    let offset = 0;
-    for (const part of parts) {
-      data.set(part, offset);
-      offset += part.byteLength;
-    }
-    return {contentType: doc.contentType, data};
+    return doc && {contentType: doc.contentType, data: doc.data};
   }
 
   // The writes that delete everything a person uploaded, e.g. with their
   // account.
   async deletionsFor(userId: string): Promise<Write[]> {
-    const docs = await this.uploadsOf(userId);
-    return docs.flatMap(doc => [
-      ...Array.from(
-        {length: doc.chunks},
-        (_, i): Write => ({
-          op: 'delete',
-          collection: this.chunksCollection,
-          id: chunkId(doc.id, i),
-        })
-      ),
-      {op: 'delete', collection: this.collection, id: doc.id} as Write,
-    ]);
+    return (await this.uploadsOf(userId)).map(doc => ({
+      op: 'delete',
+      collection: this.collection,
+      id: doc.id,
+    }));
   }
 
   private async checkDailyLimit(userId: string) {
@@ -151,10 +112,6 @@ class MediaService {
   }
 }
 
-function chunkId(id: string, index: number) {
-  return `${id}-${index}`;
-}
-
 // Where an upload is served; the site's own address, through its /api.
 function mediaUrl(id: string) {
   return `${config.baseUrl}/api/media/${id}`;
@@ -162,7 +119,7 @@ function mediaUrl(id: string) {
 
 function tooLarge() {
   return new InvalidImageError(
-    `The image is too large: it can be at most ${MAX_MEDIA_MB} MB.`,
+    'The image is too large: it can be at most 1 MB.',
     413
   );
 }

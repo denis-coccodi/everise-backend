@@ -24,8 +24,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
 | `articles` | authorId → users, slug (unique), title, description, body, tags[], favoritedBy[] → users, roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
 | `comments` | articleId → articles, authorId → users, body | `src/articles/articles-service.ts` (`CommentDoc`) |
-| `media` | userId → users, contentType, width, height, size (bytes, ≤ 5 MB), chunks, uploadedAt (ms, the daily limit) | `src/media/media-service.ts` (`MediaDoc`) |
-| `mediaChunks` | data (≤ 1 MiB); id `<media id>-<n>` | `src/media/media-service.ts` |
+| `media` | userId → users, contentType, width, height, data (≤ 1 MB), uploadedAt (ms, the daily limit) | `src/media/media-service.ts` (`MediaDoc`) |
 | `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`) | `src/roulette-posts/roulette-posts-service.ts` |
 | `profileImages` | userId → users, contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
 
@@ -35,12 +34,12 @@ Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls 
 
 ## Updating the diagram
 
-`docs/db-structure.svg` is hand-written SVG (1200×1250) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
+`docs/db-structure.svg` is hand-written SVG (1200×1220) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
 1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
    $repo = (Get-Location).Path
-   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1250 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
+   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1220 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.

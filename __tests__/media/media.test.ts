@@ -52,8 +52,8 @@ describe('uploading images and GIFs', () => {
     expect(Buffer.compare(served.body, gif)).toBe(0);
   });
 
-  test('a large GIF is stored in pieces and comes back whole', async () => {
-    const big = pngOf(Math.round(2.5 * 1024 * 1024));
+  test('a 1 MB image is stored and comes back whole', async () => {
+    const big = pngOf(1024 * 1024);
     big[5000] = 7;
     big[big.length - 1] = 9;
 
@@ -67,17 +67,16 @@ describe('uploading images and GIFs', () => {
         res.on('end', () => done(null, Buffer.concat(parts)));
       });
 
-    expect(served.body.length).toBe(big.length);
     expect(Buffer.compare(served.body, big)).toBe(0);
   });
 
   test('refuses what is too large, not an image, or from a guest', async () => {
     const token = await signedIn();
 
-    const large = await upload(token, pngOf(5 * 1024 * 1024 + 1));
+    const large = await upload(token, pngOf(1024 * 1024 + 1));
     expect(large.status).toBe(413);
     expect(large.body.errors.body[0]).toBe(
-      'The image is too large: it can be at most 5 MB.'
+      'The image is too large: it can be at most 1 MB.'
     );
 
     const text = await upload(token, Buffer.from('not an image at all'));
