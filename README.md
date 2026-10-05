@@ -41,6 +41,7 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | GET    | `/api/auth/providers`                     |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                         |
 | GET    | `/api/auth/:provider`                     |          | Start signing in with `google` or `facebook` (a browser redirect)                                           |
 | GET    | `/api/auth/:provider/callback`            |          | The provider's redirect back; signs in and redirects to the site                                            |
+| GET    | `/api/discord/widget`                     |          | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
 | GET    | `/api/user`                               | required | Current user                                                                                                |
 | PUT    | `/api/user`                               | required | Update the current user                                                                                     |
 | PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
@@ -98,6 +99,11 @@ Posts and comments are Markdown, so images go in as `![description](address)` an
 
 - **Uploads** (`POST /api/media`, the file as the body): PNG, JPEG, WebP or GIF, read from the file's bytes, up to **1 MB** and 4096 × 4096 pixels (the site shrinks larger pictures before uploading; a GIF keeps its animation, so it must already fit), and **30 a day** per person (429 with `Retry-After` after that). Each upload is one `media` document holding its bytes. The answer is `{"media": {id, url, contentType, width, height}}`; `GET /api/media/:id` serves it with the same headers as profile pictures (cached for good, `nosniff`, sandboxed). Deleting a member deletes their uploads.
 - **GIF search** (`GET /api/gifs?q=…&offset=…`, signed in): GIPHY's search, or trending GIFs without `q`, rated PG-13 at most, 24 a page. The backend calls GIPHY with `GIPHY_API_KEY` so the key stays secret, and answers `{"gifs": [{id, title, previewUrl, url, width, height}], "next": <offset or null>}`; `url` is GIPHY's "downsized medium" rendition. Without the key, `GET /api/gifs/available` says `false` and the site hides the search.
+
+## Discord
+
+- **Announcements:** every new post and roulette result is announced in a Discord channel through its webhook (`DISCORD_WEBHOOK_URL`, `src/discord/discord-announcer.ts`): a card with the title, description, author, a link back, and the duty, details and party for a roulette result, with the duty's banner (or the post's first image). It never pings anyone (`allowed_mentions` is empty). A slow or failing Discord can't hold up or fail the post: it waits 3 seconds at most and only logs a failure. It rides on the same feed as the live updates, so it covers everything that creates a post.
+- **Widget:** `GET /api/discord/widget` reads the server's public widget (`DISCORD_GUILD_ID`, in `wrangler.jsonc`), at most once a minute, and answers `{"widget": {name, presenceCount, members: [{name, avatarUrl, status}]}}` with up to 12 members, or `{"widget": null}` when the server's widget is turned off.
 
 ## Live updates
 
@@ -247,6 +253,8 @@ curl http://localhost:8080/api/tags
 | `DISCORD_CLIENT_ID`         | The Discord sign-in app's client id; without it and the secret, the Discord button isn't shown                                                                                                                                                                     |
 | `DISCORD_CLIENT_SECRET`     | The Discord sign-in app's client secret. A Worker secret                                                                                                                                                                                                           |
 | `GIPHY_API_KEY`             | GIPHY's API key for the GIF search in posts and comments ([One-time setup](#one-time-setup)); without it the search isn't offered. A Worker secret                                                                                                                 |
+| `DISCORD_WEBHOOK_URL`       | Production only: the Discord channel's webhook address, where new posts are announced ([Discord](#discord)). A Worker secret; without it nothing is announced                                                                                                      |
+| `DISCORD_GUILD_ID`          | The Discord server whose widget the home page shows; in `wrangler.jsonc`                                                                                                                                                                                           |
 
 ## Testing
 
@@ -371,6 +379,9 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    1. **Discord:** [Discord Developer Portal](https://discord.com/developers/applications) → **New Application** → OAuth2: copy the Client ID, **Reset Secret** for the Client Secret, and add the redirect `<site>/api/auth/discord/callback`. Set `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
    1. One app per provider can serve both environments: list both redirect URIs.
 1. **GIF search:** [GIPHY for Developers](https://developers.giphy.com/dashboard/) → **Create an App** → **API** (not SDK), name it and describe it, and copy its API key. Set it on each Worker: `npx wrangler secret put GIPHY_API_KEY` (and `--env staging`). A new key is a beta key, limited to 100 searches an hour; request a production key from the app's page once the site uses it (GIPHY reviews it, and wants its "Powered by GIPHY" mark shown, which the site's GIF picker does).
+1. **Discord:**
+   1. **Announcements:** in the channel's settings → Integrations → Webhooks → **New Webhook**, name it `Everise`, then **Copy Webhook URL** and set it on production only: `npx wrangler secret put DISCORD_WEBHOOK_URL --name be-prod` (staging's test posts would otherwise appear too).
+   1. **Widget:** Server Settings → Engagement → **Server Widget** → turn on **Enable Server Widget**, and pick an invite channel. The server id is already in `wrangler.jsonc` (`DISCORD_GUILD_ID`).
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.

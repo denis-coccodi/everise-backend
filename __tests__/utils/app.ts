@@ -4,6 +4,7 @@ import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
+import {DiscordFetch} from '../../src/discord';
 import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
 import {FakeXivApi} from './fake-xivapi';
@@ -80,6 +81,32 @@ const socialLogin = {
   fetch: oauthFetch,
 };
 
+// Discord: what the app sent to the webhook, and the widget it answers.
+// `webhookStatus` and `widgetStatus` are its next answers' statuses.
+const discord = {
+  webhookStatus: 204,
+  widgetStatus: 200,
+  widget: {} as unknown,
+  sent: [] as {url: string; body: Record<string, unknown>}[],
+  widgetReads: 0,
+};
+const discordFetch: DiscordFetch = async (url, init) => {
+  if (url.includes('/widget.json')) {
+    discord.widgetReads++;
+    return {
+      ok: discord.widgetStatus < 300,
+      status: discord.widgetStatus,
+      json: async () => discord.widget,
+    };
+  }
+  discord.sent.push({url, body: JSON.parse(init?.body ?? '{}')});
+  return {
+    ok: discord.webhookStatus < 300,
+    status: discord.webhookStatus,
+    json: async () => ({}),
+  };
+};
+
 // GIPHY: `status` and `body` are its next answer; `calls` what the app
 // asked it.
 const giphy = {
@@ -110,6 +137,11 @@ const app = createApp(
     loadBundledPicture,
     stagingAccess,
     socialLogin,
+    discord: {
+      webhookUrl: 'https://discord.test/api/webhooks/1/secret',
+      guildId: 'guild-1',
+      fetch: discordFetch,
+    },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
   }
 );
@@ -118,4 +150,4 @@ async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, giphy, live, providers, staging, xivApi};
+export {app, clearDb, clock, discord, giphy, live, providers, staging, xivApi};

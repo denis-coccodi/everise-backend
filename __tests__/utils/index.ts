@@ -2,6 +2,7 @@ export {
   app,
   clearDb,
   clock,
+  discord,
   giphy,
   live,
   providers,
