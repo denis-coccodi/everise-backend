@@ -34,6 +34,7 @@ describe('PUT /api/user', () => {
           token: expect.not.toBeEmpty(),
           bio: requestBody.user.bio,
           image: requestBody.user.image,
+          darkMode: true,
         },
       });
 
@@ -48,6 +49,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: requestBody.user.bio,
         image: requestBody.user.image,
+        darkMode: true,
       });
     });
 
@@ -73,6 +75,7 @@ describe('PUT /api/user', () => {
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
           image: user.user.image,
+          darkMode: true,
         },
       });
 
@@ -87,6 +90,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       });
     });
 
@@ -112,6 +116,7 @@ describe('PUT /api/user', () => {
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
           image: user.user.image,
+          darkMode: true,
         },
       });
 
@@ -126,6 +131,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       });
     });
 
@@ -151,6 +157,7 @@ describe('PUT /api/user', () => {
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
           image: user.user.image,
+          darkMode: true,
         },
       });
 
@@ -165,6 +172,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       });
     });
 
@@ -190,6 +198,7 @@ describe('PUT /api/user', () => {
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
           image: user.user.image,
+          darkMode: true,
         },
       });
 
@@ -204,6 +213,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       });
     });
   });
@@ -230,6 +240,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       },
     });
 
@@ -244,6 +255,7 @@ describe('PUT /api/user', () => {
       token: expect.not.toBeEmpty(),
       bio: user.user.bio,
       image: user.user.image,
+      darkMode: true,
     });
   });
 
@@ -269,6 +281,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: requestBody.user.bio,
         image: user.user.image,
+        darkMode: true,
       },
     });
 
@@ -280,6 +293,7 @@ describe('PUT /api/user', () => {
       token: expect.not.toBeEmpty(),
       bio: requestBody.user.bio,
       image: user.user.image,
+      darkMode: true,
     });
   });
 
@@ -305,6 +319,7 @@ describe('PUT /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: requestBody.user.image,
+        darkMode: true,
       },
     });
 
@@ -316,6 +331,7 @@ describe('PUT /api/user', () => {
       token: expect.not.toBeEmpty(),
       bio: user.user.bio,
       image: requestBody.user.image,
+      darkMode: true,
     });
   });
 
@@ -513,5 +529,54 @@ describe('PUT /api/user', () => {
         },
       });
     });
+  });
+});
+
+describe('PUT /api/user darkMode', () => {
+  const updateUserUrl = '/api/user';
+
+  test('is dark until turned off, then saved and returned on every sign-in', async () => {
+    const password = faker.internet.password();
+    const email = faker.internet.email();
+    const registered = await usersClient.registerUser(
+      email,
+      faker.internet.userName(),
+      password
+    );
+    expect(registered.user.darkMode).toBe(true);
+
+    const response = await request(app)
+      .put(updateUserUrl)
+      .set('authorization', `Token ${registered.user.token}`)
+      .send({user: {darkMode: false}});
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.darkMode).toBe(false);
+
+    const loggedIn = await usersClient.login(email, password);
+    expect(loggedIn.user.darkMode).toBe(false);
+
+    // Other updates leave it as it is.
+    const bioUpdate = await request(app)
+      .put(updateUserUrl)
+      .set('authorization', `Token ${registered.user.token}`)
+      .send({user: {bio: 'Scholar'}});
+    expect(bioUpdate.body.user.darkMode).toBe(false);
+
+    const current = await request(app)
+      .get('/api/user')
+      .set('authorization', `Token ${registered.user.token}`);
+    expect(current.body.user.darkMode).toBe(false);
+  });
+
+  test('refuses anything but true or false', async () => {
+    const user = await usersClient.registerRandomUser();
+
+    const response = await request(app)
+      .put(updateUserUrl)
+      .set('authorization', `Token ${user.user.token}`)
+      .send({user: {darkMode: 'dim'}});
+
+    expect(response.status).toBe(422);
   });
 });

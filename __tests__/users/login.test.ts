@@ -28,6 +28,7 @@ describe('POST /api/users/login', () => {
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
           image: user.user.image,
+          darkMode: true,
         },
       });
     });

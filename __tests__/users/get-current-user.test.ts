@@ -23,6 +23,7 @@ describe('GET /api/user', () => {
         token: expect.not.toBeEmpty(),
         bio: user.user.bio,
         image: user.user.image,
+        darkMode: true,
       },
     });
   });
