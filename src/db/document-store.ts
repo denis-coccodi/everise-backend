@@ -1,5 +1,5 @@
 import {randomUUID} from 'crypto';
-import {Db, Doc, DocData, FindOptions, Where} from './db';
+import {Db, Doc, DocData, FindOptions, Where, Write} from './db';
 
 // The subset of the Durable Object storage API the store relies on.
 interface KeyValueStorage {
@@ -111,6 +111,16 @@ class DocumentStore implements Db {
 
   async delete(collection: string, id: string) {
     await this.storage.delete(this.key(collection, id));
+  }
+
+  async batch(writes: Write[]) {
+    for (const write of writes) {
+      if (write.op === 'delete') {
+        await this.delete(write.collection, write.id);
+      } else {
+        await this.update(write.collection, write.id, write.data);
+      }
+    }
   }
 
   async clear() {

@@ -1,6 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import type {DurableObjectNamespace} from 'cloudflare:workers';
-import {Db, DocData, FindOptions} from './db';
+import {Db, DocData, FindOptions, Write} from './db';
 import {DocumentStore} from './document-store';
 
 // The Durable Object instance that holds the whole database. The name selects
@@ -37,6 +37,10 @@ class EveriseDb extends DurableObject {
     return this.store.delete(collection, id);
   }
 
+  batch(writes: Write[]) {
+    return this.store.batch(writes);
+  }
+
   clear() {
     return this.store.clear();
   }
@@ -69,6 +73,8 @@ class DurableObjectDb implements Db {
     this.stub.update(collection, id, data);
 
   delete: Db['delete'] = (collection, id) => this.stub.delete(collection, id);
+
+  batch: Db['batch'] = writes => this.stub.batch(writes);
 
   clear: Db['clear'] = () => this.stub.clear();
 }

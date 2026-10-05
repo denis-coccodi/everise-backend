@@ -23,6 +23,11 @@ interface FindOptions {
   offset?: number;
 }
 
+// One change in a batch.
+type Write =
+  | {op: 'delete'; collection: string; id: string}
+  | {op: 'update'; collection: string; id: string; data: DocData};
+
 // A minimal NoSQL document store. Implemented by `DocumentStore`, which runs
 // inside the `EveriseDb` Durable Object in production and in memory in tests.
 interface Db {
@@ -37,7 +42,11 @@ interface Db {
     data: DocData
   ): Promise<T | undefined>;
   delete(collection: string, id: string): Promise<void>;
+  // Applies many changes in one call to the database, e.g. everything a
+  // deleted member leaves behind. A Worker on the free plan may only make 50
+  // calls per request, so a long loop of single writes could be cut short.
+  batch(writes: Write[]): Promise<void>;
   clear(): Promise<void>;
 }
 
-export {Db, Doc, DocData, FindOptions, Where};
+export {Db, Doc, DocData, FindOptions, Where, Write};

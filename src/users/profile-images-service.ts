@@ -54,6 +54,15 @@ class ProfileImagesService {
     return this.db.get<ProfileImageDoc>(this.collection, id);
   }
 
+  // The ids of every picture a user uploaded, e.g. to delete them with the
+  // account.
+  async idsOf(userId: string) {
+    const docs = await this.db.find<ProfileImageDoc>(this.collection, {
+      where: [{field: 'userId', op: '==', value: userId}],
+    });
+    return docs.map(doc => doc.id);
+  }
+
   // Deletes a user's picture; another user's is left alone.
   async delete(userId: string, id: string) {
     const doc = await this.get(id);

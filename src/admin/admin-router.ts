@@ -15,6 +15,7 @@ import {
   uploadedImageId,
 } from '../users';
 import {bio} from '../users/user-fields';
+import {MemberDeletion} from './member-deletion';
 import {StagingAccess} from './staging-access';
 
 // The picture shown for someone who hasn't uploaded one, as in UserDto.
@@ -50,7 +51,8 @@ class AdminRouter {
     private readonly usersService: UsersService,
     private readonly profileImagesService: ProfileImagesService,
     private readonly tataru: TataruAccount,
-    private readonly stagingAccess: StagingAccess
+    private readonly stagingAccess: StagingAccess,
+    private readonly memberDeletion: MemberDeletion
   ) {}
 
   get router() {
@@ -121,6 +123,28 @@ class AdminRouter {
         }
       }
     );
+
+    // Deletes a member and everything they posted, for good (the privacy
+    // policy's "Deleting your data"). Admins and system accounts can't be.
+    router.delete('/admin/users/:username', async (req, res, next) => {
+      try {
+        const deleted = await this.memberDeletion.delete(req.params.username);
+        // A deleted staging tester loses staging access too.
+        const stagingAccess = deleted.wasStagingTester
+          ? await this.syncStagingAccess()
+          : undefined;
+        return res.json({
+          deleted: {
+            username: deleted.username,
+            articles: deleted.articles,
+            comments: deleted.comments,
+          },
+          stagingAccess,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    });
 
     // Writes the staging testers to Cloudflare Access again, e.g. after
     // setting it up or after a failed sync.

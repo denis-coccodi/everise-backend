@@ -1,7 +1,12 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import {AdminRouter, CloudflareStagingAccess, StagingAccess} from './admin';
+import {
+  AdminRouter,
+  CloudflareStagingAccess,
+  MemberDeletion,
+  StagingAccess,
+} from './admin';
 import {ArticlesRouter, ArticlesService} from './articles';
 import {config} from './config';
 import {Db} from './db';
@@ -99,7 +104,8 @@ function createApp(
     usersService,
     profileImagesService,
     tataru,
-    stagingAccess
+    stagingAccess,
+    new MemberDeletion(db, usersService, profileImagesService)
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
