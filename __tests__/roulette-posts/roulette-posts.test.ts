@@ -51,7 +51,10 @@ describe('POST /api/roulette-results', () => {
         tagList: ['roulette'],
         author: {
           username: 'Tataru',
-          image: `${config.baseUrl}/assets/images/tataru.png`,
+          // Her picture is stored like anyone's upload.
+          image: expect.stringMatching(
+            new RegExp(`^${config.baseUrl}/api/profile-images/[0-9a-f-]{36}$`)
+          ),
         },
         roulette: {
           type: 'Dungeons',
@@ -79,6 +82,15 @@ describe('POST /api/roulette-results', () => {
       const profile = await request(app).get('/api/profiles/Tataru');
       expect(profile.status).toBe(200);
       expect(profile.body.profile.bio).toContain('roulette results');
+      // The same stored picture each time, served like an upload.
+      expect(second.body.article.author.image).toBe(
+        first.body.article.author.image
+      );
+      const picture = await request(app).get(
+        first.body.article.author.image.slice(config.baseUrl.length)
+      );
+      expect(picture.status).toBe(200);
+      expect(picture.headers['content-type']).toBe('image/png');
     });
 
     test('should not be able to add a comment', async () => {

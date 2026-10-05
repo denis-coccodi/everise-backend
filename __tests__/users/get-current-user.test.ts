@@ -24,6 +24,7 @@ describe('GET /api/user', () => {
         bio: user.user.bio,
         image: user.user.image,
         darkMode: true,
+        role: 'user',
       },
     });
   });

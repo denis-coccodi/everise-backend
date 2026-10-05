@@ -12,7 +12,9 @@ import {JWTService} from './jwt-service';
 import {
   MAX_IMAGE_BYTES,
   ProfileImagesService,
+  profileImageUrl,
   tooLarge,
+  uploadedImageId,
 } from './profile-images-service';
 import {User} from './user';
 import {
@@ -38,23 +40,13 @@ class UserDto {
       image: user.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
       // Saved with the other settings; dark until the person turns it off.
       darkMode: user.darkMode ?? true,
+      role: user.role,
     };
   }
 }
 
 // An uploaded picture's id never gets new content, so it can be cached for good.
 const PROFILE_IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
-
-// Where an uploaded picture is served. Stored as the user's image URL.
-const profileImagePrefix = () => `${config.baseUrl}/api/profile-images/`;
-
-// The id of the user's uploaded picture, if their image is one.
-function profileImageId(user: User) {
-  const prefix = profileImagePrefix();
-  return user.image?.startsWith(prefix)
-    ? user.image.slice(prefix.length)
-    : undefined;
-}
 
 // The raw request body, whatever its content type (the picture's format is
 // read from its bytes), up to the size limit.
@@ -260,7 +252,7 @@ class UsersRouter {
           );
           const updated = await this.usersService.setImage(
             user.id,
-            profileImagePrefix() + id
+            profileImageUrl(id)
           );
           await this.deleteUploadedImage(user);
 
@@ -314,7 +306,7 @@ class UsersRouter {
   }
 
   private async deleteUploadedImage(user: User) {
-    const id = profileImageId(user);
+    const id = uploadedImageId(user.image);
     if (id) {
       await this.profileImagesService.delete(user.id, id);
     }
@@ -325,4 +317,4 @@ class UsersRouter {
   }
 }
 
-export {UsersRouter};
+export {UsersRouter, UserDto, readImageBody};

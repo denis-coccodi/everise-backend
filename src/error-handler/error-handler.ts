@@ -4,8 +4,10 @@ import {isCelebrateError} from 'celebrate';
 import {StatusCodes} from 'http-status-codes';
 import {
   AlreadyExistsError,
+  ForbiddenError,
   InvalidCredentialsError,
   InvalidImageError,
+  InvalidRoleError,
   InvalidRouletteResultError,
   NotFoundError,
   TooManyRequestsError,
@@ -56,6 +58,12 @@ class ErrorHandler {
       return res.status(error.status).json(new ErrorsDto([error.message]));
     }
 
+    if (error instanceof InvalidRoleError) {
+      return res
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
+        .json(new ErrorsDto([error.message]));
+    }
+
     if (error instanceof InvalidRouletteResultError) {
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)
@@ -66,6 +74,12 @@ class ErrorHandler {
       return res
         .status(StatusCodes.TOO_MANY_REQUESTS)
         .set('Retry-After', String(error.retryAfterSeconds))
+        .json(new ErrorsDto([error.message]));
+    }
+
+    if (error instanceof ForbiddenError) {
+      return res
+        .status(StatusCodes.FORBIDDEN)
         .json(new ErrorsDto([error.message]));
     }
 

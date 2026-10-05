@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import {AdminRouter, CloudflareStagingAccess, StagingAccess} from './admin';
 import {ArticlesRouter, ArticlesService} from './articles';
 import {config} from './config';
 import {Db} from './db';
@@ -18,17 +19,30 @@ import {ProfilesRouter, ProfilesService} from './profiles';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
   JWTService,
+  LoadBundledPicture,
   ProfileImagesService,
+  TataruAccount,
   UsersRouter,
   UsersService,
 } from './users';
+
+interface AppOptions {
+  // Reads a picture from public/ (the Worker's static assets).
+  loadBundledPicture?: LoadBundledPicture;
+  // Where staging testers are given access to the staging site.
+  stagingAccess?: StagingAccess;
+}
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
 function createApp(
   db: Db,
   httpGet: HttpGet = url => fetch(url),
   now: () => Date = () => new Date(),
-  liveFeed: LiveFeed = noLiveFeed
+  liveFeed: LiveFeed = noLiveFeed,
+  {
+    loadBundledPicture = async () => undefined,
+    stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
+  }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
 
@@ -48,11 +62,27 @@ function createApp(
 
   const auth = new Auth(jwtService);
 
+  const profileImagesService = new ProfileImagesService(db);
+
+  const tataru = new TataruAccount(
+    usersService,
+    profileImagesService,
+    loadBundledPicture
+  );
+
   const usersRouter = new UsersRouter(
     auth,
     usersService,
     jwtService,
-    new ProfileImagesService(db)
+    profileImagesService
+  ).router;
+
+  const adminRouter = new AdminRouter(
+    auth,
+    usersService,
+    profileImagesService,
+    tataru,
+    stagingAccess
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
@@ -79,13 +109,7 @@ function createApp(
 
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
-    new RoulettePostsService(
-      db,
-      dutiesService,
-      articlesService,
-      usersService,
-      now
-    ),
+    new RoulettePostsService(db, dutiesService, articlesService, tataru, now),
     profilesService
   ).router;
 
@@ -114,6 +138,8 @@ function createApp(
 
   app.use('/api', roulettePostsRouter);
 
+  app.use('/api', adminRouter);
+
   app.use(
     async (
       err: Error,
@@ -129,4 +155,4 @@ function createApp(
   return app;
 }
 
-export {createApp};
+export {AppOptions, createApp};

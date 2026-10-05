@@ -30,7 +30,7 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
 
 ## Endpoints
 
-Auth: **required** endpoints return 401 without a valid token; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
+Auth: **required** endpoints return 401 without a valid token, and **admin** ones also 403 for anyone who isn't an admin; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
 
 | Method   | Path                                       | Auth     | Description                                       |
 | -------- | ------------------------------------------ | -------- | ------------------------------------------------- |
@@ -59,6 +59,12 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | POST     | `/api/articles/:slug/comments`             | required | Add a comment                                     |
 | DELETE   | `/api/articles/:slug/comments/:commentId`  | required | Delete your comment                               |
 | GET      | `/api/tags`                                |          | List tags                                         |
+| GET      | `/api/admin/users`                         | admin    | Members with their roles ([Roles](#roles-and-admin)) |
+| PUT      | `/api/admin/users/:username/role`          | admin    | Make a member a `staging-tester` or a `user`; syncs staging access |
+| POST     | `/api/admin/staging-access`                | admin    | Write the staging testers to Cloudflare Access again |
+| GET      | `/api/admin/tataru`                        | admin    | Tataru's profile                                  |
+| PUT      | `/api/admin/tataru`                        | admin    | Edit Tataru's bio                                 |
+| PUT      | `/api/admin/tataru/image`                  | admin    | Upload Tataru's picture                           |
 | GET      | `/api/duties`                              |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties)) |
 | GET      | `/api/roulettes`                           |          | FFXIV duty roulettes                              |
 | GET      | `/api/frontline`                           |          | Today's Frontline map and the next days' maps     |
@@ -87,6 +93,23 @@ People upload a profile picture instead of typing a URL.
 - **Routing:** `src/worker.ts` sends WebSocket requests for `/api/live` to the hub before Express sees them; through the frontend Worker's service binding, browsers connect same-origin (`wss://<site>/api/live`).
 - **Config:** the `LIVE` Durable Object binding, in both environments, and the `v2` migration that adds the `LiveHub` class.
 
+## Roles and admin
+
+Every user has a `role`, returned with the user (sign-up, sign-in, `GET` and `PUT /api/user`):
+
+- **`user`**: everyone who registers.
+- **`staging-tester`**: given by an admin; may open the staging site to test it.
+- **`admin`**: whoever's email is in the `ADMIN_EMAILS` secret. It's never stored, so it can't be given or taken away through the API (changing an admin's role is refused with 422).
+
+Admins can (all under `/api/admin`, 403 for everyone else):
+
+- **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out) and **change a role** (`PUT /api/admin/users/:username/role` `{"role": "staging-tester" | "user"}`).
+- **Edit Tataru** ([below](#roulette-results)): her bio (`PUT /api/admin/tataru` `{"tataru": {"bio": "…"}}`) and her picture (`PUT /api/admin/tataru/image`, the file as the body, with the same checks as anyone's upload).
+
+**Staging access.** Staging is behind Cloudflare Access. Its Allow policy includes an Access group of staging testers, and the backend keeps that group in step with the roles: after every role change it writes the admins' and staging testers' emails into the group (`src/admin/staging-access.ts`, through the Cloudflare API), and `POST /api/admin/staging-access` writes them again, e.g. after setting it up or after a failed attempt. The role is saved even if Cloudflare can't be reached; the answer's `stagingAccess` (`{synced, message}`) says what happened. A tester then opens staging and signs in to Access with the one-time code sent to the email of their Everise account.
+
+Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKEN`, `CF_ACCOUNT_ID`, `CF_ACCESS_GROUP_ID`): production holds the real members, and a second backend writing its own testers into the same group would undo the first. Without them the roles still work and the answer says to update Access by hand. Setting it up: [One-time setup](#one-time-setup).
+
 ## Dark mode
 
 The user returned by sign-up, sign-in, `GET /api/user` and `PUT /api/user` has a `darkMode` flag: the site's colour mode, saved with the other settings so it follows the person to every browser. It's `true` until they turn it off with `PUT /api/user` `{"user": {"darkMode": false}}`; other updates leave it as it is.
@@ -97,7 +120,7 @@ An accepted roulette result is posted to the feeds as an article tagged `roulett
 
 - **`POST /api/roulette-results`** takes `{result: {type, candidate: {kind, id}, mode, jobId?}, comment?}`: only what the reels landed on, as ids. The backend checks it's a result the roulette can produce (the duty belongs to that type, the party settings are possible for it, dealer's choice deals a job that can queue) against its cached duty data, and builds the card itself. Anything else is refused with 422 and a message.
 - **Signed in**, the result is posted as the user, with their optional comment (up to 280 characters) as the body.
-- **Not signed in**, it's posted by **Tataru**, a system account (`system: true`, random unknown password, so nobody can sign in as her; the username is reserved), with one of her lines about catching a guest sneaking a spin. Guests can't add text. Her picture is `<BASE_URL>/assets/images/tataru.png`: like the default avatar, it's served by the frontend's assets (the site), with a copy in `public/assets/images/` for local runs, where `BASE_URL` is the backend. It's the "dress-up Tataru" minion portrait from the game's data (via XIVAPI), used under Square Enix's fan site materials licence like the other game images.
+- **Not signed in**, it's posted by **Tataru**, a real account that nobody can sign in to (`system: true`, a random password that's never kept; the username is reserved), with one of her lines about catching a guest sneaking a spin. Guests can't add text. Only admins edit her bio and picture ([Roles and admin](#roles-and-admin)). Her picture is stored and served like anyone's upload (`/api/profile-images/<id>`): when she's first needed, the bundled `public/assets/images/tataru.png` (the "dress-up Tataru" minion portrait from the game's data, via XIVAPI, used under Square Enix's fan site materials licence like the other game images) is stored as her upload, read through the Worker's `ASSETS` binding. An account that still points at the old `/assets/images/tataru.png` address is moved the same way.
 - **Limits:** one result every 15 seconds per user, one a minute per guest address (`CF-Connecting-IP`, stored hashed), and 60 guest results an hour in all. Over a limit: 429 with `Retry-After` and a message.
 - `POST /api/articles` still needs a signed-in user: this endpoint can only ever post a real result card.
 
@@ -181,6 +204,10 @@ curl http://localhost:8080/api/tags
 | `JWT_ISSUER`                | JWT issuer                                                         |
 | `JWT_SECONDS_TO_EXPIRATION` | JWT and cookie lifetime in seconds                                 |
 | `DUTIES_REFRESH_KEY`        | Key that allows `POST /api/duties/refresh`; refreshing is disabled when unset. In production, set it as a Worker secret |
+| `ADMIN_EMAILS`              | Comma-separated emails of the admins ([Roles and admin](#roles-and-admin)). A Worker secret, so the addresses stay out of the repository; without it nobody is an admin |
+| `CF_ACCESS_API_TOKEN`       | Production only: a Cloudflare API token that may edit Access groups, to keep the staging testers' group in step. A Worker secret |
+| `CF_ACCOUNT_ID`             | Production only: the Cloudflare account of the Access group |
+| `CF_ACCESS_GROUP_ID`        | Production only: the id of the staging testers' Access group |
 
 ## Testing
 
@@ -292,6 +319,12 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    - `CLOUDFLARE_API_TOKEN`: the token from the previous step.
    - `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard (Workers & Pages → Overview).
 1. Under Settings → Environments, create `staging` (any branch) and `production` (limited to the `main` branch).
+1. **Admins:** set your email (comma-separated for several) on each Worker: `npx wrangler secret put ADMIN_EMAILS` and again with `--env staging`.
+1. **Staging testers' access:**
+   1. Zero Trust → Access controls → Access groups → **Add a group**, e.g. `Staging testers`, with Include → Emails → your own email for now. Copy its id from the group's URL or overview.
+   1. In both staging Access applications (`staging` and `be-staging`), add to the Allow policy: Include → Access groups → `Staging testers` (alongside the emails already there).
+   1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Organizations, Identity Providers, and Groups → Edit**, for your account. Then on the production Worker only: `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_GROUP_ID`.
+   1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the group now lists the admins and staging testers.
 1. For the duty refresh, pick a long random key per environment and set it twice: as the Worker secret (`npx wrangler secret put DUTIES_REFRESH_KEY`, and again with `--env staging`) and as a `DUTIES_REFRESH_KEY` secret in the matching GitHub environment (Settings → Environments → `production` / `staging` → Add environment secret).
 
 To deploy from your machine instead, run `npx wrangler deploy --env staging` or `npm run deploy` (production) after `npx wrangler login`.

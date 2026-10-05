@@ -1,3 +1,6 @@
+import {readFile} from 'fs/promises';
+import {join} from 'path';
+import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
@@ -24,15 +27,33 @@ const liveFeed: LiveFeed = {
   },
 };
 
+// What the app wrote to Cloudflare Access; `result` is what it answers.
+const staging = {
+  syncs: [] as string[][],
+  result: {synced: true, message: 'Staging access updated.'} as SyncResult,
+};
+const stagingAccess: StagingAccess = {
+  async sync(emails) {
+    staging.syncs.push(emails);
+    return staging.result;
+  },
+};
+
+// The Worker reads public/ through its assets binding; tests read the files.
+async function loadBundledPicture(path: string) {
+  return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
+}
+
 const app = createApp(
   db,
   xivApi.httpGet,
   () => clock.now ?? new Date(),
-  liveFeed
+  liveFeed,
+  {loadBundledPicture, stagingAccess}
 );
 
 async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, live, xivApi};
+export {app, clearDb, clock, live, staging, xivApi};

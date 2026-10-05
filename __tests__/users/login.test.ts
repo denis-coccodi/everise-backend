@@ -29,6 +29,7 @@ describe('POST /api/users/login', () => {
           bio: user.user.bio,
           image: user.user.image,
           darkMode: true,
+          role: 'user',
         },
       });
     });
