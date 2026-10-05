@@ -15,11 +15,13 @@ const envVarsSchema = Joi.object()
     // Comma-separated emails of the admins. A secret, so the addresses stay
     // out of the repository; without it nobody is an admin.
     ADMIN_EMAILS: Joi.string().allow('').default(''),
-    // Keeps the Cloudflare Access group of staging testers in step with the
+    // Keeps the Cloudflare Access policy of staging testers in step with the
     // staging-tester role. Set on one backend only (production): each
-    // backend would otherwise write its own testers into the same group.
+    // backend would otherwise write its own testers into the same policy.
     CF_ACCESS_API_TOKEN: Joi.string().allow(''),
     CF_ACCOUNT_ID: Joi.string().allow(''),
+    CF_ACCESS_POLICY_ID: Joi.string().allow(''),
+    // The setting's earlier name, still read when CF_ACCESS_POLICY_ID isn't set.
     CF_ACCESS_GROUP_ID: Joi.string().allow(''),
   })
   .unknown();
@@ -47,7 +49,9 @@ const config = {
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,
-    groupId: envVars.CF_ACCESS_GROUP_ID as string | undefined,
+    policyId: (envVars.CF_ACCESS_POLICY_ID || envVars.CF_ACCESS_GROUP_ID) as
+      | string
+      | undefined,
   },
 };
 
