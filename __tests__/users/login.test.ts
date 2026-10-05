@@ -46,7 +46,7 @@ describe('POST /api/users/login', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.email" is required'],
+          body: ['Enter your email address.'],
         },
       });
     });
@@ -64,7 +64,7 @@ describe('POST /api/users/login', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.email" must be a valid email'],
+          body: ['Enter a valid email address, like name@example.com.'],
         },
       });
     });
@@ -84,7 +84,7 @@ describe('POST /api/users/login', () => {
       expect(response.status).toBe(401);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['unauthorized'],
+          body: ['Wrong email or password.'],
         },
       });
     });
@@ -103,7 +103,7 @@ describe('POST /api/users/login', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.password" is required'],
+          body: ['Enter your password.'],
         },
       });
     });
@@ -123,7 +123,7 @@ describe('POST /api/users/login', () => {
       expect(response.status).toBe(401);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['unauthorized'],
+          body: ['Wrong email or password.'],
         },
       });
     });

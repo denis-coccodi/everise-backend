@@ -25,7 +25,7 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: 4 collections, no fixed schema.</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 5 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -54,7 +54,7 @@
     <text x="488" y="213" class="field">username</text><text x="744" y="213" class="type" text-anchor="end">string</text>
     <text x="488" y="239" class="field">passwordHash</text><text x="744" y="239" class="type" text-anchor="end">string (bcrypt)</text>
     <text x="488" y="265" class="field">bio</text><text x="744" y="265" class="type" text-anchor="end">string?</text>
-    <text x="488" y="291" class="field">image</text><text x="744" y="291" class="type" text-anchor="end">string?</text>
+    <text x="488" y="291" class="field">image</text><text x="744" y="291" class="type" text-anchor="end">string? (URL)</text>
     <text x="488" y="317" class="field">createdAt</text><text x="744" y="317" class="type" text-anchor="end">Date</text>
     <text x="488" y="343" class="field">updatedAt</text><text x="744" y="343" class="type" text-anchor="end">Date</text>
   </g>
@@ -138,19 +138,40 @@
   <text x="250" y="402" class="rel-label">authorId</text>
   <text x="318" y="402" class="card">N : 1</text>
 
+  <!-- profileImages -->
+  <g>
+    <rect x="860" y="310" width="300" height="210" rx="10" class="box"/>
+    <path d="M870,310 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#db2777"/>
+    <text x="876" y="336" class="title">profileImages</text>
+    <text x="1144" y="336" class="key" text-anchor="end">profileImages/&lt;id&gt;</text>
+    <rect x="872" y="359" width="26" height="16" rx="3" class="pk"/><text x="885" y="371" class="badge" text-anchor="middle">PK</text>
+    <text x="908" y="371" class="field">id</text><text x="1144" y="371" class="type" text-anchor="end">uuid</text>
+    <rect x="872" y="385" width="26" height="16" rx="3" class="fk"/><text x="885" y="397" class="badge" text-anchor="middle">FK</text>
+    <text x="908" y="397" class="field">userId</text><text x="1144" y="397" class="type" text-anchor="end">users.id</text>
+    <text x="908" y="423" class="field">contentType</text><text x="1144" y="423" class="type" text-anchor="end">string</text>
+    <text x="908" y="449" class="field">data</text><text x="1144" y="449" class="type" text-anchor="end">bytes (≤ 1 MB)</text>
+    <text x="908" y="475" class="field">createdAt</text><text x="1144" y="475" class="type" text-anchor="end">Date</text>
+    <text x="908" y="501" class="field">updatedAt</text><text x="1144" y="501" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- profileImages -> users (users.image holds the picture's URL) -->
+  <path d="M860,397 H800 V300 H762" class="rel" marker-end="url(#arrow)"/>
+  <text x="806" y="338" class="rel-label">userId</text>
+  <text x="806" y="354" class="card">N : 1</text>
+
   <!-- Legend -->
-  <rect x="860" y="470" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
-  <text x="878" y="498" class="note-title">Legend</text>
-  <rect x="878" y="511" width="26" height="16" rx="3" class="pk"/><text x="891" y="523" class="badge" text-anchor="middle">PK</text>
-  <text x="914" y="523" class="note">document id, also the key suffix</text>
-  <rect x="878" y="537" width="26" height="16" rx="3" class="fk"/><text x="891" y="549" class="badge" text-anchor="middle">FK</text>
-  <text x="914" y="549" class="note">holds another document's id</text>
-  <path d="M878,572 H904" class="rel" marker-end="url(#arrow)"/>
-  <text x="914" y="576" class="note">reference (points at target)</text>
-  <path d="M878,598 H904" class="rel" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-  <text x="914" y="602" class="note">array of ids (many-to-many)</text>
-  <text x="878" y="622" class="card">References are not enforced by the database.</text>
+  <rect x="860" y="560" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="878" y="588" class="note-title">Legend</text>
+  <rect x="878" y="601" width="26" height="16" rx="3" class="pk"/><text x="891" y="613" class="badge" text-anchor="middle">PK</text>
+  <text x="914" y="613" class="note">document id, also the key suffix</text>
+  <rect x="878" y="627" width="26" height="16" rx="3" class="fk"/><text x="891" y="639" class="badge" text-anchor="middle">FK</text>
+  <text x="914" y="639" class="note">holds another document's id</text>
+  <path d="M878,662 H904" class="rel" marker-end="url(#arrow)"/>
+  <text x="914" y="666" class="note">reference (points at target)</text>
+  <path d="M878,688 H904" class="rel" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="914" y="692" class="note">array of ids (many-to-many)</text>
+  <text x="878" y="712" class="card">References are not enforced by the database.</text>
 
   <!-- Footer -->
-  <text x="40" y="800" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts</text>
+  <text x="40" y="800" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts</text>
 </svg>

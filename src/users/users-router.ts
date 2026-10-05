@@ -2,9 +2,28 @@ import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {config} from '../config';
-import {NotFoundError, UnauthorizedError} from '../errors';
+import {
+  InvalidCredentialsError,
+  InvalidImageError,
+  NotFoundError,
+} from '../errors';
 import {Auth} from '../middleware';
 import {JWTService} from './jwt-service';
+import {
+  MAX_IMAGE_BYTES,
+  ProfileImagesService,
+  tooLarge,
+} from './profile-images-service';
+import {User} from './user';
+import {
+  ALL_ERRORS,
+  bio,
+  email,
+  image,
+  newPassword,
+  signInPassword,
+  username,
+} from './user-fields';
 import {UsersService} from './users-service';
 
 class UserDto {
@@ -27,6 +46,27 @@ class UserDto {
   }
 }
 
+// An uploaded picture's id never gets new content, so it can be cached for good.
+const PROFILE_IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+// Where an uploaded picture is served. Stored as the user's image URL.
+const profileImagePrefix = () => `${config.baseUrl}/api/profile-images/`;
+
+// The id of the user's uploaded picture, if their image is one.
+function profileImageId(user: User) {
+  const prefix = profileImagePrefix();
+  return user.image?.startsWith(prefix)
+    ? user.image.slice(prefix.length)
+    : undefined;
+}
+
+// The raw request body, whatever its content type (the picture's format is
+// read from its bytes), up to the size limit.
+const readImageBody: express.RequestHandler = (req, res, next) =>
+  express.raw({type: () => true, limit: MAX_IMAGE_BYTES})(req, res, err =>
+    next(err?.type === 'entity.too.large' ? tooLarge() : err)
+  );
+
 const COOKIE_NAME = 'token';
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -40,7 +80,8 @@ class UsersRouter {
   constructor(
     private readonly auth: Auth,
     private readonly usersService: UsersService,
-    private readonly jwtService: JWTService
+    private readonly jwtService: JWTService,
+    private readonly profileImagesService: ProfileImagesService
   ) {}
 
   get router() {
@@ -48,19 +89,22 @@ class UsersRouter {
 
     router.post(
       '/users',
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            user: Joi.object()
-              .keys({
-                email: Joi.string().email().required(),
-                username: Joi.string().required(),
-                password: Joi.string().required(),
-              })
-              .required(),
-          })
-          .required(),
-      }),
+      celebrate(
+        {
+          [Segments.BODY]: Joi.object()
+            .keys({
+              user: Joi.object()
+                .keys({
+                  email: email().required(),
+                  username: username().required(),
+                  password: newPassword().required(),
+                })
+                .required(),
+            })
+            .required(),
+        },
+        ALL_ERRORS
+      ),
       async (req, res, next) => {
         try {
           const {email, username, password} = req.body.user;
@@ -95,18 +139,21 @@ class UsersRouter {
 
     router.post(
       '/users/login',
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            user: Joi.object()
-              .keys({
-                email: Joi.string().email().required(),
-                password: Joi.string().required(),
-              })
-              .required(),
-          })
-          .required(),
-      }),
+      celebrate(
+        {
+          [Segments.BODY]: Joi.object()
+            .keys({
+              user: Joi.object()
+                .keys({
+                  email: email().required(),
+                  password: signInPassword().required(),
+                })
+                .required(),
+            })
+            .required(),
+        },
+        ALL_ERRORS
+      ),
       async (req, res, next) => {
         try {
           const {email, password} = req.body.user;
@@ -118,13 +165,11 @@ class UsersRouter {
             );
 
             if (!isValidPassword) {
-              throw new UnauthorizedError(
-                `invalid password for email "${email}"`
-              );
+              throw new InvalidCredentialsError();
             }
           } catch (err) {
             if (err instanceof NotFoundError) {
-              throw new UnauthorizedError(`email ${email} not found`);
+              throw new InvalidCredentialsError();
             }
             throw err;
           }
@@ -176,23 +221,24 @@ class UsersRouter {
 
     router.put(
       '/user',
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            user: Joi.object()
-              .keys({
-                email: Joi.string().email(),
-                username: Joi.string(),
-                password: Joi.string(),
-                bio: Joi.string(),
-                image:
-                  Joi.string().uri() ||
-                  `${config.baseUrl}/assets/images/avatar-profile.png`,
-              })
-              .required(),
-          })
-          .required(),
-      }),
+      celebrate(
+        {
+          [Segments.BODY]: Joi.object()
+            .keys({
+              user: Joi.object()
+                .keys({
+                  email: email(),
+                  username: username(),
+                  password: newPassword(),
+                  bio: bio(),
+                  image: image(),
+                })
+                .required(),
+            })
+            .required(),
+        },
+        ALL_ERRORS
+      ),
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
@@ -222,7 +268,93 @@ class UsersRouter {
       }
     );
 
+    // Uploads a new profile picture (the file as the request body) and
+    // replaces the old one.
+    router.put(
+      '/user/image',
+      this.auth.requireAuth,
+      readImageBody,
+      async (req, res, next) => {
+        try {
+          const user = req.user!;
+          if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new InvalidImageError('Choose a picture to upload.');
+          }
+
+          const id = await this.profileImagesService.save(
+            user.id,
+            new Uint8Array(req.body)
+          );
+          const updated = await this.usersService.setImage(
+            user.id,
+            profileImagePrefix() + id
+          );
+          await this.deleteUploadedImage(user);
+
+          return res.json(this.toDto(updated));
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
+
+    // Removes the profile picture, back to the default one.
+    router.delete(
+      '/user/image',
+      this.auth.requireAuth,
+      async (req, res, next) => {
+        try {
+          const user = req.user!;
+          const updated = await this.usersService.setImage(user.id, undefined);
+          await this.deleteUploadedImage(user);
+
+          return res.json(this.toDto(updated));
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
+
+    router.get('/profile-images/:id', async (req, res, next) => {
+      try {
+        const image = await this.profileImagesService.get(req.params.id);
+        if (!image) {
+          throw new NotFoundError('profile image');
+        }
+
+        return (
+          res
+            .type(image.contentType)
+            .set('Cache-Control', PROFILE_IMAGE_CACHE_CONTROL)
+            // The type comes from the file's bytes; never let a browser guess
+            // another, or run anything inside it.
+            .set('X-Content-Type-Options', 'nosniff')
+            .set('Content-Security-Policy', "default-src 'none'; sandbox")
+            .send(Buffer.from(image.data))
+        );
+      } catch (err) {
+        return next(err);
+      }
+    });
+
     return router;
+  }
+
+  private async deleteUploadedImage(user: User) {
+    const id = profileImageId(user);
+    if (id) {
+      await this.profileImagesService.delete(user.id, id);
+    }
+  }
+
+  private toDto(user: User) {
+    return new UserDto(
+      user.email,
+      user.username,
+      this.jwtService.getToken(user),
+      user.bio,
+      user.image
+    );
   }
 }
 

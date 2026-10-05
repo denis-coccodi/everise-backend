@@ -8,6 +8,23 @@ import {config} from '../../src/config';
 describe('POST /api/users', () => {
   const registerUserUrl = '/api/users';
 
+  test('given every field empty should list a message for each', async () => {
+    const response = await request(app)
+      .post(registerUserUrl)
+      .send({user: {email: '', username: '', password: ''}});
+
+    expect(response.status).toBe(422);
+    expect(response.body).toStrictEqual({
+      errors: {
+        body: [
+          'Enter your email address.',
+          'Choose a username.',
+          'Choose a password.',
+        ],
+      },
+    });
+  });
+
   describe('given a valid request', () => {
     test('should return http status code 201 and the created user', async () => {
       const requestBody = {
@@ -51,7 +68,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.email" is required'],
+          body: ['Enter your email address.'],
         },
       });
     });
@@ -72,7 +89,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.email" must be a valid email'],
+          body: ['Enter a valid email address, like name@example.com.'],
         },
       });
     });
@@ -95,7 +112,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"email" is taken'],
+          body: ['That email address is already registered. Sign in instead?'],
         },
       });
     });
@@ -117,7 +134,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.username" is required'],
+          body: ['Choose a username.'],
         },
       });
     });
@@ -140,7 +157,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"username" is taken'],
+          body: ['That username is taken. Try another one.'],
         },
       });
     });
@@ -162,7 +179,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"user.password" is required'],
+          body: ['Choose a password.'],
         },
       });
     });
@@ -183,7 +200,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(422);
       expect(response.body).toStrictEqual({
         errors: {
-          body: ['"password" must contain at least 8 characters'],
+          body: ['Your password needs at least 8 characters.'],
         },
       });
     });

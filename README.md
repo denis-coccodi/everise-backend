@@ -39,6 +39,9 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | POST     | `/api/users/logout`                        |          | Clear the auth cookie                             |
 | GET      | `/api/user`                                | required | Current user                                      |
 | PUT      | `/api/user`                                | required | Update the current user                           |
+| PUT      | `/api/user/image`                          | required | Upload a profile picture ([Profile pictures](#profile-pictures)) |
+| DELETE   | `/api/user/image`                          | required | Remove the profile picture                        |
+| GET      | `/api/profile-images/:id`                  |          | An uploaded profile picture                       |
 | GET      | `/api/profiles/:username`                  | optional | Get a profile                                     |
 | POST     | `/api/profiles/:username/follow`           | required | Follow a user                                     |
 | DELETE   | `/api/profiles/:username/follow`           | required | Unfollow a user                                   |
@@ -61,6 +64,20 @@ Auth: **required** endpoints return 401 without a valid token; **optional** ones
 | GET      | `/api/images/:id`                          |          | A game image the data refers to (icons, banners)  |
 | POST     | `/api/duties/refresh`                      | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header) |
 | POST     | `/api/duties/refresh/images`               | key      | Download the next batch of game images            |
+
+## Profile pictures
+
+People upload a profile picture instead of typing a URL.
+
+- **`PUT /api/user/image`** takes the file itself as the request body (any content type) and returns the updated user, whose `image` is the picture's URL, `<BASE_URL>/api/profile-images/<id>`. The previous upload is deleted.
+- **Limits:** at most **1 MB** and **1024 × 1024 pixels**, PNG, JPEG, WebP or GIF. The format and size are read from the file's bytes, never from the client's content type, so nothing else (an SVG, a script) is ever stored or served. Breaking a limit returns 413 (size) or 422 (pixels, format) with a message saying what to change.
+- **`DELETE /api/user/image`** goes back to the default picture and deletes the upload.
+- **`GET /api/profile-images/:id`** serves a picture with its detected type, `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy`. Each upload gets a new id, so it is cached for a year.
+- `PUT /api/user` still accepts an `image` URL, as the RealWorld API defines.
+
+## Error messages
+
+Errors keep the RealWorld shape, `{"errors": {"body": ["…"]}}`. The sign-up, sign-in and settings endpoints return messages written for the person filling in the form (`src/users/user-fields.ts`), all of them at once: "Enter a valid email address, like name@example.com.", "That username is taken. Try another one.", "Wrong email or password." (which never says whether the email exists).
 
 ## FFXIV duties
 
@@ -86,7 +103,7 @@ The Frontline daily map isn't in the game data, so it is computed without any AP
 
 The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. There are four collections: `users`, `follows`, `articles` and `comments`. The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
+- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments` and `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
 - **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
