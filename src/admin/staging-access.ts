@@ -22,8 +22,17 @@ interface SyncResult {
 // writes the whole list, so the database's roles are the source of truth and
 // a missed sync is fixed by the next one.
 interface StagingAccess {
+  // Whether this backend can update the Access group at all.
+  readonly connected: boolean;
   sync(emails: string[]): Promise<SyncResult>;
 }
+
+// The settings that connect a backend to the Access group.
+const STAGING_ACCESS_SETTINGS = {
+  apiToken: 'CF_ACCESS_API_TOKEN',
+  accountId: 'CF_ACCOUNT_ID',
+  groupId: 'CF_ACCESS_GROUP_ID',
+} as const;
 
 class CloudflareStagingAccess implements StagingAccess {
   constructor(
@@ -32,13 +41,18 @@ class CloudflareStagingAccess implements StagingAccess {
       (fetch as unknown as Fetch)(url, init)
   ) {}
 
+  get connected() {
+    return this.missingSettings().length === 0;
+  }
+
   async sync(emails: string[]): Promise<SyncResult> {
     const {apiToken, accountId, groupId} = this.settings;
     if (!apiToken || !accountId || !groupId) {
       return {
         synced: false,
-        message:
-          "Staging access isn't connected on this backend, so update the staging Access policy by hand.",
+        message: `Staging access isn't connected on this backend (missing ${this.missingSettings().join(
+          ', '
+        )}), so the role is saved but the staging Access list wasn't changed.`,
       };
     }
     if (emails.length === 0) {
@@ -87,6 +101,13 @@ class CloudflareStagingAccess implements StagingAccess {
       return failed((err as Error).message);
     }
   }
+
+  // The names of the settings this backend lacks to update the group.
+  missingSettings(): string[] {
+    return Object.entries(STAGING_ACCESS_SETTINGS)
+      .filter(([key]) => !this.settings[key as keyof StagingAccessSettings])
+      .map(([, name]) => name);
+  }
 }
 
 function failed(reason: string): SyncResult {
@@ -100,6 +121,7 @@ function failed(reason: string): SyncResult {
 export {
   CloudflareStagingAccess,
   Fetch,
+  STAGING_ACCESS_SETTINGS,
   StagingAccess,
   StagingAccessSettings,
   SyncResult,

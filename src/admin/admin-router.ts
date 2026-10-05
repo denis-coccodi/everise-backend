@@ -58,14 +58,40 @@ class AdminRouter {
 
     router.use('/admin', this.auth.requireAuth, requireAdmin);
 
-    router.get('/admin/users', async (_req, res, next) => {
-      try {
-        const members = await this.usersService.listMembers();
-        return res.json({users: members.map(memberDto)});
-      } catch (err) {
-        return next(err);
+    // A page of members, optionally only those whose username or email
+    // contains `search`; `usersCount` is how many match in all.
+    router.get(
+      '/admin/users',
+      celebrate({
+        [Segments.QUERY]: Joi.object().keys({
+          search: Joi.string().allow('').max(100),
+          limit: Joi.number().integer().min(1).max(100),
+          offset: Joi.number().integer().min(0),
+        }),
+      }),
+      async (req, res, next) => {
+        try {
+          // Validated above; Express 5 keeps the query as strings.
+          const query = req.query as Record<string, string | undefined>;
+          const search = query.search ?? '';
+          const limit = query.limit ? Number(query.limit) : 20;
+          const offset = query.offset ? Number(query.offset) : 0;
+          const {users, count} = await this.usersService.searchMembers(
+            search,
+            limit,
+            offset
+          );
+          return res.json({
+            users: users.map(memberDto),
+            usersCount: count,
+            // Whether role changes reach the staging Access list.
+            stagingAccessConnected: this.stagingAccess.connected,
+          });
+        } catch (err) {
+          return next(err);
+        }
       }
-    });
+    );
 
     router.put(
       '/admin/users/:username/role',

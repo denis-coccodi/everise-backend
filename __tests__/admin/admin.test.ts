@@ -109,6 +109,54 @@ describe('roles', () => {
     expect(users.map(u => u.username)).not.toContain('Tataru');
   });
 
+  test('finds members by part of their username or email, any case, a page at a time', async () => {
+    const admin = as(await adminToken());
+    const tag = `zz${Date.now()}`;
+    const names = ['Alisaie', 'Estinien', 'Krile'].map(name => `${name}${tag}`);
+    for (const name of names) {
+      await usersClient.registerUser(
+        `${name.toLowerCase()}@example.com`,
+        name,
+        'password123'
+      );
+    }
+
+    const all = await admin.get(`/api/admin/users?search=${tag.toUpperCase()}`);
+    expect(all.status).toBe(200);
+    expect(all.body.usersCount).toBe(3);
+    expect(all.body.users.map((u: {username: string}) => u.username)).toEqual(
+      names
+    );
+
+    const byEmail = await admin.get(`/api/admin/users?search=estinien${tag}@`);
+    expect(
+      byEmail.body.users.map((u: {username: string}) => u.username)
+    ).toEqual([names[1]]);
+
+    const page = await admin.get(
+      `/api/admin/users?search=${tag}&limit=2&offset=2`
+    );
+    expect(page.body.usersCount).toBe(3);
+    expect(page.body.users.map((u: {username: string}) => u.username)).toEqual([
+      names[2],
+    ]);
+
+    expect((await admin.get('/api/admin/users?limit=0')).status).toBe(422);
+    expect((await admin.get('/api/admin/users?limit=101')).status).toBe(422);
+  });
+
+  test('says whether role changes reach the staging Access list', async () => {
+    const admin = as(await adminToken());
+
+    expect(
+      (await admin.get('/api/admin/users')).body.stagingAccessConnected
+    ).toBe(true);
+    staging.connected = false;
+    const response = await admin.get('/api/admin/users');
+    staging.connected = true;
+    expect(response.body.stagingAccessConnected).toBe(false);
+  });
+
   test("can't change an admin, give Tataru a role, or give an unknown role", async () => {
     const admin = as(await adminToken());
     await admin.get('/api/admin/tataru');

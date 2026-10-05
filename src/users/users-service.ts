@@ -222,6 +222,22 @@ class UsersService {
       .sort((a, b) => a.username.localeCompare(b.username));
   }
 
+  // A page of members whose username or email contains `search` (any
+  // case), by username, with how many match in all.
+  async searchMembers(search: string, limit: number, offset: number) {
+    const term = search.trim().toLowerCase();
+    const matches = (await this.listMembers()).filter(
+      user =>
+        !term ||
+        user.username.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term)
+    );
+    return {
+      users: matches.slice(offset, offset + limit),
+      count: matches.length,
+    };
+  }
+
   // Gives a member a role. Admins come from the configuration, and system
   // accounts have none.
   async setRole(username: string, role: AssignableRole): Promise<User> {

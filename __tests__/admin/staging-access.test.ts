@@ -65,8 +65,20 @@ describe('CloudflareStagingAccess', () => {
     ]);
 
     expect(result.synced).toBe(false);
-    expect(result.message).toContain("isn't connected");
+    expect(result.message).toContain(
+      "isn't connected on this backend (missing CF_ACCESS_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_GROUP_ID)"
+    );
     expect(calls).toHaveLength(0);
+
+    const partly = new CloudflareStagingAccess(
+      {apiToken: 't', accountId: 'a'},
+      fetchFn
+    );
+    expect(partly.connected).toBe(false);
+    expect((await partly.sync(['a@x.test'])).message).toContain(
+      '(missing CF_ACCESS_GROUP_ID)'
+    );
+    expect(new CloudflareStagingAccess(settings, fetchFn).connected).toBe(true);
   });
 
   test('reports a refusal from Cloudflare', async () => {
