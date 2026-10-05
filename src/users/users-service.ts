@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcryptjs';
+import {randomBytes} from 'crypto';
 import {Joi} from 'celebrate';
 import {Db, Doc} from '../db';
 import {AlreadyExistsError, NotFoundError} from '../errors';
@@ -18,7 +19,20 @@ interface UserDoc extends Doc {
   passwordHash: string;
   bio?: string;
   image?: string;
+  // An account the app posts as, e.g. Tataru for guests. Nobody can sign in
+  // as it: its password is random and never stored anywhere else.
+  system?: boolean;
 }
+
+interface SystemUserParams {
+  username: string;
+  email: string;
+  bio: string;
+  image: string;
+}
+
+// Usernames kept for system accounts, compared without case.
+const RESERVED_USERNAMES = ['tataru'];
 
 function toUser(doc: UserDoc): User {
   return new User(doc.id, doc.email, doc.username, doc.bio, doc.image);
@@ -139,6 +153,28 @@ class UsersService {
     return toUser(updated);
   }
 
+  // The system account with this username, created on first use.
+  async getOrCreateSystemUser(params: SystemUserParams): Promise<User> {
+    const existing = await this.findUserDoc('username', params.username);
+    if (existing?.system) {
+      return toUser(existing);
+    }
+    // A person registered the name before it was reserved: the system
+    // account takes a longer one.
+    const username = existing
+      ? `${params.username} (Everise)`
+      : params.username;
+
+    const userDoc = await this.db.create<UserDoc>(this.usersCollection, {
+      ...params,
+      username,
+      passwordHash: await this.hashPassword(randomBytes(32).toString('hex')),
+      system: true,
+    });
+
+    return toUser(userDoc);
+  }
+
   async verifyPassword(email: string, password: string): Promise<boolean> {
     const userDoc = await this.findUserDoc('email', email);
 
@@ -169,7 +205,10 @@ class UsersService {
   }
 
   private async validateUsernameOrThrow(username: string) {
-    if (await this.getUserByUsername(username)) {
+    if (
+      RESERVED_USERNAMES.includes(username.trim().toLowerCase()) ||
+      (await this.getUserByUsername(username))
+    ) {
       throw new AlreadyExistsError('That username is taken. Try another one.');
     }
   }

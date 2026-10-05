@@ -3,7 +3,8 @@ import {Joi} from 'celebrate';
 import {Db, Doc} from '../db';
 import {AlreadyExistsError, NotFoundError} from '../errors';
 import {UsersService} from '../users';
-import {Article} from './article';
+import {randomBytes} from 'crypto';
+import {Article, RouletteCard} from './article';
 import {Comment} from './comment';
 import {ProfilesService} from '../profiles';
 
@@ -12,6 +13,10 @@ interface CreateArticleParams {
   description: string;
   body: string;
   tags?: string[];
+  roulette?: RouletteCard;
+  // Adds a random suffix to the slug, for titles that repeat (roulette
+  // results), instead of rejecting a taken slug.
+  uniqueSlug?: boolean;
 }
 
 interface ListArticlesParams {
@@ -56,6 +61,7 @@ interface ArticleDoc extends Doc {
   body: string;
   tags: string[];
   favoritedBy: string[];
+  roulette?: RouletteCard;
 }
 
 interface CommentDoc extends Doc {
@@ -75,7 +81,8 @@ function toArticle(doc: ArticleDoc): Article {
     doc.tags,
     doc.favoritedBy,
     doc.createdAt,
-    doc.updatedAt
+    doc.updatedAt,
+    doc.roulette
   );
 }
 
@@ -108,7 +115,14 @@ class ArticlesService {
       throw new NotFoundError(`user "${authorId}" not found`);
     }
 
-    const slug = this.prepareSlug(params.title);
+    // Suffixed slugs also drop punctuation ("Duty Found: Sastasha" gives
+    // duty-found-sastasha-1fb67b60); other slugs keep their old form, so
+    // existing links still work.
+    const slug = params.uniqueSlug
+      ? `${slugify(params.title.toLowerCase(), {strict: true})}-${randomBytes(
+          4
+        ).toString('hex')}`
+      : this.prepareSlug(params.title);
 
     if (await this.getArticleBySlug(slug)) {
       throw new AlreadyExistsError('"slug" is taken');
@@ -128,6 +142,7 @@ class ArticlesService {
       body: params.body,
       tags,
       favoritedBy: [],
+      ...(params.roulette ? {roulette: params.roulette} : {}),
     };
 
     const articleDoc = await this.db.create<ArticleDoc>(
