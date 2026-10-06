@@ -17,7 +17,7 @@ import {
   ImagesService,
   XivApiClient,
 } from './duties';
-import {EmailSender, ResendEmailSender} from './email';
+import {emailSenderFor, EmailSender} from './email';
 import {errorHandler} from './error-handler';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
@@ -75,9 +75,7 @@ function createApp(
     socialLogin = {settings: config.socialLogin},
     discord = config.discord,
     gifSearch = {apiKey: config.giphyApiKey},
-    emailSender = config.email.resendApiKey
-      ? new ResendEmailSender(config.email.resendApiKey, config.email.from)
-      : undefined,
+    emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);

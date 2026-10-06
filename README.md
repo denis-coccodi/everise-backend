@@ -255,6 +255,8 @@ The cookie's `SameSite` value comes from `COOKIE_SAME_SITE`:
    ```
 1. Run `npm start`. The API runs on http://localhost:8080 with a local Durable Object.
 
+To try email confirmation locally, add `RESEND_API_KEY=console` to `.dev.vars`: the emails, links included, are printed in the terminal instead of being sent.
+
 Local data survives restarts. Delete `.wrangler/state` to start from an empty database. Values in `.dev.vars` override the `vars` in `wrangler.jsonc`.
 
 To check the API is up:

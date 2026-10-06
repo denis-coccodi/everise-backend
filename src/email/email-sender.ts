@@ -51,4 +51,29 @@ class ResendEmailSender implements EmailSender {
   }
 }
 
-export {EmailFetch, EmailMessage, EmailSender, ResendEmailSender};
+// Prints emails to the log instead of sending them: for local runs, with
+// RESEND_API_KEY=console in .dev.vars.
+class ConsoleEmailSender implements EmailSender {
+  async send({to, subject, text}: EmailMessage) {
+    console.log(`Email to ${to}: ${subject}\n${text}`);
+  }
+}
+
+// The sender for RESEND_API_KEY: Resend, the log ("console"), or none.
+function emailSenderFor(
+  apiKey: string | undefined,
+  from: string
+): EmailSender | undefined {
+  if (!apiKey) return undefined;
+  if (apiKey === 'console') return new ConsoleEmailSender();
+  return new ResendEmailSender(apiKey, from);
+}
+
+export {
+  ConsoleEmailSender,
+  EmailFetch,
+  EmailMessage,
+  EmailSender,
+  ResendEmailSender,
+  emailSenderFor,
+};
