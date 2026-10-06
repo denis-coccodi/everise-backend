@@ -268,6 +268,25 @@ describe('the Waking Sands room', () => {
     ]);
   });
 
+  test('a character reads only the latest 8 lines', async () => {
+    const member = await signedIn();
+    for (let i = 1; i <= 10; i++) {
+      await as(member).say(`line ${i}`);
+    }
+    await as(member).invite('tataru');
+
+    await as(member).say('line 11');
+
+    const heard = characters.asked[0]
+      .slice(1)
+      .map(message => message.content)
+      .join('\n');
+    // The 8 latest are lines 5 to 11 and the note that Tataru came in.
+    expect(heard).not.toContain('line 4\n');
+    expect(heard).toContain('line 5');
+    expect(heard).toContain('line 11');
+  });
+
   test('a member who writes while the characters are answering is answered by that round', async () => {
     const member = await signedIn();
     await as(member).invite('tataru');
