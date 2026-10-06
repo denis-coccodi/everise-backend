@@ -12,6 +12,7 @@ export {
   CharactersService,
 } from './characters-service';
 export {
+  MAX_PRESENT,
   MEMBER_SHARE,
   RoomLine,
   TURNS_EACH,
