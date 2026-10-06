@@ -1,12 +1,12 @@
 import {Db, Doc} from '../db';
 import {TooManyRequestsError} from '../errors';
-import {TataruAccount, User} from '../users';
+import {User} from '../users';
 import {
   CharacterModel,
   ModelMessage,
   secondsToMidnightUtc,
 } from './character-model';
-import {CHARACTERS, Character, characterById} from './characters';
+import {CharacterProfile, CharactersService} from './characters-service';
 
 // A line of the conversation as the site sends it: `from` is "member" or
 // a character's id.
@@ -42,40 +42,37 @@ class WakingSandsService {
   constructor(
     private readonly db: Db,
     private readonly model: CharacterModel | undefined,
-    private readonly tataru: TataruAccount,
+    private readonly charactersService: CharactersService,
     private readonly now: () => Date,
     // The Neurons this backend may spend a day (WAKING_SANDS_DAILY_NEURONS).
     // Staging and production share the account's free 10,000, so together
     // they must stay under them.
-    private readonly dailyNeurons: number,
-    private readonly siteUrl: string
+    private readonly dailyNeurons: number
   ) {}
 
   get available() {
     return !!this.model && this.dailyNeurons > 0;
   }
 
-  // The characters with their pictures (Tataru's is her account's).
+  // The characters as members see them, with their pictures.
   async characters() {
-    const tataru = await this.tataru.get();
-    return CHARACTERS.map(character => ({
+    return (await this.charactersService.all()).map(character => ({
       id: character.id,
       name: character.name,
       title: character.title,
-      image: character.picture
-        ? `${this.siteUrl}/api/waking-sands/characters/${character.id}/picture`
-        : character.id === 'tataru'
-        ? tataru.image
-        : undefined,
+      image: character.image,
     }));
   }
 
   async reply(member: User, characterIds: string[], lines: ChatLine[]) {
-    const characters = characterIds.map(id => characterById(id)!);
+    const everyone = await this.charactersService.all();
+    const characters = characterIds.map(
+      id => everyone.find(character => character.id === id)!
+    );
     const replies: Reply[] = [];
     for (const character of characters) {
       await this.checkBudget(member.id);
-      const messages = prompt(character, characters, member, [
+      const messages = prompt(character, characters, everyone, member, [
         ...lines,
         ...replies.map(reply => ({from: reply.character, text: reply.text})),
       ]);
@@ -130,8 +127,9 @@ function day(now: Date) {
 // there, then the conversation, the character's own lines as its answers
 // and everyone else's (named) as what it hears.
 function prompt(
-  character: Character,
-  present: Character[],
+  character: CharacterProfile,
+  present: CharacterProfile[],
+  everyone: CharacterProfile[],
   member: User,
   lines: ChatLine[]
 ): ModelMessage[] {
@@ -145,7 +143,7 @@ The scene: you are chatting at the Waking Sands with ${company}. ${member.userna
 How to answer:
 - Write only ${character.name}'s next line: one to four short sentences, in the first person, as spoken words. Never write lines or actions for anyone else.
 - Stay in character and in Eorzea. If asked for something from outside the game's world, answer in character and steer back.
-- Keep it friendly and suitable for all ages.
+- Swear only if your description above says you do. Whatever it says: no slurs, never mock anyone for who they are (origin, religion, gender, sexuality, disability), nothing sexual and nothing that encourages real harm. Banter, not bullying.
 - Don't spoil the story past A Realm Reborn unless ${member.username} brings it up first.
 - If someone sincerely asks whether you are an AI, say cheerfully that you are the site's AI-voiced ${character.name}.`;
 
@@ -155,7 +153,7 @@ How to answer:
     const speaker =
       line.from === 'member'
         ? member.username
-        : characterById(line.from)?.name ?? line.from;
+        : everyone.find(other => other.id === line.from)?.name ?? line.from;
     const message: ModelMessage = own
       ? {role: 'assistant', content: line.text}
       : {role: 'user', content: `${speaker}: ${line.text}`};
@@ -179,11 +177,14 @@ How to answer:
   return messages;
 }
 
-// The model's line without a "Tataru:" it may have written before it, and
-// not too long.
-function clean(text: string, character: Character) {
+// The model's line without a "Tataru:" (or "Barnaby:") it may have written
+// before it, and not too long.
+function clean(text: string, character: CharacterProfile) {
+  const names = [character.name, character.name.split(' ')[0]].map(name =>
+    name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  );
   const unnamed = text
-    .replace(new RegExp(`^\\**${character.name}\\**\\s*:\\**\\s*`, 'i'), '')
+    .replace(new RegExp(`^\\**(${names.join('|')})\\**\\s*:\\**\\s*`, 'i'), '')
     .trim();
   return unnamed.length > MAX_REPLY_LENGTH
     ? `${unnamed.slice(0, MAX_REPLY_LENGTH).trimEnd()}…`
