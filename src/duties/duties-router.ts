@@ -7,6 +7,9 @@ import {ImagesService} from './images-service';
 // Header carrying the key that allows a refresh (the DUTIES_REFRESH_KEY secret).
 const REFRESH_KEY_HEADER = 'x-refresh-key';
 
+// Answers that change at the daily reset: never kept without asking again.
+const LIVE_CACHE_CONTROL = 'no-cache';
+
 // An image id's picture doesn't change, so browsers may keep it for a week.
 const IMAGE_CACHE_CONTROL = 'public, max-age=604800';
 
@@ -22,7 +25,9 @@ class DutiesRouter {
 
     router.get('/duties', async (_req, res, next) => {
       try {
-        return res.json(await this.dutiesService.getDutyGroups());
+        return res
+          .set('Cache-Control', LIVE_CACHE_CONTROL)
+          .json(await this.dutiesService.getDutyGroups());
       } catch (err) {
         return next(err);
       }
@@ -30,11 +35,20 @@ class DutiesRouter {
 
     router.get('/frontline', async (_req, res, next) => {
       try {
-        return res.json(await this.dutiesService.getFrontline());
+        return res
+          .set('Cache-Control', LIVE_CACHE_CONTROL)
+          .json(await this.dutiesService.getFrontline());
       } catch (err) {
         return next(err);
       }
     });
+
+    // The game's daily and weekly resets, as UTC times.
+    router.get('/resets', (_req, res) =>
+      res
+        .set('Cache-Control', LIVE_CACHE_CONTROL)
+        .json(this.dutiesService.getResets())
+    );
 
     router.get('/roulettes', async (_req, res, next) => {
       try {

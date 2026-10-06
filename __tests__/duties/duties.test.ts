@@ -56,12 +56,16 @@ describe('FFXIV duties', () => {
 
   describe('before any refresh', () => {
     test('GET /api/duties should return empty lists', async () => {
+      clock.now = new Date('2026-10-04T10:00:00Z');
+
       const response = await request(app).get('/api/duties').send();
 
       expect(response.status).toBe(200);
+      expect(response.headers['cache-control']).toBe('no-cache');
       expect(response.body).toStrictEqual({
         dataVersion: null,
         fetchedAt: null,
+        dayEndsAt: '2026-10-04T15:00:00.000Z',
         groups: [],
       });
     });
@@ -119,7 +123,7 @@ describe('FFXIV duties', () => {
         dataVersion: 'test-version',
         fetchedAt: expect.any(String),
         dutyCount: 9,
-        rouletteCount: 1,
+        rouletteCount: 2,
         jobCount: 6,
         groups: [
           {name: 'Dungeons', count: 1},
@@ -287,6 +291,24 @@ describe('FFXIV duties', () => {
           description: 'A dungeon or trial will be selected at random.',
           sortKey: 4,
           image: 112034,
+        },
+        {
+          id: 3,
+          name: 'Frontline (Daily Challenge)',
+          category: 'PvP',
+          dutyType: 'PvP',
+          expansion: 'A Realm Reborn',
+          level: 30,
+          syncedFromLevel: 0,
+          itemLevel: 0,
+          itemLevelSync: 0,
+          joinPartyInProgress: true,
+          timeLimitMinutes: 20,
+          pvp: true,
+          goldSaucer: false,
+          description: "Today's Frontline map.",
+          sortKey: 20,
+          image: null,
         },
       ]);
     });
@@ -582,6 +604,21 @@ describe('FFXIV duties', () => {
         ]);
         expect(response.body.schedule[1].from).toBe('2026-10-04T15:00:00.000Z');
       });
+    });
+
+    test('the map should change at 15:00 UTC whatever the season', async () => {
+      // 17:00 in Italy in summer (CEST), 16:00 in winter (CET): the same
+      // UTC hour on either side of the clocks changing on 2026-10-25.
+      for (const [before, after] of [
+        ['2026-10-24T14:59:59Z', '2026-10-24T15:00:00Z'],
+        ['2026-10-26T14:59:59Z', '2026-10-26T15:00:00Z'],
+      ]) {
+        const day = frontlineMapAt(new Date(before));
+        expect(day.until).toStrictEqual(new Date(after));
+        expect(frontlineMapAt(new Date(after)).from).toStrictEqual(
+          new Date(after)
+        );
+      }
     });
 
     test('GET /api/frontline should work before any refresh', async () => {

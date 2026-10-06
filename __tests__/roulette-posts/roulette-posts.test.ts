@@ -265,6 +265,32 @@ describe('POST /api/roulette-results', () => {
         dutyUnknown: true,
       });
     });
+
+    test.each([
+      // Before the 15:00 UTC daily reset (17:00 in Italy in summer), and after.
+      ['2026-10-04T14:59:00Z', 'Seal Rock (Seize)'],
+      ['2026-10-04T15:00:00Z', 'the Borderland Ruins (Secure)'],
+    ])(
+      'at %s, the Frontline daily challenge should name %s',
+      async (now, map) => {
+        clock.now = new Date(now);
+
+        const response = await postAsGuest({
+          result: {
+            type: 'PvP',
+            candidate: {kind: 'roulette', id: 3},
+            mode: 'Join Party in Progress',
+          },
+        });
+
+        expect(response.status).toBe(201);
+        expect(response.body.article.roulette).toMatchObject({
+          name: 'Frontline (Daily Challenge)',
+          detail: `Map of the day: ${map}`,
+          dutyUnknown: false,
+        });
+      }
+    );
   });
 
   describe('limits', () => {

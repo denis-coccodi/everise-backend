@@ -135,6 +135,28 @@ function defaultSheets(): Record<string, Row[]> {
         },
       },
       {row_id: 2, fields: {Name: 'Hidden roulette', IsInDutyFinder: false}},
+      // The Frontline daily challenge, whose map the rotation knows.
+      {
+        row_id: 3,
+        fields: {
+          Name: 'Frontline (Daily Challenge)',
+          Category: 'PvP',
+          DutyType: 'Duty Type: PvP',
+          Description: "Today's Frontline map.\n",
+          RequiredLevel: 30,
+          SyncedFromLevel: 0,
+          ItemLevelRequired: 0,
+          ItemLevelSync: 0,
+          AllowReplacement: true,
+          TimeLimit: 20,
+          'RequiredExVersion@as(raw)': 0,
+          IsInDutyFinder: true,
+          IsPvP: true,
+          IsGoldSaucer: false,
+          SortKey: 20,
+          'Image@as(raw)': 0,
+        },
+      },
     ],
     // A class, a crafter, jobs of each discipline listed out of order, and a
     // limited job.
