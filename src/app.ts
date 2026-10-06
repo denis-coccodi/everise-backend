@@ -45,6 +45,11 @@ import {
   UsersRouter,
   UsersService,
 } from './users';
+import {
+  CharacterModel,
+  WakingSandsRouter,
+  WakingSandsService,
+} from './waking-sands';
 
 interface AppOptions {
   // Reads a picture from public/ (the Worker's static assets).
@@ -61,6 +66,9 @@ interface AppOptions {
   // Sends the email confirmation links; without one, emails aren't
   // confirmed.
   emailSender?: EmailSender;
+  // Writes the Waking Sands characters' lines (Workers AI); without one,
+  // the chat isn't open.
+  characterModel?: CharacterModel;
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -76,6 +84,7 @@ function createApp(
     discord = config.discord,
     gifSearch = {apiKey: config.giphyApiKey},
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
+    characterModel,
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -181,6 +190,11 @@ function createApp(
     profilesService
   ).router;
 
+  const wakingSandsRouter = new WakingSandsRouter(
+    auth,
+    new WakingSandsService(db, characterModel, tataru, now)
+  ).router;
+
   const app = express();
 
   app.use(
@@ -210,6 +224,8 @@ function createApp(
   app.use('/api', dutiesRouter);
 
   app.use('/api', roulettePostsRouter);
+
+  app.use('/api', wakingSandsRouter);
 
   app.use('/api', adminRouter);
 

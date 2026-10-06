@@ -25,7 +25,7 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 8 collections, no fixed schema (the cached FFXIV data is in the README).</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 9 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -229,6 +229,20 @@
   <text x="838" y="790" class="rel-label">userId</text>
   <text x="888" y="790" class="card">N : 1</text>
 
+  <!-- chatUsage: the Waking Sands replies of each day (UTC) -->
+  <g>
+    <rect x="40" y="924" width="300" height="184" rx="10" class="box"/>
+    <path d="M50,924 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
+    <text x="56" y="950" class="title">chatUsage</text>
+    <text x="324" y="950" class="key" text-anchor="end">chatUsage/&lt;day&gt;</text>
+    <rect x="52" y="973" width="26" height="16" rx="3" class="pk"/><text x="65" y="985" class="badge" text-anchor="middle">PK</text>
+    <text x="88" y="985" class="field">id</text><text x="324" y="985" class="type" text-anchor="end">YYYY-MM-DD</text>
+    <text x="88" y="1011" class="field">total</text><text x="324" y="1011" class="type" text-anchor="end">number</text>
+    <text x="88" y="1037" class="field">members</text><text x="324" y="1037" class="type" text-anchor="end">{users.id: number}</text>
+    <text x="88" y="1063" class="field">createdAt</text><text x="324" y="1063" class="type" text-anchor="end">Date</text>
+    <text x="88" y="1089" class="field">updatedAt</text><text x="324" y="1089" class="type" text-anchor="end">Date</text>
+  </g>
+
   <!-- Legend -->
   <g transform="translate(0 26)">
     <rect x="40" y="710" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
@@ -246,5 +260,5 @@
   </g>
   <!-- Footer -->
   <text x="40" y="1200" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
-  <text x="40" y="1218" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts</text>
+  <text x="40" y="1218" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts, src/waking-sands/waking-sands-service.ts</text>
 </svg>
