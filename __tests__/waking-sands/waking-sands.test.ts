@@ -1,49 +1,70 @@
 import 'jest-extended';
 import request from 'supertest';
-import {MEMBER_SHARE, WorkersAiModel} from '../../src/waking-sands';
 import {config} from '../../src/config';
 import {TooManyRequestsError, UpstreamError} from '../../src/errors';
-import {app, characters, clock, db, usersClient} from '../utils';
+import {MEMBER_SHARE, TURNS_EACH, WorkersAiModel} from '../../src/waking-sands';
+import {app, characters, clearDb, clock, db, live, usersClient} from '../utils';
 
-async function signedIn() {
-  return (await usersClient.registerRandomUser()).user as {
-    token: string;
-    username: string;
-    id: string;
-  };
+// The app may spend this many Neurons a day in the tests (utils/app.ts).
+const DAILY_NEURONS = 1000;
+
+interface Member {
+  token: string;
+  username: string;
+  id: string;
+  image: string;
 }
 
-const ask = (token: string | undefined, body: object) => {
-  const req = request(app).post('/api/waking-sands/replies').send(body);
-  return token ? req.set('authorization', `Token ${token}`) : req;
+async function signedIn() {
+  return (await usersClient.registerRandomUser()).user as Member;
+}
+
+const as = (member?: Member) => {
+  const auth = <T extends request.Test>(req: T) =>
+    member ? req.set('authorization', `Token ${member.token}`) : req;
+  return {
+    invite: (id: string) =>
+      auth(request(app).post(`/api/waking-sands/room/characters/${id}`)),
+    dismiss: (id: string) =>
+      auth(request(app).delete(`/api/waking-sands/room/characters/${id}`)),
+    say: (text: string) =>
+      auth(request(app).post('/api/waking-sands/room/lines')).send({text}),
+  };
 };
 
-const hello = {
-  characters: ['tataru'],
-  lines: [{from: 'member', text: 'Hello, Tataru!'}],
-};
+const room = async () =>
+  (await request(app).get('/api/waking-sands/room')).body;
 
-beforeEach(() => {
+// The lines of the room as "Name: text" (notes in brackets).
+const script = async (): Promise<string[]> =>
+  (await room()).lines.map((line: {from: string; name: string; text: string}) =>
+    line.from === 'note' ? `(${line.text})` : `${line.name}: ${line.text}`
+  );
+
+beforeEach(async () => {
+  await clearDb();
   characters.asked = [];
   characters.answers = [];
+  characters.directed = [];
+  characters.directions = [];
   characters.neurons = 5;
   characters.error = undefined;
+  live.events = [];
+  clock.now = undefined;
 });
 
 afterEach(() => {
   clock.now = undefined;
 });
 
-// The app may spend this many Neurons a day in the tests (utils/app.ts).
-const DAILY_NEURONS = 1000;
+describe('the Waking Sands room', () => {
+  test('shows every character with a picture, nobody in, nothing said, and that it is open', async () => {
+    const body = await room();
 
-describe('the Waking Sands characters', () => {
-  test("lists Tataru, Urianger, Y'shtola and Barnaby with their pictures, and that the chat is open", async () => {
-    const response = await request(app).get('/api/waking-sands/characters');
-
-    expect(response.status).toBe(200);
-    expect(response.body.available).toBeTrue();
-    expect(response.body.characters).toStrictEqual([
+    expect(body.available).toBeTrue();
+    expect(body.present).toEqual([]);
+    expect(body.lines).toEqual([]);
+    expect(body.characters).toStrictEqual([
       {
         id: 'tataru',
         name: 'Tataru',
@@ -84,215 +105,258 @@ describe('the Waking Sands characters', () => {
     }
   );
 
-  test('has no picture for anyone else', async () => {
-    for (const id of ['tataru', 'thancred']) {
-      const response = await request(app).get(
-        `/api/waking-sands/characters/${id}/picture`
-      );
-      expect(response.status).toBe(404);
-    }
-  });
-});
-
-describe('talking in the Waking Sands', () => {
-  test('Tataru answers the member', async () => {
+  test('a member brings characters in and sends them out, for everyone, live', async () => {
     const member = await signedIn();
-    characters.answers = ['Oh! Welcome to the Waking Sands!'];
 
-    const response = await ask(member.token, hello);
+    const invited = await as(member).invite('tataru');
+    await as(member).invite('barnaby');
+    const dismissed = await as(member).dismiss('tataru');
 
-    expect(response.status).toBe(200);
-    expect(response.body.replies).toStrictEqual([
-      {character: 'tataru', text: 'Oh! Welcome to the Waking Sands!'},
+    expect(invited.status).toBe(200);
+    expect(invited.body.present).toEqual(['tataru']);
+    expect(dismissed.body.present).toEqual(['barnaby']);
+    expect((await room()).present).toEqual(['barnaby']);
+    expect(await script()).toEqual([
+      `(${member.username} invited Tataru in.)`,
+      `(${member.username} invited Barnaby Bollocksworth in.)`,
+      `(Tataru leaves; ${member.username} saw them out.)`,
     ]);
-  });
-
-  test('tells the model who she is and who she is talking to', async () => {
-    const member = await signedIn();
-
-    await ask(member.token, {
-      characters: ['tataru'],
-      lines: [
-        {from: 'member', text: 'Hi!'},
-        {from: 'tataru', text: 'Hello there!'},
-        {from: 'member', text: 'How much gil do the Scions have?'},
-      ],
-    });
-
-    const [messages] = characters.asked;
-    expect(messages[0].role).toBe('system');
-    expect(messages[0].content).toContain('Tataru Taru');
-    expect(messages[0].content).toContain(member.username);
-    // Swearing is up to the character; the limits aren't.
-    expect(messages[0].content).toContain('Swear only if your description');
-    expect(messages[0].content).toContain('no slurs');
-    expect(messages.slice(1)).toStrictEqual([
-      {role: 'user', content: `${member.username}: Hi!`},
-      {role: 'assistant', content: 'Hello there!'},
-      {
-        role: 'user',
-        content: `${member.username}: How much gil do the Scions have?`,
-      },
-    ]);
-  });
-
-  test('keeps the turns alternating, starting with the member', async () => {
-    const member = await signedIn();
-
-    await ask(member.token, {
-      characters: ['tataru'],
-      lines: [
-        {from: 'tataru', text: 'Welcome!'},
-        {from: 'member', text: 'Hi!'},
-        {from: 'member', text: 'Are you busy?'},
-      ],
-    });
-
-    expect(characters.asked[0].slice(1)).toStrictEqual([
-      {role: 'user', content: `${member.username} walks in.`},
-      {role: 'assistant', content: 'Welcome!'},
-      {
-        role: 'user',
-        content: `${member.username}: Hi!\n${member.username}: Are you busy?`,
-      },
-    ]);
-  });
-
-  test('sends only the latest lines', async () => {
-    const member = await signedIn();
-    const lines = Array.from({length: 30}, (_, i) => ({
-      from: 'member',
-      text: `line ${i}`,
-    }));
-
-    await ask(member.token, {characters: ['tataru'], lines});
-
-    const content = characters.asked[0][1].content;
-    expect(content).not.toContain('line 17\n');
-    expect(content).toContain('line 18');
-    expect(content).toContain('line 29');
-  });
-
-  test('everyone present answers in turn, hearing the others', async () => {
-    const member = await signedIn();
-    characters.answers = [
-      'Welcome, welcome!',
-      'Verily, the stars foretold thy coming.',
-      'Must you always be so dramatic, Urianger?',
-    ];
-
-    const response = await ask(member.token, {
-      characters: ['tataru', 'urianger', 'yshtola'],
-      lines: [{from: 'member', text: 'Hello, everyone!'}],
-    });
-
-    expect(response.body.replies).toStrictEqual([
-      {character: 'tataru', text: 'Welcome, welcome!'},
-      {character: 'urianger', text: 'Verily, the stars foretold thy coming.'},
-      {
-        character: 'yshtola',
-        text: 'Must you always be so dramatic, Urianger?',
-      },
-    ]);
-    const yshtola = characters.asked[2];
-    expect(yshtola[0].content).toContain("Y'shtola Rhul");
-    expect(yshtola[0].content).toContain(
-      `${member.username}, Tataru, Urianger`
-    );
-    expect(yshtola[1]).toStrictEqual({
-      role: 'user',
-      content: [
-        `${member.username}: Hello, everyone!`,
-        'Tataru: Welcome, welcome!',
-        'Urianger: Verily, the stars foretold thy coming.',
-      ].join('\n'),
+    expect(live.events).toContainEqual({
+      type: 'sands-presence',
+      present: ['tataru', 'barnaby'],
     });
   });
 
-  test('drops a name the model wrote before her line', async () => {
-    const member = await signedIn();
-    characters.answers = ['**Tataru:** A modest fee, of course!'];
-
-    const response = await ask(member.token, hello);
-
-    expect(response.body.replies[0].text).toBe('A modest fee, of course!');
-  });
-
-  test('is for signed-in members only', async () => {
-    const response = await ask(undefined, hello);
-
-    expect(response.status).toBe(401);
-    expect(characters.asked).toBeEmpty();
+  test('watching is open to all; talking and inviting need an account', async () => {
+    expect((await as().say('Hello?')).status).toBe(401);
+    expect((await as().invite('tataru')).status).toBe(401);
+    expect((await as().dismiss('tataru')).status).toBe(401);
+    expect((await request(app).get('/api/waking-sands/room')).status).toBe(200);
   });
 
   test.each([
-    ['an unknown character', {...hello, characters: ['thancred']}],
-    ['the same character twice', {...hello, characters: ['tataru', 'tataru']}],
-    ['no character', {...hello, characters: []}],
-    ['no lines', {...hello, lines: []}],
-    [
-      'a last line that is not the member’s',
-      {...hello, lines: [{from: 'tataru', text: 'Hi'}]},
-    ],
-    [
-      'a line that is too long',
-      {...hello, lines: [{from: 'member', text: 'a'.repeat(1001)}]},
-    ],
-  ])('refuses %s', async (_case, body) => {
-    const member = await signedIn();
-
-    const response = await ask(member.token, body);
+    ['an empty line', ''],
+    ['a line that is too long', 'a'.repeat(1001)],
+  ])('refuses %s', async (_case, text) => {
+    const response = await as(await signedIn()).say(text);
 
     expect(response.status).toBe(422);
+  });
+
+  test('refuses an unknown character, or sending out one who is not in', async () => {
+    const member = await signedIn();
+
+    expect((await as(member).invite('thancred')).status).toBe(422);
+    expect((await as(member).dismiss('tataru')).status).toBe(404);
+  });
+
+  test('members talk with each other when no character is in', async () => {
+    const [alisaie, alphinaud] = [await signedIn(), await signedIn()];
+
+    const said = await as(alisaie).say('Anyone here?');
+    await as(alphinaud).say('Just me.');
+
+    expect(said.status).toBe(201);
+    expect(said.body.line).toMatchObject({
+      from: 'member',
+      name: alisaie.username,
+      memberId: alisaie.id,
+      text: 'Anyone here?',
+    });
+    expect(await script()).toEqual([
+      `${alisaie.username}: Anyone here?`,
+      `${alphinaud.username}: Just me.`,
+    ]);
     expect(characters.asked).toBeEmpty();
+    expect(characters.directed).toBeEmpty();
+  });
+
+  test('a character alone answers once, with no director', async () => {
+    const member = await signedIn();
+    await as(member).invite('tataru');
+    characters.answers = ['Oh! Welcome!'];
+
+    await as(member).say('Hello, Tataru!');
+
+    expect((await script()).slice(1)).toEqual([
+      `${member.username}: Hello, Tataru!`,
+      'Tataru: Oh! Welcome!',
+    ]);
+    expect(characters.directed).toBeEmpty();
+    expect(live.events).toContainEqual({
+      type: 'sands-writing',
+      character: 'tataru',
+    });
+    expect(live.events[live.events.length - 1]).toEqual({
+      type: 'sands-writing',
+      character: null,
+    });
+  });
+
+  test('with several in, the director picks who speaks, and they answer each other until a pause', async () => {
+    const member = await signedIn();
+    await as(member).invite('barnaby');
+    await as(member).invite('yshtola');
+    characters.directions = ['Barnaby', "Y'shtola", 'NONE'];
+    characters.answers = [
+      'Slew Titan with a spoon, I did.',
+      'You were hiding behind a rock, Barnaby.',
+    ];
+
+    await as(member).say('Barnaby, how did you slay Titan?');
+
+    expect((await script()).slice(2)).toEqual([
+      `${member.username}: Barnaby, how did you slay Titan?`,
+      'Barnaby Bollocksworth: Slew Titan with a spoon, I did.',
+      "Y'shtola: You were hiding behind a rock, Barnaby.",
+    ]);
+    const [first, second] = characters.directed;
+    expect(first[0].content).toContain("Someone must answer the member's");
+    expect(first[0].content).not.toContain('or NONE');
+    expect(second[0].content).toContain('or NONE');
+    expect(second[1].content).toContain(
+      'Barnaby Bollocksworth: Slew Titan with a spoon, I did.'
+    );
+  });
+
+  test(`each character speaks at most ${TURNS_EACH} times before a member speaks again`, async () => {
+    const member = await signedIn();
+    await as(member).invite('barnaby');
+    await as(member).invite('yshtola');
+    characters.directions = Array.from({length: 20}, (_, i) =>
+      i % 2 ? "Y'shtola" : 'Barnaby'
+    );
+
+    await as(member).say('Go on then, argue.');
+
+    expect(characters.asked).toHaveLength(2 * TURNS_EACH);
+  });
+
+  test('someone always answers a member, even if the director says nobody', async () => {
+    const member = await signedIn();
+    await as(member).invite('tataru');
+    await as(member).invite('urianger');
+    characters.directions = ['NONE'];
+
+    await as(member).say('Urianger, what do the stars say?');
+
+    expect((await script()).slice(-1)[0]).toBe('Urianger: Hello!');
+  });
+
+  test('tells each character who is there and what was said', async () => {
+    const [minfilia, thancred] = [await signedIn(), await signedIn()];
+    await as(minfilia).invite('tataru');
+    await as(thancred).say('Morning, all.');
+    characters.asked = [];
+
+    await as(minfilia).say('Tataru, any gil to spare?');
+
+    const [messages] = characters.asked;
+    expect(messages[0].content).toStartWith('You are Tataru Taru');
+    expect(messages[0].content).toContain(
+      `with ${thancred.username}, ${minfilia.username}.`
+    );
+    expect(messages[0].content).toContain('Swear only if your description');
+    expect(messages[0].content).toContain('no slurs');
+    expect(messages.slice(1)).toEqual([
+      {role: 'user', content: `${thancred.username}: Morning, all.`},
+      {role: 'assistant', content: 'Hello!'},
+      {
+        role: 'user',
+        content: `${minfilia.username}: Tataru, any gil to spare?`,
+      },
+    ]);
+  });
+
+  test('a member who writes while the characters are answering is answered by that round', async () => {
+    const member = await signedIn();
+    await as(member).invite('tataru');
+    await db.set('sandsRoom', 'room', {
+      present: ['tataru'],
+      busyUntil: Date.now() + 60_000,
+    });
+
+    const response = await as(member).say('Me too!');
+
+    expect(response.status).toBe(201);
+    expect(characters.asked).toBeEmpty();
+  });
+
+  test('keeps the last day of lines', async () => {
+    const member = await signedIn();
+    clock.now = new Date('2026-10-06T10:00:00Z');
+    await as(member).say('Yesterday.');
+    clock.now = new Date('2026-10-07T09:00:00Z');
+    await as(member).say('This morning.');
+
+    clock.now = new Date('2026-10-07T10:30:00Z');
+    expect(await script()).toEqual([`${member.username}: This morning.`]);
+  });
+
+  test("a model failure ends the round with a note, keeping the member's line", async () => {
+    const member = await signedIn();
+    await as(member).invite('tataru');
+    characters.error = new UpstreamError('down');
+
+    const response = await as(member).say('Hello?');
+
+    expect(response.status).toBe(201);
+    expect((await script()).slice(-2)).toEqual([
+      `${member.username}: Hello?`,
+      '(The room falls quiet: nobody could answer just now.)',
+    ]);
   });
 
   test(`lets a member spend ${
     MEMBER_SHARE * 100
   }% of the day's Neurons`, async () => {
     const member = await signedIn();
+    await as(member).invite('tataru');
     clock.now = new Date('2026-10-06T22:00:00Z');
     characters.neurons = 50;
     const allowed = (DAILY_NEURONS * MEMBER_SHARE) / characters.neurons;
     for (let i = 0; i < allowed; i++) {
-      expect((await ask(member.token, hello)).status).toBe(200);
+      expect((await as(member).say('Hi')).status).toBe(201);
     }
 
-    const refused = await ask(member.token, hello);
+    const refused = await as(member).say('Hi');
 
     expect(refused.status).toBe(429);
     expect(refused.headers['retry-after']).toBe(String(2 * 60 * 60));
     expect(refused.body.errors.body[0]).toContain('need their rest');
     expect(characters.asked).toHaveLength(allowed);
     // Someone else still can.
-    const other = await signedIn();
-    expect((await ask(other.token, hello)).status).toBe(200);
+    expect((await as(await signedIn()).say('Hi')).status).toBe(201);
 
     clock.now = new Date('2026-10-07T00:00:01Z');
-    expect((await ask(member.token, hello)).status).toBe(200);
+    expect((await as(member).say('Hi')).status).toBe(201);
   });
 
   test("stops for everyone once the site's Neurons for the day are spent", async () => {
     const member = await signedIn();
+    await as(member).invite('tataru');
     clock.now = new Date('2026-10-06T12:00:00Z');
     await db.set('chatUsage', '2026-10-06', {
       neurons: DAILY_NEURONS,
       members: {},
     });
 
-    const refused = await ask(member.token, hello);
+    const refused = await as(member).say('Hello?');
 
     expect(refused.status).toBe(429);
     expect(refused.body.errors.body[0]).toContain('closed');
     expect(characters.asked).toBeEmpty();
   });
 
-  test('counts what each reply cost', async () => {
+  test('counts every call, the director included, to the member who spoke', async () => {
     const member = await signedIn();
+    await as(member).invite('tataru');
+    await as(member).invite('yshtola');
     clock.now = new Date('2026-10-08T12:00:00Z');
     characters.neurons = 3.5;
+    characters.directions = ['Tataru', 'NONE'];
 
-    await ask(member.token, {...hello, characters: ['tataru', 'yshtola']});
+    await as(member).say('Hello!');
 
     const usage = await db.get<{
       id: string;
@@ -301,8 +365,9 @@ describe('talking in the Waking Sands', () => {
       neurons: number;
       members: Record<string, number>;
     }>('chatUsage', '2026-10-08');
-    expect(usage?.neurons).toBe(7);
-    expect(usage?.members).toEqual({[member.id]: 7});
+    // Two director calls and one line.
+    expect(usage?.neurons).toBe(10.5);
+    expect(usage?.members).toEqual({[member.id]: 10.5});
   });
 });
 

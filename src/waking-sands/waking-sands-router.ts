@@ -1,5 +1,6 @@
 import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
+import {StatusCodes} from 'http-status-codes';
 import {NotFoundError, UpstreamError} from '../errors';
 import {Auth} from '../middleware';
 import {LoadBundledPicture} from '../users';
@@ -7,13 +8,22 @@ import {CHARACTERS, characterById} from './characters';
 import {WakingSandsService} from './waking-sands-service';
 
 const CHARACTER_IDS = CHARACTERS.map(character => character.id);
-const MAX_LINES = 40;
 const MAX_LINE_LENGTH = 1000;
 // A picture can change with a deploy, so it's cached for a day, not for good.
 const PICTURE_CACHE_CONTROL = 'public, max-age=86400';
 
-// The Waking Sands: chatting with FINAL FANTASY XIV characters. Signed in
-// only, so the day's free AI budget is shared fairly among members.
+const characterParam = celebrate({
+  [Segments.PARAMS]: Joi.object().keys({
+    id: Joi.string()
+      .valid(...CHARACTER_IDS)
+      .required(),
+  }),
+});
+
+// The Waking Sands: one room where members talk with FINAL FANTASY XIV
+// characters, and each other. Anyone can watch; talking and bringing
+// characters in needs an account, so the day's free AI budget is shared
+// fairly among members. Lines arrive live over GET /api/live.
 class WakingSandsRouter {
   constructor(
     private readonly auth: Auth,
@@ -24,17 +34,74 @@ class WakingSandsRouter {
   get router() {
     const router = express.Router();
 
-    // Who can join a conversation, and whether the chat is set up at all.
-    router.get('/waking-sands/characters', async (_req, res, next) => {
+    // The room: the characters, who's in it, and the day's lines.
+    router.get('/waking-sands/room', async (_req, res, next) => {
       try {
-        return res.json({
-          available: this.wakingSands.available,
-          characters: await this.wakingSands.characters(),
-        });
+        return res.json(await this.wakingSands.room());
       } catch (err) {
         return next(err);
       }
     });
+
+    // Brings a character into the room, for everyone.
+    router.post(
+      '/waking-sands/room/characters/:id',
+      this.auth.requireAuth,
+      characterParam,
+      async (req, res, next) => {
+        try {
+          this.requireOpen();
+          const present = await this.wakingSands.invite(
+            req.user!,
+            req.params.id
+          );
+          return res.json({present});
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
+
+    // Sends a character out of the room.
+    router.delete(
+      '/waking-sands/room/characters/:id',
+      this.auth.requireAuth,
+      characterParam,
+      async (req, res, next) => {
+        try {
+          const present = await this.wakingSands.dismiss(
+            req.user!,
+            req.params.id
+          );
+          return res.json({present});
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
+
+    // A member's line. The characters' answers are pushed live as they're
+    // written; the request ends when they're done.
+    router.post(
+      '/waking-sands/room/lines',
+      this.auth.requireAuth,
+      celebrate({
+        [Segments.BODY]: Joi.object()
+          .keys({
+            text: Joi.string().trim().min(1).max(MAX_LINE_LENGTH).required(),
+          })
+          .required(),
+      }),
+      async (req, res, next) => {
+        try {
+          this.requireOpen();
+          const line = await this.wakingSands.say(req.user!, req.body.text);
+          return res.status(StatusCodes.CREATED).json({line});
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
 
     // A character's picture, shipped with the backend (public/). Served
     // under /api so the site reaches it through its own address.
@@ -58,60 +125,13 @@ class WakingSandsRouter {
       }
     );
 
-    // The characters' answers to the member's latest line. `characters` are
-    // who's in the conversation, answering in that order; `lines` its latest
-    // lines, oldest first, ending with the member's.
-    router.post(
-      '/waking-sands/replies',
-      this.auth.requireAuth,
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            characters: Joi.array()
-              .items(Joi.string().valid(...CHARACTER_IDS))
-              .min(1)
-              .unique()
-              .required(),
-            lines: Joi.array()
-              .items(
-                Joi.object().keys({
-                  from: Joi.string()
-                    .valid('member', ...CHARACTER_IDS)
-                    .required(),
-                  text: Joi.string().trim().max(MAX_LINE_LENGTH).required(),
-                })
-              )
-              .min(1)
-              .max(MAX_LINES)
-              .custom((lines: {from: string}[], helpers) =>
-                lines[lines.length - 1].from === 'member'
-                  ? lines
-                  : helpers.message({
-                      custom: 'The last line must be yours.',
-                    })
-              )
-              .required(),
-          })
-          .required(),
-      }),
-      async (req, res, next) => {
-        try {
-          if (!this.wakingSands.available) {
-            throw new UpstreamError("The Waking Sands isn't open yet.");
-          }
-          const replies = await this.wakingSands.reply(
-            req.user!,
-            req.body.characters,
-            req.body.lines
-          );
-          return res.json({replies});
-        } catch (err) {
-          return next(err);
-        }
-      }
-    );
-
     return router;
+  }
+
+  private requireOpen() {
+    if (!this.wakingSands.available) {
+      throw new UpstreamError("The Waking Sands isn't open yet.");
+    }
   }
 }
 

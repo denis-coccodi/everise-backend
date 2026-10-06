@@ -78,18 +78,18 @@ describe('editing the Waking Sands characters', () => {
       persona: 'You are Urianger, and you only ever answer in riddles.',
       edited: {title: true, persona: true},
     });
-    const listed = await request(app).get('/api/waking-sands/characters');
+    const listed = await request(app).get('/api/waking-sands/room');
     expect(listed.body.characters[1].title).toBe('Keeper of riddles');
 
     model.asked = [];
     const member = (await usersClient.registerRandomUser()).user;
     await request(app)
-      .post('/api/waking-sands/replies')
+      .post('/api/waking-sands/room/characters/urianger')
+      .set('authorization', `Token ${member.token}`);
+    await request(app)
+      .post('/api/waking-sands/room/lines')
       .set('authorization', `Token ${member.token}`)
-      .send({
-        characters: ['urianger'],
-        lines: [{from: 'member', text: 'Hello'}],
-      });
+      .send({text: 'Hello'});
     expect(model.asked[0][0].content).toStartWith(
       'You are Urianger, and you only ever answer in riddles.'
     );
@@ -150,7 +150,7 @@ describe('editing the Waking Sands characters', () => {
     expect(second.body.character.image).not.toBe(firstImage);
     expect((await request(app).get(path(firstImage))).status).toBe(404);
 
-    const listed = await request(app).get('/api/waking-sands/characters');
+    const listed = await request(app).get('/api/waking-sands/room');
     expect(listed.body.characters[3].image).toBe(second.body.character.image);
   });
 

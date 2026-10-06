@@ -1,5 +1,9 @@
 import {URL} from 'url';
-import {LiveEvent, LiveFeed} from '../live/live-feed';
+import {
+  ArticleEvent as ArticleCreated,
+  LiveEvent,
+  LiveFeed,
+} from '../live/live-feed';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
@@ -7,7 +11,7 @@ type DiscordFetch = (
   init?: {method?: string; headers?: Record<string, string>; body?: string}
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
-type ArticleEvent = LiveEvent['article'];
+type ArticleEvent = ArticleCreated['article'];
 
 // The crest's red, the colour of the line beside each announcement.
 const EVERISE_RED = 0xb3362f;
