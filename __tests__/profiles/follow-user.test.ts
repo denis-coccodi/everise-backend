@@ -22,6 +22,7 @@ describe('POST /api/profiles/:username/follow', () => {
       expect(followUserResponse.status).toBe(200);
       expect(followUserResponse.body).toStrictEqual({
         profile: {
+          id: expect.any(String),
           username: followee.user.username,
           following: true,
           bio: followee.user.bio,
@@ -92,7 +93,7 @@ describe('POST /api/profiles/:username/follow', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`username "${followeeUsername}" not found`],
+        body: [`user "${followeeUsername}" not found`],
       },
     });
   });

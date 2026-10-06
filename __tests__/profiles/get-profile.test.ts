@@ -31,6 +31,7 @@ describe('POST /api/profiles/:username/follow', () => {
         expect(response.status).toBe(200);
         expect(response.body).toStrictEqual({
           profile: {
+            id: expect.any(String),
             username: updatedFollowee.user.username,
             following: false,
             bio: updatedFollowee.user.bio,
@@ -68,6 +69,7 @@ describe('POST /api/profiles/:username/follow', () => {
         expect(response.status).toBe(200);
         expect(response.body).toStrictEqual({
           profile: {
+            id: expect.any(String),
             username: updatedFollowee.user.username,
             following: true,
             bio: updatedFollowee.user.bio,
@@ -98,6 +100,7 @@ describe('POST /api/profiles/:username/follow', () => {
         expect(response.status).toBe(200);
         expect(response.body).toStrictEqual({
           profile: {
+            id: expect.any(String),
             username: updatedFollowee.user.username,
             following: false,
             bio: updatedFollowee.user.bio,
@@ -118,7 +121,7 @@ describe('POST /api/profiles/:username/follow', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`username "${followeeUsername}" not found`],
+        body: [`user "${followeeUsername}" not found`],
       },
     });
   });

@@ -196,6 +196,12 @@ class UsersService {
     return userDoc && toUser(userDoc);
   }
 
+  // A member by id, or by the username in a link from before profiles had
+  // ids in their links (a username can change, an id can't).
+  async findUser(key: string): Promise<User | undefined> {
+    return (await this.getUserById(key)) ?? (await this.getUserByUsername(key));
+  }
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     const userDoc = await this.findUserDoc('username', username);
 
@@ -336,10 +342,12 @@ class UsersService {
 
   // Gives a member a role. Admins come from the configuration, and system
   // accounts have none.
-  async setRole(username: string, role: AssignableRole): Promise<User> {
-    const doc = await this.findUserDoc('username', username);
+  async setRole(key: string, role: AssignableRole): Promise<User> {
+    const found = await this.findUser(key);
+    const doc =
+      found && (await this.db.get<UserDoc>(this.usersCollection, found.id));
     if (!doc || doc.system) {
-      throw new NotFoundError(`user "${username}" not found`);
+      throw new NotFoundError(`user "${key}" not found`);
     }
     if (isAdminEmail(doc.email)) {
       throw new InvalidRoleError(

@@ -78,7 +78,6 @@ class RoulettePostsService {
       body: guest ? this.guestLine() : text,
       tags: ['roulette'],
       roulette: card,
-      uniqueSlug: true,
     });
 
     await this.recordPost(limitKey, guest);

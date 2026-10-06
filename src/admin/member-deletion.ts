@@ -39,10 +39,10 @@ class MemberDeletion {
     private readonly mediaService: MediaService
   ) {}
 
-  async delete(username: string): Promise<DeletedMember> {
-    const user = await this.usersService.getUserByUsername(username);
+  async delete(key: string): Promise<DeletedMember> {
+    const user = await this.usersService.findUser(key);
     if (!user || user.system) {
-      throw new NotFoundError(`user "${username}" not found`);
+      throw new NotFoundError(`user "${key}" not found`);
     }
     if (user.role === 'admin') {
       throw new InvalidRoleError(

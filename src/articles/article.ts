@@ -21,7 +21,8 @@ class Article {
   constructor(
     readonly id: string,
     readonly authorId: string,
-    readonly slug: string,
+    // Only on posts from before posts had ids in their links.
+    readonly slug: string | undefined,
     readonly title: string,
     readonly description: string,
     readonly body: string,

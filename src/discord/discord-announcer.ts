@@ -53,7 +53,7 @@ class DiscordAnnouncer implements LiveFeed {
   }
 
   private message(article: ArticleEvent) {
-    const link = `${this.siteUrl}/article/${encodeURIComponent(article.slug)}`;
+    const link = `${this.siteUrl}/article/${encodeURIComponent(article.id)}`;
     const author = article.author.username;
     const roulette = article.roulette;
     const embed = {

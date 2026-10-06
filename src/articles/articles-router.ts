@@ -30,6 +30,7 @@ class CommentDto {
       updatedAt: comment.updatedAt.toISOString(),
       body: comment.body,
       author: {
+        id: author.id,
         username: author.username,
         bio: author.bio,
         image:
@@ -103,17 +104,17 @@ class ArticlesRouter {
     );
 
     router.post(
-      '/articles/:slug/favorite',
+      '/articles/:id/favorite',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const user = req.user!;
 
-          const {slug} = req.params;
+          const {id} = req.params;
 
-          await this.articlesService.favoriteArticleBySlug(slug, user.id);
+          await this.articlesService.favoriteArticle(id, user.id);
 
-          const article = (await this.articlesService.getArticleBySlug(slug))!;
+          const article = await this.articlesService.requireArticle(id);
 
           const authorProfile = await this.profilesService.getProfile(
             article.authorId
@@ -129,7 +130,7 @@ class ArticlesRouter {
     );
 
     router.post(
-      '/articles/:slug/comments',
+      '/articles/:id/comments',
       celebrate({
         [Segments.BODY]: Joi.object()
           .keys({
@@ -146,12 +147,12 @@ class ArticlesRouter {
         try {
           const author = req.user!;
 
-          const {slug} = req.params;
+          const {id} = req.params;
 
           const {body} = req.body.comment;
 
-          const comment = await this.articlesService.addCommentBySlug(
-            slug,
+          const comment = await this.articlesService.addCommentTo(
+            id,
             author.id,
             body
           );
@@ -226,17 +227,13 @@ class ArticlesRouter {
     );
 
     router.get(
-      '/articles/:slug',
+      '/articles/:id',
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {slug} = req.params;
+          const {id} = req.params;
 
-          const article = await this.articlesService.getArticleBySlug(slug);
-
-          if (!article) {
-            throw new NotFoundError(`slug "${slug}" not found`);
-          }
+          const article = await this.articlesService.requireArticle(id);
 
           let authorProfile: Profile;
           let favorited = false;
@@ -278,6 +275,7 @@ class ArticlesRouter {
         try {
           const {
             tag,
+            // A member's id (or, from old links, their username).
             author: authorUsername,
             favorited: favoritedByUsername,
             limit: limitString,
@@ -286,7 +284,7 @@ class ArticlesRouter {
 
           let authorId;
           if (authorUsername) {
-            const author = await this.usersService.getUserByUsername(
+            const author = await this.usersService.findUser(
               authorUsername as string
             );
 
@@ -299,7 +297,7 @@ class ArticlesRouter {
 
           let favoritedByUserId;
           if (favoritedByUsername) {
-            const favoritedByUser = await this.usersService.getUserByUsername(
+            const favoritedByUser = await this.usersService.findUser(
               favoritedByUsername as string
             );
 
@@ -381,11 +379,11 @@ class ArticlesRouter {
     });
 
     router.get(
-      '/articles/:slug/comments',
+      '/articles/:id/comments',
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {slug} = req.params;
+          const {id} = req.params;
 
           const comments = await this.articlesService.listComments({
             orderBy: [
@@ -394,7 +392,7 @@ class ArticlesRouter {
                 direction: 'desc',
               },
             ],
-            slug,
+            article: id,
           });
 
           // TODO(Marcus): Optimize this. Maybe get a list of profiles and then merge.
@@ -419,7 +417,7 @@ class ArticlesRouter {
     );
 
     router.put(
-      '/articles/:slug',
+      '/articles/:id',
       celebrate({
         [Segments.BODY]: Joi.object()
           .keys({
@@ -439,13 +437,9 @@ class ArticlesRouter {
         try {
           const author = req.user!;
 
-          const {slug} = req.params;
+          const {id} = req.params;
 
-          const article = await this.articlesService.getArticleBySlug(slug);
-
-          if (!article) {
-            throw new NotFoundError(`slug "${slug}" not found`);
-          }
+          const article = await this.articlesService.requireArticle(id);
 
           if (author.id !== article.authorId) {
             throw new UnauthorizedError(
@@ -483,19 +477,15 @@ class ArticlesRouter {
     );
 
     router.delete(
-      '/articles/:slug',
+      '/articles/:id',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const author = req.user!;
 
-          const {slug} = req.params;
+          const {id} = req.params;
 
-          const article = await this.articlesService.getArticleBySlug(slug);
-
-          if (!article) {
-            throw new NotFoundError(`slug "${slug}" not found`);
-          }
+          const article = await this.articlesService.requireArticle(id);
 
           if (author.id !== article.authorId) {
             throw new UnauthorizedError(
@@ -503,7 +493,7 @@ class ArticlesRouter {
             );
           }
 
-          await this.articlesService.deleteArticleBySlug(slug);
+          await this.articlesService.deleteArticle(article.id);
 
           return res.sendStatus(StatusCodes.NO_CONTENT);
         } catch (err) {
@@ -513,17 +503,17 @@ class ArticlesRouter {
     );
 
     router.delete(
-      '/articles/:slug/favorite',
+      '/articles/:id/favorite',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const user = req.user!;
 
-          const {slug} = req.params;
+          const {id} = req.params;
 
-          await this.articlesService.unfavoriteArticleBySlug(slug, user.id);
+          await this.articlesService.unfavoriteArticle(id, user.id);
 
-          const article = (await this.articlesService.getArticleBySlug(slug))!;
+          const article = await this.articlesService.requireArticle(id);
 
           const authorProfile = await this.profilesService.getProfile(
             article.authorId
@@ -539,13 +529,13 @@ class ArticlesRouter {
     );
 
     router.delete(
-      '/articles/:slug/comments/:commentId',
+      '/articles/:id/comments/:commentId',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const author = req.user!;
 
-          const {slug, commentId} = req.params;
+          const {id, commentId} = req.params;
 
           const comment = await this.articlesService.getCommentById(commentId);
 
@@ -559,15 +549,11 @@ class ArticlesRouter {
             );
           }
 
-          const article = await this.articlesService.getArticleBySlug(slug);
-
-          if (!article) {
-            throw new NotFoundError(`slug "${slug}" not found`);
-          }
+          const article = await this.articlesService.requireArticle(id);
 
           if (comment.articleId !== article.id) {
             throw new NotFoundError(
-              `comment "${commentId}" not found in article with slug ${slug}`
+              `comment "${commentId}" not found in post ${id}`
             );
           }
 

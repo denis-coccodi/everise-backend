@@ -150,4 +150,15 @@ async function clearDb() {
   await db.clear();
 }
 
-export {app, clearDb, clock, discord, giphy, live, providers, staging, xivApi};
+export {
+  app,
+  clearDb,
+  clock,
+  db,
+  discord,
+  giphy,
+  live,
+  providers,
+  staging,
+  xivApi,
+};

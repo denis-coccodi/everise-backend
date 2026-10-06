@@ -22,11 +22,11 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .set('authorization', `Token ${commentAuthor.user.token}`)
         .send();
 
@@ -34,7 +34,7 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
       expect(response.body).toBeEmpty();
 
       const articleComments = await articlesClient.getCommentsFromArticle(
-        article.article.slug
+        article.article.id
       );
 
       expect(articleComments.comments).toBeEmpty();
@@ -52,7 +52,7 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
     const aComment = await articlesClient.addRandomComment(
       aCommentAuthor.user.token,
-      anArticle.article.slug
+      anArticle.article.id
     );
 
     const slug = slugify(faker.lorem.sentence());
@@ -65,7 +65,7 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -81,13 +81,13 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
     await articlesClient.addRandomComment(
       aCommentAuthor.user.token,
-      article.article.slug
+      article.article.id
     );
 
     const commentId = faker.datatype.uuid();
 
     const response = await request(app)
-      .delete(makeDeleteCommentUrl(article.article.slug, commentId))
+      .delete(makeDeleteCommentUrl(article.article.id, commentId))
       .set('authorization', `Token ${aCommentAuthor.user.token}`)
       .send();
 
@@ -113,11 +113,11 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .set('authorization', `Token ${user.user.token}`)
         .send();
 
@@ -140,11 +140,11 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .send();
 
       expect(response.status).toBe(401);
@@ -168,11 +168,11 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -199,11 +199,11 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -226,7 +226,7 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
 
       const comment = await articlesClient.addRandomComment(
         commentAuthor.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const expiresInSeconds = 1;
@@ -239,7 +239,7 @@ describe('DELETE /api/articles/:slug/comments/:commentId', () => {
       await new Promise(r => setTimeout(r, expiresInSeconds * 1000 + 1));
 
       const response = await request(app)
-        .delete(makeDeleteCommentUrl(article.article.slug, comment.comment.id))
+        .delete(makeDeleteCommentUrl(article.article.id, comment.comment.id))
         .set('authorization', `Token ${token}`)
         .send();
 

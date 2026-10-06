@@ -40,19 +40,19 @@ describe('DELETE /api/admin/users/:username', () => {
     const {article: theirs} = await articlesClient.createRandomArticle(
       gone.token
     );
-    await articlesClient.addRandomComment(other.token, theirs.slug);
+    await articlesClient.addRandomComment(other.token, theirs.id);
     // Someone else's post, which they commented on and favourited, and which
     // the other member favourited too.
     const {article: kept} = await articlesClient.createRandomArticle(
       other.token
     );
-    await articlesClient.addRandomComment(gone.token, kept.slug);
+    await articlesClient.addRandomComment(gone.token, kept.id);
     const {comment: keptComment} = await articlesClient.addRandomComment(
       other.token,
-      kept.slug
+      kept.id
     );
-    await articlesClient.favoriteArticle(gone.token, kept.slug);
-    await articlesClient.favoriteArticle(other.token, kept.slug);
+    await articlesClient.favoriteArticle(gone.token, kept.id);
+    await articlesClient.favoriteArticle(other.token, kept.id);
     // Follows both ways, and a picture.
     await profilesClient.followUser(gone.token, other.username);
     await profilesClient.followUser(other.token, gone.username);
@@ -95,20 +95,20 @@ describe('DELETE /api/admin/users/:username', () => {
       ).status
     ).toBe(401);
     // Their post and its comments, their picture.
-    expect(
-      (await request(app).get(`/api/articles/${theirs.slug}`)).status
-    ).toBe(404);
+    expect((await request(app).get(`/api/articles/${theirs.id}`)).status).toBe(
+      404
+    );
     expect((await request(app).get(picture)).status).toBe(404);
     expect(
       (await request(app).get(`/api/media/${media.body.media.id}`)).status
     ).toBe(404);
     // The other post stays, without their comment or favourite.
     const article = await request(app)
-      .get(`/api/articles/${kept.slug}`)
+      .get(`/api/articles/${kept.id}`)
       .set('authorization', `Token ${other.token}`);
     expect(article.body.article.favoritesCount).toBe(1);
     expect(article.body.article.favorited).toBe(true);
-    const {comments} = await articlesClient.getCommentsFromArticle(kept.slug);
+    const {comments} = await articlesClient.getCommentsFromArticle(kept.id);
     expect(comments.map((c: {id: string}) => c.id)).toEqual([keptComment.id]);
     // Nothing of theirs is left in the other member's feed.
     const feed = await request(app)

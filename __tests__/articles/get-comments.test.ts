@@ -27,23 +27,23 @@ describe('GET /api/articles/:slug/comments', () => {
 
         const comment1 = await articlesClient.addRandomComment(
           author1.user.token,
-          article.article.slug
+          article.article.id
         );
 
         const comment2 = await articlesClient.addRandomComment(
           author2.user.token,
-          article.article.slug
+          article.article.id
         );
 
         const comment3 = await articlesClient.addRandomComment(
           author1.user.token,
-          article.article.slug
+          article.article.id
         );
 
         await profilesClient.followUser(user.user.token, author1.user.username);
 
         const response = await request(app)
-          .get(makeGetCommentsUrl(article.article.slug))
+          .get(makeGetCommentsUrl(article.article.id))
           .set('authorization', `Token ${user.user.token}`)
           .send();
 
@@ -56,6 +56,7 @@ describe('GET /api/articles/:slug/comments', () => {
               updatedAt: comment3.comment.updatedAt,
               body: comment3.comment.body,
               author: {
+                id: expect.any(String),
                 username: author1.user.username,
                 bio: author1.user.bio,
                 image: author1.user.image,
@@ -68,6 +69,7 @@ describe('GET /api/articles/:slug/comments', () => {
               updatedAt: comment2.comment.updatedAt,
               body: comment2.comment.body,
               author: {
+                id: expect.any(String),
                 username: author2.user.username,
                 bio: author2.user.bio,
                 image: author2.user.image,
@@ -80,6 +82,7 @@ describe('GET /api/articles/:slug/comments', () => {
               updatedAt: comment1.comment.updatedAt,
               body: comment1.comment.body,
               author: {
+                id: expect.any(String),
                 username: author1.user.username,
                 bio: author1.user.bio,
                 image: author1.user.image,
@@ -105,7 +108,7 @@ describe('GET /api/articles/:slug/comments', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -127,7 +130,7 @@ describe('GET /api/articles/:slug/comments', () => {
       };
 
       const response = await request(app)
-        .get(makeGetCommentsUrl(article.article.slug))
+        .get(makeGetCommentsUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(requestBody);
 
@@ -157,7 +160,7 @@ describe('GET /api/articles/:slug/comments', () => {
       };
 
       const response = await request(app)
-        .get(makeGetCommentsUrl(article.article.slug))
+        .get(makeGetCommentsUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(requestBody);
 
@@ -192,7 +195,7 @@ describe('GET /api/articles/:slug/comments', () => {
       };
 
       const response = await request(app)
-        .get(makeGetCommentsUrl(article.article.slug))
+        .get(makeGetCommentsUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(requestBody);
 

@@ -19,7 +19,7 @@ describe('DELETE /api/articles/:slug', () => {
       );
 
       const deleteArticleResponse = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send();
 
@@ -27,7 +27,7 @@ describe('DELETE /api/articles/:slug', () => {
       expect(deleteArticleResponse.body).toBeEmpty();
 
       const getArticleResponse = await request(app)
-        .get(makeDeleteArticleUrl(article.article.slug))
+        .get(makeDeleteArticleUrl(article.article.id))
         .send();
 
       expect(getArticleResponse.status).toBe(404);
@@ -47,7 +47,7 @@ describe('DELETE /api/articles/:slug', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -61,7 +61,7 @@ describe('DELETE /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .send();
 
       expect(response.status).toBe(401);
@@ -82,7 +82,7 @@ describe('DELETE /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -103,7 +103,7 @@ describe('DELETE /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .set('authorization', `Token ${user.user.token}`)
         .send();
 
@@ -127,7 +127,7 @@ describe('DELETE /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -156,7 +156,7 @@ describe('DELETE /api/articles/:slug', () => {
       await new Promise(r => setTimeout(r, expiresInSeconds * 1000 + 1));
 
       const response = await request(app)
-        .delete(makeDeleteArticleUrl(article.article.slug))
+        .delete(makeDeleteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 

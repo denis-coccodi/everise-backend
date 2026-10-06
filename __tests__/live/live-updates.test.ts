@@ -89,7 +89,7 @@ describe('live updates', () => {
 
       expect(response.status).toBe(201);
       const saved = await request(app).get(
-        `/api/articles/${response.body.article.slug}`
+        `/api/articles/${response.body.article.id}`
       );
       expect(saved.status).toBe(200);
     });

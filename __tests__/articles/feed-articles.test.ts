@@ -47,7 +47,7 @@ describe('GET /api/articles/feed', () => {
 
       await articlesClient.favoriteArticle(
         user.user.token,
-        article1.article.slug
+        article1.article.id
       );
 
       const response = await request(app)
@@ -116,7 +116,7 @@ describe('GET /api/articles/feed', () => {
 
       await articlesClient.favoriteArticle(
         user.user.token,
-        article1.article.slug
+        article1.article.id
       );
 
       const response = await request(app)
@@ -211,7 +211,7 @@ describe('GET /api/articles/feed', () => {
 
       await articlesClient.favoriteArticle(
         user.user.token,
-        article1.article.slug
+        article1.article.id
       );
 
       const response = await request(app)

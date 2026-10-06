@@ -9,7 +9,8 @@ class ArticleDto {
 
   constructor(article: Article, favorited: boolean, author: Profile) {
     this.article = {
-      slug: article.slug,
+      // What identifies the post in links and API paths. Never its title.
+      id: article.id,
       title: article.title,
       description: article.description,
       body: article.body,
@@ -21,6 +22,7 @@ class ArticleDto {
       // Only on roulette results, so other articles keep the RealWorld shape.
       ...(article.roulette ? {roulette: article.roulette} : {}),
       author: {
+        id: author.id,
         username: author.username,
         bio: author.bio,
         image:

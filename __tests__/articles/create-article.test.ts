@@ -33,7 +33,7 @@ describe('POST /api/articles', () => {
       expect(response.status).toBe(201);
       expect(response.body).toStrictEqual({
         article: {
-          slug: 'tired-of-falling-from-the-sky-this-is-how-to-train-your-dragon!',
+          id: expect.any(String),
           title:
             'Tired of falling from the sky? This is how to train your dragon!',
           description: requestBody.article.description,
@@ -44,6 +44,7 @@ describe('POST /api/articles', () => {
           favorited: false,
           favoritesCount: 0,
           author: {
+            id: expect.any(String),
             username: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
@@ -73,7 +74,7 @@ describe('POST /api/articles', () => {
       expect(response.status).toBe(201);
       expect(response.body).toStrictEqual({
         article: {
-          slug: 'tired-of-falling-from-the-sky-this-is-how-to-train-your-dragon!',
+          id: expect.any(String),
           title:
             'Tired of falling from the sky? This is how to train your dragon!',
           description: requestBody.article.description,
@@ -84,6 +85,7 @@ describe('POST /api/articles', () => {
           favorited: false,
           favoritesCount: 0,
           author: {
+            id: expect.any(String),
             username: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
@@ -119,7 +121,7 @@ describe('POST /api/articles', () => {
       });
     });
 
-    test('given title results in taken slug should return http status code 422 and an errors object', async () => {
+    test('given the title of another post should return http status code 201 and a post of its own', async () => {
       const author = await usersClient.registerRandomUser();
 
       const existingAuthor = await usersClient.registerRandomUser();
@@ -142,12 +144,10 @@ describe('POST /api/articles', () => {
         .set('authorization', `Token ${author.user.token}`)
         .send(requestBody);
 
-      expect(response.status).toBe(422);
-      expect(response.body).toStrictEqual({
-        errors: {
-          body: ['"slug" is taken'],
-        },
-      });
+      // Posts are identified by id, so titles may repeat.
+      expect(response.status).toBe(201);
+      expect(response.body.article.title).toBe(existingArticle.article.title);
+      expect(response.body.article.id).not.toBe(existingArticle.article.id);
     });
   });
 

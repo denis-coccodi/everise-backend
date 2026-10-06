@@ -42,6 +42,7 @@ describe('POST /api/users', () => {
       expect(response.status).toBe(201);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: requestBody.user.email,
           username: requestBody.user.username,
           token: expect.not.toBeEmpty(),
