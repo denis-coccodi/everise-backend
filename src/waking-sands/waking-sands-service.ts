@@ -50,12 +50,13 @@ interface UsageDoc extends Doc {
 const MEMBER_SHARE = 1 / 4;
 // After a member's line each character may speak this many times, answering
 // the member or each other, before the room waits for a member again.
-const TURNS_EACH = 3;
+const TURNS_EACH = 2;
 // What the room keeps: the last day, and at most this many lines.
 const HISTORY_MS = 24 * 60 * 60 * 1000;
 const MAX_LINES = 200;
-// What the model sees of the conversation: the latest lines only.
-const PROMPT_LINES = 16;
+// What the model sees of the conversation: the latest lines only. Most of a
+// line's cost is reading them, so fewer lines mean cheaper answers.
+const PROMPT_LINES = 8;
 const MAX_REPLY_LENGTH = 1500;
 const BUSY_MS = 90 * 1000;
 // Members who write while a round runs are answered by the next rounds, at
@@ -65,7 +66,7 @@ const ROOM = 'room';
 
 // The Waking Sands: one room every member shares. Members bring characters
 // in or send them off, and talk; after each member's line the characters
-// answer as they see fit: at least one, each at most three times, answering
+// answer as they see fit: at least one, each at most twice, answering
 // each other too. A short "director" call to the model picks who speaks next.
 // Everything said is pushed live to everyone on the page.
 class WakingSandsService {
