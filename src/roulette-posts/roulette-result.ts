@@ -135,7 +135,8 @@ function buildRouletteCard(
   }
 
   const {roulette} = candidate;
-  // The Frontline daily challenge plays today's map, which is known.
+  // The Frontline daily challenge plays the day's map, which is known. Not
+  // "Today": the post is still read once the map has changed.
   const frontline =
     roulette.pvp && roulette.name.includes('Frontline')
       ? data.groups.flatMap(g => g.duties).find(d => d.activeFrontline)
@@ -144,7 +145,7 @@ function buildRouletteCard(
     type: input.type,
     name: roulette.name,
     detail: frontline
-      ? `Today: ${frontline.name}`
+      ? `Map of the day: ${frontline.name}`
       : [roulette.dutyType, 'the game picks the duty']
           .filter(Boolean)
           .join(' · '),

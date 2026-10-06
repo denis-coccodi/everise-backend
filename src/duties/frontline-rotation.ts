@@ -1,3 +1,5 @@
+import {DAY_MS, ResetPeriod, gameDayAt} from './resets';
+
 // The Frontline daily challenge plays one map a day, in a fixed cycle that the
 // game data doesn't contain, so it is kept here and computed without any API
 // call. Source: the community wiki's rotation template,
@@ -17,29 +19,21 @@ const ROTATION = [
   'Worqor Chirteh (Triumph)',
 ];
 
-// The start of a day on which ROTATION[0] was the map. Days start at the
-// daily reset, 15:00 UTC.
+// The start of a day on which ROTATION[0] was the map. The map changes with
+// the daily reset (see resets.ts).
 const ROTATION_START = Date.UTC(2025, 10, 13, 15);
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-interface FrontlineDay {
+interface FrontlineDay extends ResetPeriod {
   map: string;
-  from: Date;
-  until: Date;
 }
 
 // The Frontline map in play at `at`, and the day it is in play.
 function frontlineMapAt(at: Date): FrontlineDay {
-  const day = Math.floor((at.getTime() - ROTATION_START) / DAY_MS);
+  const {from, until} = gameDayAt(at);
+  const day = Math.round((from.getTime() - ROTATION_START) / DAY_MS);
   const index = ((day % ROTATION.length) + ROTATION.length) % ROTATION.length;
-  const from = new Date(ROTATION_START + day * DAY_MS);
 
-  return {
-    map: ROTATION[index],
-    from,
-    until: new Date(from.getTime() + DAY_MS),
-  };
+  return {map: ROTATION[index], from, until};
 }
 
 // The map in play at `at`, followed by the next days' maps.

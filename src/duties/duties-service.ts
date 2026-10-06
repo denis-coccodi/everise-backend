@@ -5,6 +5,7 @@ import {
   frontlineSchedule,
   isSameMap,
 } from './frontline-rotation';
+import {gameDayAt, gameWeekAt} from './resets';
 import {ImagesService} from './images-service';
 import {XivApiClient} from './xivapi-client';
 
@@ -93,14 +94,18 @@ class DutiesService {
     };
   }
 
+  // activeFrontline holds until dayEndsAt, the next daily reset: a page left
+  // open past it reads the duties again.
   async getDutyGroups(): Promise<
-    RefreshInfo & {groups: DutyGroup<DutyStatus>[]}
+    RefreshInfo & {dayEndsAt: string; groups: DutyGroup<DutyStatus>[]}
   > {
     const docs = await this.findGroups();
-    const isActive = this.isActiveFrontline(frontlineMapAt(this.now()).map);
+    const today = frontlineMapAt(this.now());
+    const isActive = this.isActiveFrontline(today.map);
 
     return {
       ...(await this.getRefreshInfo()),
+      dayEndsAt: today.until.toISOString(),
       groups: docs.map(({name, order, icon, duties}) => ({
         name,
         order,
@@ -132,6 +137,20 @@ class DutiesService {
     );
 
     return {active: schedule[0], schedule};
+  }
+
+  // The game day and week in progress, each from its last reset to its next.
+  getResets() {
+    const now = this.now();
+    const iso = ({from, until}: {from: Date; until: Date}) => ({
+      from: from.toISOString(),
+      until: until.toISOString(),
+    });
+    return {
+      now: now.toISOString(),
+      daily: iso(gameDayAt(now)),
+      weekly: iso(gameWeekAt(now)),
+    };
   }
 
   private findGroups() {
