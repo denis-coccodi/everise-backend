@@ -47,6 +47,7 @@ import {
 } from './users';
 import {
   CharacterModel,
+  CharactersService,
   WakingSandsRouter,
   WakingSandsService,
 } from './waking-sands';
@@ -154,13 +155,23 @@ function createApp(
     new GifSearch(gifSearch.apiKey, gifSearch.fetch)
   ).router;
 
+  // The Waking Sands characters, as admins edited them.
+  const charactersService = new CharactersService(
+    db,
+    usersService,
+    profileImagesService,
+    tataru,
+    config.baseUrl
+  );
+
   const adminRouter = new AdminRouter(
     auth,
     usersService,
     profileImagesService,
     tataru,
     stagingAccess,
-    new MemberDeletion(db, usersService, profileImagesService, mediaService)
+    new MemberDeletion(db, usersService, profileImagesService, mediaService),
+    charactersService
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
@@ -196,10 +207,9 @@ function createApp(
     new WakingSandsService(
       db,
       wakingSands.model,
-      tataru,
+      charactersService,
       now,
-      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
-      config.baseUrl
+      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons
     ),
     loadBundledPicture
   ).router;

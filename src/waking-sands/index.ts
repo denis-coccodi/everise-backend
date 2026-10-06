@@ -6,5 +6,10 @@ export {
   WorkersAiModel,
 } from './character-model';
 export {CHARACTERS, Character} from './characters';
+export {
+  CharacterChanges,
+  CharacterProfile,
+  CharactersService,
+} from './characters-service';
 export {MEMBER_SHARE, WakingSandsService} from './waking-sands-service';
 export {WakingSandsRouter} from './waking-sands-router';

@@ -15,8 +15,13 @@ import {
   uploadedImageId,
 } from '../users';
 import {bio} from '../users/user-fields';
+import {CHARACTERS, CharactersService} from '../waking-sands';
 import {MemberDeletion} from './member-deletion';
 import {StagingAccess} from './staging-access';
+
+// How long a character's personality may be: room for a detailed one, while
+// keeping each reply's prompt (and its Neurons) small.
+const MAX_PERSONA_LENGTH = 4000;
 
 // The picture shown for someone who hasn't uploaded one, as in UserDto.
 const pictureOf = (user: User) =>
@@ -45,7 +50,8 @@ function tataruDto(tataru: User) {
 
 // The admin's tools, all under /api/admin and only for admins (ADMIN_EMAILS):
 // members and their roles (a staging tester may open the staging site, kept
-// in Cloudflare Access by StagingAccess), and Tataru's profile.
+// in Cloudflare Access by StagingAccess), Tataru's profile, and the Waking
+// Sands characters.
 class AdminRouter {
   constructor(
     private readonly auth: Auth,
@@ -53,7 +59,8 @@ class AdminRouter {
     private readonly profileImagesService: ProfileImagesService,
     private readonly tataru: TataruAccount,
     private readonly stagingAccess: StagingAccess,
-    private readonly memberDeletion: MemberDeletion
+    private readonly memberDeletion: MemberDeletion,
+    private readonly characters: CharactersService
   ) {}
 
   get router() {
@@ -210,6 +217,76 @@ class AdminRouter {
         return next(err);
       }
     });
+
+    // The Waking Sands characters as admins edit them: title, personality
+    // (with the default, to go back to) and picture; Tataru's bio too.
+    router.get('/admin/characters', async (_req, res, next) => {
+      try {
+        return res.json({characters: await this.characters.all()});
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    // Changes a character; an empty title or personality goes back to the
+    // default. Only Tataru has a bio.
+    router.put(
+      '/admin/characters/:id',
+      celebrate({
+        [Segments.PARAMS]: Joi.object().keys({
+          id: Joi.string().valid(...CHARACTERS.map(character => character.id)),
+        }),
+        [Segments.BODY]: Joi.object()
+          .keys({
+            character: Joi.object()
+              .keys({
+                title: Joi.string().allow('', null).trim().max(80),
+                persona: Joi.string().allow('', null).max(MAX_PERSONA_LENGTH),
+                bio: bio(),
+              })
+              .required(),
+          })
+          .required(),
+      }),
+      async (req, res, next) => {
+        try {
+          if (
+            req.params.id !== 'tataru' &&
+            req.body.character.bio !== undefined
+          ) {
+            throw new RangeError('Only Tataru has a bio.');
+          }
+          const character = await this.characters.update(
+            req.params.id,
+            req.body.character
+          );
+          return res.json({character});
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
+
+    // A new picture for a character: the file as the request body, with the
+    // same checks as anyone's upload.
+    router.put(
+      '/admin/characters/:id/image',
+      readImageBody,
+      async (req, res, next) => {
+        try {
+          if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new InvalidImageError('Choose a picture to upload.');
+          }
+          const character = await this.characters.setPicture(
+            req.params.id,
+            new Uint8Array(req.body)
+          );
+          return res.json({character});
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
 
     return router;
   }

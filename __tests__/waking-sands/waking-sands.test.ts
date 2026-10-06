@@ -38,7 +38,7 @@ afterEach(() => {
 const DAILY_NEURONS = 1000;
 
 describe('the Waking Sands characters', () => {
-  test("lists Tataru, Urianger and Y'shtola with their pictures, and that the chat is open", async () => {
+  test("lists Tataru, Urianger, Y'shtola and Barnaby with their pictures, and that the chat is open", async () => {
     const response = await request(app).get('/api/waking-sands/characters');
 
     expect(response.status).toBe(200);
@@ -62,18 +62,27 @@ describe('the Waking Sands characters', () => {
         title: 'Sorceress of the Scions of the Seventh Dawn',
         image: `${config.baseUrl}/api/waking-sands/characters/yshtola/picture`,
       },
+      {
+        id: 'barnaby',
+        name: 'Barnaby Bollocksworth',
+        title: 'Primal hunter, sellsword and a right bad influence',
+        image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
+      },
     ]);
   });
 
-  test.each(['urianger', 'yshtola'])("serves %s's picture", async id => {
-    const response = await request(app).get(
-      `/api/waking-sands/characters/${id}/picture`
-    );
+  test.each(['urianger', 'yshtola', 'barnaby'])(
+    "serves %s's picture",
+    async id => {
+      const response = await request(app).get(
+        `/api/waking-sands/characters/${id}/picture`
+      );
 
-    expect(response.status).toBe(200);
-    expect(response.headers['content-type']).toBe('image/png');
-    expect(response.body.subarray(1, 4).toString()).toBe('PNG');
-  });
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.body.subarray(1, 4).toString()).toBe('PNG');
+    }
+  );
 
   test('has no picture for anyone else', async () => {
     for (const id of ['tataru', 'thancred']) {
@@ -114,6 +123,9 @@ describe('talking in the Waking Sands', () => {
     expect(messages[0].role).toBe('system');
     expect(messages[0].content).toContain('Tataru Taru');
     expect(messages[0].content).toContain(member.username);
+    // Swearing is up to the character; the limits aren't.
+    expect(messages[0].content).toContain('Swear only if your description');
+    expect(messages[0].content).toContain('no slurs');
     expect(messages.slice(1)).toStrictEqual([
       {role: 'user', content: `${member.username}: Hi!`},
       {role: 'assistant', content: 'Hello there!'},
