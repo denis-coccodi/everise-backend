@@ -1,5 +1,6 @@
 export {
   app,
+  characters,
   clearDb,
   clock,
   db,

@@ -28,6 +28,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 | `emailConfirmations` | userId → users, email (the address the link went to), tokenHash (SHA-256), expiresAt, lastSentAt, sendsToday, dayStartedAt (one per account; deleted when opened) | `src/users/email-confirmation.ts` (`ConfirmationDoc`) |
 | `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`) | `src/roulette-posts/roulette-posts-service.ts` |
 | `profileImages` | userId → users, contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
+| `chatUsage` | total, members ({users.id: replies}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/waking-sands-service.ts` (`UsageDoc`) |
 
 Tags and favorites have no collection of their own; they are arrays on articles.
 

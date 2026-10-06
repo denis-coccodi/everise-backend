@@ -7,6 +7,7 @@ import {Db} from './db';
 import {DurableObjectDb, EveriseDb} from './db/everise-db';
 import {HubLiveFeed, LiveHub, connectToHub} from './live/live-hub';
 import {isAllowedOrigin, isLiveRequest} from './live/live-requests';
+import {AiBinding, WorkersAiModel} from './waking-sands';
 
 // Express runs inside the Worker through Cloudflare's Node.js HTTP server
 // support: the app listens on a virtual port that the handler forwards to.
@@ -26,8 +27,12 @@ async function loadBundledPicture(path: string) {
   return response.ok ? new Uint8Array(await response.arrayBuffer()) : undefined;
 }
 
+// Workers AI, for the Waking Sands characters (the "AI" binding).
+const ai = env.AI as AiBinding | undefined;
+
 createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   loadBundledPicture,
+  characterModel: ai ? new WorkersAiModel(ai) : undefined,
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {

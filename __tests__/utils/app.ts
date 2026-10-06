@@ -8,6 +8,7 @@ import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
 import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
+import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
 import {MemoryStorage} from './memory-storage';
 
@@ -136,6 +137,21 @@ const emailSender: EmailSender = {
   },
 };
 
+// The Waking Sands' model: what it was asked, and its next answers (`answers`
+// in order, then "Hello!"); `error` makes it fail with that message.
+const characters = {
+  asked: [] as ModelMessage[][],
+  answers: [] as string[],
+  error: undefined as Error | undefined,
+};
+const characterModel: CharacterModel = {
+  async reply(messages) {
+    characters.asked.push(messages);
+    if (characters.error) throw characters.error;
+    return characters.answers.shift() ?? 'Hello!';
+  },
+};
+
 // The token in the last confirmation link sent to `email`.
 function lastConfirmationToken(email: string) {
   const message = [...mail.sent].reverse().find(m => m.to === email);
@@ -163,6 +179,7 @@ const app = createApp(
     },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
     emailSender,
+    characterModel,
   }
 );
 
@@ -172,6 +189,7 @@ async function clearDb() {
 
 export {
   app,
+  characters,
   clearDb,
   clock,
   db,
