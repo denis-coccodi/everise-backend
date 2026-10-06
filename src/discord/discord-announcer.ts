@@ -1,6 +1,5 @@
 import {URL} from 'url';
 import {LiveEvent, LiveFeed} from '../live/live-feed';
-import {firstYouTubeLink} from './youtube';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
@@ -33,7 +32,7 @@ class DiscordAnnouncer implements LiveFeed {
     // Discord previews links (and plays videos) only in messages without a
     // card of their own, so the post's first video follows the card as a
     // message of its own.
-    const video = firstYouTubeLink(article.body);
+    const video = article.media.find(item => item.kind === 'video')?.url;
     const messages = [
       this.card(article),
       ...(video ? [this.plain(video)] : []),
@@ -134,8 +133,10 @@ function imageOf(article: ArticleEvent, siteUrl: string) {
   if (article.roulette?.image) {
     return {image: {url: `${siteUrl}/api/images/${article.roulette.image}`}};
   }
-  const first = /!\[[^\]]*\]\((https:\/\/[^)\s]+)\)/.exec(article.body);
-  return first ? {image: {url: first[1]}} : {};
+  // The first image or GIF (an upload's address is the site's own, which
+  // Discord can fetch).
+  const first = article.media.find(item => item.kind !== 'video');
+  return first ? {image: {url: first.url}} : {};
 }
 
 function truncate(text: string, length: number) {

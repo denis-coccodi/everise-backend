@@ -1,3 +1,5 @@
+import {Attachment} from '../media/attachments';
+
 // A roulette result shown as a card, like the roulette's "Duty Found"
 // window. Built by the backend from its own duty data, never from the client.
 interface RouletteCard {
@@ -30,7 +32,9 @@ class Article {
     readonly favoritedBy: string[],
     readonly createdAt: Date,
     readonly updatedAt: Date,
-    readonly roulette?: RouletteCard
+    readonly roulette?: RouletteCard,
+    // Images, GIFs and videos, shown apart from the text.
+    readonly media: Attachment[] = []
   ) {}
 }
 

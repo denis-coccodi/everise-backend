@@ -1,0 +1,156 @@
+import {Joi} from 'celebrate';
+import {config} from '../config';
+import {youTubeLink, youTubeVideo} from './youtube';
+
+// An image, GIF or YouTube video attached to a post or comment, shown apart
+// from its text: in a grid in the feeds, below the text on the post's page.
+type Attachment =
+  | {
+      kind: 'image' | 'gif';
+      // An upload (this site's /api/media/:id), a GIPHY GIF, or any https
+      // image.
+      url: string;
+      // What it shows, for people who can't see it.
+      alt?: string;
+      // Its size, when known, so the page keeps its space while it loads.
+      width?: number;
+      height?: number;
+    }
+  | {
+      kind: 'video';
+      // A plain YouTube watch link.
+      url: string;
+      videoId: string;
+      start?: number;
+      alt?: string;
+    };
+
+const MAX_POST_ATTACHMENTS = 4;
+const MAX_COMMENT_ATTACHMENTS = 1;
+
+// One attachment as the site sends it. The server works out the rest (a
+// video's id, whether an image is an upload).
+const attachmentSchema = Joi.object({
+  kind: Joi.string().valid('image', 'gif', 'video').required(),
+  url: Joi.string()
+    .uri({scheme: ['https', 'http']})
+    .max(2000)
+    .required(),
+  alt: Joi.string().allow('').max(200),
+  width: Joi.number().integer().min(1).max(10000),
+  height: Joi.number().integer().min(1).max(10000),
+}).messages({
+  'string.uri': 'An attachment needs a web address.',
+  'any.only': 'An attachment is an image, a GIF or a video.',
+});
+
+function attachmentsSchema(max: number, what: string) {
+  return Joi.array()
+    .items(attachmentSchema)
+    .max(max)
+    .messages({
+      'array.max': `${what} can have at most ${max} ${
+        max === 1 ? 'image, GIF or video' : 'images, GIFs or videos'
+      }.`,
+    });
+}
+
+// Checks what the site sent and keeps only what's needed: a video must be a
+// YouTube video; images must be https (or this site, in local development).
+function cleanAttachment(input: {
+  kind: string;
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+}): Attachment {
+  const alt = input.alt?.trim() || undefined;
+  if (input.kind === 'video') {
+    const video = youTubeVideo(input.url);
+    if (!video) {
+      throw new RangeError('That video link isn’t a YouTube video.');
+    }
+    return {
+      kind: 'video',
+      url: youTubeLink(video),
+      videoId: video.id,
+      ...(video.start ? {start: video.start} : {}),
+      ...(alt ? {alt} : {}),
+    };
+  }
+  if (!input.url.startsWith('https://') && !isUpload(input.url)) {
+    throw new RangeError('Images must have an https address.');
+  }
+  return {
+    kind: input.kind === 'gif' ? 'gif' : 'image',
+    url: input.url,
+    ...(alt ? {alt} : {}),
+    ...(input.width && input.height
+      ? {width: input.width, height: input.height}
+      : {}),
+  };
+}
+
+// The upload's id when an attachment is one of this site's uploads.
+function uploadIdOf(attachment: Attachment): string | undefined {
+  if (attachment.kind === 'video' || !isUpload(attachment.url)) {
+    return undefined;
+  }
+  return attachment.url.slice(uploadPrefix().length).split(/[?#]/)[0];
+}
+
+function isUpload(url: string) {
+  return url.startsWith(uploadPrefix());
+}
+
+const uploadPrefix = () => `${config.baseUrl}/api/media/`;
+
+// Posts written before attachments had their media in the text: Markdown
+// images (![alt](address)) and YouTube links alone on a line. Read as
+// attachments, with the text left without them, so old posts show the same
+// way as new ones. Nothing is written back.
+function attachmentsFromText(text: string): {
+  attachments: Attachment[];
+  text: string;
+} {
+  const attachments: Attachment[] = [];
+  const kept: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    const image = /^!\[([^\]]*)\]\((\S+?)\)$/.exec(trimmed);
+    const video = youTubeVideo(trimmed.replace(/^<(.*)>$/, '$1'));
+    if (image && image[2].startsWith('http')) {
+      attachments.push({
+        kind: /\.gif(\?|$)|giphy\.com/i.test(image[2]) ? 'gif' : 'image',
+        url: image[2],
+        ...(image[1].trim() ? {alt: image[1].trim()} : {}),
+      });
+    } else if (video) {
+      attachments.push({
+        kind: 'video',
+        url: youTubeLink(video),
+        videoId: video.id,
+        ...(video.start ? {start: video.start} : {}),
+      });
+    } else {
+      kept.push(line);
+    }
+  }
+  return {
+    attachments,
+    text: kept
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+  };
+}
+
+export {
+  Attachment,
+  MAX_COMMENT_ATTACHMENTS,
+  MAX_POST_ATTACHMENTS,
+  attachmentsFromText,
+  attachmentsSchema,
+  cleanAttachment,
+  uploadIdOf,
+};

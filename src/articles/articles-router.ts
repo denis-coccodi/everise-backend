@@ -9,6 +9,11 @@ import {UsersService} from '../users';
 import {ArticleDto} from './article-dto';
 import {ArticlesService} from './articles-service';
 import {Comment} from './comment';
+import {
+  MAX_COMMENT_ATTACHMENTS,
+  MAX_POST_ATTACHMENTS,
+  attachmentsSchema,
+} from '../media/attachments';
 
 class MultipleArticlesDto {
   readonly articles;
@@ -29,6 +34,8 @@ class CommentDto {
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),
       body: comment.body,
+      // An image, GIF or video, or null.
+      media: comment.media,
       author: {
         id: author.id,
         username: author.username,
@@ -69,8 +76,10 @@ class ArticlesRouter {
               .keys({
                 title: Joi.string().required(),
                 description: Joi.string().required(),
-                body: Joi.string().required(),
+                // May be empty when the post has attachments.
+                body: Joi.string().allow('').required(),
                 tagList: Joi.array().items(Joi.string()),
+                media: attachmentsSchema(MAX_POST_ATTACHMENTS, 'A post'),
               })
               .required(),
           })
@@ -88,6 +97,7 @@ class ArticlesRouter {
             description: articleBody.description,
             body: articleBody.body,
             tags: articleBody.tagList,
+            media: articleBody.media,
           });
 
           const authorProfile = await this.profilesService.getProfile(
@@ -136,7 +146,9 @@ class ArticlesRouter {
           .keys({
             comment: Joi.object()
               .keys({
-                body: Joi.string().required(),
+                // May be empty when the comment has an attachment.
+                body: Joi.string().allow('').required(),
+                media: attachmentsSchema(MAX_COMMENT_ATTACHMENTS, 'A comment'),
               })
               .required(),
           })
@@ -149,12 +161,13 @@ class ArticlesRouter {
 
           const {id} = req.params;
 
-          const {body} = req.body.comment;
+          const {body, media} = req.body.comment;
 
           const comment = await this.articlesService.addCommentTo(
             id,
             author.id,
-            body
+            body,
+            media?.[0]
           );
 
           const authorProfile = await this.profilesService.getProfile(
@@ -425,8 +438,9 @@ class ArticlesRouter {
               .keys({
                 title: Joi.string(),
                 description: Joi.string(),
-                body: Joi.string(),
+                body: Joi.string().allow(''),
                 tagList: Joi.array().items(Joi.string()),
+                media: attachmentsSchema(MAX_POST_ATTACHMENTS, 'A post'),
               })
               .required(),
           })
@@ -456,6 +470,7 @@ class ArticlesRouter {
               description: articleBody.description,
               body: articleBody.body,
               tags: articleBody.tagList,
+              media: articleBody.media,
             }
           );
 

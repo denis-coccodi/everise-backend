@@ -22,6 +22,8 @@ class ArticleDto {
       updatedAt: article.updatedAt.toISOString(),
       favorited: favorited,
       favoritesCount: article.favoritedBy.length,
+      // Images, GIFs and videos, shown apart from the text.
+      media: article.media,
       // Only on roulette results, so other articles keep the RealWorld shape.
       ...(article.roulette ? {roulette: article.roulette} : {}),
       author: {

@@ -23,6 +23,10 @@ interface MediaDoc extends Doc {
   data: Uint8Array;
   // When it was uploaded (ms), by the app's clock, for the daily limit.
   uploadedAt: number;
+  // False until a post or comment uses it; a day later, an upload still
+  // unused is deleted. Unset on uploads from before attachments, which old
+  // posts use from their text: those are never swept.
+  attached?: boolean;
 }
 
 interface StoredMedia {
@@ -56,6 +60,7 @@ class MediaService {
       );
     }
     await this.checkDailyLimit(userId);
+    await this.sweepUnused(userId);
 
     const id = randomUUID();
     await this.db.set(this.collection, id, {
@@ -65,6 +70,7 @@ class MediaService {
       height: info.height,
       data,
       uploadedAt: this.now().getTime(),
+      attached: false,
     });
     return {
       id,
@@ -88,6 +94,61 @@ class MediaService {
       collection: this.collection,
       id: doc.id,
     }));
+  }
+
+  // Marks a person's uploads as used by a post or comment.
+  async claim(userId: string, ids: string[]) {
+    await this.db.batch(
+      (
+        await this.ownedOf(userId, ids)
+      ).map(doc => ({
+        op: 'update',
+        collection: this.collection,
+        id: doc.id,
+        data: {attached: true},
+      }))
+    );
+  }
+
+  // Deletes a person's uploads that a deleted post or comment (or a removed
+  // attachment) used. Someone else's upload is left alone.
+  async release(userId: string, ids: string[]) {
+    await this.db.batch(
+      (
+        await this.ownedOf(userId, ids)
+      ).map(doc => ({
+        op: 'delete',
+        collection: this.collection,
+        id: doc.id,
+      }))
+    );
+  }
+
+  private async ownedOf(userId: string, ids: string[]) {
+    const docs = await Promise.all(
+      [...new Set(ids)].map(id => this.db.get<MediaDoc>(this.collection, id))
+    );
+    return docs.filter(
+      (doc): doc is MediaDoc => !!doc && doc.userId === userId
+    );
+  }
+
+  // Uploads added to a post or comment that was never sent: deleted once
+  // they're a day old, the next time that person uploads.
+  private async sweepUnused(userId: string) {
+    const before = this.now().getTime() - DAY_MS;
+    const unused = (await this.uploadsOf(userId)).filter(
+      doc => doc.attached === false && doc.uploadedAt < before
+    );
+    if (unused.length > 0) {
+      await this.db.batch(
+        unused.map(doc => ({
+          op: 'delete',
+          collection: this.collection,
+          id: doc.id,
+        }))
+      );
+    }
   }
 
   private async checkDailyLimit(userId: string) {

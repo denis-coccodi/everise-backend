@@ -22,9 +22,9 @@ The whole database is one Durable Object instance, named `everise`, of the class
 | --- | --- | --- |
 | `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru) | `src/users/users-service.ts` (`UserDoc`) |
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
-| `articles` | authorId → users, slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
-| `comments` | articleId → articles, authorId → users, body | `src/articles/articles-service.ts` (`CommentDoc`) |
-| `media` | userId → users, contentType, width, height, data (≤ 1 MB), uploadedAt (ms, the daily limit) | `src/media/media-service.ts` (`MediaDoc`) |
+| `articles` | authorId → users, slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, media? (up to 4 attachments: image, gif or YouTube video; unset on posts from before, whose media is in the body), roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
+| `comments` | articleId → articles, authorId → users, body, media? (one attachment) | `src/articles/articles-service.ts` (`CommentDoc`) |
+| `media` | userId → users, contentType, width, height, data (≤ 1 MB), uploadedAt (ms, the daily limit), attached? (false until a post or comment uses it; swept a day later) | `src/media/media-service.ts` (`MediaDoc`) |
 | `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`) | `src/roulette-posts/roulette-posts-service.ts` |
 | `profileImages` | userId → users, contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
 
@@ -34,12 +34,12 @@ Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls 
 
 ## Updating the diagram
 
-`docs/db-structure.svg` is hand-written SVG (1200×1220) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
+`docs/db-structure.svg` is hand-written SVG (1200×1246) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
 1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
    $repo = (Get-Location).Path
-   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1220 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
+   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1246 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.

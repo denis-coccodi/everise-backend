@@ -68,7 +68,8 @@ describe('DiscordAnnouncer', () => {
       id: expect.any(String),
       title: 'Duty Found',
       description: 'A roulette result',
-      body: 'Body with ![a pic](https://example.com/pic.png)',
+      body: 'Body',
+      media: [{kind: 'image', url: 'https://example.com/pic.png'}],
       tagList: [],
       createdAt: '2026-10-06T10:00:00.000Z',
       updatedAt: '2026-10-06T10:00:00.000Z',
@@ -146,13 +147,19 @@ describe('DiscordAnnouncer', () => {
 
     await discordAnnouncer.publish(
       event({
-        body: [
-          'Look:',
-          '',
-          'https://youtu.be/dQw4w9WgXcQ?t=42',
-          '',
-          'Not this one https://youtu.be/aaaaaaaaaaa',
-        ].join('\n'),
+        // Only the first video is relayed.
+        media: [
+          {
+            kind: 'video',
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            videoId: 'dQw4w9WgXcQ',
+          },
+          {
+            kind: 'video',
+            url: 'https://www.youtube.com/watch?v=aaaaaaaaaaa',
+            videoId: 'aaaaaaaaaaa',
+          },
+        ],
       })
     );
 
@@ -171,7 +178,10 @@ describe('DiscordAnnouncer', () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
     await discordAnnouncer.publish(
-      event({body: 'A link in text: https://youtu.be/dQw4w9WgXcQ here'})
+      event({
+        body: 'A link in text: https://youtu.be/dQw4w9WgXcQ here',
+        media: [],
+      })
     );
 
     expect((sent[0] as {content: string}).content).toBe(

@@ -43,6 +43,7 @@ describe('POST /api/articles', () => {
           updatedAt: expect.toBeDateString(),
           favorited: false,
           favoritesCount: 0,
+          media: [],
           author: {
             id: expect.any(String),
             username: author.user.username,
@@ -84,6 +85,7 @@ describe('POST /api/articles', () => {
           updatedAt: expect.toBeDateString(),
           favorited: false,
           favoritesCount: 0,
+          media: [],
           author: {
             id: expect.any(String),
             username: author.user.username,

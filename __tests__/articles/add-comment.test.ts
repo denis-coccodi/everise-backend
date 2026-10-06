@@ -36,6 +36,7 @@ describe('POST /api/articles/:slug/comments', () => {
           createdAt: expect.toBeDateString(),
           updatedAt: expect.toBeDateString(),
           body: requestBody.comment.body,
+          media: null,
           author: {
             id: expect.any(String),
             username: author.user.username,

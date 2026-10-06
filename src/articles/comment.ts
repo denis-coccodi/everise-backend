@@ -1,3 +1,5 @@
+import {Attachment} from '../media/attachments';
+
 class Comment {
   private _id: string;
   private _articleId: string;
@@ -12,7 +14,9 @@ class Comment {
     authorId: string,
     body: string,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    // One image, GIF or video, shown under the text.
+    readonly media: Attachment | null = null
   ) {
     this._id = id;
     this._articleId = articleId;
