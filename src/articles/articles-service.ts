@@ -12,6 +12,7 @@ import {
   Attachment,
   attachmentsFromText,
   cleanAttachment,
+  currentAttachment,
   uploadIdOf,
 } from '../media/attachments';
 import {MediaService} from '../media/media-service';
@@ -104,7 +105,7 @@ function toArticle(doc: ArticleDoc): Article {
     doc.createdAt,
     doc.updatedAt,
     doc.roulette,
-    attachments
+    attachments.map(currentAttachment)
   );
 }
 
@@ -116,7 +117,7 @@ function toComment(doc: CommentDoc): Comment {
     doc.body,
     doc.createdAt,
     doc.updatedAt,
-    doc.media ?? null
+    doc.media ? currentAttachment(doc.media) : null
   );
 }
 

@@ -1,5 +1,5 @@
 import {Joi} from 'celebrate';
-import {config} from '../config';
+import {currentSiteUrl, sitePathRest} from '../site-urls';
 import {youTubeLink, youTubeVideo} from './youtube';
 
 // An image, GIF or YouTube video attached to a post or comment, shown apart
@@ -96,14 +96,19 @@ function uploadIdOf(attachment: Attachment): string | undefined {
   if (attachment.kind === 'video' || !isUpload(attachment.url)) {
     return undefined;
   }
-  return attachment.url.slice(uploadPrefix().length).split(/[?#]/)[0];
+  return sitePathRest(attachment.url, '/api/media/')?.split(/[?#]/)[0];
 }
 
+// One of this site's uploads, at its current address or an earlier one.
 function isUpload(url: string) {
-  return url.startsWith(uploadPrefix());
+  return sitePathRest(url, '/api/media/') !== undefined;
 }
 
-const uploadPrefix = () => `${config.baseUrl}/api/media/`;
+// The attachment at the site's current address, if saved under an earlier one.
+function currentAttachment<T extends Attachment>(attachment: T): T {
+  const url = currentSiteUrl(attachment.url);
+  return url === attachment.url ? attachment : {...attachment, url};
+}
 
 // Posts written before attachments had their media in the text: Markdown
 // images (![alt](address)) and YouTube links alone on a line. Read as
@@ -152,5 +157,6 @@ export {
   attachmentsFromText,
   attachmentsSchema,
   cleanAttachment,
+  currentAttachment,
   uploadIdOf,
 };

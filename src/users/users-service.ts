@@ -9,6 +9,7 @@ import {
   MissingEmailError,
   NotFoundError,
 } from '../errors';
+import {currentSiteUrl} from '../site-urls';
 import {AssignableRole, Role, SignInMethod, User} from './user';
 
 interface UpdateUserParams {
@@ -105,7 +106,7 @@ function toUser(doc: UserDoc): User {
     doc.email,
     doc.username,
     doc.bio,
-    doc.image,
+    currentSiteUrl(doc.image),
     doc.darkMode,
     roleOf(doc),
     !!doc.system,

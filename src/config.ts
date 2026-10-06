@@ -3,6 +3,9 @@ import {Joi} from 'celebrate';
 const envVarsSchema = Joi.object()
   .keys({
     BASE_URL: Joi.string().uri().required(),
+    // Comma-separated addresses the site had before BASE_URL. Pictures and
+    // uploads saved under them are still the site's own (src/site-urls.ts).
+    LEGACY_BASE_URLS: Joi.string().allow('').default(''),
     CORS_ORIGINS: Joi.string().required(),
     COOKIE_SAME_SITE: Joi.string()
       .valid('strict', 'lax', 'none')
@@ -59,6 +62,10 @@ if (error) {
 
 const config = {
   baseUrl: envVars.BASE_URL,
+  legacyBaseUrls: (envVars.LEGACY_BASE_URLS as string)
+    .split(',')
+    .map(url => url.trim().replace(/\/+$/, ''))
+    .filter(Boolean),
   corsOrigins: (envVars.CORS_ORIGINS as string).split(','),
   cookieSameSite: envVars.COOKIE_SAME_SITE as 'strict' | 'lax' | 'none',
   jwt: {
