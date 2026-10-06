@@ -483,10 +483,11 @@ describe('FFXIV duties', () => {
   });
 
   describe('Frontline rotation', () => {
-    // 2026-10-04 before the 15:00 UTC reset is a Seal Rock day (its second slot
-    // in the cycle); the next day is the Borderland Ruins.
-    const SEAL_ROCK_DAY = new Date('2026-10-04T10:00:00Z');
-    const BORDERLAND_RUINS_DAY = new Date('2026-10-04T15:00:00Z');
+    // 2026-10-05 before the 15:00 UTC reset is a Seal Rock day (its second slot
+    // in the cycle); the next day is the Borderland Ruins, which the game's
+    // Duty Finder showed on the morning of 2026-10-06.
+    const SEAL_ROCK_DAY = new Date('2026-10-05T10:00:00Z');
+    const BORDERLAND_RUINS_DAY = new Date('2026-10-05T15:00:00Z');
 
     function namesWhere(
       body: {groups: {duties: {name: string}[]}[]},
@@ -498,8 +499,9 @@ describe('FFXIV duties', () => {
         .map(d => d.name);
     }
 
-    test('should follow the community wiki formula', () => {
-      // The wiki template: (((unix + 32400) div 86400) - 20406) mod 8.
+    test("should follow the community wiki's formula, a day later", () => {
+      // The wiki template: (((unix + 32400) div 86400) - 20406) mod 8; the
+      // game was a day behind it on 2026-10-06, hence 20407.
       const wikiMaps = [
         'Seal Rock (Seize)',
         'the Fields of Glory (Shatter)',
@@ -513,7 +515,7 @@ describe('FFXIV duties', () => {
       const start = Date.UTC(2025, 10, 1);
       for (let hour = 0; hour < 24 * 400; hour += 5) {
         const at = new Date(start + hour * 3600 * 1000);
-        const day = Math.floor((at.getTime() / 1000 + 32400) / 86400) - 20406;
+        const day = Math.floor((at.getTime() / 1000 + 32400) / 86400) - 20407;
         expect(frontlineMapAt(at).map).toBe(wikiMaps[((day % 8) + 8) % 8]);
       }
     });
@@ -521,8 +523,8 @@ describe('FFXIV duties', () => {
     test('a day should run from one 15:00 UTC reset to the next', () => {
       expect(frontlineMapAt(SEAL_ROCK_DAY)).toStrictEqual({
         map: 'Seal Rock (Seize)',
-        from: new Date('2026-10-03T15:00:00Z'),
-        until: new Date('2026-10-04T15:00:00Z'),
+        from: new Date('2026-10-04T15:00:00Z'),
+        until: new Date('2026-10-05T15:00:00Z'),
       });
       expect(frontlineMapAt(BORDERLAND_RUINS_DAY).map).toBe(
         'the Borderland Ruins (Secure)'
@@ -584,8 +586,8 @@ describe('FFXIV duties', () => {
         expect(response.body.active).toStrictEqual({
           map: 'Seal Rock (Seize)',
           dutyId: 130,
-          from: '2026-10-03T15:00:00.000Z',
-          until: '2026-10-04T15:00:00.000Z',
+          from: '2026-10-04T15:00:00.000Z',
+          until: '2026-10-05T15:00:00.000Z',
         });
         expect(
           response.body.schedule.map(
@@ -602,7 +604,7 @@ describe('FFXIV duties', () => {
           ['Onsal Hakair (Danshig Naadam)', null],
           ['Worqor Chirteh (Triumph)', null],
         ]);
-        expect(response.body.schedule[1].from).toBe('2026-10-04T15:00:00.000Z');
+        expect(response.body.schedule[1].from).toBe('2026-10-05T15:00:00.000Z');
       });
     });
 
