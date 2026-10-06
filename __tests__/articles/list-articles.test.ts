@@ -42,7 +42,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -93,20 +93,20 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const tag = 'mytag';
 
         await articlesClient.updateArticle(
           author1.user.token,
-          article1.article.slug,
+          article1.article.id,
           {tagList: [...article1.article.tagList, tag]}
         );
 
         await articlesClient.updateArticle(
           author2.user.token,
-          article2.article.slug,
+          article2.article.id,
           {tagList: [...article2.article.tagList, tag]}
         );
 
@@ -160,7 +160,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -202,7 +202,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -247,7 +247,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -321,7 +321,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -368,7 +368,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app).get(listArticlesUrl).send();
@@ -416,20 +416,20 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const tag = 'mytag';
 
         await articlesClient.updateArticle(
           author1.user.token,
-          article1.article.slug,
+          article1.article.id,
           {tagList: [...article1.article.tagList, tag]}
         );
 
         await articlesClient.updateArticle(
           author2.user.token,
-          article2.article.slug,
+          article2.article.id,
           {tagList: [...article2.article.tagList, tag]}
         );
 
@@ -482,7 +482,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -523,7 +523,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -567,7 +567,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)
@@ -635,7 +635,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.slug
+          article1.article.id
         );
 
         const response = await request(app)

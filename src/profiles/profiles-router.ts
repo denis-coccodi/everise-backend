@@ -9,12 +9,15 @@ class ProfileDto {
   readonly profile;
 
   constructor(
+    id: string,
     username: string,
     following: boolean,
     bio?: string,
     image?: string
   ) {
     this.profile = {
+      // What identifies the member in links and API paths.
+      id,
       username,
       following,
       bio: bio || null,
@@ -34,23 +37,24 @@ class ProfilesRouter {
     const router = express.Router();
 
     router.post(
-      '/profiles/:username/follow',
+      '/profiles/:id/follow',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const follower = req.user!;
 
-          const {username} = req.params;
+          const {id} = req.params;
 
-          const followee = await this.usersService.getUserByUsername(username);
+          const followee = await this.usersService.findUser(id);
 
           if (!followee) {
-            throw new NotFoundError(`username "${username}" not found`);
+            throw new NotFoundError(`user "${id}" not found`);
           }
 
           await this.profilesService.followUser(follower.id, followee.id);
 
           const profileDto = new ProfileDto(
+            followee.id,
             followee.username,
             true,
             followee.bio,
@@ -65,16 +69,16 @@ class ProfilesRouter {
     );
 
     router.get(
-      '/profiles/:username',
+      '/profiles/:id',
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {username} = req.params;
+          const {id} = req.params;
 
-          const followee = await this.usersService.getUserByUsername(username);
+          const followee = await this.usersService.findUser(id);
 
           if (!followee) {
-            throw new NotFoundError(`username "${username}" not found`);
+            throw new NotFoundError(`user "${id}" not found`);
           }
 
           let isFollowing = false;
@@ -86,6 +90,7 @@ class ProfilesRouter {
           }
 
           const profileDto = new ProfileDto(
+            followee.id,
             followee.username,
             isFollowing,
             followee.bio,
@@ -100,23 +105,24 @@ class ProfilesRouter {
     );
 
     router.delete(
-      '/profiles/:username/follow',
+      '/profiles/:id/follow',
       this.auth.requireAuth,
       async (req, res, next) => {
         try {
           const follower = req.user!;
 
-          const {username} = req.params;
+          const {id} = req.params;
 
-          const followee = await this.usersService.getUserByUsername(username);
+          const followee = await this.usersService.findUser(id);
 
           if (!followee) {
-            throw new NotFoundError(`username "${username}" not found`);
+            throw new NotFoundError(`user "${id}" not found`);
           }
 
           await this.profilesService.unfollowUser(follower.id, followee.id);
 
           const profileDto = new ProfileDto(
+            followee.id,
             followee.username,
             false,
             followee.bio,

@@ -29,6 +29,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: requestBody.user.email,
           username: requestBody.user.username,
           token: expect.not.toBeEmpty(),
@@ -46,6 +47,7 @@ describe('PUT /api/user', () => {
       );
 
       expect(loggeduser.user).toStrictEqual({
+        id: expect.any(String),
         email: requestBody.user.email,
         username: requestBody.user.username,
         token: expect.not.toBeEmpty(),
@@ -74,6 +76,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: requestBody.user.email,
           username: user.user.username,
           token: expect.not.toBeEmpty(),
@@ -91,6 +94,7 @@ describe('PUT /api/user', () => {
       );
 
       expect(loggeduser.user).toStrictEqual({
+        id: expect.any(String),
         email: requestBody.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -119,6 +123,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: user.user.email,
           username: user.user.username,
           token: expect.not.toBeEmpty(),
@@ -136,6 +141,7 @@ describe('PUT /api/user', () => {
       );
 
       expect(loggeduser.user).toStrictEqual({
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -164,6 +170,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: user.user.email,
           username: requestBody.user.username,
           token: expect.not.toBeEmpty(),
@@ -181,6 +188,7 @@ describe('PUT /api/user', () => {
       );
 
       expect(loggeduser.user).toStrictEqual({
+        id: expect.any(String),
         email: user.user.email,
         username: requestBody.user.username,
         token: expect.not.toBeEmpty(),
@@ -209,6 +217,7 @@ describe('PUT /api/user', () => {
       expect(response.status).toBe(200);
       expect(response.body).toStrictEqual({
         user: {
+          id: expect.any(String),
           email: user.user.email,
           username: user.user.username,
           token: expect.not.toBeEmpty(),
@@ -226,6 +235,7 @@ describe('PUT /api/user', () => {
       );
 
       expect(loggeduser.user).toStrictEqual({
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -255,6 +265,7 @@ describe('PUT /api/user', () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       user: {
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -272,6 +283,7 @@ describe('PUT /api/user', () => {
     );
 
     expect(loggeduser.user).toStrictEqual({
+      id: expect.any(String),
       email: user.user.email,
       username: user.user.username,
       token: expect.not.toBeEmpty(),
@@ -300,6 +312,7 @@ describe('PUT /api/user', () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       user: {
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -314,6 +327,7 @@ describe('PUT /api/user', () => {
     const loggeduser = await usersClient.login(user.user.email, user.password);
 
     expect(loggeduser.user).toStrictEqual({
+      id: expect.any(String),
       email: user.user.email,
       username: user.user.username,
       token: expect.not.toBeEmpty(),
@@ -342,6 +356,7 @@ describe('PUT /api/user', () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       user: {
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),
@@ -356,6 +371,7 @@ describe('PUT /api/user', () => {
     const loggeduser = await usersClient.login(user.user.email, user.password);
 
     expect(loggeduser.user).toStrictEqual({
+      id: expect.any(String),
       email: user.user.email,
       username: user.user.username,
       token: expect.not.toBeEmpty(),

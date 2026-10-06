@@ -85,7 +85,7 @@ class DiscordAnnouncer implements LiveFeed {
 
   // The post as a card: title, description, author, link, picture.
   private card(article: ArticleEvent) {
-    const link = `${this.siteUrl}/article/${encodeURIComponent(article.slug)}`;
+    const link = `${this.siteUrl}/article/${encodeURIComponent(article.id)}`;
     const author = article.author.username;
     const roulette = article.roulette;
     const embed = {

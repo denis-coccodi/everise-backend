@@ -1,9 +1,8 @@
 import slugify from 'slugify';
 import {Joi} from 'celebrate';
 import {Db, Doc} from '../db';
-import {AlreadyExistsError, NotFoundError} from '../errors';
+import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
-import {randomBytes} from 'crypto';
 import {Article, RouletteCard} from './article';
 import {ArticleDto} from './article-dto';
 import {Comment} from './comment';
@@ -16,9 +15,6 @@ interface CreateArticleParams {
   body: string;
   tags?: string[];
   roulette?: RouletteCard;
-  // Adds a random suffix to the slug, for titles that repeat (roulette
-  // results), instead of rejecting a taken slug.
-  uniqueSlug?: boolean;
 }
 
 interface ListArticlesParams {
@@ -52,12 +48,15 @@ interface ListCommentsParams {
     field: 'createdAt';
     direction: 'asc' | 'desc';
   }[];
-  slug?: string;
+  // The post's id (or an old link's slug).
+  article?: string;
 }
 
 interface ArticleDoc extends Doc {
   authorId: string;
-  slug: string;
+  // Only on posts made before they had ids in their links, to keep those
+  // links working: a slug made from the title.
+  slug?: string;
   title: string;
   description: string;
   body: string;
@@ -119,19 +118,6 @@ class ArticlesService {
       throw new NotFoundError(`user "${authorId}" not found`);
     }
 
-    // Suffixed slugs also drop punctuation ("Duty Found: Sastasha" gives
-    // duty-found-sastasha-1fb67b60); other slugs keep their old form, so
-    // existing links still work.
-    const slug = params.uniqueSlug
-      ? `${slugify(params.title.toLowerCase(), {strict: true})}-${randomBytes(
-          4
-        ).toString('hex')}`
-      : this.prepareSlug(params.title);
-
-    if (await this.getArticleBySlug(slug)) {
-      throw new AlreadyExistsError('"slug" is taken');
-    }
-
     let tags: string[] = [];
 
     if (params.tags) {
@@ -140,7 +126,6 @@ class ArticlesService {
 
     const articleData = {
       authorId,
-      slug,
       title: params.title.trim(),
       description: params.description,
       body: params.body,
@@ -168,16 +153,30 @@ class ArticlesService {
     return articleDoc && toArticle(articleDoc);
   }
 
-  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+  // A post by its id, or by the slug in a link from before posts had ids
+  // in their links (made from the title), so old links keep working.
+  async findArticle(key: string): Promise<Article | undefined> {
+    const byId = await this.getArticleById(key);
+    if (byId) return byId;
+
     const [articleDoc] = await this.db.find<ArticleDoc>(
       this.articlesCollection,
       {
-        where: [{field: 'slug', op: '==', value: slug}],
+        where: [{field: 'slug', op: '==', value: key}],
         limit: 1,
       }
     );
 
     return articleDoc && toArticle(articleDoc);
+  }
+
+  // A post by its id or old slug, or NotFoundError.
+  async requireArticle(key: string): Promise<Article> {
+    const article = await this.findArticle(key);
+    if (!article) {
+      throw new NotFoundError(`post "${key}" not found`);
+    }
+    return article;
   }
 
   async listArticles(params: ListArticlesParams) {
@@ -297,14 +296,9 @@ class ArticlesService {
       throw new NotFoundError(`article "${articleId}" not found`);
     }
 
+    // The title can change freely: the post's id, not its title, is in
+    // its links.
     if (params.title && params.title !== articleData.title) {
-      const slug = this.prepareSlug(params.title);
-
-      if (slug !== articleData.slug && (await this.getArticleBySlug(slug))) {
-        throw new AlreadyExistsError('"slug" is taken');
-      }
-
-      articleData.slug = slug;
       articleData.title = params.title;
     }
 
@@ -328,7 +322,6 @@ class ArticlesService {
       this.articlesCollection,
       articleId,
       {
-        slug: articleData.slug,
         title: articleData.title,
         description: articleData.description,
         body: articleData.body,
@@ -340,12 +333,8 @@ class ArticlesService {
     return toArticle(updatedDoc!);
   }
 
-  async deleteArticleBySlug(slug: string): Promise<void> {
-    const article = await this.getArticleBySlug(slug);
-
-    if (!article) {
-      throw new NotFoundError(`slug "${slug}" not found`);
-    }
+  async deleteArticle(key: string): Promise<void> {
+    const article = await this.requireArticle(key);
 
     await this.db.delete(this.articlesCollection, article.id);
   }
@@ -358,12 +347,8 @@ class ArticlesService {
     return tags;
   }
 
-  async favoriteArticleBySlug(slug: string, userId: string): Promise<void> {
-    const article = await this.getArticleBySlug(slug);
-
-    if (!article) {
-      throw new NotFoundError(`slug "${slug}" not found`);
-    }
+  async favoriteArticle(key: string, userId: string): Promise<void> {
+    const article = await this.requireArticle(key);
 
     const user = await this.usersService.getUserById(userId);
 
@@ -380,12 +365,8 @@ class ArticlesService {
     });
   }
 
-  async unfavoriteArticleBySlug(slug: string, userId: string): Promise<void> {
-    const article = await this.getArticleBySlug(slug);
-
-    if (!article) {
-      throw new NotFoundError(`slug "${slug}" not found`);
-    }
+  async unfavoriteArticle(key: string, userId: string): Promise<void> {
+    const article = await this.requireArticle(key);
 
     const user = await this.usersService.getUserById(userId);
 
@@ -429,16 +410,12 @@ class ArticlesService {
     return toComment(commentDoc);
   }
 
-  async addCommentBySlug(
-    slug: string,
+  async addCommentTo(
+    key: string,
     authorId: string,
     body: string
   ): Promise<Comment> {
-    const article = await this.getArticleBySlug(slug);
-
-    if (!article) {
-      throw new NotFoundError(`slug "${slug}" not found`);
-    }
+    const article = await this.requireArticle(key);
 
     return await this.addComment(article.id, authorId, body);
   }
@@ -459,12 +436,8 @@ class ArticlesService {
 
     const where = [];
 
-    if (params.slug) {
-      const article = await this.getArticleBySlug(params.slug);
-
-      if (!article) {
-        throw new NotFoundError(`slug "${params.slug}" not found`);
-      }
+    if (params.article) {
+      const article = await this.requireArticle(params.article);
 
       where.push({field: 'articleId', op: '==' as const, value: article.id});
     }
@@ -500,10 +473,6 @@ class ArticlesService {
     } catch (err) {
       console.error('live update failed', err);
     }
-  }
-
-  private prepareSlug(title: string): string {
-    return slugify(title.toLowerCase());
   }
 
   private prepareTags(tags: string[]) {

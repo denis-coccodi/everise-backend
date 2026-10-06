@@ -33,6 +33,7 @@ class UserDto {
 
   constructor(user: User, token: string) {
     this.user = {
+      id: user.id,
       email: user.email,
       username: user.username,
       token,

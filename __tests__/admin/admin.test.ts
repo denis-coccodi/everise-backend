@@ -49,6 +49,7 @@ describe('roles', () => {
     expect(promoted.status).toBe(200);
     expect(promoted.body).toStrictEqual({
       user: {
+        id: expect.any(String),
         username: user.username,
         email: user.email,
         image: expect.any(String),

@@ -33,55 +33,61 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
 
 Auth: **required** endpoints return 401 without a valid token, and **admin** ones also 403 for anyone who isn't an admin; **optional** ones add viewer-specific fields such as `following` and `favorited` when a token is sent.
 
-| Method | Path                                      | Auth     | Description                                                                                                 |
-| ------ | ----------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| POST   | `/api/users`                              |          | Register                                                                                                    |
-| POST   | `/api/users/login`                        |          | Log in                                                                                                      |
-| POST   | `/api/users/logout`                       |          | Clear the auth cookie                                                                                       |
-| GET    | `/api/auth/providers`                     |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                         |
-| GET    | `/api/auth/:provider`                     |          | Start signing in with `google` or `facebook` (a browser redirect)                                           |
-| GET    | `/api/auth/:provider/callback`            |          | The provider's redirect back; signs in and redirects to the site                                            |
-| GET    | `/api/discord/widget`                     |          | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
-| GET    | `/api/user`                               | required | Current user                                                                                                |
-| PUT    | `/api/user`                               | required | Update the current user                                                                                     |
-| PUT    | `/api/user/image`                         | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
-| DELETE | `/api/user/image`                         | required | Remove the profile picture                                                                                  |
-| GET    | `/api/profile-images/:id`                 |          | An uploaded profile picture                                                                                 |
-| POST   | `/api/media`                              | required | Upload an image or GIF for a post or comment (the file as the body) ([Media](#media-in-posts-and-comments)) |
-| GET    | `/api/media/:id`                          |          | An uploaded image or GIF                                                                                    |
-| GET    | `/api/gifs/available`                     |          | Whether the GIF search is set up: `{available}`                                                             |
-| GET    | `/api/gifs`                               | required | A page of GIFs from GIPHY (`q`, `offset`): `{gifs, next}`                                                   |
-| GET    | `/api/live` (WebSocket)                   |          | Live updates: new posts ([Live updates](#live-updates))                                                     |
-| POST   | `/api/roulette-results`                   | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results))                       |
-| GET    | `/api/profiles/:username`                 | optional | Get a profile                                                                                               |
-| POST   | `/api/profiles/:username/follow`          | required | Follow a user                                                                                               |
-| DELETE | `/api/profiles/:username/follow`          | required | Unfollow a user                                                                                             |
-| GET    | `/api/articles`                           | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`)                                             |
-| GET    | `/api/articles/feed`                      | required | Articles by followed users (`limit`, `offset`)                                                              |
-| POST   | `/api/articles`                           | required | Create an article                                                                                           |
-| GET    | `/api/articles/:slug`                     | optional | Get an article                                                                                              |
-| PUT    | `/api/articles/:slug`                     | required | Update your article                                                                                         |
-| DELETE | `/api/articles/:slug`                     | required | Delete your article                                                                                         |
-| POST   | `/api/articles/:slug/favorite`            | required | Favorite an article                                                                                         |
-| DELETE | `/api/articles/:slug/favorite`            | required | Unfavorite an article                                                                                       |
-| GET    | `/api/articles/:slug/comments`            | optional | List comments                                                                                               |
-| POST   | `/api/articles/:slug/comments`            | required | Add a comment                                                                                               |
-| DELETE | `/api/articles/:slug/comments/:commentId` | required | Delete your comment                                                                                         |
-| GET    | `/api/tags`                               |          | List tags                                                                                                   |
-| GET    | `/api/admin/users`                        | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin))        |
-| PUT    | `/api/admin/users/:username/role`         | admin    | Make a member a `staging-tester` or a `user`; syncs staging access                                          |
-| DELETE | `/api/admin/users/:username`              | admin    | Delete a member and everything they posted, for good                                                        |
-| POST   | `/api/admin/staging-access`               | admin    | Write the staging testers to Cloudflare Access again                                                        |
-| GET    | `/api/admin/tataru`                       | admin    | Tataru's profile                                                                                            |
-| PUT    | `/api/admin/tataru`                       | admin    | Edit Tataru's bio                                                                                           |
-| PUT    | `/api/admin/tataru/image`                 | admin    | Upload Tataru's picture                                                                                     |
-| GET    | `/api/duties`                             |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties))                                               |
-| GET    | `/api/roulettes`                          |          | FFXIV duty roulettes                                                                                        |
-| GET    | `/api/frontline`                          |          | Today's Frontline map and the next days' maps                                                               |
-| GET    | `/api/jobs`                               |          | FFXIV combat jobs, with role and icon                                                                       |
-| GET    | `/api/images/:id`                         |          | A game image the data refers to (icons, banners)                                                            |
-| POST   | `/api/duties/refresh`                     | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header)                                              |
-| POST   | `/api/duties/refresh/images`              | key      | Download the next batch of game images                                                                      |
+| Method | Path                                    | Auth     | Description                                                                                                 |
+| ------ | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/users`                            |          | Register                                                                                                    |
+| POST   | `/api/users/login`                      |          | Log in                                                                                                      |
+| POST   | `/api/users/logout`                     |          | Clear the auth cookie                                                                                       |
+| GET    | `/api/auth/providers`                   |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                         |
+| GET    | `/api/auth/:provider`                   |          | Start signing in with `google` or `facebook` (a browser redirect)                                           |
+| GET    | `/api/auth/:provider/callback`          |          | The provider's redirect back; signs in and redirects to the site                                            |
+| GET    | `/api/discord/widget`                   |          | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
+| GET    | `/api/user`                             | required | Current user                                                                                                |
+| PUT    | `/api/user`                             | required | Update the current user                                                                                     |
+| PUT    | `/api/user/image`                       | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
+| DELETE | `/api/user/image`                       | required | Remove the profile picture                                                                                  |
+| GET    | `/api/profile-images/:id`               |          | An uploaded profile picture                                                                                 |
+| POST   | `/api/media`                            | required | Upload an image or GIF for a post or comment (the file as the body) ([Media](#media-in-posts-and-comments)) |
+| GET    | `/api/media/:id`                        |          | An uploaded image or GIF                                                                                    |
+| GET    | `/api/gifs/available`                   |          | Whether the GIF search is set up: `{available}`                                                             |
+| GET    | `/api/gifs`                             | required | A page of GIFs from GIPHY (`q`, `offset`): `{gifs, next}`                                                   |
+| GET    | `/api/live` (WebSocket)                 |          | Live updates: new posts ([Live updates](#live-updates))                                                     |
+| POST   | `/api/roulette-results`                 | optional | Post an accepted roulette result to the feeds ([Roulette results](#roulette-results))                       |
+| GET    | `/api/profiles/:id`                     | optional | Get a profile                                                                                               |
+| POST   | `/api/profiles/:id/follow`              | required | Follow a user                                                                                               |
+| DELETE | `/api/profiles/:id/follow`              | required | Unfollow a user                                                                                             |
+| GET    | `/api/articles`                         | optional | List articles (`tag`, `author`, `favorited`, `limit`, `offset`)                                             |
+| GET    | `/api/articles/feed`                    | required | Articles by followed users (`limit`, `offset`)                                                              |
+| POST   | `/api/articles`                         | required | Create an article                                                                                           |
+| GET    | `/api/articles/:id`                     | optional | Get an article                                                                                              |
+| PUT    | `/api/articles/:id`                     | required | Update your article                                                                                         |
+| DELETE | `/api/articles/:id`                     | required | Delete your article                                                                                         |
+| POST   | `/api/articles/:id/favorite`            | required | Favorite an article                                                                                         |
+| DELETE | `/api/articles/:id/favorite`            | required | Unfavorite an article                                                                                       |
+| GET    | `/api/articles/:id/comments`            | optional | List comments                                                                                               |
+| POST   | `/api/articles/:id/comments`            | required | Add a comment                                                                                               |
+| DELETE | `/api/articles/:id/comments/:commentId` | required | Delete your comment                                                                                         |
+| GET    | `/api/tags`                             |          | List tags                                                                                                   |
+| GET    | `/api/admin/users`                      | admin    | Members with their roles, a page at a time (`search`, `limit`, `offset`) ([Roles](#roles-and-admin))        |
+| PUT    | `/api/admin/users/:id/role`             | admin    | Make a member a `staging-tester` or a `user`; syncs staging access                                          |
+| DELETE | `/api/admin/users/:id`                  | admin    | Delete a member and everything they posted, for good                                                        |
+| POST   | `/api/admin/staging-access`             | admin    | Write the staging testers to Cloudflare Access again                                                        |
+| GET    | `/api/admin/tataru`                     | admin    | Tataru's profile                                                                                            |
+| PUT    | `/api/admin/tataru`                     | admin    | Edit Tataru's bio                                                                                           |
+| PUT    | `/api/admin/tataru/image`               | admin    | Upload Tataru's picture                                                                                     |
+| GET    | `/api/duties`                           |          | FFXIV duties, grouped by type ([FFXIV duties](#ffxiv-duties))                                               |
+| GET    | `/api/roulettes`                        |          | FFXIV duty roulettes                                                                                        |
+| GET    | `/api/frontline`                        |          | Today's Frontline map and the next days' maps                                                               |
+| GET    | `/api/jobs`                             |          | FFXIV combat jobs, with role and icon                                                                       |
+| GET    | `/api/images/:id`                       |          | A game image the data refers to (icons, banners)                                                            |
+| POST   | `/api/duties/refresh`                   | key      | Re-download the game data from XIVAPI (`X-Refresh-Key` header)                                              |
+| POST   | `/api/duties/refresh/images`            | key      | Download the next batch of game images                                                                      |
+
+## Ids in links
+
+Posts and members are identified by their ids (the database's UUIDs) everywhere: in the API's paths (`/api/articles/:id`, `/api/profiles/:id`, `/api/admin/users/:id`), in the `author` and `favorited` filters of `GET /api/articles`, and in every answer (`article.id`, `author.id`, `profile.id`, `user.id`, and comments' `id`). A title or a username can change; an id can't, so links keep working. Titles may repeat.
+
+Links from before still work: a post is also found by the slug its old links used (made from its title, kept only on posts from then), and a member by their username.
 
 ## Profile pictures
 
@@ -125,8 +131,8 @@ Every user has a `role`, returned with the user (sign-up, sign-in, `GET` and `PU
 
 Admins can (all under `/api/admin`, 403 for everyone else):
 
-- **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out; `search` keeps those whose username or email contains it, in any case; `limit` (1–100, default 20) and `offset` page through them; `usersCount` is how many match, and `stagingAccessConnected` says whether role changes reach Cloudflare Access) and **change a role** (`PUT /api/admin/users/:username/role` `{"role": "staging-tester" | "user"}`).
-- **Delete a member** (`DELETE /api/admin/users/:username`), for good, as the privacy policy promises when someone asks: their account, posts (with every comment on them), comments elsewhere, favourites, follows both ways, uploaded pictures and roulette posting limit, in one batch write to the database (`src/admin/member-deletion.ts`). Their sessions stop working, since the account is gone. A deleted staging tester's staging access is synced away (`stagingAccess` in the answer). Admins (remove them from `ADMIN_EMAILS` first, 422) and system accounts such as Tataru (404) can't be deleted. The answer: `{"deleted": {"username", "articles", "comments"}}`, the counts being their own posts and comments.
+- **List the members** (`GET /api/admin/users`: username, email, picture, role; system accounts left out; `search` keeps those whose username or email contains it, in any case; `limit` (1–100, default 20) and `offset` page through them; `usersCount` is how many match, and `stagingAccessConnected` says whether role changes reach Cloudflare Access) and **change a role** (`PUT /api/admin/users/:id/role` `{"role": "staging-tester" | "user"}`).
+- **Delete a member** (`DELETE /api/admin/users/:id`), for good, as the privacy policy promises when someone asks: their account, posts (with every comment on them), comments elsewhere, favourites, follows both ways, uploaded pictures and roulette posting limit, in one batch write to the database (`src/admin/member-deletion.ts`). Their sessions stop working, since the account is gone. A deleted staging tester's staging access is synced away (`stagingAccess` in the answer). Admins (remove them from `ADMIN_EMAILS` first, 422) and system accounts such as Tataru (404) can't be deleted. The answer: `{"deleted": {"username", "articles", "comments"}}`, the counts being their own posts and comments.
 - **Edit Tataru** ([below](#roulette-results)): her bio (`PUT /api/admin/tataru` `{"tataru": {"bio": "…"}}`) and her picture (`PUT /api/admin/tataru/image`, the file as the body, with the same checks as anyone's upload).
 
 **Staging access.** Staging is behind Cloudflare Access. Both staging applications use one reusable Allow policy of staging testers, and the backend keeps that policy in step with the roles: after every role change it writes the admins' and staging testers' emails into the policy's Include (`src/admin/staging-access.ts`, through the Cloudflare API), and `POST /api/admin/staging-access` writes them again, e.g. after setting it up or after a failed attempt. The role is saved even if Cloudflare can't be reached; the answer's `stagingAccess` (`{synced, message}`) says what happened. A tester then opens staging and signs in to Access with the one-time code sent to the email of their Everise account.
@@ -180,7 +186,7 @@ The database is a single instance, named `everise`, of the `EveriseDb` Durable O
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
 - **Queries.** `find` lists a collection by key prefix, then filters (`==` or `array-contains`), sorts and paginates in memory. This is fine at this app's scale but would need indexes for large data.
-- **Consistency.** The Durable Object handles one request at a time and its storage is strongly consistent, so checks like "is this username taken?" or "is this slug taken?" can't race.
+- **Consistency.** The Durable Object handles one request at a time and its storage is strongly consistent, so checks like "is this username taken?" can't race.
 - **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `DocumentStore` on an in-memory storage, so they exercise the real query logic.
 
 Data is stored durably by Cloudflare. Locally it lives in `.wrangler/state`.

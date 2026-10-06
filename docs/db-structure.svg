@@ -90,7 +90,7 @@
     <text x="488" y="501" class="field">id</text><text x="744" y="501" class="type" text-anchor="end">uuid</text>
     <rect x="452" y="515" width="26" height="16" rx="3" class="fk"/><text x="465" y="527" class="badge" text-anchor="middle">FK</text>
     <text x="488" y="527" class="field">authorId</text><text x="744" y="527" class="type" text-anchor="end">users.id</text>
-    <text x="488" y="553" class="field">slug</text><text x="744" y="553" class="type" text-anchor="end">string (unique)</text>
+    <text x="488" y="553" class="field">slug</text><text x="744" y="553" class="type" text-anchor="end">string? (old links)</text>
     <text x="488" y="579" class="field">title</text><text x="744" y="579" class="type" text-anchor="end">string</text>
     <text x="488" y="605" class="field">description</text><text x="744" y="605" class="type" text-anchor="end">string</text>
     <text x="488" y="631" class="field">body</text><text x="744" y="631" class="type" text-anchor="end">string</text>

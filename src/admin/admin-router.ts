@@ -25,6 +25,7 @@ const pictureOf = (user: User) =>
 // A member as the admin's list shows them.
 function memberDto(user: User) {
   return {
+    id: user.id,
     username: user.username,
     email: user.email,
     image: pictureOf(user),
@@ -96,7 +97,7 @@ class AdminRouter {
     );
 
     router.put(
-      '/admin/users/:username/role',
+      '/admin/users/:id/role',
       celebrate({
         [Segments.BODY]: Joi.object()
           .keys({
@@ -113,7 +114,7 @@ class AdminRouter {
       async (req, res, next) => {
         try {
           const user = await this.usersService.setRole(
-            req.params.username,
+            req.params.id,
             req.body.role as AssignableRole
           );
           const stagingAccess = await this.syncStagingAccess();
@@ -126,9 +127,9 @@ class AdminRouter {
 
     // Deletes a member and everything they posted, for good (the privacy
     // policy's "Deleting your data"). Admins and system accounts can't be.
-    router.delete('/admin/users/:username', async (req, res, next) => {
+    router.delete('/admin/users/:id', async (req, res, next) => {
       try {
-        const deleted = await this.memberDeletion.delete(req.params.username);
+        const deleted = await this.memberDeletion.delete(req.params.id);
         // A deleted staging tester loses staging access too.
         const stagingAccess = deleted.wasStagingTester
           ? await this.syncStagingAccess()

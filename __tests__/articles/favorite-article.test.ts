@@ -23,7 +23,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       );
 
       const favoriteArticleResponse1 = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${user1.user.token}`)
         .send();
 
@@ -38,7 +38,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       });
 
       const favoriteArticleResponse2 = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${user2.user.token}`)
         .send();
 
@@ -66,7 +66,7 @@ describe('POST /api/articles/:slug/favorite', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -80,7 +80,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .send();
 
       expect(response.status).toBe(401);
@@ -101,7 +101,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -125,7 +125,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -154,7 +154,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       await new Promise(r => setTimeout(r, expiresInSeconds * 1000 + 1));
 
       const response = await request(app)
-        .post(makeFavoriteArticleUrl(article.article.slug))
+        .post(makeFavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 

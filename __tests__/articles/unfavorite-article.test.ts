@@ -24,16 +24,16 @@ describe('DELETE /api/articles/:slug/favorite', () => {
 
       await articlesClient.favoriteArticle(
         user1.user.token,
-        article.article.slug
+        article.article.id
       );
 
       await articlesClient.favoriteArticle(
         user2.user.token,
-        article.article.slug
+        article.article.id
       );
 
       const unfavoriteArticleResponse1 = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${user1.user.token}`)
         .send();
 
@@ -48,7 +48,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       });
 
       const unfavoriteArticleResponse2 = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${user2.user.token}`)
         .send();
 
@@ -73,7 +73,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${user.user.token}`)
         .send();
 
@@ -101,7 +101,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -115,7 +115,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .send();
 
       expect(response.status).toBe(401);
@@ -136,7 +136,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -160,7 +160,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       );
 
       const response = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -189,7 +189,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       await new Promise(r => setTimeout(r, expiresInSeconds * 1000 + 1));
 
       const response = await request(app)
-        .delete(makeUnfavoriteArticleUrl(article.article.slug))
+        .delete(makeUnfavoriteArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 

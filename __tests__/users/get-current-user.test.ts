@@ -18,6 +18,7 @@ describe('GET /api/user', () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       user: {
+        id: expect.any(String),
         email: user.user.email,
         username: user.user.username,
         token: expect.not.toBeEmpty(),

@@ -20,7 +20,7 @@ describe('GET /api/articles/:slug', () => {
         );
 
         const response = await request(app)
-          .get(makeGetArticleUrl(article.article.slug))
+          .get(makeGetArticleUrl(article.article.id))
           .send();
 
         expect(response.status).toBe(200);
@@ -54,11 +54,11 @@ describe('GET /api/articles/:slug', () => {
 
             await articlesClient.favoriteArticle(
               user2.user.token,
-              article.article.slug
+              article.article.id
             );
 
             const response = await request(app)
-              .get(makeGetArticleUrl(article.article.slug))
+              .get(makeGetArticleUrl(article.article.id))
               .set('authorization', `Token ${user1.user.token}`)
               .send();
 
@@ -93,7 +93,7 @@ describe('GET /api/articles/:slug', () => {
             );
 
             const response = await request(app)
-              .get(makeGetArticleUrl(article.article.slug))
+              .get(makeGetArticleUrl(article.article.id))
               .set('authorization', `Token ${user1.user.token}`)
               .send();
 
@@ -127,11 +127,11 @@ describe('GET /api/articles/:slug', () => {
 
             await articlesClient.favoriteArticle(
               user2.user.token,
-              article.article.slug
+              article.article.id
             );
 
             const response = await request(app)
-              .get(makeGetArticleUrl(article.article.slug))
+              .get(makeGetArticleUrl(article.article.id))
               .set('authorization', `Token ${user1.user.token}`)
               .send();
 
@@ -161,7 +161,7 @@ describe('GET /api/articles/:slug', () => {
             );
 
             const response = await request(app)
-              .get(makeGetArticleUrl(article.article.slug))
+              .get(makeGetArticleUrl(article.article.id))
               .set('authorization', `Token ${user1.user.token}`)
               .send();
 
@@ -190,7 +190,7 @@ describe('GET /api/articles/:slug', () => {
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
@@ -206,7 +206,7 @@ describe('GET /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .get(makeGetArticleUrl(article.article.slug))
+        .get(makeGetArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -230,7 +230,7 @@ describe('GET /api/articles/:slug', () => {
       );
 
       const response = await request(app)
-        .get(makeGetArticleUrl(article.article.slug))
+        .get(makeGetArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 
@@ -259,7 +259,7 @@ describe('GET /api/articles/:slug', () => {
       await new Promise(r => setTimeout(r, expiresInSeconds * 1000 + 1));
 
       const response = await request(app)
-        .get(makeGetArticleUrl(article.article.slug))
+        .get(makeGetArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send();
 

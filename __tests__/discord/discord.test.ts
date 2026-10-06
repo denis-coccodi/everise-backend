@@ -28,7 +28,7 @@ describe('announcing new posts in Discord', () => {
       embeds: [
         {
           title: article.title,
-          url: `${site}/article/${article.slug}`,
+          url: `${site}/article/${article.id}`,
           author: {
             name: user.username,
             url: `${site}/profile/${encodeURIComponent(user.username)}`,
@@ -65,7 +65,7 @@ describe('DiscordAnnouncer', () => {
   const event = (article: Partial<LiveEvent['article']>): LiveEvent => ({
     type: 'article-created',
     article: {
-      slug: 'duty-found',
+      id: expect.any(String),
       title: 'Duty Found',
       description: 'A roulette result',
       body: 'Body with ![a pic](https://example.com/pic.png)',
@@ -75,6 +75,7 @@ describe('DiscordAnnouncer', () => {
       favorited: false,
       favoritesCount: 0,
       author: {
+        id: expect.any(String),
         username: 'snek_lord',
         bio: null,
         image: 'https://site/a.png',

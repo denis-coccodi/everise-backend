@@ -50,6 +50,7 @@ describe('POST /api/roulette-results', () => {
         description: 'Dungeons · Regular',
         tagList: ['roulette'],
         author: {
+          id: expect.any(String),
           username: 'Tataru',
           // Her picture is stored like anyone's upload.
           image: expect.stringMatching(
@@ -68,8 +69,8 @@ describe('POST /api/roulette-results', () => {
         },
       });
       expect(GUEST_LINES).toContain(article.body);
-      // Roulette titles repeat, so slugs get a suffix.
-      expect(article.slug).toMatch(/^duty-found-sastasha-[0-9a-f]{8}$/);
+      // Identified by its id, not its (repeating) title.
+      expect(article.id).toMatch(/^[0-9a-f-]{36}$/);
     });
 
     test('should always be posted by the same Tataru, a profile anyone can see', async () => {

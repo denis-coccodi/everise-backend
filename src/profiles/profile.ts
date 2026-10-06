@@ -1,5 +1,6 @@
 class Profile {
   constructor(
+    readonly id: string,
     readonly username: string,
     readonly following: boolean,
     readonly bio?: string,

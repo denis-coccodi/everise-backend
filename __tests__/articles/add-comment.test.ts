@@ -25,7 +25,7 @@ describe('POST /api/articles/:slug/comments', () => {
       };
 
       const response = await request(app)
-        .post(makeAddCommentUrl(article.article.slug))
+        .post(makeAddCommentUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(requestBody);
 
@@ -37,6 +37,7 @@ describe('POST /api/articles/:slug/comments', () => {
           updatedAt: expect.toBeDateString(),
           body: requestBody.comment.body,
           author: {
+            id: expect.any(String),
             username: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
@@ -65,7 +66,7 @@ describe('POST /api/articles/:slug/comments', () => {
       expect(response.status).toBe(404);
       expect(response.body).toStrictEqual({
         errors: {
-          body: [`slug "${slug}" not found`],
+          body: [`post "${slug}" not found`],
         },
       });
     });
@@ -85,7 +86,7 @@ describe('POST /api/articles/:slug/comments', () => {
         };
 
         const response = await request(app)
-          .post(makeAddCommentUrl(article.article.slug))
+          .post(makeAddCommentUrl(article.article.id))
           .send(requestBody);
 
         expect(response.status).toBe(401);
@@ -112,7 +113,7 @@ describe('POST /api/articles/:slug/comments', () => {
         };
 
         const response = await request(app)
-          .post(makeAddCommentUrl(article.article.slug))
+          .post(makeAddCommentUrl(article.article.id))
           .set('authorization', `Token ${token}`)
           .send(requestBody);
 
@@ -142,7 +143,7 @@ describe('POST /api/articles/:slug/comments', () => {
         };
 
         const response = await request(app)
-          .post(makeAddCommentUrl(article.article.slug))
+          .post(makeAddCommentUrl(article.article.id))
           .set('authorization', `Token ${token}`)
           .send(requestBody);
 
@@ -174,7 +175,7 @@ describe('POST /api/articles/:slug/comments', () => {
         };
 
         const response = await request(app)
-          .post(makeAddCommentUrl(article.article.slug))
+          .post(makeAddCommentUrl(article.article.id))
           .set('authorization', `Token ${token}`)
           .send(requestBody);
 

@@ -32,7 +32,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -40,7 +40,8 @@ describe('PUT /api/articles/:slug', () => {
       expect(updateArticleResponse.body).toStrictEqual({
         article: {
           ...article.article,
-          slug: 'a-new-hope',
+          // A new title keeps the post's id, so its links keep working.
+          id: article.article.id,
           title: updateArticleRequestBody.article.title,
           description: updateArticleRequestBody.article.description,
           body: updateArticleRequestBody.article.body,
@@ -67,7 +68,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -75,7 +76,8 @@ describe('PUT /api/articles/:slug', () => {
       expect(updateArticleResponse.body).toStrictEqual({
         article: {
           ...article.article,
-          slug: 'a-new-hope',
+          // A new title keeps the post's id, so its links keep working.
+          id: article.article.id,
           title: updateArticleRequestBody.article.title,
           updatedAt: expect.toBeDateString(),
         },
@@ -85,7 +87,7 @@ describe('PUT /api/articles/:slug', () => {
       );
     });
 
-    test('given title that results in the same slug for the same article should return http status code 200 and the article', async () => {
+    test('given the same title should return http status code 200 and the unchanged article', async () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
@@ -99,7 +101,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -129,7 +131,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -160,7 +162,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -191,7 +193,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -231,13 +233,13 @@ describe('PUT /api/articles/:slug', () => {
     expect(updateArticleResponse.status).toBe(404);
     expect(updateArticleResponse.body).toStrictEqual({
       errors: {
-        body: [`slug "${slug}" not found`],
+        body: [`post "${slug}" not found`],
       },
     });
   });
 
   describe('title validation', () => {
-    test('given title results in taken slug should return http status code 422 and an errors object', async () => {
+    test('given the title of another post should return http status code 200, keeping its own id', async () => {
       const author = await usersClient.registerRandomUser();
 
       const existingAuthor = await usersClient.registerRandomUser();
@@ -260,16 +262,15 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${author.user.token}`)
         .send(updateArticleRequestBody);
 
-      expect(updateArticleResponse.status).toBe(422);
-      expect(updateArticleResponse.body).toStrictEqual({
-        errors: {
-          body: ['"slug" is taken'],
-        },
-      });
+      expect(updateArticleResponse.status).toBe(200);
+      expect(updateArticleResponse.body.article.title).toBe(
+        existingArticle.article.title
+      );
+      expect(updateArticleResponse.body.article.id).toBe(article.article.id);
     });
   });
 
@@ -291,7 +292,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .send(updateArticleRequestBody);
 
       expect(updateArticleResponse.status).toBe(401);
@@ -321,7 +322,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(updateArticleRequestBody);
 
@@ -351,7 +352,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${user.user.token}`)
         .send(updateArticleRequestBody);
 
@@ -384,7 +385,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(updateArticleRequestBody);
 
@@ -422,7 +423,7 @@ describe('PUT /api/articles/:slug', () => {
       };
 
       const updateArticleResponse = await request(app)
-        .put(makeUpdateArticleUrl(article.article.slug))
+        .put(makeUpdateArticleUrl(article.article.id))
         .set('authorization', `Token ${token}`)
         .send(updateArticleRequestBody);
 
