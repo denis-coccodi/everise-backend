@@ -32,7 +32,7 @@ const ai = env.AI as AiBinding | undefined;
 
 createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   loadBundledPicture,
-  characterModel: ai ? new WorkersAiModel(ai) : undefined,
+  wakingSands: {model: ai ? new WorkersAiModel(ai) : undefined},
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {

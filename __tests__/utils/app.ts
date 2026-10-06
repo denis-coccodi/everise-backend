@@ -138,17 +138,22 @@ const emailSender: EmailSender = {
 };
 
 // The Waking Sands' model: what it was asked, and its next answers (`answers`
-// in order, then "Hello!"); `error` makes it fail with that message.
+// in order, then "Hello!") and the Neurons each costs; `error` makes it fail
+// with that message. The app may spend 1,000 Neurons a day.
 const characters = {
   asked: [] as ModelMessage[][],
   answers: [] as string[],
+  neurons: 5,
   error: undefined as Error | undefined,
 };
 const characterModel: CharacterModel = {
   async reply(messages) {
     characters.asked.push(messages);
     if (characters.error) throw characters.error;
-    return characters.answers.shift() ?? 'Hello!';
+    return {
+      text: characters.answers.shift() ?? 'Hello!',
+      neurons: characters.neurons,
+    };
   },
 };
 
@@ -179,7 +184,7 @@ const app = createApp(
     },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
     emailSender,
-    characterModel,
+    wakingSands: {model: characterModel, dailyNeurons: 1000},
   }
 );
 
