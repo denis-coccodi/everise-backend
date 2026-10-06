@@ -11,5 +11,10 @@ export {
   CharacterProfile,
   CharactersService,
 } from './characters-service';
-export {MEMBER_SHARE, WakingSandsService} from './waking-sands-service';
+export {
+  MEMBER_SHARE,
+  RoomLine,
+  TURNS_EACH,
+  WakingSandsService,
+} from './waking-sands-service';
 export {WakingSandsRouter} from './waking-sands-router';

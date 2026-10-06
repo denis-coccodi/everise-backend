@@ -1,3 +1,4 @@
+import {ArticleEvent} from '../../src/live/live-feed';
 import 'jest-extended';
 import request from 'supertest';
 import {isAllowedOrigin, isLiveRequest} from '../../src/live/live-requests';
@@ -43,7 +44,7 @@ describe('live updates', () => {
       expect(live.events).toStrictEqual([
         {type: 'article-created', article: response.body.article},
       ]);
-      expect(live.events[0].article).toMatchObject({
+      expect((live.events[0] as ArticleEvent).article).toMatchObject({
         title: 'Live news',
         tagList: ['news'],
         favorited: false,
@@ -72,7 +73,7 @@ describe('live updates', () => {
       expect(live.events).toStrictEqual([
         {type: 'article-created', article: response.body.article},
       ]);
-      expect(live.events[0].article).toMatchObject({
+      expect((live.events[0] as ArticleEvent).article).toMatchObject({
         author: {username: 'Tataru'},
         roulette: {name: 'Sastasha', guest: true},
       });

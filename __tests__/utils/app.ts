@@ -137,17 +137,28 @@ const emailSender: EmailSender = {
   },
 };
 
-// The Waking Sands' model: what it was asked, and its next answers (`answers`
-// in order, then "Hello!") and the Neurons each costs; `error` makes it fail
-// with that message. The app may spend 1,000 Neurons a day.
+// The Waking Sands' model. A character's line: `asked` is what it was asked,
+// `answers` its next lines in order (then "Hello!"). The director's call
+// (who speaks next): `directed` and `directions` (then "NONE"). `neurons`
+// is what each call costs; `error` makes the characters' lines fail. The app
+// may spend 1,000 Neurons a day.
 const characters = {
   asked: [] as ModelMessage[][],
   answers: [] as string[],
+  directed: [] as ModelMessage[][],
+  directions: [] as string[],
   neurons: 5,
   error: undefined as Error | undefined,
 };
 const characterModel: CharacterModel = {
   async reply(messages) {
+    if (messages[0].content.startsWith('You direct')) {
+      characters.directed.push(messages);
+      return {
+        text: characters.directions.shift() ?? 'NONE',
+        neurons: characters.neurons,
+      };
+    }
     characters.asked.push(messages);
     if (characters.error) throw characters.error;
     return {

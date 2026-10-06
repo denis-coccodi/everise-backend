@@ -208,6 +208,7 @@ function createApp(
       db,
       wakingSands.model,
       charactersService,
+      liveFeed,
       now,
       wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons
     ),

@@ -2,7 +2,7 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {DiscordAnnouncer, DiscordFetch} from '../../src/discord';
-import {LiveEvent} from '../../src/live/live-feed';
+import {ArticleEvent, LiveEvent} from '../../src/live/live-feed';
 import {app, articlesClient, clock, discord, usersClient} from '../utils';
 
 const site = config.baseUrl;
@@ -62,7 +62,7 @@ describe('announcing new posts in Discord', () => {
 });
 
 describe('DiscordAnnouncer', () => {
-  const event = (article: Partial<LiveEvent['article']>): LiveEvent => ({
+  const event = (article: Partial<ArticleEvent['article']>): LiveEvent => ({
     type: 'article-created',
     article: {
       id: expect.any(String),
@@ -83,7 +83,7 @@ describe('DiscordAnnouncer', () => {
         following: false,
       },
       ...article,
-    } as LiveEvent['article'],
+    } as ArticleEvent['article'],
   });
 
   function announcer() {
