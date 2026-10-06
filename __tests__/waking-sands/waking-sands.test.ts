@@ -2,7 +2,12 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {TooManyRequestsError, UpstreamError} from '../../src/errors';
-import {MEMBER_SHARE, TURNS_EACH, WorkersAiModel} from '../../src/waking-sands';
+import {
+  MAX_PRESENT,
+  MEMBER_SHARE,
+  TURNS_EACH,
+  WorkersAiModel,
+} from '../../src/waking-sands';
 import {app, characters, clearDb, clock, db, live, usersClient} from '../utils';
 
 // The app may spend this many Neurons a day in the tests (utils/app.ts).
@@ -141,6 +146,24 @@ describe('the Waking Sands room', () => {
     const response = await as(await signedIn()).say(text);
 
     expect(response.status).toBe(422);
+  });
+
+  test(`lets at most ${MAX_PRESENT} characters in at once`, async () => {
+    const member = await signedIn();
+    for (const id of ['tataru', 'urianger', 'yshtola']) {
+      expect((await as(member).invite(id)).status).toBe(200);
+    }
+
+    const full = await as(member).invite('barnaby');
+
+    expect(full.status).toBe(422);
+    expect(full.body.errors.body[0]).toContain('The room is full');
+    expect((await room()).present).toEqual(['tataru', 'urianger', 'yshtola']);
+    // Someone already in can be invited again (nothing changes), and once
+    // someone leaves there's room.
+    expect((await as(member).invite('tataru')).status).toBe(200);
+    await as(member).dismiss('urianger');
+    expect((await as(member).invite('barnaby')).status).toBe(200);
   });
 
   test('refuses an unknown character, or sending out one who is not in', async () => {

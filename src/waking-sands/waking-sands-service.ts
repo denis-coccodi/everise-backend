@@ -63,6 +63,8 @@ const BUSY_MS = 90 * 1000;
 // most this many per request.
 const MAX_ROUNDS = 3;
 const ROOM = 'room';
+// At most this many characters in the room at once.
+const MAX_PRESENT = 3;
 
 // The Waking Sands: one room every member shares. Members bring characters
 // in or send them off, and talk; after each member's line the characters
@@ -110,6 +112,11 @@ class WakingSandsService {
     const character = await this.charactersService.get(id);
     const present = await this.present();
     if (present.includes(id)) return present;
+    if (present.length >= MAX_PRESENT) {
+      throw new RangeError(
+        `The room is full: at most ${MAX_PRESENT} characters at once. Send someone out first.`
+      );
+    }
     return this.setPresent(
       [...present, id],
       `${member.username} invited ${character.name} in.`
@@ -489,4 +496,4 @@ function clean(text: string, character: CharacterProfile) {
     : unnamed;
 }
 
-export {MEMBER_SHARE, RoomLine, TURNS_EACH, WakingSandsService};
+export {MAX_PRESENT, MEMBER_SHARE, RoomLine, TURNS_EACH, WakingSandsService};
