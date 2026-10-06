@@ -2,10 +2,13 @@ import {DAY_MS, ResetPeriod, gameDayAt} from './resets';
 
 // The Frontline daily challenge plays one map a day, in a fixed cycle that the
 // game data doesn't contain, so it is kept here and computed without any API
-// call. Source: the community wiki's rotation template,
-// https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map
-// (last checked 2026-10-04, game version 7.56). When a patch adds a map or
-// changes the order, update ROTATION and ROTATION_START together.
+// call. The order is the Patch 7.5 notes' (one campaign a day; Worqor
+// Chirteh is no longer always available). The start was checked against the
+// game's Duty Finder on 2026-10-06 (game version 7.56): The Borderland Ruins
+// until that day's reset. The community wiki's template,
+// https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map,
+// was a day ahead then. When a patch adds a map or changes the order, or the
+// game skips a day, update ROTATION and ROTATION_START together.
 //
 // Names match the duties' names in the game data.
 const ROTATION = [
@@ -21,7 +24,7 @@ const ROTATION = [
 
 // The start of a day on which ROTATION[0] was the map. The map changes with
 // the daily reset (see resets.ts).
-const ROTATION_START = Date.UTC(2025, 10, 13, 15);
+const ROTATION_START = Date.UTC(2025, 10, 14, 15);
 
 interface FrontlineDay extends ResetPeriod {
   map: string;
