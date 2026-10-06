@@ -19,7 +19,8 @@ describe('announcing new posts in Discord', () => {
 
     expect(discord.sent).toHaveLength(1);
     const [{url, body}] = discord.sent;
-    expect(url).toBe('https://discord.test/api/webhooks/1/secret');
+    // wait=true: Discord answers once it's posted, so messages keep their order.
+    expect(url).toBe('https://discord.test/api/webhooks/1/secret?wait=true');
     expect(body).toMatchObject({
       username: 'Everise',
       avatar_url: `${site}/assets/images/everise-crest.png`,
@@ -140,7 +141,7 @@ describe('DiscordAnnouncer', () => {
     });
   });
 
-  test("a post's first YouTube video goes in the message, where Discord plays it", async () => {
+  test("a post's first YouTube video follows the card as a message of its own, where Discord plays it", async () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
     await discordAnnouncer.publish(
@@ -155,9 +156,15 @@ describe('DiscordAnnouncer', () => {
       })
     );
 
-    expect((sent[0] as {content: string}).content).toBe(
-      '📜 New post by **snek\\_lord**\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ'
-    );
+    // Discord doesn't preview links in a message that has a card.
+    expect(sent).toHaveLength(2);
+    expect(sent[0]).toMatchObject({content: '📜 New post by **snek\\_lord**'});
+    expect(sent[1]).toStrictEqual({
+      username: 'Everise',
+      avatar_url: 'https://site/assets/images/everise-crest.png',
+      content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      allowed_mentions: {parse: []},
+    });
   });
 
   test('a post without a video has just the headline', async () => {
