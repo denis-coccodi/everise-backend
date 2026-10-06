@@ -35,6 +35,8 @@ describe('ids in links', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.article.id).toBe(article.id);
+    // Said in the answer, so the site can move the old link to the id.
+    expect(response.body.article.slug).toBe('duty-found-sastasha-1fb67b60');
     const comments = await request(app).get(
       '/api/articles/duty-found-sastasha-1fb67b60/comments'
     );

@@ -11,6 +11,9 @@ class ArticleDto {
     this.article = {
       // What identifies the post in links and API paths. Never its title.
       id: article.id,
+      // Only on posts from before ids were in links: what their old links
+      // used, so the site can move an old link to the post's id.
+      ...(article.slug ? {slug: article.slug} : {}),
       title: article.title,
       description: article.description,
       body: article.body,
