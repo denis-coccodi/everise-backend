@@ -1,3 +1,4 @@
+import {URL} from 'url';
 import {LiveEvent, LiveFeed} from '../live/live-feed';
 import {firstYouTubeLink} from './youtube';
 
@@ -28,11 +29,29 @@ class DiscordAnnouncer implements LiveFeed {
 
   async publish(event: LiveEvent): Promise<void> {
     if (!this.webhookUrl || event.type !== 'article-created') return;
-    const message = this.message(event.article);
+    const article = event.article;
+    // Discord previews links (and plays videos) only in messages without a
+    // card of their own, so the post's first video follows the card as a
+    // message of its own.
+    const video = firstYouTubeLink(article.body);
+    const messages = [
+      this.card(article),
+      ...(video ? [this.plain(video)] : []),
+    ];
+    for (const message of messages) {
+      if (!(await this.send(message))) return;
+    }
+  }
+
+  // Sends one message, waiting until Discord has posted it so the next one
+  // comes after it. False when it didn't go through.
+  private async send(message: object): Promise<boolean> {
+    const url = new URL(this.webhookUrl!);
+    url.searchParams.set('wait', 'true');
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const sent = await Promise.race([
-        this.fetchFn(this.webhookUrl, {
+        this.fetchFn(url.toString(), {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(message),
@@ -44,15 +63,28 @@ class DiscordAnnouncer implements LiveFeed {
       if (!sent.ok) {
         console.error(`Discord announcement answered ${sent.status}`);
       }
+      return sent.ok;
     } catch (err) {
       // The post is saved either way; only the announcement is lost.
       console.error('Discord announcement failed', err);
+      return false;
     } finally {
       clearTimeout(timer);
     }
   }
 
-  private message(article: ArticleEvent) {
+  // A message with just a link, which Discord previews (a video it plays).
+  private plain(link: string) {
+    return {
+      username: 'Everise',
+      avatar_url: `${this.siteUrl}/assets/images/everise-crest.png`,
+      content: link,
+      allowed_mentions: {parse: []},
+    };
+  }
+
+  // The post as a card: title, description, author, link, picture.
+  private card(article: ArticleEvent) {
     const link = `${this.siteUrl}/article/${encodeURIComponent(article.slug)}`;
     const author = article.author.username;
     const roulette = article.roulette;
@@ -82,19 +114,13 @@ class DiscordAnnouncer implements LiveFeed {
         : {}),
       ...imageOf(article, this.siteUrl),
     };
-    // Discord only plays a video from a link in the message itself: the
-    // post's first one goes there, and Discord shows it under the card.
-    const video = firstYouTubeLink(article.body);
     const headline = roulette
       ? `🎲 **${escape(author)}** spun the duty roulette!`
       : `📜 New post by **${escape(author)}**`;
     return {
       username: 'Everise',
       avatar_url: `${this.siteUrl}/assets/images/everise-crest.png`,
-      content: video
-        ? `${headline}
-${video}`
-        : headline,
+      content: headline,
       embeds: [embed],
       // Never ping anyone, whatever a post says.
       allowed_mentions: {parse: []},
