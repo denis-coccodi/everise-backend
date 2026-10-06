@@ -7,7 +7,7 @@ description: Check that the Everise API responds and that data persists in the E
 
 `scripts/smoke.sh` (in the repo root, also run by CI against staging) drives the real HTTP API with curl and a cookie jar. It prints `ok`/`FAIL` per request with the status code, masks JWTs, and exits non-zero on any unexpected status.
 
-- `create`: registers a random user, reads `/api/user`, creates an article tagged `smoketest`, lists it and lists tags. Saves the username next to the jar.
+- `create`: registers a random user (at Resend's test inbox, `delivered+…@resend.dev`), reads `/api/user`, creates an article tagged `smoketest`, lists it and lists tags. When the API confirms emails (`RESEND_API_KEY` set, as on staging and production), the sign-up answers "check your email" instead, so it checks that signing in is refused (`403`) until the link is opened and skips the article. Saves the username (and the article's id) next to the jar.
 - `verify`: logs that user in again and fetches the article by slug. Run it after a restart or redeploy to prove the data persisted.
 
 ```

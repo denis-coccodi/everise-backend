@@ -2,9 +2,15 @@
 # Smoke test against a running Everise API.
 #
 # Usage: scripts/smoke.sh create|verify <base-url> <cookie-jar>
-#   create: register a random user, create an article, list it.
-#   verify: log the saved user in again and fetch the saved article,
-#           e.g. after a restart or redeploy, to check the data persisted.
+#   create: register a random user, create an article, list it. When the
+#           API confirms emails (RESEND_API_KEY set), the sign-up answers
+#           "check your email" and signing in is refused until the link is
+#           opened, so that is checked instead of the article. The address
+#           is Resend's test inbox (delivered+...@resend.dev), which accepts
+#           the email and delivers it nowhere.
+#   verify: log the saved user in again and fetch the saved article (by its id),
+#           e.g. after a restart or redeploy, to check the data persisted
+#           (or, for an unconfirmed sign-up, that sign-in is still refused).
 #
 # Exits non-zero if any request returns an unexpected status code.
 #
@@ -25,6 +31,7 @@ req() {
   fi
   out=$(curl -s -b "$J" -c "$J" -w '\n%{redirect_url}\n%{http_code}' -H 'Content-Type: application/json' "$@")
   code=$(printf '%s' "$out" | tail -n 1)
+  BODY=$(printf '%s\n' "$out" | sed '$d' | sed '$d')
   redirect=$(printf '%s' "$out" | tail -n 2 | head -n 1)
   if [ "$code" = "$expected" ]; then
     echo "ok   [$code] $label"
@@ -59,17 +66,34 @@ access_hint() {
 case "$MODE" in
   create)
     U="smoke$(date +%s)"
+    E="delivered+$U@resend.dev"
     echo "$U" > "$J.user"
-    req 201 "register $U"   -X POST "$B/api/users" -d "{\"user\":{\"email\":\"$U@example.com\",\"username\":\"$U\",\"password\":\"Passw0rd!\"}}"
-    req 200 "current user"  "$B/api/user"
-    req 201 "create article" -X POST "$B/api/articles" -d "{\"article\":{\"title\":\"Smoke $U\",\"description\":\"d\",\"body\":\"b\",\"tagList\":[\"smoketest\"]}}"
-    req 200 "list articles" "$B/api/articles?author=$U"
+    rm -f "$J.unconfirmed"
+    req 201 "register $U"   -X POST "$B/api/users" -d "{\"user\":{\"email\":\"$E\",\"username\":\"$U\",\"password\":\"Passw0rd!\"}}"
+    case "$BODY" in
+      *'"confirmation"'*)
+        echo "     a confirmation link was emailed"
+        touch "$J.unconfirmed"
+        req 403 "sign-in refused until the email is confirmed" -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$E\",\"password\":\"Passw0rd!\"}}"
+        ;;
+      *)
+        req 200 "current user"  "$B/api/user"
+        req 201 "create article" -X POST "$B/api/articles" -d "{\"article\":{\"title\":\"Smoke $U\",\"description\":\"d\",\"body\":\"b\",\"tagList\":[\"smoketest\"]}}"
+        printf '%s' "$BODY" | sed -n 's/.*"article":{"id":"\([^"]*\)".*/\1/p' > "$J.article"
+        req 200 "list articles" "$B/api/articles?author=$U"
+        ;;
+    esac
     req 200 "list tags"     "$B/api/tags"
     ;;
   verify)
     U=$(cat "$J.user")
-    req 200 "login $U"      -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$U@example.com\",\"password\":\"Passw0rd!\"}}"
-    req 200 "get article"   "$B/api/articles/smoke-$U"
+    E="delivered+$U@resend.dev"
+    if [ -f "$J.unconfirmed" ]; then
+      req 403 "login $U (unconfirmed)" -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$E\",\"password\":\"Passw0rd!\"}}"
+    else
+      req 200 "login $U"      -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$E\",\"password\":\"Passw0rd!\"}}"
+      req 200 "get article"   "$B/api/articles/$(cat "$J.article")"
+    fi
     ;;
   *)
     echo "usage: $0 create|verify <base-url> <cookie-jar>" >&2
