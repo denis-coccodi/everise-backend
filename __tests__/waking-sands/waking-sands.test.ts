@@ -65,7 +65,7 @@ describe('the Waking Sands characters', () => {
       {
         id: 'barnaby',
         name: 'Barnaby Bollocksworth',
-        title: 'Primal hunter, sellsword and a right bad influence',
+        title: 'Self-proclaimed primal slayer and a right bad influence',
         image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
       },
     ]);
