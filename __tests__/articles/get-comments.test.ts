@@ -55,6 +55,7 @@ describe('GET /api/articles/:slug/comments', () => {
               createdAt: comment3.comment.createdAt,
               updatedAt: comment3.comment.updatedAt,
               body: comment3.comment.body,
+              media: null,
               author: {
                 id: expect.any(String),
                 username: author1.user.username,
@@ -68,6 +69,7 @@ describe('GET /api/articles/:slug/comments', () => {
               createdAt: comment2.comment.createdAt,
               updatedAt: comment2.comment.updatedAt,
               body: comment2.comment.body,
+              media: null,
               author: {
                 id: expect.any(String),
                 username: author2.user.username,
@@ -81,6 +83,7 @@ describe('GET /api/articles/:slug/comments', () => {
               createdAt: comment1.comment.createdAt,
               updatedAt: comment1.comment.updatedAt,
               body: comment1.comment.body,
+              media: null,
               author: {
                 id: expect.any(String),
                 username: author1.user.username,

@@ -101,6 +101,12 @@ People upload a profile picture instead of typing a URL.
 
 ## Media in posts and comments
 
+**Attachments.** A post has up to 4 images, GIFs and YouTube videos (`media` in `POST` and `PUT /api/articles`), a comment one (`media` in `POST /api/articles/:id/comments`, a list of at most one), kept apart from the text and shown in a grid in the feeds. Each is `{kind: "image" | "gif" | "video", url, alt?, width?, height?}`; the backend checks them (`src/media/attachments.ts`): images need an https address (or are this site's uploads), a video must be a YouTube link and is stored as `{kind: "video", url (a plain watch link), videoId, start?}`. A post or comment with media may have no text. Answers carry `article.media` (a list) and `comment.media` (or null).
+
+**Uploads and attachments.** An upload starts unattached; a post or comment that uses it claims it. Deleting the post or comment, or removing the attachment in an edit, deletes the uploads it used (only its author's: someone else's upload is never deleted), and deleting a post deletes its comments too. An upload never attached is deleted a day later, the next time its owner uploads. Uploads from before attachments are never swept, because old posts use them from their text.
+
+**Posts from before attachments** had their media in the text: Markdown images and YouTube links alone on a line. They're read as attachments, with the text without them, so they show like new posts; the stored post only changes when it's next saved with `media`.
+
 Posts and comments are Markdown, so images go in as `![description](address)` and a YouTube link on a line of its own shows as a video preview (the site does that). The backend stores uploads and searches GIFs (`src/media`):
 
 - **Uploads** (`POST /api/media`, the file as the body): PNG, JPEG, WebP or GIF, read from the file's bytes, up to **1 MB** and 4096 × 4096 pixels (the site shrinks larger pictures before uploading; a GIF keeps its animation, so it must already fit), and **30 a day** per person (429 with `Retry-After` after that). Each upload is one `media` document holding its bytes. The answer is `{"media": {id, url, contentType, width, height}}`; `GET /api/media/:id` serves it with the same headers as profile pictures (cached for good, `nosniff`, sandboxed). Deleting a member deletes their uploads.

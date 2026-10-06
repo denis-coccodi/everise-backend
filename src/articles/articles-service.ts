@@ -8,6 +8,16 @@ import {ArticleDto} from './article-dto';
 import {Comment} from './comment';
 import {ProfilesService} from '../profiles';
 import {LiveFeed, noLiveFeed} from '../live/live-feed';
+import {
+  Attachment,
+  attachmentsFromText,
+  cleanAttachment,
+  uploadIdOf,
+} from '../media/attachments';
+import {MediaService} from '../media/media-service';
+
+// What the site sends for an attachment; checked and tidied before saving.
+type AttachmentInput = Parameters<typeof cleanAttachment>[0];
 
 interface CreateArticleParams {
   title: string;
@@ -15,6 +25,7 @@ interface CreateArticleParams {
   body: string;
   tags?: string[];
   roulette?: RouletteCard;
+  media?: AttachmentInput[];
 }
 
 interface ListArticlesParams {
@@ -41,6 +52,7 @@ interface UpdateArticleParams {
   body?: string;
   tags?: string[];
   favoritedBy?: string[];
+  media?: AttachmentInput[];
 }
 
 interface ListCommentsParams {
@@ -63,27 +75,36 @@ interface ArticleDoc extends Doc {
   tags: string[];
   favoritedBy: string[];
   roulette?: RouletteCard;
+  // Unset on posts from before attachments: their media is in the text.
+  media?: Attachment[];
 }
 
 interface CommentDoc extends Doc {
   articleId: string;
   authorId: string;
   body: string;
+  media?: Attachment;
 }
 
 function toArticle(doc: ArticleDoc): Article {
+  // A post from before attachments shows its text's media as attachments,
+  // like new posts; the stored post isn't changed.
+  const {attachments, text} = doc.media
+    ? {attachments: doc.media, text: doc.body}
+    : attachmentsFromText(doc.body);
   return new Article(
     doc.id,
     doc.authorId,
     doc.slug,
     doc.title,
     doc.description,
-    doc.body,
+    text,
     doc.tags,
     doc.favoritedBy,
     doc.createdAt,
     doc.updatedAt,
-    doc.roulette
+    doc.roulette,
+    attachments
   );
 }
 
@@ -94,8 +115,14 @@ function toComment(doc: CommentDoc): Comment {
     doc.authorId,
     doc.body,
     doc.createdAt,
-    doc.updatedAt
+    doc.updatedAt,
+    doc.media ?? null
   );
+}
+
+// The site's own uploads among some attachments, by id.
+function uploadsIn(media: Attachment[]): string[] {
+  return media.flatMap(item => uploadIdOf(item) ?? []);
 }
 
 class ArticlesService {
@@ -106,7 +133,8 @@ class ArticlesService {
     private readonly db: Db,
     private readonly usersService: UsersService,
     private readonly profilesService: ProfilesService,
-    private readonly liveFeed: LiveFeed = noLiveFeed
+    private readonly liveFeed: LiveFeed = noLiveFeed,
+    private readonly mediaService?: MediaService
   ) {}
 
   async createArticle(
@@ -124,6 +152,8 @@ class ArticlesService {
       tags = this.prepareTags(params.tags);
     }
 
+    const media = (params.media ?? []).map(cleanAttachment);
+
     const articleData = {
       authorId,
       title: params.title.trim(),
@@ -131,6 +161,7 @@ class ArticlesService {
       body: params.body,
       tags,
       favoritedBy: [],
+      media,
       ...(params.roulette ? {roulette: params.roulette} : {}),
     };
 
@@ -138,6 +169,7 @@ class ArticlesService {
       this.articlesCollection,
       articleData
     );
+    await this.mediaService?.claim(authorId, uploadsIn(media));
 
     await this.announce(articleDoc);
 
@@ -306,8 +338,26 @@ class ArticlesService {
       articleData.description = params.description;
     }
 
-    if (params.body && params.body !== articleData.body) {
+    if (params.body !== undefined && params.body !== articleData.body) {
       articleData.body = params.body;
+    }
+
+    // The attachments, as the editor now has them. A post from before
+    // attachments moves its text's media into them the first time it's
+    // saved with them. Uploads no longer used are deleted.
+    let media = articleData.media;
+    if (params.media) {
+      const before = articleData.media ?? toArticle(articleData).media;
+      media = params.media.map(cleanAttachment);
+      if (!articleData.media) {
+        articleData.body = attachmentsFromText(articleData.body).text;
+      }
+      const kept = new Set(uploadsIn(media));
+      await this.mediaService?.release(
+        articleData.authorId,
+        uploadsIn(before).filter(id => !kept.has(id))
+      );
+      await this.mediaService?.claim(articleData.authorId, [...kept]);
     }
 
     if (params.tags) {
@@ -327,16 +377,40 @@ class ArticlesService {
         body: articleData.body,
         tags: articleData.tags,
         favoritedBy: articleData.favoritedBy,
+        ...(media ? {media} : {}),
       }
     );
 
     return toArticle(updatedDoc!);
   }
 
+  // Deletes a post with its comments, and the uploads they used.
   async deleteArticle(key: string): Promise<void> {
     const article = await this.requireArticle(key);
+    const comments = await this.db.find<CommentDoc>(this.commentsCollection, {
+      where: [{field: 'articleId', op: '==', value: article.id}],
+    });
 
-    await this.db.delete(this.articlesCollection, article.id);
+    await this.mediaService?.release(
+      article.authorId,
+      uploadsIn(article.media)
+    );
+    for (const comment of comments) {
+      if (comment.media) {
+        await this.mediaService?.release(
+          comment.authorId,
+          uploadsIn([comment.media])
+        );
+      }
+    }
+    await this.db.batch([
+      ...comments.map(comment => ({
+        op: 'delete' as const,
+        collection: this.commentsCollection,
+        id: comment.id,
+      })),
+      {op: 'delete', collection: this.articlesCollection, id: article.id},
+    ]);
   }
 
   async listTags(): Promise<string[]> {
@@ -386,7 +460,8 @@ class ArticlesService {
   async addComment(
     articleId: string,
     authorId: string,
-    body: string
+    body: string,
+    attachment?: AttachmentInput
   ): Promise<Comment> {
     if (!(await this.getArticleById(articleId))) {
       throw new NotFoundError(`article ${articleId} not found`);
@@ -396,16 +471,25 @@ class ArticlesService {
       throw new NotFoundError(`user "${authorId}" not found`);
     }
 
+    const media = attachment ? cleanAttachment(attachment) : undefined;
+    if (!body.trim() && !media) {
+      throw new RangeError('Write a comment, or add an image, GIF or video.');
+    }
+
     const commentData = {
       articleId,
       authorId,
       body,
+      ...(media ? {media} : {}),
     };
 
     const commentDoc = await this.db.create<CommentDoc>(
       this.commentsCollection,
       commentData
     );
+    if (media) {
+      await this.mediaService?.claim(authorId, uploadsIn([media]));
+    }
 
     return toComment(commentDoc);
   }
@@ -413,11 +497,12 @@ class ArticlesService {
   async addCommentTo(
     key: string,
     authorId: string,
-    body: string
+    body: string,
+    attachment?: AttachmentInput
   ): Promise<Comment> {
     const article = await this.requireArticle(key);
 
-    return await this.addComment(article.id, authorId, body);
+    return await this.addComment(article.id, authorId, body, attachment);
   }
 
   async getCommentById(commentId: string): Promise<Comment | undefined> {
@@ -457,6 +542,12 @@ class ArticlesService {
       throw new NotFoundError(`comment "${commentId}" not found`);
     }
 
+    if (comment.media) {
+      await this.mediaService?.release(
+        comment.authorId,
+        uploadsIn([comment.media])
+      );
+    }
     await this.db.delete(this.commentsCollection, comment.id);
   }
 

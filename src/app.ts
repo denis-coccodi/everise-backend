@@ -81,6 +81,8 @@ function createApp(
 
   const profilesService = new ProfilesService(db, usersService);
 
+  const mediaService = new MediaService(db, now);
+
   const articlesService = new ArticlesService(
     db,
     usersService,
@@ -88,7 +90,8 @@ function createApp(
     allFeeds(
       liveFeed,
       new DiscordAnnouncer(discord.webhookUrl, config.baseUrl, discord.fetch)
-    )
+    ),
+    mediaService
   );
 
   const auth = new Auth(jwtService);
@@ -119,8 +122,6 @@ function createApp(
   const discordRouter = new DiscordRouter(
     new DiscordWidgetReader(discord.guildId, now, discord.fetch)
   ).router;
-
-  const mediaService = new MediaService(db, now);
 
   const mediaRouter = new MediaRouter(
     auth,
