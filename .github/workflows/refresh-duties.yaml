@@ -44,9 +44,9 @@ jobs:
             exit 1
           fi
           if [ "$TARGET" = production ]; then
-            url=https://be-prod.everisefc.workers.dev
+            url=https://apis.everise.dev
           else
-            url=https://be-staging.everisefc.workers.dev
+            url=https://staging.apis.everise.dev
           fi
           set -- -H "X-Refresh-Key: $DUTIES_REFRESH_KEY"
           if [ "$TARGET" = staging ] && [ -n "$CF_ACCESS_CLIENT_ID" ]; then

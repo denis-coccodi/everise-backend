@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://be-prod.everisefc.workers.dev
+      url: https://apis.everise.dev
     permissions:
       contents: read
       actions: read
@@ -42,7 +42,7 @@ jobs:
       - run: npm ci
       # Compared after the deploy: a drop means data was lost.
       - name: Count production data before deploying
-        run: echo "ARTICLES_BEFORE=$(sh scripts/count-articles.sh https://be-prod.everisefc.workers.dev)" >> "$GITHUB_ENV"
+        run: echo "ARTICLES_BEFORE=$(sh scripts/count-articles.sh https://apis.everise.dev)" >> "$GITHUB_ENV"
       # JWT_SECRET_KEY is a Worker secret set once with `wrangler secret put`;
       # it is kept across deploys.
       - run: npx wrangler deploy
@@ -51,8 +51,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Check production responds and kept its data
         run: |
-          curl -sf -o /dev/null https://be-prod.everisefc.workers.dev/api/tags
-          after=$(sh scripts/count-articles.sh https://be-prod.everisefc.workers.dev)
+          curl -sf -o /dev/null https://apis.everise.dev/api/tags
+          after=$(sh scripts/count-articles.sh https://apis.everise.dev)
           echo "Articles before: $ARTICLES_BEFORE, after: $after"
           if [ "$after" -lt "$ARTICLES_BEFORE" ]; then
             echo "::error::Production lost articles in the deploy ($ARTICLES_BEFORE -> $after). Roll back in the Cloudflare dashboard (be-prod -> Deployments) and investigate."

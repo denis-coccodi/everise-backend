@@ -240,7 +240,7 @@ Only confirmed email addresses are used: Google's `email_verified`, Discord's `v
 
 The cookie's `SameSite` value comes from `COOKIE_SAME_SITE`:
 
-- `none` (default): needed while the frontend runs on another site, e.g. `localhost:4200` or another `*.workers.dev` subdomain. Every `*.workers.dev` subdomain counts as a separate site.
+- `none` (default): needed while the frontend runs on another site, e.g. `localhost:4200` or a `*.workers.dev` subdomain. Every `*.workers.dev` subdomain counts as a separate site.
 - `strict`: use this once the frontend and the API share one origin, for example a frontend Worker that forwards `/api/*` to this Worker through a [service binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/).
 
 # Getting started
@@ -269,7 +269,8 @@ curl http://localhost:8080/api/tags
 
 | Variable                    | Description                                                                                                                                                                                                                                                        |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `BASE_URL`                  | URL of the site users open (the frontend), used to build the default avatar URL; locally the API itself                                                                                                                                                            |
+| `BASE_URL`                  | URL of the site users open (the frontend): email confirmation links, sign-in return addresses, upload and default avatar URLs are built from it; locally the API itself                                                                                            |
+| `LEGACY_BASE_URLS`          | Comma-separated earlier values of `BASE_URL`. Pictures and uploads saved under them are still the site's own, and are shown at `BASE_URL` (see [Site address](#site-address))                                                                                     |
 | `CORS_ORIGINS`              | Comma-separated frontend origins allowed to call the API with the user's cookie. Production lists only the deployed frontend; localhost is for local and staging use                                                                                               |
 | `COOKIE_SAME_SITE`          | `none` (default), `lax` or `strict`                                                                                                                                                                                                                                |
 | `JWT_SECRET_KEY`            | Secret used to sign JWTs. In production, set it as a Worker secret                                                                                                                                                                                                 |
@@ -314,8 +315,14 @@ There are two environments, each a separate Worker with its own Durable Object, 
 
 | Environment | URL                                      | Deployed                                                        |
 | ----------- | ---------------------------------------- | --------------------------------------------------------------- |
-| staging     | https://be-staging.everisefc.workers.dev | automatically on every merge to `main`; by hand from any branch |
-| production  | https://be-prod.everisefc.workers.dev    | by hand, once a commit has passed staging                       |
+| staging     | https://staging.apis.everise.dev         | automatically on every merge to `main`; by hand from any branch |
+| production  | https://apis.everise.dev                 | by hand, once a commit has passed staging                       |
+
+The sites themselves are https://everise.dev and https://staging.everise.dev (the [frontend](https://github.com/denis-coccodi/everise-frontend)). Each Worker's custom domain is declared under `routes` in `wrangler.jsonc`; the `workers.dev` addresses (`be-prod.everisefc.workers.dev`, `be-staging.everisefc.workers.dev`) stay on for links saved before the move.
+
+### Site address
+
+Profile pictures and uploads in posts and comments are saved as full URLs under `BASE_URL`. When the site moves, put the old address in `LEGACY_BASE_URLS` (production lists `https://prod.everisefc.workers.dev`, staging `https://staging.everisefc.workers.dev`): those URLs are then read as `BASE_URL` ones (`src/site-urls.ts`), so pages show the new address, and replacing or deleting them still deletes the files. A document saved again stores the new address; nothing else needs migrating.
 
 Both run on the Cloudflare free plan. Its daily limits (e.g. 100,000 Worker requests and 100,000 Durable Object requests) are shared by the whole account, so heavy traffic on staging uses up production's allowance too. Avoid load tests against staging.
 
@@ -368,7 +375,7 @@ Against staging, export `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` firs
 
 Staging (backend `be-staging` and frontend `staging`) is restricted with [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) (Zero Trust Free plan): only allowed email addresses can open it, after logging in with a one-time code sent by email. Production is public.
 
-- **Browser**: open https://be-staging.everisefc.workers.dev once and log in, then use the staging frontend (log in there too). Access's cookie lets the frontend's requests through.
+- **Browser**: open https://staging.apis.everise.dev once and log in, then use the staging frontend (log in there too). Access's cookie lets the frontend's requests through.
 - **CI**: the staging smoke test authenticates with an Access service token, stored as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` repository secrets.
 - **Scripts**: export the same two variables before running `scripts/smoke.sh` against staging.
 
@@ -377,13 +384,13 @@ Staging (backend `be-staging` and frontend `staging`) is restricted with [Cloudf
 In the Cloudflare dashboard (menu names may differ slightly):
 
 1. **Service token for CI**: Zero Trust → Access controls → Service credentials → Service tokens → **Create service token**, e.g. `github-actions-staging`, no expiry or a long one. Copy the Client ID and Client Secret (the secret is shown once) and add them to this repository as the `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` secrets.
-1. **Protect the backend**: Workers & Pages → `be-staging` → Domains → **Enable Access** on the workers.dev URL (and on Preview URLs). Then open the Access application it created (Zero Trust → Access controls → Applications) and set its policies:
+1. **Protect the backend**: Workers & Pages → `be-staging` → Domains → **Enable Access** on the workers.dev URL (and on Preview URLs), and add the custom domain `staging.apis.everise.dev` to the same Access application (Zero Trust → Access controls → Applications → the application → add a public hostname). Then open the Access application it created (Zero Trust → Access controls → Applications) and set its policies:
    - Allow: Include → Emails → the allowed addresses.
    - Service Auth: Include → Service Token → `github-actions-staging`.
 1. **Let the staging frontend call it**: in the same application's settings:
-   - Cross-Origin Resource Sharing: allowed origin `https://staging.everisefc.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
+   - Cross-Origin Resource Sharing: allowed origins `https://staging.everise.dev` and `https://staging.everisefc.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
    - Cookie settings: SameSite attribute **None**.
-1. **Protect the frontend**: `staging` → Domains → **Enable Access**, with the same Allow policy.
+1. **Protect the frontend**: `staging` → Domains → **Enable Access**, with the same Allow policy, and add `staging.everise.dev` to that application too.
 1. Re-run the latest CI/CD run on `main` and check the smoke test still passes.
 
 Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or the next staging smoke test fails.
@@ -410,7 +417,7 @@ Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or
    1. Use that policy in both staging Access applications (`staging` and `be-staging`), in place of their own email lists.
    1. My Profile → API Tokens → **Create token** → Custom token, permission **Account → Access: Apps and Policies → Edit**, for your account. Then on the production Worker only (`--name be-prod`, or from this folder with `--env=""`): `npx wrangler secret put CF_ACCESS_API_TOKEN`, `npx wrangler secret put CF_ACCOUNT_ID` and `npx wrangler secret put CF_ACCESS_POLICY_ID` (the policy's name, e.g. `Staging Testers`, or its **Policy ID** from Access controls → Policies). A sync replaces only the policy's Include with the emails; its name, action and other settings stay. If a sync fails, its message carries Cloudflare's reason, and when nothing matches it lists the policies the token can see.
    1. Once deployed, run "Sync staging access" in the site's admin settings (`POST /api/admin/staging-access`): the policy now lists the admins and staging testers.
-1. **Sign-in with Google, Facebook, Microsoft and Discord** (per environment; the return address is the site's, `https://prod.everisefc.workers.dev` or `https://staging.everisefc.workers.dev`):
+1. **Sign-in with Google, Facebook, Microsoft and Discord** (per environment; the return address is the site's, `https://everise.dev` or `https://staging.everise.dev`):
    1. **Google:** [Google Cloud console](https://console.cloud.google.com/) → APIs & Services → OAuth consent screen: set it up as External, with the app name and support email, and publish it. Then Credentials → **Create credentials** → OAuth client ID → Web application, with the authorised redirect URI `<site>/api/auth/google/callback`. Set the client id and secret on the Worker: `npx wrangler secret put GOOGLE_CLIENT_ID` and `npx wrangler secret put GOOGLE_CLIENT_SECRET` (add `--env staging` for staging).
    1. **Facebook:** [Meta for Developers](https://developers.facebook.com/apps/) → **Create app** → use case "Authenticate and request data from users with Facebook Login", and add the `email` permission. Under Facebook Login → Settings, add the valid OAuth redirect URI `<site>/api/auth/facebook/callback`. Under App settings → Basic, fill in the privacy policy URL and user data deletion instructions (required to go Live), then switch the app to Live. Set `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` the same way.
    1. **Microsoft:** [Azure portal](https://portal.azure.com/) → Microsoft Entra ID → App registrations → **New registration**, supported account types "Personal Microsoft accounts only", redirect URI (Web) `<site>/api/auth/microsoft/callback`. Then Certificates & secrets → **New client secret** and copy its **Value**. Set `MICROSOFT_CLIENT_ID` (the Application (client) ID on the Overview page) and `MICROSOFT_CLIENT_SECRET`. The secret expires; add a new one before it does.

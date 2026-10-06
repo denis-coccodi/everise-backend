@@ -32,12 +32,16 @@
   "vars": {
     // The site users open: the frontend forwards /api here over a service binding
     // and serves the default avatar (BASE_URL/assets/images/avatar-profile.png).
-    "BASE_URL": "https://prod.everisefc.workers.dev",
+    // Email links, sign-in return addresses and upload URLs are built from it.
+    "BASE_URL": "https://everise.dev",
+    // The site's earlier address: pictures and uploads saved under it are read
+    // as BASE_URL ones (src/site-urls.ts).
+    "LEGACY_BASE_URLS": "https://prod.everisefc.workers.dev",
     // Only the deployed frontend. Requests carry the auth cookie, so any origin
     // listed here can act as a logged-in user: never add localhost to production.
     // Browsers now reach the API same-origin through the frontend; this stays for
     // frontend builds that still call the API directly.
-    "CORS_ORIGINS": "https://prod.everisefc.workers.dev",
+    "CORS_ORIGINS": "https://everise.dev,https://prod.everisefc.workers.dev",
     "COOKIE_SAME_SITE": "none",
     "JWT_ISSUER": "https://everisefc.com",
     "JWT_SECONDS_TO_EXPIRATION": "86400",
@@ -49,6 +53,11 @@
 
   "dev": {"port": 8080},
 
+  // The API's own address (browsers reach it through the site's /api). The
+  // workers.dev address stays on for scripts, CI and links saved before.
+  "routes": [{"pattern": "apis.everise.dev", "custom_domain": true}],
+  "workers_dev": true,
+
   // `wrangler deploy --env staging` deploys a separate Worker, "be-staging",
   // with its own Durable Object and so its own data. Bindings and vars are not
   // inherited from the top level, so they are repeated here.
@@ -57,6 +66,9 @@
     "staging": {
       // Set explicitly: the default would be "be-prod-staging".
       "name": "be-staging",
+      // Not inherited either.
+      "routes": [{"pattern": "staging.apis.everise.dev", "custom_domain": true}],
+      "workers_dev": true,
       "durable_objects": {
         "bindings": [
           {"name": "DB", "class_name": "EveriseDb"},
@@ -64,9 +76,10 @@
         ]
       },
       "vars": {
-        "BASE_URL": "https://staging.everisefc.workers.dev",
+        "BASE_URL": "https://staging.everise.dev",
+        "LEGACY_BASE_URLS": "https://staging.everisefc.workers.dev",
         // localhost is allowed here so a local frontend can use staging; staging only holds test data.
-        "CORS_ORIGINS": "https://staging.everisefc.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
+        "CORS_ORIGINS": "https://staging.everise.dev,https://staging.everisefc.workers.dev,http://localhost:4200,http://127.0.0.1:4200",
         "COOKIE_SAME_SITE": "none",
         "JWT_ISSUER": "https://everisefc.com",
         "JWT_SECONDS_TO_EXPIRATION": "86400",

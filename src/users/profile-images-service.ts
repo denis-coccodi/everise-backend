@@ -2,6 +2,7 @@ import {randomUUID} from 'crypto';
 import {config} from '../config';
 import {Db, Doc} from '../db';
 import {InvalidImageError} from '../errors';
+import {sitePathRest} from '../site-urls';
 import {ImageType, readImageInfo} from './image-info';
 
 // The limits on an uploaded profile picture. Pictures are kept as uploaded
@@ -79,10 +80,10 @@ function profileImageUrl(id: string) {
   return profileImagePrefix() + id;
 }
 
-// The id of an uploaded picture, if this image URL is one.
+// The id of an uploaded picture, if this image URL is one (at the site's
+// current address or an earlier one).
 function uploadedImageId(image: string | undefined) {
-  const prefix = profileImagePrefix();
-  return image?.startsWith(prefix) ? image.slice(prefix.length) : undefined;
+  return image ? sitePathRest(image, '/api/profile-images/') : undefined;
 }
 
 function tooLarge() {

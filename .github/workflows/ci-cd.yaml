@@ -45,7 +45,7 @@ jobs:
       cancel-in-progress: false
     environment:
       name: staging
-      url: https://be-staging.everisefc.workers.dev
+      url: https://staging.apis.everise.dev
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -55,7 +55,7 @@ jobs:
       - run: npm ci
       # Compared after the deploy: a drop means data was lost.
       - name: Count staging data before deploying
-        run: echo "ARTICLES_BEFORE=$(sh scripts/count-articles.sh https://be-staging.everisefc.workers.dev)" >> "$GITHUB_ENV"
+        run: echo "ARTICLES_BEFORE=$(sh scripts/count-articles.sh https://staging.apis.everise.dev)" >> "$GITHUB_ENV"
         env:
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
@@ -67,7 +67,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Check staging data survived the deploy
         run: |
-          after=$(sh scripts/count-articles.sh https://be-staging.everisefc.workers.dev)
+          after=$(sh scripts/count-articles.sh https://staging.apis.everise.dev)
           echo "Articles before: $ARTICLES_BEFORE, after: $after"
           if [ "$after" -lt "$ARTICLES_BEFORE" ]; then
             echo "::error::Staging lost articles in the deploy ($ARTICLES_BEFORE -> $after)."
@@ -78,7 +78,7 @@ jobs:
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
       # Exercises the deployed API: register, auth, create and read back data.
       - name: Smoke test staging
-        run: sh scripts/smoke.sh create https://be-staging.everisefc.workers.dev "$RUNNER_TEMP/jar.txt"
+        run: sh scripts/smoke.sh create https://staging.apis.everise.dev "$RUNNER_TEMP/jar.txt"
         # Staging is behind Cloudflare Access; this service token lets CI through.
         # While the secrets are unset, no Access headers are sent.
         env:
@@ -87,7 +87,7 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "Staging is live at https://be-staging.everisefc.workers.dev with \`${GITHUB_REF_NAME}\` @ \`${GITHUB_SHA::7}\`."
+            echo "Staging is live at https://staging.apis.everise.dev with \`${GITHUB_REF_NAME}\` @ \`${GITHUB_SHA::7}\`."
             echo
             if [ "$GITHUB_REF" = refs/heads/main ]; then
               echo "To ship this commit to production, open [Deploy production](${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy-production.yaml) and click **Run workflow**."
