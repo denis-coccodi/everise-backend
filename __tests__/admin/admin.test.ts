@@ -13,9 +13,15 @@ const ADMIN = {
 };
 
 async function adminToken() {
-  const registered = await request(app).post('/api/users').send({user: ADMIN});
-  if (registered.status === 201) return registered.body.user.token as string;
-  const {user} = await usersClient.login(ADMIN.email, ADMIN.password);
+  const signedIn = await request(app)
+    .post('/api/users/login')
+    .send({user: {email: ADMIN.email, password: ADMIN.password}});
+  if (signedIn.status === 200) return signedIn.body.user.token as string;
+  const {user} = await usersClient.registerUser(
+    ADMIN.email,
+    ADMIN.username,
+    ADMIN.password
+  );
   return user.token as string;
 }
 

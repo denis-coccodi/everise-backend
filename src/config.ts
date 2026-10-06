@@ -43,6 +43,11 @@ const envVarsSchema = Joi.object()
     // The GIF search in posts and comments (GIPHY's API key); without it the
     // search isn't offered.
     GIPHY_API_KEY: Joi.string().allow(''),
+    // Email confirmation at sign-up and on a new address: Resend's API key
+    // (a secret) and the sender, on a domain verified at Resend. Without the
+    // key, emails aren't confirmed.
+    RESEND_API_KEY: Joi.string().allow(''),
+    EMAIL_FROM: Joi.string().default('Everise <noreply@everise.dev>'),
   })
   .unknown();
 
@@ -89,6 +94,10 @@ const config = {
     guildId: envVars.DISCORD_GUILD_ID as string | undefined,
   },
   giphyApiKey: envVars.GIPHY_API_KEY as string | undefined,
+  email: {
+    resendApiKey: envVars.RESEND_API_KEY as string | undefined,
+    from: envVars.EMAIL_FROM as string,
+  },
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,

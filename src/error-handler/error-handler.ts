@@ -4,6 +4,7 @@ import {isCelebrateError} from 'celebrate';
 import {StatusCodes} from 'http-status-codes';
 import {
   AlreadyExistsError,
+  EmailNotConfirmedError,
   ForbiddenError,
   InvalidCredentialsError,
   InvalidImageError,
@@ -75,6 +76,14 @@ class ErrorHandler {
         .status(StatusCodes.TOO_MANY_REQUESTS)
         .set('Retry-After', String(error.retryAfterSeconds))
         .json(new ErrorsDto([error.message]));
+    }
+
+    // Its own status, so the sign-in page can offer to send the link again.
+    if (error instanceof EmailNotConfirmedError) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        ...new ErrorsDto([error.message]),
+        unconfirmedEmail: error.email,
+      });
     }
 
     if (error instanceof ForbiddenError) {

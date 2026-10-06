@@ -1,4 +1,5 @@
 export {AlreadyExistsError} from './already-exists-error';
+export {EmailNotConfirmedError} from './email-not-confirmed-error';
 export {ForbiddenError} from './forbidden-error';
 export {InvalidCredentialsError} from './invalid-credentials-error';
 export {InvalidImageError} from './invalid-image-error';

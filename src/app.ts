@@ -17,6 +17,7 @@ import {
   ImagesService,
   XivApiClient,
 } from './duties';
+import {EmailSender, ResendEmailSender} from './email';
 import {errorHandler} from './error-handler';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
@@ -36,6 +37,7 @@ import {
   allFeeds,
 } from './discord';
 import {
+  EmailConfirmation,
   JWTService,
   LoadBundledPicture,
   ProfileImagesService,
@@ -56,6 +58,9 @@ interface AppOptions {
   discord?: {webhookUrl?: string; guildId?: string; fetch?: DiscordFetch};
   // The GIF search: GIPHY's key, and how the app reaches it.
   gifSearch?: {apiKey?: string; fetch?: GifFetch};
+  // Sends the email confirmation links; without one, emails aren't
+  // confirmed.
+  emailSender?: EmailSender;
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -70,6 +75,9 @@ function createApp(
     socialLogin = {settings: config.socialLogin},
     discord = config.discord,
     gifSearch = {apiKey: config.giphyApiKey},
+    emailSender = config.email.resendApiKey
+      ? new ResendEmailSender(config.email.resendApiKey, config.email.from)
+      : undefined,
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -104,11 +112,20 @@ function createApp(
     loadBundledPicture
   );
 
+  const emailConfirmation = new EmailConfirmation(
+    db,
+    usersService,
+    emailSender,
+    config.baseUrl,
+    now
+  );
+
   const usersRouter = new UsersRouter(
     auth,
     usersService,
     jwtService,
-    profileImagesService
+    profileImagesService,
+    emailConfirmation
   ).router;
 
   const socialLoginRouter = new SocialLoginRouter(

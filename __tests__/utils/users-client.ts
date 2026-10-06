@@ -1,7 +1,7 @@
 import {faker} from '@faker-js/faker';
 import * as assert from 'node:assert';
 import request from 'supertest';
-import {app} from './app';
+import {app, lastConfirmationToken} from './app';
 
 interface UpdateUserParams {
   email?: string;
@@ -28,9 +28,20 @@ class UsersClient {
     assert.strictEqual(response.statusCode, 201);
 
     return {
-      ...response.body,
+      ...(await this.confirmEmail(email)),
       password,
     };
+  }
+
+  // Opens the last confirmation link sent to `email`, which signs in.
+  async confirmEmail(email: string) {
+    const confirmed = await request(app)
+      .post('/api/users/confirm-email')
+      .send({token: lastConfirmationToken(email)});
+
+    assert.strictEqual(confirmed.statusCode, 200);
+
+    return confirmed.body;
   }
 
   async registerRandomUser() {
