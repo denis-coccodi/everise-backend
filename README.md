@@ -333,9 +333,9 @@ Three GitHub Actions workflows:
 **CI/CD** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
 
 1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
-1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user, creates an article and reads it back, and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
+1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user and, with email confirmation on, checks that signing in waits for the emailed link (otherwise it creates an article and reads it back), and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
 
-Pull requests only run **test**, and it must pass before the PR can be merged. Each staging run leaves one smoke-test user and article in the staging database.
+Pull requests only run **test**, and it must pass before the PR can be merged. Each staging run leaves one smoke-test user (unconfirmed, with email confirmation on) in the staging database, and one Resend email.
 
 To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
 
