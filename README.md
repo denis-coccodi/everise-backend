@@ -186,7 +186,7 @@ Some of the game's flags are unreliable, so the grouping relies on duty names an
 
 The game's resets are kept in `src/duties/resets.ts`. The daily reset is at 15:00 UTC, and the weekly reset is on Tuesdays at 08:00 UTC ([wiki](https://ffxiv.consolegameswiki.com/wiki/Reset)). They stay on UTC all year: daylight saving time doesn't move them, so their local time moves instead. In Italy, the daily reset is at 17:00 in summer and 16:00 in winter. The API gives every time in UTC, and the site shows it in the reader's time zone.
 
-The Frontline daily map isn't in the game data, so it is computed without any API call from a fixed rotation in `src/duties/frontline-rotation.ts`. The map changes at the daily reset through an 8-day cycle taken from the [community wiki](https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map). When a patch changes the rotation, update the list and its start date there; the tests check it against the wiki's formula.
+The Frontline daily map isn't in the game data, so it is computed without any API call from a fixed rotation in `src/duties/frontline-rotation.ts`. The map changes at the daily reset through the 8-day cycle of the Patch 7.5 notes: one campaign a day (Worqor Chirteh is no longer always available). The cycle's start was checked against the game's Duty Finder on 2026-10-06; the [community wiki's template](https://ffxiv.consolegameswiki.com/wiki/Template:Current_Frontline_map) was a day ahead of the game then, so the tests check the rotation against its formula shifted by a day. When a patch changes the rotation, or the game's map differs from the site's, update the list and its start date there.
 
 ## Database
 

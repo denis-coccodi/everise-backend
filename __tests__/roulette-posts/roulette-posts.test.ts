@@ -268,8 +268,8 @@ describe('POST /api/roulette-results', () => {
 
     test.each([
       // Before the 15:00 UTC daily reset (17:00 in Italy in summer), and after.
-      ['2026-10-04T14:59:00Z', 'Seal Rock (Seize)'],
-      ['2026-10-04T15:00:00Z', 'the Borderland Ruins (Secure)'],
+      ['2026-10-05T14:59:00Z', 'Seal Rock (Seize)'],
+      ['2026-10-05T15:00:00Z', 'the Borderland Ruins (Secure)'],
     ])(
       'at %s, the Frontline daily challenge should name %s',
       async (now, map) => {
