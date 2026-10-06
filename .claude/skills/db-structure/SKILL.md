@@ -20,11 +20,12 @@ The whole database is one Durable Object instance, named `everise`, of the class
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |
-| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru) | `src/users/users-service.ts` (`UserDoc`) |
+| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru), emailConfirmed? (false until a password sign-up opens its link; unset: confirmed), pendingEmail? (a new address waiting for its link) | `src/users/users-service.ts` (`UserDoc`) |
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
 | `articles` | authorId → users, slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, media? (up to 4 attachments: image, gif or YouTube video; unset on posts from before, whose media is in the body), roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
 | `comments` | articleId → articles, authorId → users, body, media? (one attachment) | `src/articles/articles-service.ts` (`CommentDoc`) |
 | `media` | userId → users, contentType, width, height, data (≤ 1 MB), uploadedAt (ms, the daily limit), attached? (false until a post or comment uses it; swept a day later) | `src/media/media-service.ts` (`MediaDoc`) |
+| `emailConfirmations` | userId → users, email (the address the link went to), tokenHash (SHA-256), expiresAt, lastSentAt, sendsToday, dayStartedAt (one per account; deleted when opened) | `src/users/email-confirmation.ts` (`ConfirmationDoc`) |
 | `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`) | `src/roulette-posts/roulette-posts-service.ts` |
 | `profileImages` | userId → users, contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
 

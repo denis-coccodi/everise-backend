@@ -30,7 +30,8 @@ describe('PUT /api/user', () => {
       expect(response.body).toStrictEqual({
         user: {
           id: expect.any(String),
-          email: requestBody.user.email,
+          // The new address waits for its link to be opened.
+          email: user.user.email,
           username: requestBody.user.username,
           token: expect.not.toBeEmpty(),
           bio: requestBody.user.bio,
@@ -38,9 +39,11 @@ describe('PUT /api/user', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: requestBody.user.email,
         },
       });
 
+      await usersClient.confirmEmail(requestBody.user.email);
       const loggeduser = await usersClient.login(
         requestBody.user.email,
         requestBody.user.password
@@ -56,6 +59,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       });
     });
 
@@ -77,7 +81,7 @@ describe('PUT /api/user', () => {
       expect(response.body).toStrictEqual({
         user: {
           id: expect.any(String),
-          email: requestBody.user.email,
+          email: user.user.email,
           username: user.user.username,
           token: expect.not.toBeEmpty(),
           bio: user.user.bio,
@@ -85,9 +89,11 @@ describe('PUT /api/user', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: requestBody.user.email,
         },
       });
 
+      await usersClient.confirmEmail(requestBody.user.email);
       const loggeduser = await usersClient.login(
         requestBody.user.email,
         user.password
@@ -103,6 +109,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       });
     });
 
@@ -132,6 +139,7 @@ describe('PUT /api/user', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: null,
         },
       });
 
@@ -150,6 +158,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       });
     });
 
@@ -179,6 +188,7 @@ describe('PUT /api/user', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: null,
         },
       });
 
@@ -197,6 +207,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       });
     });
 
@@ -226,6 +237,7 @@ describe('PUT /api/user', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: null,
         },
       });
 
@@ -244,6 +256,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       });
     });
   });
@@ -274,6 +287,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       },
     });
 
@@ -292,6 +306,7 @@ describe('PUT /api/user', () => {
       darkMode: true,
       role: 'user',
       signInMethods: ['password'],
+      pendingEmail: null,
     });
   });
 
@@ -321,6 +336,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       },
     });
 
@@ -336,6 +352,7 @@ describe('PUT /api/user', () => {
       darkMode: true,
       role: 'user',
       signInMethods: ['password'],
+      pendingEmail: null,
     });
   });
 
@@ -365,6 +382,7 @@ describe('PUT /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       },
     });
 
@@ -380,6 +398,7 @@ describe('PUT /api/user', () => {
       darkMode: true,
       role: 'user',
       signInMethods: ['password'],
+      pendingEmail: null,
     });
   });
 

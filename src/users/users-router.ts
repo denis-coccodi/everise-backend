@@ -3,6 +3,7 @@ import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {config} from '../config';
 import {
+  EmailNotConfirmedError,
   InvalidCredentialsError,
   InvalidImageError,
   NotFoundError,
@@ -16,6 +17,7 @@ import {
   tooLarge,
   uploadedImageId,
 } from './profile-images-service';
+import {EmailConfirmation} from './email-confirmation';
 import {User} from './user';
 import {
   ALL_ERRORS,
@@ -45,6 +47,8 @@ class UserDto {
       // How this account can be signed in to, e.g. ["password", "google"]:
       // the settings show the Google and Facebook accounts tied to it.
       signInMethods: user.signInMethods,
+      // A new address from the settings, until its link is opened.
+      pendingEmail: user.pendingEmail ?? null,
     };
   }
 }
@@ -85,8 +89,16 @@ class UsersRouter {
     private readonly auth: Auth,
     private readonly usersService: UsersService,
     private readonly jwtService: JWTService,
-    private readonly profileImagesService: ProfileImagesService
+    private readonly profileImagesService: ProfileImagesService,
+    private readonly emailConfirmation: EmailConfirmation
   ) {}
+
+  // Signs the browser in as this user, and answers with them.
+  private signIn(res: express.Response, user: User) {
+    const token = this.jwtService.getToken(user);
+    setSessionCookie(res, token, this.jwtService.secondsToExpiration);
+    return new UserDto(user, token);
+  }
 
   get router() {
     const router = express.Router();
@@ -112,20 +124,24 @@ class UsersRouter {
       async (req, res, next) => {
         try {
           const {email, username, password} = req.body.user;
+          const confirming = this.emailConfirmation.enabled;
 
           const user = await this.usersService.registerUser(
             email,
             username,
-            password
+            password,
+            !confirming
           );
 
-          const token = this.jwtService.getToken(user);
+          // Signed in only once the link in the email is opened.
+          if (confirming) {
+            await this.emailConfirmation.send(user, user.email);
+            return res
+              .status(StatusCodes.CREATED)
+              .json({confirmation: {email: user.email}});
+          }
 
-          const userDto = new UserDto(user, token);
-
-          setSessionCookie(res, token, this.jwtService.secondsToExpiration);
-
-          return res.status(StatusCodes.CREATED).json(userDto);
+          return res.status(StatusCodes.CREATED).json(this.signIn(res, user));
         } catch (err) {
           return next(err);
         }
@@ -170,14 +186,55 @@ class UsersRouter {
           }
 
           const user = (await this.usersService.getUserByEmail(email))!;
+          if (!user.emailConfirmed) {
+            throw new EmailNotConfirmedError(user.email);
+          }
 
-          const token = this.jwtService.getToken(user);
+          return res.json(this.signIn(res, user));
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
 
-          const userDto = new UserDto(user, token);
+    // Opens a confirmation link: confirms the address and signs in.
+    router.post(
+      '/users/confirm-email',
+      celebrate({
+        [Segments.BODY]: Joi.object()
+          .keys({token: Joi.string().max(200).required()})
+          .required(),
+      }),
+      async (req, res, next) => {
+        try {
+          const user = await this.emailConfirmation.confirm(req.body.token);
+          return res.json(this.signIn(res, user));
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
 
-          setSessionCookie(res, token, this.jwtService.secondsToExpiration);
-
-          return res.json(userDto);
+    // Sends a sign-up's link again. Answers the same whether or not the
+    // address has an account waiting, so it can't be used to find one out.
+    router.post(
+      '/users/confirm-email/resend',
+      celebrate(
+        {
+          [Segments.BODY]: Joi.object()
+            .keys({
+              user: Joi.object().keys({email: email().required()}).required(),
+            })
+            .required(),
+        },
+        ALL_ERRORS
+      ),
+      async (req, res, next) => {
+        try {
+          await this.emailConfirmation.resend(req.body.user.email);
+          return res.status(StatusCodes.ACCEPTED).json({
+            confirmation: {email: req.body.user.email},
+          });
         } catch (err) {
           return next(err);
         }
@@ -227,10 +284,21 @@ class UsersRouter {
 
           const {user: updateUserData} = req.body;
 
+          // A new email address is used once its link is opened.
           const updatedUser = await this.usersService.updateUser(
             user.id,
-            updateUserData
+            updateUserData,
+            {confirmNewEmail: this.emailConfirmation.enabled}
           );
+          if (
+            updatedUser.pendingEmail &&
+            updatedUser.pendingEmail !== user.pendingEmail
+          ) {
+            await this.emailConfirmation.send(
+              updatedUser,
+              updatedUser.pendingEmail
+            );
+          }
 
           const token = this.jwtService.getToken(updatedUser);
 

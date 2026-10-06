@@ -25,7 +25,7 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 7 collections, no fixed schema (the cached FFXIV data is in the README).</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 8 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -55,13 +55,13 @@
     <text x="488" y="222" class="field">passwordHash</text><text x="744" y="222" class="type" text-anchor="end">string? (bcrypt)</text>
     <text x="488" y="243" class="field">googleId, facebookId</text><text x="744" y="243" class="type" text-anchor="end">string?</text>
     <text x="488" y="264" class="field">microsoftId, discordId</text><text x="744" y="264" class="type" text-anchor="end">string?</text>
-    <text x="488" y="285" class="field">bio</text><text x="744" y="285" class="type" text-anchor="end">string?</text>
-    <text x="488" y="306" class="field">image</text><text x="744" y="306" class="type" text-anchor="end">string? (URL)</text>
-    <text x="488" y="327" class="field">system</text><text x="744" y="327" class="type" text-anchor="end">boolean? (Tataru)</text>
-    <text x="488" y="348" class="field">darkMode</text><text x="744" y="348" class="type" text-anchor="end">boolean? (unset: dark)</text>
-    <text x="488" y="369" class="field">role</text><text x="744" y="369" class="type" text-anchor="end">string? (unset: user)</text>
-    <text x="488" y="390" class="field">createdAt</text><text x="744" y="390" class="type" text-anchor="end">Date</text>
-    <text x="488" y="411" class="field">updatedAt</text><text x="744" y="411" class="type" text-anchor="end">Date</text>
+    <text x="488" y="285" class="field">bio, image</text><text x="744" y="285" class="type" text-anchor="end">string? (image: URL)</text>
+    <text x="488" y="306" class="field">system</text><text x="744" y="306" class="type" text-anchor="end">boolean? (Tataru)</text>
+    <text x="488" y="327" class="field">darkMode</text><text x="744" y="327" class="type" text-anchor="end">boolean? (unset: dark)</text>
+    <text x="488" y="348" class="field">role</text><text x="744" y="348" class="type" text-anchor="end">string? (unset: user)</text>
+    <text x="488" y="369" class="field">emailConfirmed</text><text x="744" y="369" class="type" text-anchor="end">boolean?</text>
+    <text x="488" y="390" class="field">pendingEmail</text><text x="744" y="390" class="type" text-anchor="end">string? (new address)</text>
+    <text x="488" y="411" class="field">createdAt, updatedAt</text><text x="744" y="411" class="type" text-anchor="end">Date</text>
   </g>
 
   <!-- follows -->
@@ -206,6 +206,29 @@
   <text x="791" y="860" class="rel-label">userId</text>
   <text x="791" y="876" class="card">N : 1</text>
 
+  <!-- emailConfirmations: the confirmation link waiting to be opened, one per account -->
+  <g>
+    <rect x="860" y="800" width="300" height="290" rx="10" class="box"/>
+    <path d="M870,800 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#b45309"/>
+    <text x="876" y="826" class="title">emailConfirmations</text>
+    <rect x="872" y="849" width="26" height="16" rx="3" class="pk"/><text x="885" y="861" class="badge" text-anchor="middle">PK</text>
+    <text x="908" y="861" class="field">id</text><text x="1144" y="861" class="type" text-anchor="end">uuid</text>
+    <rect x="872" y="875" width="26" height="16" rx="3" class="fk"/><text x="885" y="887" class="badge" text-anchor="middle">FK</text>
+    <text x="908" y="887" class="field">userId</text><text x="1144" y="887" class="type" text-anchor="end">users.id</text>
+    <text x="908" y="913" class="field">email</text><text x="1144" y="913" class="type" text-anchor="end">string (sent to)</text>
+    <text x="908" y="939" class="field">tokenHash</text><text x="1144" y="939" class="type" text-anchor="end">sha-256 hex</text>
+    <text x="908" y="965" class="field">expiresAt</text><text x="1144" y="965" class="type" text-anchor="end">ISO (24 h)</text>
+    <text x="908" y="991" class="field">lastSentAt</text><text x="1144" y="991" class="type" text-anchor="end">ISO</text>
+    <text x="908" y="1017" class="field">sendsToday</text><text x="1144" y="1017" class="type" text-anchor="end">number (≤ 5)</text>
+    <text x="908" y="1043" class="field">dayStartedAt</text><text x="1144" y="1043" class="type" text-anchor="end">ISO</text>
+    <text x="908" y="1069" class="field">createdAt, updatedAt</text><text x="1144" y="1069" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- emailConfirmations -> users (enters above the media arrow) -->
+  <path d="M860,887 H830 V415 H762" class="rel" marker-end="url(#arrow)"/>
+  <text x="838" y="790" class="rel-label">userId</text>
+  <text x="888" y="790" class="card">N : 1</text>
+
   <!-- Legend -->
   <g transform="translate(0 26)">
     <rect x="40" y="710" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
@@ -223,5 +246,5 @@
   </g>
   <!-- Footer -->
   <text x="40" y="1200" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
-  <text x="40" y="1218" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts</text>
+  <text x="40" y="1218" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts</text>
 </svg>

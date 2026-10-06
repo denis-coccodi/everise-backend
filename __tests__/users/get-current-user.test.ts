@@ -27,6 +27,7 @@ describe('GET /api/user', () => {
         darkMode: true,
         role: 'user',
         signInMethods: ['password'],
+        pendingEmail: null,
       },
     });
   });

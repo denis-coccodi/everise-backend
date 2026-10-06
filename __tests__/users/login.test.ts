@@ -32,6 +32,7 @@ describe('POST /api/users/login', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: null,
         },
       });
     });

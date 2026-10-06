@@ -35,6 +35,11 @@ interface UserDoc extends Doc {
   bio?: string;
   image?: string;
   darkMode?: boolean;
+  // false until a password sign-up opens its confirmation link; missing on
+  // accounts from before email confirmation, which count as confirmed.
+  emailConfirmed?: boolean;
+  // A new address from the settings, used once its link is opened.
+  pendingEmail?: string;
   // Given by an admin; admins themselves come from ADMIN_EMAILS.
   role?: AssignableRole;
   // An account the app posts as, e.g. Tataru for guests. Nobody can sign in
@@ -104,20 +109,32 @@ function toUser(doc: UserDoc): User {
     doc.darkMode,
     roleOf(doc),
     !!doc.system,
-    signInMethodsOf(doc)
+    signInMethodsOf(doc),
+    doc.emailConfirmed !== false,
+    doc.pendingEmail
   );
 }
+
+// How long an unconfirmed sign-up keeps its username.
+const UNCONFIRMED_DAYS = 7;
 
 class UsersService {
   private readonly usersCollection = 'users';
 
   constructor(private readonly db: Db) {}
 
+  // A new account. With `confirmed` false it can't be signed in to until its
+  // email is confirmed; until then a new sign-up with the same email
+  // replaces it (whoever made it may not own the address), and after
+  // UNCONFIRMED_DAYS its username is free again.
   async registerUser(
     email: string,
     username: string,
-    password: string
+    password: string,
+    confirmed = true
   ): Promise<User> {
+    await this.removeUnconfirmed(email);
+
     await this.validateEmailOrThrow(email);
 
     await this.validateUsernameOrThrow(username);
@@ -130,6 +147,7 @@ class UsersService {
       email,
       username,
       passwordHash,
+      ...(confirmed ? {} : {emailConfirmed: false}),
     };
 
     const userDoc = await this.db.create<UserDoc>(
@@ -168,10 +186,16 @@ class UsersService {
           'That email belongs to an account nobody can sign in to.'
         );
       }
+      // The provider has confirmed the email. An account whose email wasn't
+      // confirmed may have been made by someone else with this address, so
+      // its password goes: the owner can set a new one in the settings.
+      const unconfirmed = sameEmail.emailConfirmed === false;
       const linked = await this.db.update<UserDoc>(
         this.usersCollection,
         sameEmail.id,
-        {[field]: signIn.id}
+        unconfirmed
+          ? {[field]: signIn.id, emailConfirmed: true, passwordHash: undefined}
+          : {[field]: signIn.id}
       );
       return {user: toUser(linked!), created: false};
     }
@@ -208,7 +232,13 @@ class UsersService {
     return userDoc && toUser(userDoc);
   }
 
-  async updateUser(userId: string, params: UpdateUserParams): Promise<User> {
+  // With `confirmNewEmail`, a new email address waits as pendingEmail until
+  // its link is opened (see confirmEmail); otherwise it's used at once.
+  async updateUser(
+    userId: string,
+    params: UpdateUserParams,
+    {confirmNewEmail = false} = {}
+  ): Promise<User> {
     const userData = await this.db.get<UserDoc>(this.usersCollection, userId);
 
     if (!userData) {
@@ -217,7 +247,14 @@ class UsersService {
 
     if (params.email && params.email !== userData.email) {
       await this.validateEmailOrThrow(params.email);
-      userData.email = params.email;
+      if (confirmNewEmail) {
+        userData.pendingEmail = params.email;
+      } else {
+        userData.email = params.email;
+      }
+    } else if (params.email === userData.email) {
+      // Back to the current address: nothing waits any more.
+      userData.pendingEmail = undefined;
     }
 
     if (params.username && params.username !== userData.username) {
@@ -249,6 +286,7 @@ class UsersService {
       userId,
       {
         email: userData.email,
+        pendingEmail: userData.pendingEmail,
         username: userData.username,
         passwordHash: userData.passwordHash,
         bio: userData.bio,
@@ -258,6 +296,33 @@ class UsersService {
     );
 
     return toUser(updatedData!);
+  }
+
+  // A confirmation link for `email` was opened: the account's own address
+  // is confirmed, or the new address it was changing to takes over.
+  async confirmEmail(userId: string, email: string): Promise<User> {
+    const doc = await this.db.get<UserDoc>(this.usersCollection, userId);
+    if (doc && doc.pendingEmail === email) {
+      // Someone may have taken the address since it was asked for.
+      await this.validateEmailOrThrow(email);
+      const updated = await this.db.update<UserDoc>(
+        this.usersCollection,
+        userId,
+        {email, pendingEmail: undefined, emailConfirmed: true}
+      );
+      return toUser(updated!);
+    }
+    if (doc && doc.email === email) {
+      const updated = await this.db.update<UserDoc>(
+        this.usersCollection,
+        userId,
+        {emailConfirmed: true}
+      );
+      return toUser(updated!);
+    }
+    throw new RangeError(
+      'This link is for an email address the account no longer uses.'
+    );
   }
 
   // Sets the user's picture to a stored upload's URL, or back to the default
@@ -388,6 +453,25 @@ class UsersService {
       ) {
         return candidate;
       }
+    }
+  }
+
+  // Unconfirmed sign-ups with this email, and any older than
+  // UNCONFIRMED_DAYS: nobody could sign in to them, and they would keep the
+  // email or username from someone else.
+  private async removeUnconfirmed(email: string) {
+    const cutoff = Date.now() - UNCONFIRMED_DAYS * 24 * 60 * 60 * 1000;
+    const stale = (
+      await this.db.find<UserDoc>(this.usersCollection, {
+        where: [{field: 'emailConfirmed', op: '==', value: false}],
+      })
+    ).filter(
+      doc =>
+        doc.email.toLowerCase() === email.toLowerCase() ||
+        new Date(doc.createdAt).getTime() < cutoff
+    );
+    for (const doc of stale) {
+      await this.db.delete(this.usersCollection, doc.id);
     }
   }
 

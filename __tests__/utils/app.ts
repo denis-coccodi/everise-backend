@@ -5,6 +5,7 @@ import {createApp} from '../../src/app';
 import {DocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
+import {EmailMessage, EmailSender} from '../../src/email';
 import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
 import {FakeXivApi} from './fake-xivapi';
@@ -123,6 +124,24 @@ const gifFetch: GifFetch = async url => {
   };
 };
 
+// The emails the app sent; `failing` makes sending fail.
+const mail = {
+  sent: [] as EmailMessage[],
+  failing: false,
+};
+const emailSender: EmailSender = {
+  async send(message) {
+    if (mail.failing) throw new Error('mail unavailable');
+    mail.sent.push(message);
+  },
+};
+
+// The token in the last confirmation link sent to `email`.
+function lastConfirmationToken(email: string) {
+  const message = [...mail.sent].reverse().find(m => m.to === email);
+  return message?.text.match(/confirm-email\?token=([\w-]+)/)?.[1];
+}
+
 // The Worker reads public/ through its assets binding; tests read the files.
 async function loadBundledPicture(path: string) {
   return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
@@ -143,6 +162,7 @@ const app = createApp(
       fetch: discordFetch,
     },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
+    emailSender,
   }
 );
 
@@ -157,7 +177,9 @@ export {
   db,
   discord,
   giphy,
+  lastConfirmationToken,
   live,
+  mail,
   providers,
   staging,
   xivApi,

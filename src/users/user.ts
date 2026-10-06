@@ -28,7 +28,12 @@ class User {
     readonly role: Role = 'user',
     // An account the app posts as (Tataru), which nobody can sign in to.
     readonly system = false,
-    readonly signInMethods: SignInMethod[] = ['password']
+    readonly signInMethods: SignInMethod[] = ['password'],
+    // False for an account signed up with a password whose email hasn't
+    // been confirmed yet: it can't be signed in to.
+    readonly emailConfirmed = true,
+    // A new address from the settings, waiting for its link to be opened.
+    readonly pendingEmail?: string
   ) {}
 }
 

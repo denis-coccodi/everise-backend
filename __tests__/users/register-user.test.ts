@@ -26,7 +26,7 @@ describe('POST /api/users', () => {
   });
 
   describe('given a valid request', () => {
-    test('should return http status code 201 and the created user', async () => {
+    test('should return http status code 201 and send a confirmation link', async () => {
       const requestBody = {
         user: {
           email: faker.internet.email(),
@@ -40,7 +40,14 @@ describe('POST /api/users', () => {
         .send(requestBody);
 
       expect(response.status).toBe(201);
+      // Not signed in: the account is used once its email is confirmed.
       expect(response.body).toStrictEqual({
+        confirmation: {email: requestBody.user.email},
+      });
+      expect(response.headers['set-cookie']).toBeUndefined();
+
+      const confirmed = await usersClient.confirmEmail(requestBody.user.email);
+      expect(confirmed).toStrictEqual({
         user: {
           id: expect.any(String),
           email: requestBody.user.email,
@@ -51,6 +58,7 @@ describe('POST /api/users', () => {
           darkMode: true,
           role: 'user',
           signInMethods: ['password'],
+          pendingEmail: null,
         },
       });
     });
