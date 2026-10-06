@@ -20,16 +20,15 @@ interface Reply {
   text: string;
 }
 
-// The day's replies (UTC), all members' and each member's.
+// The Neurons the day's replies (UTC) cost, all members' and each member's.
 interface UsageDoc extends Doc {
-  total: number;
-  members: Record<string, number>;
+  neurons?: number;
+  members?: Record<string, number>;
 }
 
-// Per member and for the whole site, so nobody can use up the day's free
-// Neurons alone, and the site never goes past them.
-const MEMBER_DAILY_REPLIES = 40;
-const SITE_DAILY_REPLIES = 400;
+// A member may spend this share of the site's daily Neurons, so a few
+// keen talkers can't close the Waking Sands for everyone.
+const MEMBER_SHARE = 1 / 4;
 // What the model sees of the conversation: the latest lines only.
 const HISTORY_LINES = 12;
 const MAX_REPLY_LENGTH = 1500;
@@ -44,11 +43,16 @@ class WakingSandsService {
     private readonly db: Db,
     private readonly model: CharacterModel | undefined,
     private readonly tataru: TataruAccount,
-    private readonly now: () => Date
+    private readonly now: () => Date,
+    // The Neurons this backend may spend a day (WAKING_SANDS_DAILY_NEURONS).
+    // Staging and production share the account's free 10,000, so together
+    // they must stay under them.
+    private readonly dailyNeurons: number,
+    private readonly siteUrl: string
   ) {}
 
   get available() {
-    return !!this.model;
+    return !!this.model && this.dailyNeurons > 0;
   }
 
   // The characters with their pictures (Tataru's is her account's).
@@ -58,7 +62,11 @@ class WakingSandsService {
       id: character.id,
       name: character.name,
       title: character.title,
-      image: character.id === 'tataru' ? tataru.image : undefined,
+      image: character.picture
+        ? `${this.siteUrl}/api/waking-sands/characters/${character.id}/picture`
+        : character.id === 'tataru'
+        ? tataru.image
+        : undefined,
     }));
   }
 
@@ -66,42 +74,56 @@ class WakingSandsService {
     const characters = characterIds.map(id => characterById(id)!);
     const replies: Reply[] = [];
     for (const character of characters) {
-      await this.count(member.id);
+      await this.checkBudget(member.id);
       const messages = prompt(character, characters, member, [
         ...lines,
         ...replies.map(reply => ({from: reply.character, text: reply.text})),
       ]);
-      const text = clean(await this.model!.reply(messages), character);
-      replies.push({character: character.id, text});
+      const {text, neurons} = await this.model!.reply(messages);
+      await this.spend(member.id, neurons);
+      replies.push({character: character.id, text: clean(text, character)});
     }
     return replies;
   }
 
-  // Counts one reply, or refuses it once a limit is reached.
-  private async count(memberId: string) {
+  // Refuses the next reply once the member's or the site's Neurons for the
+  // day are spent. A reply costs a few, so the last one may go a little over.
+  private async checkBudget(memberId: string) {
     const now = this.now();
-    const day = now.toISOString().slice(0, 10);
-    const usage = await this.db.get<UsageDoc>(this.collection, day);
-    const total = usage?.total ?? 0;
-    const members = usage?.members ?? {};
-    const mine = members[memberId] ?? 0;
-    if (mine >= MEMBER_DAILY_REPLIES) {
-      throw new TooManyRequestsError(
-        `You've had ${MEMBER_DAILY_REPLIES} replies today. The Scions need their rest too: come back after midnight UTC!`,
-        secondsToMidnightUtc(now)
-      );
-    }
-    if (total >= SITE_DAILY_REPLIES) {
+    const usage = await this.usage(now);
+    const mine = usage.members?.[memberId] ?? 0;
+    if ((usage.neurons ?? 0) >= this.dailyNeurons) {
       throw new TooManyRequestsError(
         'The Waking Sands is closed for the rest of the day. Come back after midnight UTC!',
         secondsToMidnightUtc(now)
       );
     }
-    await this.db.set(this.collection, day, {
-      total: total + 1,
-      members: {...members, [memberId]: mine + 1},
+    if (mine >= this.dailyNeurons * MEMBER_SHARE) {
+      throw new TooManyRequestsError(
+        "You've talked a great deal today, and the Scions need their rest too. Come back after midnight UTC!",
+        secondsToMidnightUtc(now)
+      );
+    }
+  }
+
+  private async spend(memberId: string, neurons: number) {
+    const now = this.now();
+    const usage = await this.usage(now);
+    const members = usage.members ?? {};
+    await this.db.set(this.collection, day(now), {
+      neurons: (usage.neurons ?? 0) + neurons,
+      members: {...members, [memberId]: (members[memberId] ?? 0) + neurons},
     });
   }
+
+  private async usage(now: Date): Promise<Partial<UsageDoc>> {
+    return (await this.db.get<UsageDoc>(this.collection, day(now))) ?? {};
+  }
+}
+
+// The UTC day, as the usage document's id.
+function day(now: Date) {
+  return now.toISOString().slice(0, 10);
 }
 
 // What the model is told for `character`'s next line: who they are, who's
@@ -168,10 +190,4 @@ function clean(text: string, character: Character) {
     : unnamed;
 }
 
-export {
-  ChatLine,
-  MEMBER_DAILY_REPLIES,
-  Reply,
-  SITE_DAILY_REPLIES,
-  WakingSandsService,
-};
+export {ChatLine, MEMBER_SHARE, Reply, WakingSandsService};

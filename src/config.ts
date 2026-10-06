@@ -51,6 +51,10 @@ const envVarsSchema = Joi.object()
     // key, emails aren't confirmed.
     RESEND_API_KEY: Joi.string().allow(''),
     EMAIL_FROM: Joi.string().default('Everise <noreply@everise.dev>'),
+    // The Workers AI Neurons the Waking Sands may spend a day. The account's
+    // free 10,000 are shared by staging and production, so the two settings
+    // together must stay under them. 0 (the default) keeps the chat closed.
+    WAKING_SANDS_DAILY_NEURONS: Joi.number().integer().min(0).default(0),
   })
   .unknown();
 
@@ -105,6 +109,7 @@ const config = {
     resendApiKey: envVars.RESEND_API_KEY as string | undefined,
     from: envVars.EMAIL_FROM as string,
   },
+  wakingSandsDailyNeurons: envVars.WAKING_SANDS_DAILY_NEURONS as number,
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,

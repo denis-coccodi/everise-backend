@@ -1,10 +1,7 @@
 import 'jest-extended';
 import request from 'supertest';
-import {
-  MEMBER_DAILY_REPLIES,
-  SITE_DAILY_REPLIES,
-  WorkersAiModel,
-} from '../../src/waking-sands';
+import {MEMBER_SHARE, WorkersAiModel} from '../../src/waking-sands';
+import {config} from '../../src/config';
 import {TooManyRequestsError, UpstreamError} from '../../src/errors';
 import {app, characters, clock, db, usersClient} from '../utils';
 
@@ -29,6 +26,7 @@ const hello = {
 beforeEach(() => {
   characters.asked = [];
   characters.answers = [];
+  characters.neurons = 5;
   characters.error = undefined;
 });
 
@@ -36,8 +34,11 @@ afterEach(() => {
   clock.now = undefined;
 });
 
+// The app may spend this many Neurons a day in the tests (utils/app.ts).
+const DAILY_NEURONS = 1000;
+
 describe('the Waking Sands characters', () => {
-  test('lists Tataru with her picture, and that the chat is open', async () => {
+  test("lists Tataru, Urianger and Y'shtola with their pictures, and that the chat is open", async () => {
     const response = await request(app).get('/api/waking-sands/characters');
 
     expect(response.status).toBe(200);
@@ -47,9 +48,40 @@ describe('the Waking Sands characters', () => {
         id: 'tataru',
         name: 'Tataru',
         title: 'Receptionist of the Scions of the Seventh Dawn',
-        image: expect.stringContaining('/api/'),
+        image: expect.stringContaining('/api/profile-images/'),
+      },
+      {
+        id: 'urianger',
+        name: 'Urianger',
+        title: 'Astrologian and scholar of Sharlayan',
+        image: `${config.baseUrl}/api/waking-sands/characters/urianger/picture`,
+      },
+      {
+        id: 'yshtola',
+        name: "Y'shtola",
+        title: 'Sorceress of the Scions of the Seventh Dawn',
+        image: `${config.baseUrl}/api/waking-sands/characters/yshtola/picture`,
       },
     ]);
+  });
+
+  test.each(['urianger', 'yshtola'])("serves %s's picture", async id => {
+    const response = await request(app).get(
+      `/api/waking-sands/characters/${id}/picture`
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toBe('image/png');
+    expect(response.body.subarray(1, 4).toString()).toBe('PNG');
+  });
+
+  test('has no picture for anyone else', async () => {
+    for (const id of ['tataru', 'thancred']) {
+      const response = await request(app).get(
+        `/api/waking-sands/characters/${id}/picture`
+      );
+      expect(response.status).toBe(404);
+    }
   });
 });
 
@@ -129,6 +161,42 @@ describe('talking in the Waking Sands', () => {
     expect(content).toContain('line 29');
   });
 
+  test('everyone present answers in turn, hearing the others', async () => {
+    const member = await signedIn();
+    characters.answers = [
+      'Welcome, welcome!',
+      'Verily, the stars foretold thy coming.',
+      'Must you always be so dramatic, Urianger?',
+    ];
+
+    const response = await ask(member.token, {
+      characters: ['tataru', 'urianger', 'yshtola'],
+      lines: [{from: 'member', text: 'Hello, everyone!'}],
+    });
+
+    expect(response.body.replies).toStrictEqual([
+      {character: 'tataru', text: 'Welcome, welcome!'},
+      {character: 'urianger', text: 'Verily, the stars foretold thy coming.'},
+      {
+        character: 'yshtola',
+        text: 'Must you always be so dramatic, Urianger?',
+      },
+    ]);
+    const yshtola = characters.asked[2];
+    expect(yshtola[0].content).toContain("Y'shtola Rhul");
+    expect(yshtola[0].content).toContain(
+      `${member.username}, Tataru, Urianger`
+    );
+    expect(yshtola[1]).toStrictEqual({
+      role: 'user',
+      content: [
+        `${member.username}: Hello, everyone!`,
+        'Tataru: Welcome, welcome!',
+        'Urianger: Verily, the stars foretold thy coming.',
+      ].join('\n'),
+    });
+  });
+
   test('drops a name the model wrote before her line', async () => {
     const member = await signedIn();
     characters.answers = ['**Tataru:** A modest fee, of course!'];
@@ -146,7 +214,8 @@ describe('talking in the Waking Sands', () => {
   });
 
   test.each([
-    ['an unknown character', {...hello, characters: ['urianger']}],
+    ['an unknown character', {...hello, characters: ['thancred']}],
+    ['the same character twice', {...hello, characters: ['tataru', 'tataru']}],
     ['no character', {...hello, characters: []}],
     ['no lines', {...hello, lines: []}],
     [
@@ -166,10 +235,14 @@ describe('talking in the Waking Sands', () => {
     expect(characters.asked).toBeEmpty();
   });
 
-  test(`allows a member ${MEMBER_DAILY_REPLIES} replies a day`, async () => {
+  test(`lets a member spend ${
+    MEMBER_SHARE * 100
+  }% of the day's Neurons`, async () => {
     const member = await signedIn();
     clock.now = new Date('2026-10-06T22:00:00Z');
-    for (let i = 0; i < MEMBER_DAILY_REPLIES; i++) {
+    characters.neurons = 50;
+    const allowed = (DAILY_NEURONS * MEMBER_SHARE) / characters.neurons;
+    for (let i = 0; i < allowed; i++) {
       expect((await ask(member.token, hello)).status).toBe(200);
     }
 
@@ -177,17 +250,21 @@ describe('talking in the Waking Sands', () => {
 
     expect(refused.status).toBe(429);
     expect(refused.headers['retry-after']).toBe(String(2 * 60 * 60));
-    expect(characters.asked).toHaveLength(MEMBER_DAILY_REPLIES);
+    expect(refused.body.errors.body[0]).toContain('need their rest');
+    expect(characters.asked).toHaveLength(allowed);
+    // Someone else still can.
+    const other = await signedIn();
+    expect((await ask(other.token, hello)).status).toBe(200);
 
     clock.now = new Date('2026-10-07T00:00:01Z');
     expect((await ask(member.token, hello)).status).toBe(200);
   });
 
-  test(`stops for everyone after ${SITE_DAILY_REPLIES} replies a day`, async () => {
+  test("stops for everyone once the site's Neurons for the day are spent", async () => {
     const member = await signedIn();
     clock.now = new Date('2026-10-06T12:00:00Z');
     await db.set('chatUsage', '2026-10-06', {
-      total: SITE_DAILY_REPLIES,
+      neurons: DAILY_NEURONS,
       members: {},
     });
 
@@ -196,6 +273,24 @@ describe('talking in the Waking Sands', () => {
     expect(refused.status).toBe(429);
     expect(refused.body.errors.body[0]).toContain('closed');
     expect(characters.asked).toBeEmpty();
+  });
+
+  test('counts what each reply cost', async () => {
+    const member = await signedIn();
+    clock.now = new Date('2026-10-08T12:00:00Z');
+    characters.neurons = 3.5;
+
+    await ask(member.token, {...hello, characters: ['tataru', 'yshtola']});
+
+    const usage = await db.get<{
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+      neurons: number;
+      members: Record<string, number>;
+    }>('chatUsage', '2026-10-08');
+    expect(usage?.neurons).toBe(7);
+    expect(usage?.members).toEqual({[member.id]: 7});
   });
 });
 
@@ -210,12 +305,28 @@ describe('Workers AI', () => {
     run.mockResolvedValueOnce({response: ' Hello! '});
     run.mockResolvedValueOnce({choices: [{message: {content: 'Welcome!'}}]});
 
-    expect(await model.reply(messages)).toBe('Hello!');
-    expect(await model.reply(messages)).toBe('Welcome!');
+    expect((await model.reply(messages)).text).toBe('Hello!');
+    expect((await model.reply(messages)).text).toBe('Welcome!');
     expect(run).toHaveBeenCalledWith(
       expect.stringMatching(/^@cf\//),
       expect.objectContaining({messages})
     );
+  });
+
+  test('reports what the reply cost, or prices its tokens', async () => {
+    run.mockResolvedValueOnce({
+      choices: [{message: {content: 'Hi'}}],
+      usage: {prompt_tokens: 80, completion_tokens: 49, neurons: 2.06},
+    });
+    run.mockResolvedValueOnce({
+      choices: [{message: {content: 'Hi'}}],
+      usage: {prompt_tokens: 1_000_000, completion_tokens: 0},
+    });
+    run.mockResolvedValueOnce({response: 'Hi'});
+
+    expect((await model.reply(messages)).neurons).toBe(2.06);
+    expect((await model.reply(messages)).neurons).toBeCloseTo(9091);
+    expect((await model.reply(messages)).neurons).toBe(20);
   });
 
   test('says the chat is closed once the free Neurons are used up', async () => {

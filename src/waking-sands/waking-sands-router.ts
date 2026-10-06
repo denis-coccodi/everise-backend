@@ -1,20 +1,24 @@
 import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
-import {UpstreamError} from '../errors';
+import {NotFoundError, UpstreamError} from '../errors';
 import {Auth} from '../middleware';
-import {CHARACTERS} from './characters';
+import {LoadBundledPicture} from '../users';
+import {CHARACTERS, characterById} from './characters';
 import {WakingSandsService} from './waking-sands-service';
 
 const CHARACTER_IDS = CHARACTERS.map(character => character.id);
 const MAX_LINES = 40;
 const MAX_LINE_LENGTH = 1000;
+// A picture can change with a deploy, so it's cached for a day, not for good.
+const PICTURE_CACHE_CONTROL = 'public, max-age=86400';
 
 // The Waking Sands: chatting with FINAL FANTASY XIV characters. Signed in
 // only, so the day's free AI budget is shared fairly among members.
 class WakingSandsRouter {
   constructor(
     private readonly auth: Auth,
-    private readonly wakingSands: WakingSandsService
+    private readonly wakingSands: WakingSandsService,
+    private readonly loadBundledPicture: LoadBundledPicture
   ) {}
 
   get router() {
@@ -31,6 +35,28 @@ class WakingSandsRouter {
         return next(err);
       }
     });
+
+    // A character's picture, shipped with the backend (public/). Served
+    // under /api so the site reaches it through its own address.
+    router.get(
+      '/waking-sands/characters/:id/picture',
+      async (req, res, next) => {
+        try {
+          const picture = characterById(req.params.id)?.picture;
+          const bytes = picture && (await this.loadBundledPicture(picture));
+          if (!bytes) {
+            throw new NotFoundError('picture');
+          }
+          return res
+            .type('image/png')
+            .set('Cache-Control', PICTURE_CACHE_CONTROL)
+            .set('X-Content-Type-Options', 'nosniff')
+            .send(Buffer.from(bytes));
+        } catch (err) {
+          return next(err);
+        }
+      }
+    );
 
     // The characters' answers to the member's latest line. `characters` are
     // who's in the conversation, answering in that order; `lines` its latest

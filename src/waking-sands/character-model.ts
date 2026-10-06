@@ -6,9 +6,16 @@ interface ModelMessage {
   content: string;
 }
 
+// A character's next line, and what writing it cost in Workers AI's
+// Neurons (the free plan has 10,000 a day).
+interface ModelReply {
+  text: string;
+  neurons: number;
+}
+
 // Writes a character's next line; tests pass a fake.
 interface CharacterModel {
-  reply(messages: ModelMessage[]): Promise<string>;
+  reply(messages: ModelMessage[]): Promise<ModelReply>;
 }
 
 // The Worker's Workers AI binding (the part of it the app uses).
@@ -16,9 +23,11 @@ interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
 }
 
-// Small, quick and cheap: a few Neurons a reply (2 for a short one), so the
-// free plan's 10,000 a day cover well over a thousand.
+// Small, quick and cheap: a few Neurons a reply.
 const MODEL = '@cf/google/gemma-4-26b-a4b-it';
+// Its price in Neurons per token, for an answer that doesn't say what it
+// cost (Workers AI's pricing page: 9,091 a million in, 27,273 out).
+const NEURONS_PER_TOKEN = {in: 9091 / 1e6, out: 27273 / 1e6};
 const MAX_REPLY_TOKENS = 300;
 
 // Workers AI answers these codes once the account's free Neurons for the day
@@ -55,7 +64,7 @@ class WorkersAiModel implements CharacterModel {
     if (!text) {
       throw new UpstreamError("The characters can't answer right now.");
     }
-    return text;
+    return {text, neurons: neuronsOf(output)};
   }
 }
 
@@ -73,6 +82,19 @@ function textOf(output: unknown): string | undefined {
   return typeof text === 'string' ? text.trim() : undefined;
 }
 
+// What the answer says it cost; else priced from its tokens, else a
+// generous guess.
+function neuronsOf(output: unknown): number {
+  const usage = (output as {usage?: Record<string, unknown>})?.usage;
+  if (typeof usage?.neurons === 'number') return usage.neurons;
+  const tokensIn = usage?.prompt_tokens;
+  const tokensOut = usage?.completion_tokens;
+  if (typeof tokensIn === 'number' && typeof tokensOut === 'number') {
+    return tokensIn * NEURONS_PER_TOKEN.in + tokensOut * NEURONS_PER_TOKEN.out;
+  }
+  return 20;
+}
+
 function secondsToMidnightUtc(now: Date) {
   const midnight = Date.UTC(
     now.getUTCFullYear(),
@@ -86,6 +108,7 @@ export {
   AiBinding,
   CharacterModel,
   ModelMessage,
+  ModelReply,
   WorkersAiModel,
   secondsToMidnightUtc,
 };

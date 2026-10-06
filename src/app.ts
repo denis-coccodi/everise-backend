@@ -66,9 +66,10 @@ interface AppOptions {
   // Sends the email confirmation links; without one, emails aren't
   // confirmed.
   emailSender?: EmailSender;
-  // Writes the Waking Sands characters' lines (Workers AI); without one,
+  // The Waking Sands: what writes the characters' lines (Workers AI), and
+  // the Neurons it may spend a day. Without a model, or with no Neurons,
   // the chat isn't open.
-  characterModel?: CharacterModel;
+  wakingSands?: {model?: CharacterModel; dailyNeurons?: number};
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -84,7 +85,7 @@ function createApp(
     discord = config.discord,
     gifSearch = {apiKey: config.giphyApiKey},
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
-    characterModel,
+    wakingSands = {},
   }: AppOptions = {}
 ) {
   const usersService = new UsersService(db);
@@ -192,7 +193,15 @@ function createApp(
 
   const wakingSandsRouter = new WakingSandsRouter(
     auth,
-    new WakingSandsService(db, characterModel, tataru, now)
+    new WakingSandsService(
+      db,
+      wakingSands.model,
+      tataru,
+      now,
+      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
+      config.baseUrl
+    ),
+    loadBundledPicture
   ).router;
 
   const app = express();
