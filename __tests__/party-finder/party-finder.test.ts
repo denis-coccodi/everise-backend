@@ -20,6 +20,7 @@ function entry(
     updatedSecondsAgo?: number;
     secondsRemaining?: number;
     searchArea?: {world: boolean; one_player_per_job: boolean};
+    slotCount?: number;
     slots?: string[][];
     filled?: (string | null)[];
   } = {},
@@ -56,7 +57,7 @@ function entry(
       seconds_remaining: changes.secondsRemaining ?? 3600,
       min_item_level: 0,
       num_parties: 1,
-      slot_count: 3,
+      slot_count: changes.slotCount ?? 3,
       last_server_restart: 1789630212,
       objective: {duty_completion: false, practice: true, loot: false},
       conditions: {
@@ -255,6 +256,26 @@ describe('GET /api/party-finder', () => {
       '66-5': [null, false],
       '66-6': ['Copperbell Mines (Hard)', true],
     });
+  });
+
+  test("shows only the party's own slots: xivpf sends 8 for a party of 4", async () => {
+    xivpf.listings = [
+      entry({
+        category: 'DeepDungeon',
+        slotCount: 4,
+        slots: [['PLD'], ['WHM'], ['BLM'], ['NIN'], [], [], [], []],
+        filled: ['PLD', null, null, null, null, null, null, null],
+      }),
+    ];
+
+    const response = await board();
+
+    expect(
+      response.body.listings[0].slots.map(
+        (s: {job: string | null; roles: string[]}) =>
+          s.job ?? s.roles.join('+'),
+      ),
+    ).toEqual(['PLD', 'healer', 'dps', 'dps']);
   });
 
   test("skips entries it doesn't understand", async () => {

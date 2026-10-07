@@ -27,6 +27,9 @@ interface XivpfListing {
     conditions: {duty_complete: boolean};
     loot_rules: {greed_only: boolean; lootmaster: boolean};
     search_area: {world: boolean; one_player_per_job: boolean};
+    // How many slots the party has (4 for a light party): xivpf always
+    // sends 8, the rest unused.
+    slot_count: number;
     // The jobs each slot accepts, and who's in it (a job code, or null).
     slots: string[][];
     slots_filled: (string | null)[];
@@ -135,9 +138,9 @@ function toListing({updated_at, listing}: XivpfListing): PartyFinderListing {
     dutyComplete: listing.conditions.duty_complete,
     loot: lootOf(listing),
     parties: listing.num_parties,
-    slots: listing.slots_filled.map((job, i) =>
-      slotOf(job, listing.slots[i] ?? []),
-    ),
+    slots: listing.slots_filled
+      .slice(0, listing.slot_count)
+      .map((job, i) => slotOf(job, listing.slots[i] ?? [])),
     updatedAt: updated.toISOString(),
     expiresAt: new Date(
       updated.getTime() + listing.seconds_remaining * 1000,
