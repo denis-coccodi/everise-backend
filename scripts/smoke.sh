@@ -2,7 +2,8 @@
 # Smoke test against a running Everise API.
 #
 # Usage: scripts/smoke.sh create|verify <base-url> <cookie-jar>
-#   create: register a random user, create an article, list it. When the
+#   create: register a random user, create an article, list it, upload an
+#           image and read it back (the R2 bucket). When the
 #           API confirms emails (RESEND_API_KEY set), the sign-up answers
 #           "check your email" and signing in is refused until the link is
 #           opened, so that is checked instead of the article. The address
@@ -23,13 +24,14 @@ FAILED=0
 CF_ACCESS_CLIENT_ID=${CF_ACCESS_CLIENT_ID:-}
 CF_ACCESS_CLIENT_SECRET=${CF_ACCESS_CLIENT_SECRET:-}
 
-# req <expected-status> <label> <curl args...>
+# req <expected-status> <label> <curl args...>; the body is JSON unless CT
+# names another type.
 req() {
   expected=$1; label=$2; shift 2
   if [ -n "$CF_ACCESS_CLIENT_ID" ]; then
     set -- -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
   fi
-  out=$(curl -s -b "$J" -c "$J" -w '\n%{redirect_url}\n%{http_code}' -H 'Content-Type: application/json' "$@")
+  out=$(curl -s -b "$J" -c "$J" -w '\n%{redirect_url}\n%{http_code}' -H "Content-Type: ${CT:-application/json}" "$@")
   code=$(printf '%s' "$out" | tail -n 1)
   BODY=$(printf '%s\n' "$out" | sed '$d' | sed '$d')
   redirect=$(printf '%s' "$out" | tail -n 2 | head -n 1)
@@ -81,6 +83,11 @@ case "$MODE" in
         req 201 "create article" -X POST "$B/api/articles" -d "{\"article\":{\"title\":\"Smoke $U\",\"description\":\"d\",\"body\":\"b\",\"tagList\":[\"smoketest\"]}}"
         printf '%s' "$BODY" | sed -n 's/.*"article":{"id":"\([^"]*\)".*/\1/p' > "$J.article"
         req 200 "list articles" "$B/api/articles?author=$U"
+        CT=image/gif
+        req 201 "upload an image" -X POST "$B/api/media" --data-binary "@$(dirname "$0")/../__tests__/fixtures/images/pixel.gif"
+        CT=
+        M=$(printf '%s' "$BODY" | sed -n 's/.*"media":{"id":"\([^"]*\)".*/\1/p')
+        req 200 "read the image back" -o /dev/null "$B/api/media/$M"
         ;;
     esac
     req 200 "list tags"     "$B/api/tags"
