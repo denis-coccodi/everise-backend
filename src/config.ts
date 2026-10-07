@@ -55,6 +55,9 @@ const envVarsSchema = Joi.object()
     // free 10,000 are shared by staging and production, so the two settings
     // together must stay under them. 0 (the default) keeps the chat closed.
     WAKING_SANDS_DAILY_NEURONS: Joi.number().integer().min(0).default(0),
+    // Checks every response against its route's schema (src/api), failing
+    // with a 500 when they differ. On in the tests, off when deployed.
+    CHECK_API_RESPONSES: Joi.boolean().default(false),
   })
   .unknown();
 
@@ -110,6 +113,7 @@ const config = {
     from: envVars.EMAIL_FROM as string,
   },
   wakingSandsDailyNeurons: envVars.WAKING_SANDS_DAILY_NEURONS as number,
+  checkApiResponses: envVars.CHECK_API_RESPONSES as boolean,
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,

@@ -1,7 +1,18 @@
 import {createHash, timingSafeEqual} from 'crypto';
 import * as express from 'express';
+import {z} from 'zod';
+import {route} from '../api';
 import {NotFoundError, UnauthorizedError} from '../errors';
 import {DutiesService} from './duties-service';
+import {
+  DutiesRefreshResponse,
+  DutyGroupsResponse,
+  FrontlineResponse,
+  ImagesRefreshResponse,
+  JobsResponse,
+  ResetsResponse,
+  RoulettesResponse,
+} from './duty-schemas';
 import {ImagesService} from './images-service';
 
 // Header carrying the key that allows a refresh (the DUTIES_REFRESH_KEY secret).
@@ -23,93 +34,116 @@ class DutiesRouter {
   get router() {
     const router = express.Router();
 
-    router.get('/duties', async (_req, res, next) => {
-      try {
-        return res
-          .set('Cache-Control', LIVE_CACHE_CONTROL)
-          .json(await this.dutiesService.getDutyGroups());
-      } catch (err) {
-        return next(err);
-      }
-    });
+    const get = (
+      path: string,
+      summary: string,
+      schema: z.ZodType,
+      read: () => unknown,
+      cacheControl?: string,
+    ) =>
+      route(
+        router,
+        {
+          method: 'get',
+          path,
+          summary,
+          responses: {200: {description: summary, schema}},
+        },
+        async (_req, res) => {
+          if (cacheControl) res.set('Cache-Control', cacheControl);
+          res.json(await read());
+        },
+      );
 
-    router.get('/frontline', async (_req, res, next) => {
-      try {
-        return res
-          .set('Cache-Control', LIVE_CACHE_CONTROL)
-          .json(await this.dutiesService.getFrontline());
-      } catch (err) {
-        return next(err);
-      }
-    });
-
+    get(
+      '/duties',
+      'The duties, by type',
+      DutyGroupsResponse,
+      () => this.dutiesService.getDutyGroups(),
+      LIVE_CACHE_CONTROL,
+    );
+    get(
+      '/frontline',
+      "Today's Frontline map and the rotation",
+      FrontlineResponse,
+      () => this.dutiesService.getFrontline(),
+      LIVE_CACHE_CONTROL,
+    );
     // The game's daily and weekly resets, as UTC times.
-    router.get('/resets', (_req, res) =>
-      res
-        .set('Cache-Control', LIVE_CACHE_CONTROL)
-        .json(this.dutiesService.getResets()),
+    get(
+      '/resets',
+      "The game's daily and weekly resets",
+      ResetsResponse,
+      () => this.dutiesService.getResets(),
+      LIVE_CACHE_CONTROL,
+    );
+    get('/roulettes', 'The duty roulettes', RoulettesResponse, () =>
+      this.dutiesService.getRoulettes(),
+    );
+    get('/jobs', 'The combat jobs', JobsResponse, () =>
+      this.dutiesService.getJobs(),
     );
 
-    router.get('/roulettes', async (_req, res, next) => {
-      try {
-        return res.json(await this.dutiesService.getRoulettes());
-      } catch (err) {
-        return next(err);
-      }
-    });
-
-    router.get('/jobs', async (_req, res, next) => {
-      try {
-        return res.json(await this.dutiesService.getJobs());
-      } catch (err) {
-        return next(err);
-      }
-    });
-
     // A game image the data refers to by id (job icons, banners...).
-    router.get('/images/:id', async (req, res, next) => {
-      try {
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/images/:id',
+        summary: 'A game image',
+        tag: 'duties',
+        responses: {200: {description: 'The picture.', contentType: 'image/*'}},
+      },
+      async (req, res) => {
         const image = await this.imagesService.getImage(req.params.id);
-        if (!image) {
-          throw new NotFoundError('image');
-        }
-
-        return res
+        if (!image) throw new NotFoundError('image');
+        res
           .type(image.contentType)
           .set('Cache-Control', IMAGE_CACHE_CONTROL)
           .send(Buffer.from(image.data));
-      } catch (err) {
-        return next(err);
-      }
-    });
+      },
+    );
 
     // Re-downloads the game data from XIVAPI and replaces the cached copy.
-    // The images follow through /duties/refresh/images.
-    router.post('/duties/refresh', async (req, res, next) => {
-      try {
+    // The images follow through /duties/refresh/images. Both need the
+    // refresh key in the x-refresh-key header.
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/duties/refresh',
+        summary: 'Read the game data from XIVAPI again (needs x-refresh-key)',
+        responses: {
+          200: {description: 'What was read.', schema: DutiesRefreshResponse},
+        },
+      },
+      async (req, res) => {
         this.checkRefreshKey(req);
-
-        return res.json(await this.dutiesService.refresh());
-      } catch (err) {
-        return next(err);
-      }
-    });
+        res.json(await this.dutiesService.refresh());
+      },
+    );
 
     // Downloads the next batch of images; call until `pending` is 0.
-    router.post('/duties/refresh/images', async (req, res, next) => {
-      try {
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/duties/refresh/images',
+        summary: 'Download the next batch of game images (needs x-refresh-key)',
+        responses: {
+          200: {description: 'How far along.', schema: ImagesRefreshResponse},
+        },
+      },
+      async (req, res) => {
         this.checkRefreshKey(req);
-
-        return res.json(await this.imagesService.downloadBatch());
-      } catch (err) {
-        return next(err);
-      }
-    });
+        res.json(await this.imagesService.downloadBatch());
+      },
+    );
 
     return router;
   }
 
-  private checkRefreshKey(req: express.Request) {
+  private checkRefreshKey(req: {header(name: string): string | undefined}) {
     if (!this.isRefreshKey(req.header(REFRESH_KEY_HEADER))) {
       throw new UnauthorizedError('invalid refresh key');
     }

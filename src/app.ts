@@ -18,6 +18,7 @@ import {
   XivApiClient,
 } from './duties';
 import {emailSenderFor, EmailSender} from './email';
+import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
@@ -248,6 +249,9 @@ function createApp(
   app.use('/api', wakingSandsRouter);
 
   app.use('/api', adminRouter);
+
+  // The API's description, built from the routes above.
+  app.use('/api', docsRouter());
 
   app.use(
     async (

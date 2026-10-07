@@ -5,3 +5,5 @@ firestore-data/
 worker-configuration.d.ts
 # Docs keep their hand-written tables (wide ones would be padded).
 *.md
+# Written by __tests__/openapi (npm test).
+openapi.json

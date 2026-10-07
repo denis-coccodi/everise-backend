@@ -11,6 +11,11 @@ abstract class HttpError extends Error {
     return this.message;
   }
 
+  // The response's messages: one, unless an error reports several fields.
+  messages(): string[] {
+    return [this.publicMessage];
+  }
+
   // Extra response headers (e.g. Retry-After).
   headers(): Record<string, string> {
     return {};

@@ -7,14 +7,19 @@ description: How backend code in this repo is written - routers, services, error
 
 The Everise API: Express 5 running in a Cloudflare Worker, with the data in the `EveriseDb` Durable Object (see the `db-structure` skill). Code is organised by feature: `src/<feature>/` holds a `<feature>-router.ts`, a `<feature>-service.ts`, its models and DTOs, and an `index.ts` that exports them. Other features import from that `index.ts`, never from a file inside it.
 
-## Routers
+## Routers and the API description
 
 - A router class takes its services (and `Auth`) in its constructor and builds an `express.Router` in its `router` getter. `src/app.ts` puts it together and mounts it under `/api`.
-- Every route checks its input with `celebrate` (`Segments.BODY`, `PARAMS`, `QUERY`). Give limits a message the user can read (`.messages({'string.max': ...})`) and take the numbers from constants the service exports. Don't copy them.
-- Sign-in: `this.auth.requireAuth` / `this.auth.optionalAuth`; `req.user` is then set (or `undefined`).
-- Read route params with `routeParam(req, 'id')` (`src/middleware`), not `req.params.id`: Express 5 types a param as `string | string[]` whenever a validator sits before the handler.
-- A router only reads the request, calls services, and writes the response (status from `StatusCodes`, body as a DTO). Rules and data access belong in the service.
-- Express 5 forwards a rejected async handler to the error middleware by itself. New handlers just `throw` or `await`; they don't need `try { ... } catch (err) { next(err) }`. The older handlers still have that wrapper; take it out when you are editing one of them anyway.
+- Every endpoint is defined with `route(router, spec, handler)` from `src/api`. The spec has the method, the path, a summary, `auth` (`this.auth.required` / `this.auth.optional`), zod schemas for `params`, `query` and `body`, and every status it answers with its response schema. From that one definition:
+  - the request is checked: a 422 lists one message per failing field (`src/api/messages.ts`), and the handler gets `req.params`, `req.query` and `req.body` parsed and typed;
+  - the OpenAPI 3.1 document is built (`GET /api/openapi.json`, browsable at `/api/docs`), and the frontend generates its API types from it;
+  - in tests (`CHECK_API_RESPONSES`), every JSON answer is checked against its declared schema. An undeclared status, or a field the schema doesn't name, fails the test with a 500.
+- Schemas live next to the feature, in `<feature>-schemas.ts`. Response bodies use `responseSchema('Name', z.strictObject({...}))`; request bodies use `requestSchema('Name', z.object({...}))`. The name becomes the frontend's type name, so make it a noun (`Profile`, `ArticleResponse`, `NewComment`). Dates in responses are `isoDate`. Query values arrive as strings, so numbers use `z.coerce.number()`.
+- Give limits a message the user can read (`.max(MAX, {error: 'Keep the comment to 280 characters.'})`), and take the numbers from constants the service exports. Don't copy them.
+- `openapi.json` at the repo root is the committed copy of the document. `npm test` rewrites it when routes change and fails once; commit the new file. CI fails while it's out of date.
+- A router only reads the request, calls services, and writes the response (status from `StatusCodes`). Rules and data access belong in the service.
+- Express 5 forwards a rejected async handler to the error middleware by itself: handlers just `throw` or `await`, with no `try { ... } catch (err) { next(err) }`.
+- Routes still on `celebrate` (being moved to `route()`) read params with `routeParam(req, 'id')`, since Express 5 types params as `string | string[]` behind a validator.
 
 ## Services
 
