@@ -28,6 +28,12 @@ const XIVPF_LISTINGS = 'https://xivpf.com/api/listings';
 const REFRESH_MS = 60 * 1000;
 // When xivpf can't be reached, the last listings stay this long.
 const STALE_MS = 15 * 60 * 1000;
+// A listing nobody's plugin has reported for this long is taken as gone.
+// xivpf only hears of listings players see: one that filled up or was taken
+// down stays there until its timer would have run out (up to an hour),
+// while live ones are reported every minute or two. Without this the page
+// showed three times what the game does.
+const UNSEEN_MS = 5 * 60 * 1000;
 
 // The Party Finder listings of the data centres the site follows, read from
 // xivpf and kept between requests. Parsing xivpf's whole answer takes more
@@ -59,7 +65,9 @@ class PartyFinderBoard implements PartyFinderSource {
       worlds: DATA_CENTRES[dataCentre],
       fetchedAt: new Date(this.snapshot.at).toISOString(),
       listings: this.snapshot.listings[dataCentre].filter(
-        listing => Date.parse(listing.expiresAt) > now,
+        listing =>
+          Date.parse(listing.expiresAt) > now &&
+          now - Date.parse(listing.updatedAt) <= UNSEEN_MS,
       ),
     };
   }

@@ -221,6 +221,22 @@ describe('GET /api/party-finder', () => {
     ]);
   });
 
+  test('drops listings nobody has reported for 5 minutes, even with time left: they filled up or were taken down', async () => {
+    xivpf.listings = [
+      entry({id: 1, updatedSecondsAgo: 4 * 60}),
+      entry({id: 2, updatedSecondsAgo: 6 * 60}),
+    ];
+
+    const response = await board();
+    expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
+      '66-1',
+    ]);
+
+    // A minute on, the first one's 5 minutes are up too.
+    at(61);
+    expect((await board()).body.listings).toEqual([]);
+  });
+
   test("names maps, deep dungeons and roulettes, not the duty xivpf's API mistakes them for", async () => {
     const named = (
       id: number,
