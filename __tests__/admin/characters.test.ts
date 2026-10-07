@@ -46,6 +46,7 @@ describe('editing the Waking Sands characters', () => {
       'urianger',
       'yshtola',
       'barnaby',
+      'bernadette',
     ]);
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
