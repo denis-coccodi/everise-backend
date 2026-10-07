@@ -25,6 +25,7 @@ import {
 import {emailSenderFor, EmailSender} from './email';
 import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
+import {FileStore, MemoryFileStore} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
 import {ProfilesRouter, ProfilesService} from './profiles';
@@ -59,6 +60,8 @@ import {
 } from './waking-sands';
 
 interface AppOptions {
+  // Where uploaded images' bytes are kept (R2 in the Worker; memory without).
+  fileStore?: FileStore;
   // Reads a picture from public/ (the Worker's static assets).
   loadBundledPicture?: LoadBundledPicture;
   // Where staging testers are given access to the staging site.
@@ -86,6 +89,7 @@ function createApp(
   now: () => Date = () => new Date(),
   liveFeed: LiveFeed = noLiveFeed,
   {
+    fileStore = new MemoryFileStore(),
     loadBundledPicture = async () => undefined,
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
     socialLogin = {settings: config.socialLogin},
@@ -104,7 +108,7 @@ function createApp(
 
   const profilesService = new ProfilesService(db, usersService);
 
-  const mediaService = new MediaService(db, now);
+  const mediaService = new MediaService(db, fileStore, now);
 
   const articlesService = new ArticlesService(
     db,
@@ -125,7 +129,7 @@ function createApp(
 
   const auth = new Auth(jwtService);
 
-  const profileImagesService = new ProfileImagesService(db);
+  const profileImagesService = new ProfileImagesService(db, fileStore);
 
   const tataru = new TataruAccount(
     usersService,
