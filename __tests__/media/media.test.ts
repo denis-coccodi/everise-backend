@@ -4,7 +4,7 @@ import {join} from 'path';
 import request from 'supertest';
 import {URL} from 'url';
 import {config} from '../../src/config';
-import {app, clock, giphy, usersClient} from '../utils';
+import {app, clock, db, files, giphy, usersClient} from '../utils';
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, '../fixtures/images', name));
@@ -99,6 +99,70 @@ describe('uploading images and GIFs', () => {
 
     clock.now = new Date('2026-10-07T10:00:01Z');
     expect((await upload(token, fixture('pixel.gif'))).status).toBe(201);
+  });
+});
+
+describe('where uploads are kept', () => {
+  const idOf = async (username: string) =>
+    (
+      await db.find('users', {
+        where: [{field: 'username', op: '==', value: username}],
+      })
+    )[0].id;
+
+  test('the bytes go to the file store, the rest to the database', async () => {
+    const gif = fixture('pixel.gif');
+
+    const {body} = await upload(await signedIn(), gif);
+
+    const id = body.media.id;
+    const kept = await files.get(`media/${id}`);
+    expect(Buffer.compare(Buffer.from(kept!), gif)).toBe(0);
+    const doc = await db.get('media', id);
+    expect(doc).not.toHaveProperty('data');
+    expect(doc).toHaveProperty('size', gif.length);
+  });
+
+  test('an upload from before the file store moves there when first read', async () => {
+    const gif = fixture('pixel.gif');
+    await db.set('media', 'from-before', {
+      userId: 'someone',
+      contentType: 'image/gif',
+      width: 1,
+      height: 1,
+      data: new Uint8Array(gif),
+      uploadedAt: Date.now(),
+    });
+
+    for (let read = 0; read < 2; read++) {
+      const served = await request(app).get('/api/media/from-before');
+      expect(served.status).toBe(200);
+      expect(Buffer.compare(served.body, gif)).toBe(0);
+    }
+    expect(await files.get('media/from-before')).toBeDefined();
+    expect(await db.get('media', 'from-before')).not.toHaveProperty('data');
+  });
+
+  test('each member keeps at most 100 MB of uploads', async () => {
+    const {user} = await usersClient.registerRandomUser();
+    const userId = await idOf(user.username);
+    await db.set('media', `full-${userId}`, {
+      userId,
+      contentType: 'image/png',
+      width: 1,
+      height: 1,
+      size: 100 * 1024 * 1024 - 100,
+      uploadedAt: 0,
+      attached: true,
+    });
+
+    expect((await upload(user.token, fixture('pixel.gif'))).status).toBe(201);
+    const refused = await upload(user.token, pngOf(100));
+
+    expect(refused.status).toBe(422);
+    expect(refused.body.errors.body[0]).toBe(
+      'Your uploads fill your 100 MB. Delete posts or comments with images you no longer need, or link to an image instead.',
+    );
   });
 });
 

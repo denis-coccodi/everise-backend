@@ -5,6 +5,7 @@ export {
   clock,
   db,
   discord,
+  files,
   giphy,
   lastConfirmationToken,
   live,

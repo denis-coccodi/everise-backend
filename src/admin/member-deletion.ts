@@ -61,6 +61,10 @@ class MemberDeletion {
       this.db.find<FollowDoc>('follows'),
     ]);
 
+    const [pictures, uploads] = await Promise.all([
+      this.profileImagesService.idsOf(user.id),
+      this.mediaService.idsOf(user.id),
+    ]);
     const ownArticles = new Set(articles.map(a => a.id));
     const goneComments = comments.filter(
       c => c.authorId === user.id || ownArticles.has(c.articleId),
@@ -81,13 +85,15 @@ class MemberDeletion {
       ...follows
         .filter(f => f.followerId === user.id || f.followeeId === user.id)
         .map(f => remove('follows', f.id)),
-      ...(await this.profileImagesService.idsOf(user.id)).map(id =>
-        remove('profileImages', id),
-      ),
-      ...(await this.mediaService.deletionsFor(user.id)),
+      ...pictures.map(id => remove('profileImages', id)),
+      ...uploads.map(id => remove('media', id)),
       remove('postLimits', `user-${user.id}`),
       remove('users', user.id),
     ];
+    // The files first: if the database step fails, a retry finds the
+    // documents and finishes.
+    await this.profileImagesService.deleteFiles(pictures);
+    await this.mediaService.deleteFiles(uploads);
     await this.db.batch(writes);
 
     return {

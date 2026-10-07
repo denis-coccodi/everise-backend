@@ -6,6 +6,7 @@ import {URL} from 'url';
 import {
   app,
   articlesClient,
+  files,
   profilesClient,
   staging,
   usersClient,
@@ -105,6 +106,8 @@ describe('DELETE /api/admin/users/:username', () => {
       404,
     );
     expect((await request(app).get(picture)).status).toBe(404);
+    expect(await files.get(picture.replace('/api/', ''))).toBeUndefined();
+    expect(await files.get(`media/${media.body.media.id}`)).toBeUndefined();
     expect(
       (await request(app).get(`/api/media/${media.body.media.id}`)).status,
     ).toBe(404);

@@ -3,7 +3,7 @@ import {readFileSync} from 'fs';
 import {join} from 'path';
 import request from 'supertest';
 import {config} from '../../src/config';
-import {app} from '../utils/app';
+import {app, db, files} from '../utils/app';
 import {usersClient} from '../utils';
 
 const imageUrl = '/api/user/image';
@@ -84,6 +84,9 @@ describe('profile pictures', () => {
 
     expect(second.body.user.image).not.toBe(first.body.user.image);
     expect((await getImage(pathOf(first.body.user.image))).status).toBe(404);
+    expect(
+      await files.get(pathOf(first.body.user.image).replace('/api/', '')),
+    ).toBeUndefined();
     expect((await getImage(pathOf(second.body.user.image))).status).toBe(200);
   });
 
@@ -153,6 +156,37 @@ describe('profile pictures', () => {
       `${config.baseUrl}/assets/images/avatar-profile.png`,
     );
     expect((await getImage(pathOf(uploaded.body.user.image))).status).toBe(404);
+  });
+
+  test('a picture is kept in the file store, not the database', async () => {
+    const {user} = await usersClient.registerRandomUser();
+    const picture = fixture('small.png');
+
+    const uploaded = await upload(user.token, picture);
+
+    const id = pathOf(uploaded.body.user.image).split('/').pop()!;
+    const kept = await files.get(`profile-images/${id}`);
+    expect(Buffer.compare(Buffer.from(kept!), picture)).toBe(0);
+    expect(await db.get('profileImages', id)).not.toHaveProperty('data');
+  });
+
+  test('a picture from before the file store moves there when first read', async () => {
+    const old = fixture('vp8.webp');
+    await db.set('profileImages', 'from-before', {
+      userId: 'someone',
+      contentType: 'image/webp',
+      data: new Uint8Array(old),
+    });
+
+    for (let read = 0; read < 2; read++) {
+      const served = await getImage('/api/profile-images/from-before');
+      expect(served.status).toBe(200);
+      expect(Buffer.compare(served.body, old)).toBe(0);
+    }
+    expect(await files.get('profile-images/from-before')).toBeDefined();
+    const moved = await db.get('profileImages', 'from-before');
+    expect(moved).not.toHaveProperty('data');
+    expect(moved).toHaveProperty('size', old.length);
   });
 
   test('GET /api/profile-images/:id should return 404 for an unknown picture', async () => {

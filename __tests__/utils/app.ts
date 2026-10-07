@@ -6,6 +6,7 @@ import {SqlDocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
+import {MemoryFileStore} from '../../src/files';
 import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
@@ -13,6 +14,9 @@ import {FakeXivApi} from './fake-xivapi';
 import {SqliteStorage} from './sqlite-storage';
 
 const db = new SqlDocumentStore(new SqliteStorage());
+
+// The uploaded images' bytes, by key (e.g. media/<id>).
+const files = new MemoryFileStore();
 
 const xivApi = new FakeXivApi();
 
@@ -185,6 +189,7 @@ const app = createApp(
   () => clock.now ?? new Date(),
   liveFeed,
   {
+    fileStore: files,
     loadBundledPicture,
     stagingAccess,
     socialLogin,
@@ -210,6 +215,7 @@ export {
   clock,
   db,
   discord,
+  files,
   giphy,
   lastConfirmationToken,
   live,
