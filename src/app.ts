@@ -162,6 +162,7 @@ function createApp(
   ).router;
 
   const discordRouter = new DiscordRouter(
+    auth,
     new DiscordWidgetReader(discord.guildId, now, discord.fetch),
   ).router;
 

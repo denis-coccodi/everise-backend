@@ -201,12 +201,25 @@ describe('DiscordAnnouncer', () => {
 });
 
 describe('GET /api/discord/widget', () => {
+  let token: string;
+
+  beforeAll(async () => {
+    ({
+      user: {token},
+    } = await usersClient.registerRandomUser());
+  });
+
   afterEach(() => {
     clock.now = undefined;
     discord.widgetStatus = 200;
   });
 
-  test("shows who's online, and asks Discord at most once a minute", async () => {
+  const getWidget = () =>
+    request(app)
+      .get('/api/discord/widget')
+      .set('authorization', `Token ${token}`);
+
+  test("shows a member who's online, and asks Discord at most once a minute", async () => {
     clock.now = new Date('2026-10-06T10:00:00Z');
     discord.widgetReads = 0;
     discord.widget = {
@@ -221,9 +234,11 @@ describe('GET /api/discord/widget', () => {
       ],
     };
 
-    const response = await request(app).get('/api/discord/widget');
+    const response = await getWidget();
 
     expect(response.status).toBe(200);
+    // Kept by the member's browser only, never by a shared cache.
+    expect(response.headers['cache-control']).toBe('private, max-age=60');
     expect(response.body).toStrictEqual({
       widget: {
         name: 'EVERISE',
@@ -237,11 +252,11 @@ describe('GET /api/discord/widget', () => {
         ],
       },
     });
-    await request(app).get('/api/discord/widget');
+    await getWidget();
     expect(discord.widgetReads).toBe(1);
 
     clock.now = new Date('2026-10-06T10:01:01Z');
-    await request(app).get('/api/discord/widget');
+    await getWidget();
     expect(discord.widgetReads).toBe(2);
   });
 
@@ -249,8 +264,18 @@ describe('GET /api/discord/widget', () => {
     clock.now = new Date('2026-10-06T12:00:00Z');
     discord.widgetStatus = 403;
 
-    const response = await request(app).get('/api/discord/widget');
+    const response = await getWidget();
 
     expect(response.body).toStrictEqual({widget: null});
+  });
+
+  test("doesn't show guests who's online, nor ask Discord for them", async () => {
+    clock.now = new Date('2026-10-06T14:00:00Z');
+    discord.widgetReads = 0;
+
+    const response = await request(app).get('/api/discord/widget');
+
+    expect(response.status).toBe(401);
+    expect(discord.widgetReads).toBe(0);
   });
 });
