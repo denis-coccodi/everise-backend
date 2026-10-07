@@ -10,6 +10,8 @@ interface XivpfListing {
   updated_at: string;
   listing: {
     id: number;
+    // When the game's servers last restarted: listing numbers start again.
+    last_server_restart: number;
     recruiter: string;
     description: Text;
     created_world: {id: number; name: string};
@@ -117,8 +119,9 @@ function lootOf({loot_rules}: XivpfListing['listing']) {
 function toListing({updated_at, listing}: XivpfListing): PartyFinderListing {
   const updated = new Date(updated_at);
   return {
-    // Listing ids restart with the game's servers: the world keeps them apart.
-    id: `${listing.created_world.id}-${listing.id}`,
+    // Listing numbers start again when the game's servers restart. The world
+    // isn't part of it: xivpf can hold one listing under two worlds.
+    id: `${listing.last_server_restart}-${listing.id}`,
     recruiter: listing.recruiter,
     description: listing.description.en ?? '',
     world: listing.created_world,
