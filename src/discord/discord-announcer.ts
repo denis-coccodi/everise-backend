@@ -13,8 +13,8 @@ type DiscordFetch = (
 
 type ArticleEvent = ArticleCreated['article'];
 
-// The crest's red, the colour of the line beside each announcement.
-const EVERISE_RED = 0xb3362f;
+// The crest's orange, the colour of the line beside each announcement.
+const CREST_ORANGE = 0xf78627;
 // A post isn't held up for long by a slow Discord.
 const TIMEOUT_MS = 3000;
 
@@ -95,7 +95,7 @@ class DiscordAnnouncer implements LiveFeed {
       title: truncate(article.title, 256),
       url: link,
       description: truncate(article.description, 350),
-      color: EVERISE_RED,
+      color: CREST_ORANGE,
       timestamp: article.createdAt,
       author: {
         name: author,
