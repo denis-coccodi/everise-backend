@@ -9,16 +9,12 @@ import {
   readImageBody,
   uploadedImageId,
 } from '../users';
-import {CharactersService} from '../waking-sands';
-import {
-  CharacterParams,
-  memberDto,
-  tataruDto,
-  uploadedFile,
-} from './admin-dtos';
+import {CharacterParams, CharactersService} from '../waking-sands';
+import {memberDto, tataruDto, uploadedFile} from './admin-dtos';
 import {
   AdminCharacterResponse,
   AdminCharactersResponse,
+  CHARACTER_LIMITS,
   CharacterUpdate,
   MemberDeletionResponse,
   MembersQuery,
@@ -226,7 +222,10 @@ class AdminRouter {
         },
       },
       async (_req, res) => {
-        res.json({characters: await this.characters.all()});
+        res.json({
+          characters: await this.characters.all(),
+          limits: CHARACTER_LIMITS,
+        });
       },
     );
 

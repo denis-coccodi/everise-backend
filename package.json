@@ -49,7 +49,6 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "celebrate": "^15.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
@@ -57,10 +56,5 @@
     "jsonwebtoken": "^9.0.3",
     "slugify": "^1.6.9",
     "zod": "^4.6.5"
-  },
-  "overrides": {
-    "celebrate": {
-      "lodash": "^4.18.1"
-    }
   }
 }

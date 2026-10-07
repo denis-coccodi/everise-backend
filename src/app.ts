@@ -7,7 +7,7 @@ import {
   MemberDeletion,
   StagingAccess,
 } from './admin';
-import {ArticlesRouter, ArticlesService} from './articles';
+import {ArticlesRouter, ArticlesService, CommentsRouter} from './articles';
 import {config} from './config';
 import {Db} from './db';
 import {
@@ -184,6 +184,11 @@ function createApp(
     usersService,
     profilesService,
   ).router;
+  const commentsRouter = new CommentsRouter(
+    auth,
+    articlesService,
+    profilesService,
+  ).router;
 
   const xivApiClient = new XivApiClient(httpGet);
 
@@ -241,6 +246,8 @@ function createApp(
   app.use('/api', profilesRouter);
 
   app.use('/api', articlesRouter);
+
+  app.use('/api', commentsRouter);
 
   app.use('/api', dutiesRouter);
 

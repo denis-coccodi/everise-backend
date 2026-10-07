@@ -1,8 +1,6 @@
-import {z} from 'zod';
 import {config} from '../config';
 import {InvalidImageError} from '../errors';
 import {User} from '../users';
-import {CHARACTERS} from '../waking-sands';
 
 // What the admin routes answer with, and the checks they share.
 
@@ -31,12 +29,6 @@ function tataruDto(tataru: User) {
   };
 }
 
-const CharacterParams = z.object({
-  id: z.string().refine(id => CHARACTERS.some(c => c.id === id), {
-    error: 'There is no such character.',
-  }),
-});
-
 // A file as the body: the checks every upload gets.
 function uploadedFile(body: unknown) {
   if (!Buffer.isBuffer(body) || body.length === 0) {
@@ -45,4 +37,4 @@ function uploadedFile(body: unknown) {
   return new Uint8Array(body);
 }
 
-export {CharacterParams, memberDto, tataruDto, uploadedFile};
+export {memberDto, tataruDto, uploadedFile};

@@ -1,5 +1,4 @@
 import slugify from 'slugify';
-import {Joi} from 'celebrate';
 import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
@@ -253,15 +252,7 @@ class ArticlesService {
       });
     }
 
-    let limit;
-    if (params.limit) {
-      limit = await Joi.number().integer().validateAsync(params.limit);
-    }
-
-    let offset;
-    if (params.offset) {
-      offset = await Joi.number().integer().validateAsync(params.offset);
-    }
+    const {limit, offset} = params;
 
     const articleDocs = await this.db.find<ArticleDoc>(
       this.articlesCollection,
@@ -302,15 +293,11 @@ class ArticlesService {
     );
 
     if (params.offset) {
-      const offset = await Joi.number().integer().validateAsync(params.offset);
-
-      followedUserArticles = followedUserArticles.slice(offset);
+      followedUserArticles = followedUserArticles.slice(params.offset);
     }
 
     if (params.limit) {
-      const limit = await Joi.number().integer().validateAsync(params.limit);
-
-      followedUserArticles = followedUserArticles.slice(0, limit);
+      followedUserArticles = followedUserArticles.slice(0, params.limit);
     }
 
     return followedUserArticles;

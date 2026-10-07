@@ -1,9 +1,15 @@
-import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
+import {route} from '../api';
 import {InvalidImageError, NotFoundError} from '../errors';
 import {Auth} from '../middleware';
 import {GifSearch} from './gif-search';
+import {
+  GifsAvailableResponse,
+  GifsQuery,
+  GifsResponse,
+  MediaResponse,
+} from './media-schemas';
 import {MAX_MEDIA_BYTES, MediaService, tooLarge} from './media-service';
 
 // An upload never gets new content, so it can be cached for good.
@@ -29,75 +35,82 @@ class MediaRouter {
 
     // Uploads an image or GIF (the file as the request body); the answer has
     // its address, to put in a post or comment.
-    router.post(
-      '/media',
-      this.auth.requireAuth,
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/media',
+        summary: 'Upload an image or GIF (the file as the body)',
+        auth: this.auth.required,
+        bodyType: 'image',
+        responses: {201: {description: 'The upload.', schema: MediaResponse}},
+      },
       readMediaBody,
-      async (req, res, next) => {
-        try {
-          if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
-            throw new InvalidImageError('Choose an image to upload.');
-          }
-          const media = await this.media.save(
-            req.user!.id,
-            new Uint8Array(req.body),
-          );
-          return res.status(StatusCodes.CREATED).json({media});
-        } catch (err) {
-          return next(err);
+      async (req, res) => {
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+          throw new InvalidImageError('Choose an image to upload.');
         }
+        const media = await this.media.save(
+          req.user!.id,
+          new Uint8Array(req.body),
+        );
+        res.status(StatusCodes.CREATED).json({media});
       },
     );
 
-    router.get('/media/:id', async (req, res, next) => {
-      try {
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/media/:id',
+        summary: 'An uploaded image or GIF',
+        responses: {200: {description: 'The file.', contentType: 'image/*'}},
+      },
+      async (req, res) => {
         const media = await this.media.get(req.params.id);
-        if (!media) {
-          throw new NotFoundError('image');
-        }
-        return (
-          res
-            .type(media.contentType)
-            .set('Cache-Control', MEDIA_CACHE_CONTROL)
-            // The type comes from the file's bytes; never let a browser guess
-            // another, or run anything inside it.
-            .set('X-Content-Type-Options', 'nosniff')
-            .set('Content-Security-Policy', "default-src 'none'; sandbox")
-            .send(Buffer.from(media.data))
-        );
-      } catch (err) {
-        return next(err);
-      }
-    });
+        if (!media) throw new NotFoundError('image');
+        res
+          .type(media.contentType)
+          .set('Cache-Control', MEDIA_CACHE_CONTROL)
+          // The type comes from the file's bytes; never let a browser guess
+          // another, or run anything inside it.
+          .set('X-Content-Type-Options', 'nosniff')
+          .set('Content-Security-Policy', "default-src 'none'; sandbox")
+          .send(Buffer.from(media.data));
+      },
+    );
 
     // Whether the GIF search is set up, for the site to offer it.
-    router.get('/gifs/available', (_req, res) =>
-      res.json({available: this.gifs.available}),
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/gifs/available',
+        summary: 'Whether the GIF search is set up',
+        responses: {
+          200: {description: 'Whether.', schema: GifsAvailableResponse},
+        },
+      },
+      (_req, res) => {
+        res.json({available: this.gifs.available});
+      },
     );
 
     // A page of GIFs from GIPHY: `q` to search (trending without it), and
     // `offset` from the previous page's `next`. Signed in only, like posting.
-    router.get(
-      '/gifs',
-      this.auth.requireAuth,
-      celebrate({
-        [Segments.QUERY]: Joi.object().keys({
-          q: Joi.string().allow('').max(100),
-          offset: Joi.number().integer().min(0).max(4999),
-        }),
-      }),
-      async (req, res, next) => {
-        try {
-          if (!this.gifs.available) {
-            throw new NotFoundError('GIF search');
-          }
-          const query = req.query as Record<string, string | undefined>;
-          return res.json(
-            await this.gifs.search(query.q ?? '', Number(query.offset ?? 0)),
-          );
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/gifs',
+        summary: 'Search GIPHY (trending without words)',
+        auth: this.auth.required,
+        query: GifsQuery,
+        responses: {200: {description: 'A page.', schema: GifsResponse}},
+      },
+      async (req, res) => {
+        if (!this.gifs.available) throw new NotFoundError('GIF search');
+        res.json(await this.gifs.search(req.query.q, req.query.offset));
       },
     );
 
