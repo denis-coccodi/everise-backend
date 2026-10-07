@@ -53,6 +53,22 @@ class EveriseDb extends DurableObject {
     return this.store.batch(writes);
   }
 
+  addToSet(collection: string, id: string, field: string, value: string) {
+    return this.store.addToSet(collection, id, field, value);
+  }
+
+  removeFromSet(collection: string, id: string, field: string, value: string) {
+    return this.store.removeFromSet(collection, id, field, value);
+  }
+
+  increment(collection: string, id: string, amounts: Record<string, number>) {
+    return this.store.increment(collection, id, amounts);
+  }
+
+  createUnique(collection: string, data: DocData, unique: string[][]) {
+    return this.store.createUnique(collection, data, unique);
+  }
+
   clear() {
     return this.store.clear();
   }
@@ -89,6 +105,18 @@ class DurableObjectDb implements Db {
   delete: Db['delete'] = (collection, id) => this.stub.delete(collection, id);
 
   batch: Db['batch'] = writes => this.stub.batch(writes);
+
+  addToSet: Db['addToSet'] = (collection, id, field, value) =>
+    this.stub.addToSet(collection, id, field, value);
+
+  removeFromSet: Db['removeFromSet'] = (collection, id, field, value) =>
+    this.stub.removeFromSet(collection, id, field, value);
+
+  increment: Db['increment'] = (collection, id, amounts) =>
+    this.stub.increment(collection, id, amounts);
+
+  createUnique: Db['createUnique'] = (collection, data, unique) =>
+    this.stub.createUnique(collection, data, unique);
 
   clear: Db['clear'] = () => this.stub.clear();
 }

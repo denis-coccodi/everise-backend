@@ -418,13 +418,14 @@ class ArticlesService {
       throw new NotFoundError(`user "${userId}" not found`);
     }
 
-    if (article.favoritedBy.includes(user.id)) {
-      return;
-    }
-
-    await this.updateArticle(article.id, {
-      favoritedBy: [...article.favoritedBy, user.id],
-    });
+    // In one step: two people favoriting at once both count, and an edit
+    // made meanwhile isn't overwritten.
+    await this.db.addToSet(
+      this.articlesCollection,
+      article.id,
+      'favoritedBy',
+      user.id,
+    );
   }
 
   async unfavoriteArticle(key: string, userId: string): Promise<void> {
@@ -436,13 +437,12 @@ class ArticlesService {
       throw new NotFoundError(`user "${userId}" not found`);
     }
 
-    if (!article.favoritedBy.includes(user.id)) {
-      return;
-    }
-
-    await this.updateArticle(article.id, {
-      favoritedBy: article.favoritedBy.filter(uId => uId !== user.id),
-    });
+    await this.db.removeFromSet(
+      this.articlesCollection,
+      article.id,
+      'favoritedBy',
+      user.id,
+    );
   }
 
   async addComment(

@@ -46,6 +46,39 @@ interface Db {
   // deleted member leaves behind. A Worker on the free plan may only make 50
   // calls per request, so a long loop of single writes could be cut short.
   batch(writes: Write[]): Promise<void>;
+
+  // Each of these reads and writes in one call to the database, so no other
+  // request's write can come between (a separate get and update can).
+
+  // Adds `value` to the array `field` unless it's there, keeping it sorted.
+  // The document after, or undefined when there's none.
+  addToSet<T extends Doc>(
+    collection: string,
+    id: string,
+    field: string,
+    value: string,
+  ): Promise<T | undefined>;
+  removeFromSet<T extends Doc>(
+    collection: string,
+    id: string,
+    field: string,
+    value: string,
+  ): Promise<T | undefined>;
+  // Adds the amounts to number fields (missing ones count as 0; a dotted
+  // name such as `members.<id>` reaches into an object), creating the
+  // document under `id` if there's none.
+  increment<T extends Doc>(
+    collection: string,
+    id: string,
+    amounts: Record<string, number>,
+  ): Promise<T>;
+  // Creates the document unless one already matches every field of one of
+  // the `unique` groups (e.g. [['email'], ['username']]); undefined then.
+  createUnique<T extends Doc>(
+    collection: string,
+    data: DocData,
+    unique: string[][],
+  ): Promise<T | undefined>;
   clear(): Promise<void>;
 }
 

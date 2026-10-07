@@ -127,6 +127,54 @@ describe('SqlDocumentStore', () => {
     expect(await db.get('posts', b.id)).toMatchObject({title: 'B'});
   });
 
+  test('adds to and removes from a set in one step', async () => {
+    const post = await db.create<Post>('posts', {tags: ['b']});
+
+    await db.addToSet('posts', post.id, 'tags', 'a');
+    await db.addToSet('posts', post.id, 'tags', 'b');
+    expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['a', 'b']);
+
+    await db.removeFromSet('posts', post.id, 'tags', 'b');
+    expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['a']);
+    expect(await db.addToSet('posts', 'missing', 'tags', 'a')).toBeUndefined();
+  });
+
+  test('increments counters, creating the document and nested fields', async () => {
+    await db.increment('usage', 'day', {neurons: 5, 'members.m-1': 5});
+    const usage = await db.increment('usage', 'day', {
+      neurons: 2,
+      'members.m-1': 2,
+      'members.m-2': 1,
+    });
+
+    expect(usage).toMatchObject({
+      id: 'day',
+      neurons: 7,
+      members: {'m-1': 7, 'm-2': 1},
+    });
+  });
+
+  test('creates a document only when no other matches a unique group', async () => {
+    const first = await db.createUnique(
+      'users',
+      {email: 'a@example.com', username: 'A'},
+      [['email'], ['username']],
+    );
+    const sameEmail = await db.createUnique(
+      'users',
+      {email: 'a@example.com', username: 'B'},
+      [['email'], ['username']],
+    );
+    const follow = {followerId: 'x', followeeId: 'y'};
+    await db.createUnique('follows', follow, [['followerId', 'followeeId']]);
+    await db.createUnique('follows', follow, [['followerId', 'followeeId']]);
+
+    expect(first).toBeDefined();
+    expect(sameEmail).toBeUndefined();
+    expect(await db.find('users')).toHaveLength(1);
+    expect(await db.find('follows')).toHaveLength(1);
+  });
+
   test('refuses field names that are not plain words', async () => {
     await expect(
       db.find('posts', {where: [{field: "x') OR 1=1 --", op: '==', value: 1}]}),
