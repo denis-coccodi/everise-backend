@@ -1,5 +1,5 @@
 import {randomUUID} from 'crypto';
-import {Db, Doc, DocData, FindOptions, Where, Write} from './db';
+import {Db, Doc, DocData, FindOptions, SetOptions, Where, Write} from './db';
 import {Json, decode, encode} from './json-values';
 import {SCHEMA, fieldName, fieldSql, sqlValue} from './sql-schema';
 
@@ -107,10 +107,39 @@ class SqlDocumentStore implements Db {
     id: string,
     field: string,
     value: string,
+    {max, create = false}: SetOptions = {},
   ) {
-    return this.changeSet<T>(collection, id, field, items =>
-      items.includes(value) ? items : [...items, value].sort(),
+    return this.changeSet<T>(
+      collection,
+      id,
+      field,
+      items =>
+        items.includes(value) || (max !== undefined && items.length >= max)
+          ? items
+          : [...items, value],
+      create,
     );
+  }
+
+  async takeLease(
+    collection: string,
+    id: string,
+    field: string,
+    now: number,
+    until: number,
+  ) {
+    return this.transaction(() => {
+      const existing = this.read(collection, id);
+      const held = (existing as unknown as DocData | undefined)?.[field];
+      if (typeof held === 'number' && held > now) return false;
+      if (existing) {
+        this.updateNow(collection, id, {[field]: until});
+      } else {
+        const at = new Date();
+        this.write(collection, id, {[field]: until}, at, at);
+      }
+      return true;
+    });
   }
 
   async removeFromSet<T extends Doc>(
@@ -234,10 +263,15 @@ class SqlDocumentStore implements Db {
     id: string,
     field: string,
     change: (items: string[]) => string[],
+    create = false,
   ) {
     return this.transaction(() => {
       const existing = this.read<T>(collection, id);
-      if (!existing) return undefined;
+      if (!existing) {
+        if (!create) return undefined;
+        const at = new Date();
+        return this.write<T>(collection, id, {[field]: change([])}, at, at);
+      }
       const items = (existing as unknown as DocData)[field];
       return this.updateNow<T>(collection, id, {
         [field]: change(Array.isArray(items) ? items : []),

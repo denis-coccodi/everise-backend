@@ -8,42 +8,7 @@ import {
   secondsToMidnightUtc,
 } from './character-model';
 import {CharacterProfile, CharactersService} from './characters-service';
-
-// A line in the room as the site shows it. `from` is "member", "note" (who
-// came and went), or the id of the character who said it.
-interface RoomLine {
-  id: string;
-  at: string;
-  from: string;
-  name: string;
-  image?: string;
-  // The member's id, on a member's line.
-  memberId?: string;
-  text: string;
-}
-
-interface LineDoc extends Doc {
-  // When it was said (ms), for the order and the day's history.
-  at: number;
-  from: string;
-  name: string;
-  image?: string;
-  userId?: string;
-  text: string;
-}
-
-// The room's state: who's in it, and until when someone's round of answers
-// is running (ms; it's renewed every turn, so a stuck round frees it).
-interface RoomDoc extends Doc {
-  present?: string[];
-  busyUntil?: number;
-}
-
-// The Neurons the day's replies (UTC) cost, all members' and each member's.
-interface UsageDoc extends Doc {
-  neurons?: number;
-  members?: Record<string, number>;
-}
+import {LineDoc, RoomDoc, RoomLine, UsageDoc} from './sands-docs';
 
 // A member may spend this share of the site's daily Neurons, so a few
 // keen talkers can't close the Waking Sands for everyone.
@@ -110,27 +75,45 @@ class WakingSandsService {
 
   async invite(member: User, id: string) {
     const character = await this.charactersService.get(id);
-    const present = await this.present();
-    if (present.includes(id)) return present;
-    if (present.length >= MAX_PRESENT) {
+    const before = await this.present();
+    if (before.includes(id)) return before;
+    // Added in one step, up to MAX_PRESENT: invitations at once can't
+    // overfill the room or undo each other.
+    const room = await this.db.addToSet<RoomDoc>(
+      this.rooms,
+      ROOM,
+      'present',
+      id,
+      {
+        max: MAX_PRESENT,
+        create: true,
+      },
+    );
+    const present = room?.present ?? [];
+    if (!present.includes(id)) {
       throw new RangeError(
         `The room is full: at most ${MAX_PRESENT} characters at once. Send someone out first.`,
       );
     }
-    return this.setPresent(
-      [...present, id],
+    return this.announcePresent(
+      present,
       `${member.username} invited ${character.name} in.`,
     );
   }
 
   async dismiss(member: User, id: string) {
     const character = await this.charactersService.get(id);
-    const present = await this.present();
-    if (!present.includes(id)) {
+    if (!(await this.present()).includes(id)) {
       throw new NotFoundError('character in the room');
     }
-    return this.setPresent(
-      present.filter(other => other !== id),
+    const room = await this.db.removeFromSet<RoomDoc>(
+      this.rooms,
+      ROOM,
+      'present',
+      id,
+    );
+    return this.announcePresent(
+      room?.present ?? [],
       `${character.name} leaves; ${member.username} saw them out.`,
     );
   }
@@ -146,9 +129,18 @@ class WakingSandsService {
       userId: member.id,
       text,
     });
-    if (await this.busy()) return line;
+    // One round at a time: whoever takes the lease runs it, and it answers
+    // lines that arrive meanwhile too.
+    const now = this.now().getTime();
+    const started = await this.db.takeLease(
+      this.rooms,
+      ROOM,
+      'busyUntil',
+      now,
+      now + BUSY_MS,
+    );
+    if (!started) return line;
 
-    await this.setBusy(true);
     try {
       let handled = 0;
       for (let round = 0; round < MAX_ROUNDS; round++) {
@@ -160,7 +152,7 @@ class WakingSandsService {
         await this.round(latest.userId ?? member.id);
       }
     } finally {
-      await this.setBusy(false);
+      await this.db.update(this.rooms, ROOM, {busyUntil: 0});
       await this.publish({type: 'sands-writing', character: null});
     }
     return line;
@@ -194,7 +186,10 @@ class WakingSandsService {
             : await this.direct(payer, lines, present, free, turn === 0);
         if (!speaker) break;
         await this.publish({type: 'sands-writing', character: speaker.id});
-        await this.setBusy(true);
+        // Still running: the lease lasts another BUSY_MS.
+        await this.db.update(this.rooms, ROOM, {
+          busyUntil: this.now().getTime() + BUSY_MS,
+        });
         const {text, neurons} = await this.model.reply(
           prompt(speaker, present, everyone, lines),
         );
@@ -287,27 +282,10 @@ class WakingSandsService {
     return (await this.roomDoc())?.present ?? [];
   }
 
-  private async setPresent(present: string[], note: string) {
-    const room = await this.roomDoc();
-    await this.db.set(this.rooms, ROOM, {
-      present,
-      busyUntil: room?.busyUntil ?? 0,
-    });
+  private async announcePresent(present: string[], note: string) {
     await this.publish({type: 'sands-presence', present});
     await this.addLine({from: 'note', name: '', text: note});
     return present;
-  }
-
-  private async busy() {
-    return ((await this.roomDoc())?.busyUntil ?? 0) > this.now().getTime();
-  }
-
-  private async setBusy(busy: boolean) {
-    const room = await this.roomDoc();
-    await this.db.set(this.rooms, ROOM, {
-      present: room?.present ?? [],
-      busyUntil: busy ? this.now().getTime() + BUSY_MS : 0,
-    });
   }
 
   // A live update; a hub that's down never fails the conversation.

@@ -1,5 +1,5 @@
 import {DurableObject} from 'cloudflare:workers';
-import {Db, DocData, FindOptions, Write} from './db';
+import {Db, DocData, FindOptions, SetOptions, Write} from './db';
 import {copyKeyValueDocuments} from './key-value-copy';
 import {SqlDocumentStore} from './sql-document-store';
 
@@ -53,8 +53,24 @@ class EveriseDb extends DurableObject {
     return this.store.batch(writes);
   }
 
-  addToSet(collection: string, id: string, field: string, value: string) {
-    return this.store.addToSet(collection, id, field, value);
+  addToSet(
+    collection: string,
+    id: string,
+    field: string,
+    value: string,
+    options?: SetOptions,
+  ) {
+    return this.store.addToSet(collection, id, field, value, options);
+  }
+
+  takeLease(
+    collection: string,
+    id: string,
+    field: string,
+    now: number,
+    until: number,
+  ) {
+    return this.store.takeLease(collection, id, field, now, until);
   }
 
   removeFromSet(collection: string, id: string, field: string, value: string) {
@@ -106,8 +122,11 @@ class DurableObjectDb implements Db {
 
   batch: Db['batch'] = writes => this.stub.batch(writes);
 
-  addToSet: Db['addToSet'] = (collection, id, field, value) =>
-    this.stub.addToSet(collection, id, field, value);
+  addToSet: Db['addToSet'] = (collection, id, field, value, options) =>
+    this.stub.addToSet(collection, id, field, value, options);
+
+  takeLease: Db['takeLease'] = (collection, id, field, now, until) =>
+    this.stub.takeLease(collection, id, field, now, until);
 
   removeFromSet: Db['removeFromSet'] = (collection, id, field, value) =>
     this.stub.removeFromSet(collection, id, field, value);

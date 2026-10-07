@@ -17,7 +17,7 @@ const KNOWN_OVER = {
   'src/users/users-router.ts': 351,
   'src/users/users-service.ts': 440,
   'src/articles/articles-service.ts': 570,
-  'src/waking-sands/waking-sands-service.ts': 497,
+  'src/waking-sands/waking-sands-service.ts': 475,
   'src/duties/xivapi-client.ts': 530,
 };
 
