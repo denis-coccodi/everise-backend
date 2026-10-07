@@ -1,3 +1,4 @@
+export {HttpError} from './http-error';
 export {AlreadyExistsError} from './already-exists-error';
 export {EmailNotConfirmedError} from './email-not-confirmed-error';
 export {ForbiddenError} from './forbidden-error';

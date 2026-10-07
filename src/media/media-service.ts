@@ -1,3 +1,4 @@
+import {StatusCodes} from 'http-status-codes';
 import {randomUUID} from 'crypto';
 import {config} from '../config';
 import {Db, Doc} from '../db';
@@ -181,7 +182,7 @@ function mediaUrl(id: string) {
 function tooLarge() {
   return new InvalidImageError(
     'The image is too large: it can be at most 1 MB.',
-    413
+    StatusCodes.REQUEST_TOO_LONG
   );
 }
 

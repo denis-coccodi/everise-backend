@@ -16,13 +16,14 @@
   "scripts": {
     "start": "wrangler dev",
     "test": "jest --runInBand",
-    "posttest": "npm run compile && npm run lint",
+    "posttest": "npm run compile && npm run lint && npm run sizes",
     "deploy": "wrangler deploy",
     "format": "prettier --write .",
     "lint": "gts lint",
     "fix": "gts fix",
     "clean": "gts clean",
-    "compile": "tsc --noEmit"
+    "compile": "tsc --noEmit",
+    "sizes": "node scripts/check-sizes.mjs"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
