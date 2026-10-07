@@ -1,6 +1,7 @@
 import {randomUUID} from 'crypto';
 import {Db, Doc, DocData, FindOptions, Where, Write} from './db';
 import {Json, decode, encode} from './json-values';
+import {SCHEMA, fieldName, fieldSql, sqlValue} from './sql-schema';
 
 type SqlValue = string | number | null;
 
@@ -21,67 +22,6 @@ interface Row {
   data: string;
   created_at: number;
   updated_at: number;
-}
-
-// The columns the store keeps itself; any other field is in the JSON.
-const COLUMNS: Record<string, string> = {
-  id: 'id',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-};
-
-// The fields queries filter on, each with an index (per collection).
-const INDEXED: Record<string, string[]> = {
-  users: [
-    'email',
-    'username',
-    'googleId',
-    'facebookId',
-    'microsoftId',
-    'discordId',
-  ],
-  follows: ['followerId', 'followeeId'],
-  articles: ['authorId', 'slug'],
-  comments: ['articleId', 'authorId'],
-  media: ['userId'],
-  profileImages: ['userId'],
-  emailConfirmations: ['userId'],
-};
-
-const SCHEMA = [
-  `CREATE TABLE IF NOT EXISTS docs (
-    collection TEXT NOT NULL,
-    id TEXT NOT NULL,
-    data TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    PRIMARY KEY (collection, id)
-  )`,
-  'CREATE INDEX IF NOT EXISTS docs_by_created ON docs (collection, created_at)',
-  // Which one-time steps (e.g. copying the old key-value data) have run.
-  'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
-  ...Object.values(INDEXED)
-    .flat()
-    .filter((field, i, all) => all.indexOf(field) === i)
-    .map(
-      field =>
-        `CREATE INDEX IF NOT EXISTS docs_by_${field} ON docs (collection, ${fieldSql(field)})`,
-    ),
-];
-
-// A field as SQL. Field names come from the code, never from requests, and
-// must be literal for SQLite to use an index; they're checked all the same.
-function fieldSql(field: string) {
-  if (!/^\w+$/.test(field)) throw new Error(`Bad field name: ${field}`);
-  return COLUMNS[field] ?? `json_extract(data, '$.${field}')`;
-}
-
-// JSON has no booleans in SQLite: json_extract gives 1 and 0.
-function sqlValue(value: unknown): SqlValue {
-  if (typeof value === 'boolean') return value ? 1 : 0;
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === 'string' || typeof value === 'number') return value;
-  return null;
 }
 
 // The database: every document is a row of the `docs` table, its fields as
@@ -162,6 +102,79 @@ class SqlDocumentStore implements Db {
     });
   }
 
+  async addToSet<T extends Doc>(
+    collection: string,
+    id: string,
+    field: string,
+    value: string,
+  ) {
+    return this.changeSet<T>(collection, id, field, items =>
+      items.includes(value) ? items : [...items, value].sort(),
+    );
+  }
+
+  async removeFromSet<T extends Doc>(
+    collection: string,
+    id: string,
+    field: string,
+    value: string,
+  ) {
+    return this.changeSet<T>(collection, id, field, items =>
+      items.filter(item => item !== value),
+    );
+  }
+
+  async increment<T extends Doc>(
+    collection: string,
+    id: string,
+    amounts: Record<string, number>,
+  ) {
+    return this.transaction(() => {
+      const existing = this.read<T>(collection, id);
+      const data = structuredClone((existing ?? {}) as unknown as DocData);
+      for (const [path, amount] of Object.entries(amounts)) {
+        const names = path.split('.');
+        let target = data;
+        for (const name of names.slice(0, -1)) {
+          const next = target[name];
+          target[name] = typeof next === 'object' && next !== null ? next : {};
+          target = target[name] as DocData;
+        }
+        const last = names[names.length - 1];
+        const current = target[last];
+        target[last] = (typeof current === 'number' ? current : 0) + amount;
+      }
+      const now = new Date();
+      return this.write<T>(
+        collection,
+        id,
+        data,
+        existing?.createdAt ?? now,
+        now,
+      );
+    });
+  }
+
+  async createUnique<T extends Doc>(
+    collection: string,
+    data: DocData,
+    unique: string[][],
+  ) {
+    return this.transaction(() => {
+      for (const fields of unique) {
+        const conditions = fields.map(field => `${fieldSql(field)} = ?`);
+        const [taken] = this.rows(
+          `SELECT id FROM docs WHERE collection = ? AND ${conditions.join(' AND ')} LIMIT 1`,
+          collection,
+          ...fields.map(field => sqlValue(data[field])),
+        );
+        if (taken) return undefined;
+      }
+      const now = new Date();
+      return this.write<T>(collection, randomUUID(), data, now, now);
+    });
+  }
+
   async clear() {
     this.exec('DELETE FROM docs');
   }
@@ -214,6 +227,22 @@ class SqlDocumentStore implements Db {
     void _id;
     void _updatedAt;
     return this.write<T>(collection, id, fields, createdAt, new Date());
+  }
+
+  private changeSet<T extends Doc>(
+    collection: string,
+    id: string,
+    field: string,
+    change: (items: string[]) => string[],
+  ) {
+    return this.transaction(() => {
+      const existing = this.read<T>(collection, id);
+      if (!existing) return undefined;
+      const items = (existing as unknown as DocData)[field];
+      return this.updateNow<T>(collection, id, {
+        [field]: change(Array.isArray(items) ? items : []),
+      });
+    });
   }
 
   private read<T extends Doc>(collection: string, id: string) {
@@ -272,11 +301,6 @@ class SqlDocumentStore implements Db {
   private exec(query: string, ...bindings: SqlValue[]) {
     this.rows(query, ...bindings);
   }
-}
-
-function fieldName(field: string) {
-  if (!/^\w+$/.test(field)) throw new Error(`Bad field name: ${field}`);
-  return field;
 }
 
 export {SqlDocumentStore, SqlStorage, SqlValue};

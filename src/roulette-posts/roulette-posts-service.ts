@@ -142,10 +142,15 @@ class RoulettePostsService {
         'guests',
       );
       const inWindow = all && now - (all.windowStart ?? 0) < HOUR_MS;
-      await this.db.set(this.limitsCollection, 'guests', {
-        windowStart: inWindow ? all.windowStart : now,
-        count: inWindow ? (all.count ?? 0) + 1 : 1,
-      });
+      if (inWindow) {
+        // Counted in one step, so posts arriving together all count.
+        await this.db.increment(this.limitsCollection, 'guests', {count: 1});
+      } else {
+        await this.db.set(this.limitsCollection, 'guests', {
+          windowStart: now,
+          count: 1,
+        });
+      }
     }
   }
 }

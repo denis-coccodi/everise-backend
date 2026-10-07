@@ -37,14 +37,12 @@ class ProfilesService {
       throw new RangeError('cannot follow ownself');
     }
 
-    if (await this.isFollowing(followerId, followeeId)) {
-      return;
-    }
-
-    await this.db.create(this.followsCollection, {
-      followerId,
-      followeeId,
-    });
+    // Created only if not there yet, in one step: a double click makes one.
+    await this.db.createUnique(
+      this.followsCollection,
+      {followerId, followeeId},
+      [['followerId', 'followeeId']],
+    );
   }
 
   async listFollowed(followerId: string): Promise<string[]> {

@@ -340,12 +340,10 @@ class WakingSandsService {
   }
 
   private async spend(memberId: string, neurons: number) {
-    const now = this.now();
-    const usage = await this.usageOf(now);
-    const members = usage.members ?? {};
-    await this.db.set(this.usage, day(now), {
-      neurons: (usage.neurons ?? 0) + neurons,
-      members: {...members, [memberId]: (members[memberId] ?? 0) + neurons},
+    // Added in one step, so rounds ending together all count.
+    await this.db.increment(this.usage, day(this.now()), {
+      neurons,
+      [`members.${memberId}`]: neurons,
     });
   }
 
