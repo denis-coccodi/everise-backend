@@ -119,7 +119,7 @@ describe('GET /api/party-finder', () => {
     expect(response.body.worlds).toHaveLength(8);
     expect(response.body.listings).toStrictEqual([
       {
-        id: '66-1',
+        id: '1789630212-1',
         recruiter: 'Tataru Taru',
         description: 'Prog from P3, know the mechanics',
         world: {id: 66, name: 'Odin'},
@@ -168,7 +168,7 @@ describe('GET /api/party-finder', () => {
 
     expect(chaos.body.dataCentre).toBe('Chaos');
     expect(chaos.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '71-2',
+      '1789630212-2',
     ]);
     expect(xivpf.reads).toBe(1);
   });
@@ -211,9 +211,9 @@ describe('GET /api/party-finder', () => {
     const response = await board();
 
     expect(response.body.listings).toMatchObject([
-      {id: '66-2', category: 'None', duty: null, highEnd: false},
+      {id: '1789630212-2', category: 'None', duty: null, highEnd: false},
       {
-        id: '66-1',
+        id: '1789630212-1',
         category: 'TheHunt',
         worldOnly: true,
         onePlayerPerJob: false,
@@ -229,7 +229,7 @@ describe('GET /api/party-finder', () => {
 
     const response = await board();
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '66-1',
+      '1789630212-1',
     ]);
 
     // A minute on, the first one's 5 minutes are up too.
@@ -265,12 +265,12 @@ describe('GET /api/party-finder', () => {
       ),
     );
     expect(duties).toStrictEqual({
-      '66-1': ['Kumbhiraskin Treasure Map', false],
-      '66-2': ["Pilgrim's Traverse", false],
-      '66-3': ['Duty Roulette: Expert', false],
-      '66-4': [null, false],
-      '66-5': [null, false],
-      '66-6': ['Copperbell Mines (Hard)', true],
+      '1789630212-1': ['Kumbhiraskin Treasure Map', false],
+      '1789630212-2': ["Pilgrim's Traverse", false],
+      '1789630212-3': ['Duty Roulette: Expert', false],
+      '1789630212-4': [null, false],
+      '1789630212-5': [null, false],
+      '1789630212-6': ['Copperbell Mines (Hard)', true],
     });
   });
 
@@ -294,6 +294,20 @@ describe('GET /api/party-finder', () => {
     ).toEqual(['PLD', 'healer', 'dps', 'dps']);
   });
 
+  test('shows a listing once when xivpf holds it under two worlds, as last reported', async () => {
+    xivpf.listings = [
+      entry({id: 7, world: {id: 402, name: 'Alpha'}, updatedSecondsAgo: 190}),
+      entry({id: 7, world: {id: 67, name: 'Shiva'}, updatedSecondsAgo: 2}),
+    ];
+
+    const response = await board();
+
+    expect(response.body.listings).toMatchObject([
+      {id: '1789630212-7', world: {id: 67, name: 'Shiva'}},
+    ]);
+    expect(response.body.listings).toHaveLength(1);
+  });
+
   test("skips entries it doesn't understand", async () => {
     xivpf.listings = [
       entry(),
@@ -304,7 +318,7 @@ describe('GET /api/party-finder', () => {
     const response = await board();
 
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '66-1',
+      '1789630212-1',
     ]);
   });
 

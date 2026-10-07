@@ -98,26 +98,32 @@ class PartyFinderBoard implements PartyFinderSource {
   }
 }
 
-// The followed data centres' listings, the latest first. Entries that don't
-// have the expected shape are skipped.
+// The followed data centres' listings, the latest first, each once. xivpf
+// keeps a listing per world it was reported on, so one whose recruiter
+// changed worlds can be there twice: the latest report is the one kept.
+// Entries that don't have the expected shape are skipped.
 function byDataCentre(all: unknown[]) {
-  const listings: Record<DataCentre, PartyFinderListing[]> = {
-    Light: [],
-    Chaos: [],
+  const latest: Record<DataCentre, Map<string, PartyFinderListing>> = {
+    Light: new Map(),
+    Chaos: new Map(),
   };
   for (const entry of all) {
     try {
       const xivpf = entry as XivpfListing;
       const dataCentre = dataCentreOf(xivpf.listing.created_world.id);
-      if (dataCentre) listings[dataCentre].push(toListing(xivpf));
+      if (!dataCentre) continue;
+      const listing = toListing(xivpf);
+      const seen = latest[dataCentre].get(listing.id);
+      if (!seen || listing.updatedAt > seen.updatedAt) {
+        latest[dataCentre].set(listing.id, listing);
+      }
     } catch {
       // Not a listing we understand.
     }
   }
-  for (const list of Object.values(listings)) {
-    list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }
-  return listings;
+  const newestFirst = (map: Map<string, PartyFinderListing>) =>
+    [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return {Light: newestFirst(latest.Light), Chaos: newestFirst(latest.Chaos)};
 }
 
 export {
