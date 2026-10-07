@@ -1180,6 +1180,11 @@
           "discord"
         ],
         "summary": "Who's online on the Discord server",
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "parameters": [],
         "responses": {
           "200": {
