@@ -84,7 +84,8 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | GET    | `/api/auth/providers`                   |          | The sign-in providers set up: `{providers: ["google", "facebook"]}`                                         |
 | GET    | `/api/auth/:provider`                   |          | Start signing in with `google` or `facebook` (a browser redirect)                                           |
 | GET    | `/api/auth/:provider/callback`          |          | The provider's redirect back; signs in and redirects to the site                                            |
-| GET    | `/api/discord/widget`                   |          | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
+| GET    | `/api/discord/widget`                   | required | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
+| GET    | `/api/party-finder`                     |          | A data centre's Party Finder listings (`?dataCentre=Light` or `Chaos`) ([Party Finder](#party-finder))      |
 | GET    | `/api/user`                             | required | Current user                                                                                                |
 | PUT    | `/api/user`                             | required | Update the current user                                                                                     |
 | PUT    | `/api/user/image`                       | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
@@ -168,7 +169,15 @@ Posts and comments are Markdown, so images go in as `![description](address)` an
 ## Discord
 
 - **Announcements:** every new post and roulette result is announced in a Discord channel through its webhook (`DISCORD_WEBHOOK_URL`, `src/discord/discord-announcer.ts`): a card with the title, description, author, a link back, and the duty, details and party for a roulette result, with the duty's banner (or the post's first image). A post's first YouTube video (a link alone on its line, as the site shows them) follows the card as a message of its own: Discord only previews links, and plays videos, in a message without a card of its own. Messages are sent with `?wait=true`, so they arrive in order. It never pings anyone (`allowed_mentions` is empty). A slow or failing Discord can't hold up or fail the post: it waits 3 seconds at most and only logs a failure. It rides on the same feed as the live updates, so it covers everything that creates a post.
-- **Widget:** `GET /api/discord/widget` reads the server's public widget (`DISCORD_GUILD_ID`, in `wrangler.jsonc`), at most once a minute, and answers `{"widget": {name, presenceCount, members: [{name, avatarUrl, status}]}}` with up to 12 members, or `{"widget": null}` when the server's widget is turned off.
+- **Widget:** `GET /api/discord/widget` (members only: guests don't see who's online) reads the server's public widget (`DISCORD_GUILD_ID`, in `wrangler.jsonc`), at most once a minute, and answers `{"widget": {name, presenceCount, members: [{name, avatarUrl, status}]}}` with up to 12 members, or `{"widget": null}` when the server's widget is turned off. It's cached privately (`Cache-Control: private`).
+
+## Party Finder
+
+`GET /api/party-finder?dataCentre=Light` (or `Chaos`; Light by default, open to everyone) answers a data centre's active Party Finder listings for the site's Party Finder page (`src/party-finder`): `{dataCentre, worlds: [{id, name}], fetchedAt, listings}`, the latest first. Each listing is `{id, recruiter, description, world, homeWorld, category, duty, highEnd, worldOnly, onePlayerPerJob, beginnersWelcome, minItemLevel, objective, dutyComplete, loot, parties, slots: [{job, roles}], updatedAt, expiresAt}`: `category` is xivpf's (`HighEndDuty`, `TheHunt`, `None` for a listing without a duty…), `worldOnly` listings can only be joined from their own world (the Hunt, FATEs), and an open slot lists the roles it takes.
+
+- **Where they come from.** Square Enix has no Party Finder API. [xivpf.com](https://xivpf.com/listings) collects listings from players who run the Remote Party Finder plugin (Dalamud; [its server](https://github.com/zeroeightysix/remote-party-finder)), so a quiet data centre or hour can show few. Its `GET /api/listings` has no filters: it always sends every listing in the game, about 1.3 MB.
+- **A Durable Object reads them.** Parsing that takes more CPU than a Worker request may use on the Free plan (10 ms), so `PartyFinderHub` (the `PARTY_FINDER` binding; a Durable Object may use 30 s) holds the board in memory: it reads xivpf at most once a minute and only while someone asks, keeps the followed data centres' listings (`data-centres.ts`), and drops those whose time ran out. Requests arriving during a read wait for it. Answers are `Cache-Control: public, max-age=15`.
+- **When xivpf is down**, the last listings stay for 15 minutes; with none, 502.
 
 ## The Waking Sands
 

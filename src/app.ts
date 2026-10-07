@@ -28,6 +28,11 @@ import {errorHandler} from './error-handler';
 import {FileStore, MemoryFileStore} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
+import {
+  PartyFinderBoard,
+  PartyFinderRouter,
+  PartyFinderSource,
+} from './party-finder';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
@@ -80,6 +85,9 @@ interface AppOptions {
   // the Neurons it may spend a day. Without a model, or with no Neurons,
   // the chat isn't open.
   wakingSands?: {model?: CharacterModel; dailyNeurons?: number};
+  // The Party Finder listings (xivpf.com). In the Worker, the Durable Object
+  // that reads them; otherwise a board in this process.
+  partyFinder?: PartyFinderSource;
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -97,6 +105,7 @@ function createApp(
     gifSearch = {apiKey: config.giphyApiKey},
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
     wakingSands = {},
+    partyFinder = new PartyFinderBoard(url => fetch(url), now),
   }: AppOptions = {},
 ) {
   const usersService = new UsersService(db);
@@ -258,6 +267,7 @@ function createApp(
   app.use('/api', socialLoginRouter);
 
   app.use('/api', discordRouter);
+  app.use('/api', new PartyFinderRouter(partyFinder).router);
   app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);

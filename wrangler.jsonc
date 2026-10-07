@@ -15,13 +15,16 @@
     "bindings": [
       {"name": "DB", "class_name": "EveriseDb"},
       // The live updates' WebSockets (src/live/live-hub.ts).
-      {"name": "LIVE", "class_name": "LiveHub"}
+      {"name": "LIVE", "class_name": "LiveHub"},
+      // The Party Finder listings read from xivpf.com (src/party-finder).
+      {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"}
     ]
   },
   // Never edit or remove applied migrations; add new ones.
   "migrations": [
     {"tag": "v1", "new_sqlite_classes": ["EveriseDb"]},
-    {"tag": "v2", "new_sqlite_classes": ["LiveHub"]}
+    {"tag": "v2", "new_sqlite_classes": ["LiveHub"]},
+    {"tag": "v3", "new_sqlite_classes": ["PartyFinderHub"]}
   ],
 
   // Workers AI, for the Waking Sands characters (src/waking-sands). On the
@@ -82,7 +85,8 @@
       "durable_objects": {
         "bindings": [
           {"name": "DB", "class_name": "EveriseDb"},
-          {"name": "LIVE", "class_name": "LiveHub"}
+          {"name": "LIVE", "class_name": "LiveHub"},
+          {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"}
         ]
       },
       "ai": {"binding": "AI"},

@@ -13,6 +13,7 @@ export {
   providers,
   staging,
   xivApi,
+  xivpf,
 } from './app';
 export {usersClient} from './users-client';
 export {profilesClient} from './profiles-client';

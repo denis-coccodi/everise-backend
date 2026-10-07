@@ -8,6 +8,7 @@ import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
 import {MemoryFileStore} from '../../src/files';
 import {GifFetch} from '../../src/media';
+import {PartyFinderBoard, XivpfFetch} from '../../src/party-finder';
 import {OAuthFetch} from '../../src/social-login';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
@@ -129,6 +130,23 @@ const gifFetch: GifFetch = async url => {
   };
 };
 
+// xivpf.com's Party Finder listings: `status` and `listings` are its next
+// answer (`body`, when set, is sent as is); `reads` counts the app's asks.
+const xivpf = {
+  status: 200,
+  listings: [] as unknown[],
+  body: undefined as string | undefined,
+  reads: 0,
+};
+const xivpfFetch: XivpfFetch = async () => {
+  xivpf.reads++;
+  return {
+    ok: xivpf.status < 300,
+    status: xivpf.status,
+    text: async () => xivpf.body ?? JSON.stringify(xivpf.listings),
+  };
+};
+
 // The emails the app sent; `failing` makes sending fail.
 const mail = {
   sent: [] as EmailMessage[],
@@ -201,6 +219,10 @@ const app = createApp(
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
     emailSender,
     wakingSands: {model: characterModel, dailyNeurons: 1000},
+    partyFinder: new PartyFinderBoard(
+      xivpfFetch,
+      () => clock.now ?? new Date(),
+    ),
   },
 );
 
@@ -223,4 +245,5 @@ export {
   providers,
   staging,
   xivApi,
+  xivpf,
 };
