@@ -2,7 +2,7 @@ import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {NotFoundError, UpstreamError} from '../errors';
-import {Auth} from '../middleware';
+import {Auth, routeParam} from '../middleware';
 import {LoadBundledPicture} from '../users';
 import {CHARACTERS, characterById} from './characters';
 import {WakingSandsService} from './waking-sands-service';
@@ -53,7 +53,7 @@ class WakingSandsRouter {
           this.requireOpen();
           const present = await this.wakingSands.invite(
             req.user!,
-            req.params.id
+            routeParam(req, 'id')
           );
           return res.json({present});
         } catch (err) {
@@ -71,7 +71,7 @@ class WakingSandsRouter {
         try {
           const present = await this.wakingSands.dismiss(
             req.user!,
-            req.params.id
+            routeParam(req, 'id')
           );
           return res.json({present});
         } catch (err) {
@@ -109,7 +109,7 @@ class WakingSandsRouter {
       '/waking-sands/characters/:id/picture',
       async (req, res, next) => {
         try {
-          const picture = characterById(req.params.id)?.picture;
+          const picture = characterById(routeParam(req, 'id'))?.picture;
           const bytes = picture && (await this.loadBundledPicture(picture));
           if (!bytes) {
             throw new NotFoundError('picture');

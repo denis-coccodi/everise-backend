@@ -1,5 +1,4 @@
 import {DurableObject} from 'cloudflare:workers';
-import type {DurableObjectNamespace} from 'cloudflare:workers';
 import {LiveEvent, LiveFeed} from './live-feed';
 
 // The one hub every client connects to.
@@ -14,14 +13,14 @@ const PONG = 'pong';
 // with the sockets kept open, so idle connections cost nothing. Clients only
 // listen; anything they send other than the heartbeat is ignored.
 class LiveHub extends DurableObject {
-  constructor(...args: ConstructorParameters<typeof DurableObject>) {
-    super(...args);
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
     this.ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair(PING, PONG)
     );
   }
 
-  fetch(request: WorkerRequest): Response {
+  fetch(request: Request): Response {
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('Expected a WebSocket upgrade.', {status: 426});
     }
@@ -62,10 +61,7 @@ class HubLiveFeed implements LiveFeed {
   }
 }
 
-function connectToHub(
-  hubs: DurableObjectNamespace<LiveHub>,
-  request: WorkerRequest
-) {
+function connectToHub(hubs: DurableObjectNamespace<LiveHub>, request: Request) {
   return hubs.getByName(HUB_NAME).fetch(request);
 }
 

@@ -3,7 +3,13 @@ import request from 'supertest';
 import slugify from 'slugify';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
-import {articlesClient, jwt, usersClient, profilesClient} from '../utils';
+import {
+  atOrAfter,
+  articlesClient,
+  jwt,
+  usersClient,
+  profilesClient,
+} from '../utils';
 
 describe('GET /api/articles/:slug', () => {
   function makeGetArticleUrl(slug: string) {
@@ -67,7 +73,7 @@ describe('GET /api/articles/:slug', () => {
               article: {
                 ...article.article,
                 favoritesCount: 1,
-                updatedAt: expect.toBeAfterOrEqualTo(article.article.updatedAt),
+                updatedAt: atOrAfter(article.article.updatedAt),
                 author: {
                   ...article.article.author,
                   following: true,
@@ -140,7 +146,7 @@ describe('GET /api/articles/:slug', () => {
               article: {
                 ...article.article,
                 favoritesCount: 1,
-                updatedAt: expect.toBeAfterOrEqualTo(article.article.updatedAt),
+                updatedAt: atOrAfter(article.article.updatedAt),
                 author: {
                   ...article.article.author,
                   following: false,

@@ -3,6 +3,7 @@ import request from 'supertest';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
 import {
+  atOrAfter,
   clearDb,
   articlesClient,
   jwt,
@@ -64,7 +65,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: true,
             },
           ],
@@ -121,7 +122,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article2.article,
               tagList: [...article2.article.tagList, tag].sort(),
-              updatedAt: expect.toBeAfterOrEqualTo(article2.article.updatedAt),
+              updatedAt: atOrAfter(article2.article.updatedAt),
               author: {
                 ...article2.article.author,
                 following: true,
@@ -131,7 +132,7 @@ describe('GET /api/articles/:slug', () => {
               ...article1.article,
               tagList: [...article1.article.tagList, tag].sort(),
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: true,
             },
           ],
@@ -216,7 +217,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: true,
             },
           ],
@@ -335,7 +336,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: true,
             },
           ],
@@ -387,7 +388,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: false,
             },
           ],
@@ -443,7 +444,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article2.article,
               tagList: [...article2.article.tagList, tag].sort(),
-              updatedAt: expect.toBeAfterOrEqualTo(article2.article.updatedAt),
+              updatedAt: atOrAfter(article2.article.updatedAt),
               author: {
                 ...article2.article.author,
                 following: false,
@@ -453,7 +454,7 @@ describe('GET /api/articles/:slug', () => {
               ...article1.article,
               tagList: [...article1.article.tagList, tag].sort(),
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: false,
             },
           ],
@@ -536,7 +537,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: false,
             },
           ],
@@ -648,7 +649,7 @@ describe('GET /api/articles/:slug', () => {
             {
               ...article1.article,
               favoritesCount: 1,
-              updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+              updatedAt: atOrAfter(article1.article.updatedAt),
               favorited: false,
             },
           ],

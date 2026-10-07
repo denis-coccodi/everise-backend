@@ -3,6 +3,7 @@ import request from 'supertest';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
 import {
+  atOrAfter,
   clearDb,
   articlesClient,
   jwt,
@@ -75,7 +76,7 @@ describe('GET /api/articles/feed', () => {
           {
             ...article1.article,
             favoritesCount: 1,
-            updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+            updatedAt: atOrAfter(article1.article.updatedAt),
             favorited: true,
             author: {
               ...article1.article.author,
@@ -225,7 +226,7 @@ describe('GET /api/articles/feed', () => {
           {
             ...article1.article,
             favoritesCount: 1,
-            updatedAt: expect.toBeAfterOrEqualTo(article1.article.updatedAt),
+            updatedAt: atOrAfter(article1.article.updatedAt),
             favorited: true,
             author: {
               ...article1.article.author,

@@ -9,10 +9,10 @@ interface RandomTokenOptions {
 }
 
 function getRandomToken(options?: RandomTokenOptions) {
-  const signOptions = {
+  const signOptions: jwt.SignOptions = {
     subject: faker.datatype.uuid(),
     issuer: config.jwt.issuer,
-    expiresIn: `${config.jwt.secondsToExpiration}s`,
+    expiresIn: config.jwt.secondsToExpiration,
   };
 
   if (options) {
@@ -25,7 +25,7 @@ function getRandomToken(options?: RandomTokenOptions) {
     }
 
     if (options.expiresInSeconds) {
-      signOptions.expiresIn = `${options.expiresInSeconds}s`;
+      signOptions.expiresIn = options.expiresInSeconds;
     }
   }
 

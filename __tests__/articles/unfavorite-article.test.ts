@@ -3,7 +3,7 @@ import request from 'supertest';
 import slugify from 'slugify';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
-import {articlesClient, jwt, usersClient} from '../utils';
+import {atOrAfter, articlesClient, jwt, usersClient} from '../utils';
 
 describe('DELETE /api/articles/:slug/favorite', () => {
   function makeUnfavoriteArticleUrl(slug: string) {
@@ -43,7 +43,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
           ...article.article,
           favoritesCount: 1,
           favorited: false,
-          updatedAt: expect.toBeAfterOrEqualTo(article.article.updatedAt),
+          updatedAt: atOrAfter(article.article.updatedAt),
         },
       });
 
@@ -58,7 +58,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
           ...unfavoriteArticleResponse1.body.article,
           favoritesCount: 0,
           favorited: false,
-          updatedAt: expect.toBeAfterOrEqualTo(article.article.updatedAt),
+          updatedAt: atOrAfter(article.article.updatedAt),
         },
       });
     });

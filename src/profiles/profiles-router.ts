@@ -1,7 +1,7 @@
 import * as express from 'express';
 import {config} from '../config';
 import {NotFoundError} from '../errors';
-import {Auth} from '../middleware';
+import {Auth, routeParam} from '../middleware';
 import {UsersService} from '../users';
 import {ProfilesService} from './profiles-service';
 
@@ -43,7 +43,7 @@ class ProfilesRouter {
         try {
           const follower = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const followee = await this.usersService.findUser(id);
 
@@ -73,7 +73,7 @@ class ProfilesRouter {
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const followee = await this.usersService.findUser(id);
 
@@ -111,7 +111,7 @@ class ProfilesRouter {
         try {
           const follower = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const followee = await this.usersService.findUser(id);
 
