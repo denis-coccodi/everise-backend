@@ -495,6 +495,564 @@
         }
       }
     },
+    "/api/articles": {
+      "post": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Write a post",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewArticle"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Posts, newest first, optionally filtered",
+        "security": [
+          {
+            "token": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "favorited",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticlesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/{id}": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "A post",
+        "security": [
+          {
+            "token": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Change a post (its author only)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArticleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Delete a post (its author only)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/{id}/comments": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "A post's comments, newest first",
+        "security": [
+          {
+            "token": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The comments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Comment on a post",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewComment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The comment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/{id}/comments/{commentId}": {
+      "delete": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Delete a comment (its author only)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/{id}/favorite": {
+      "post": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Favorite a post",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Unfavorite a post",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/articles/feed": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Posts by the members the user follows",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticlesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/{provider}": {
       "get": {
         "tags": [
@@ -771,6 +1329,95 @@
         }
       }
     },
+    "/api/gifs": {
+      "get": {
+        "tags": [
+          "gifs"
+        ],
+        "summary": "Search GIPHY (trending without words)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4999
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GifsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gifs/available": {
+      "get": {
+        "tags": [
+          "gifs"
+        ],
+        "summary": "Whether the GIF search is set up",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Whether.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GifsAvailableResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/images/{id}": {
       "get": {
         "tags": [
@@ -826,6 +1473,94 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Upload an image or GIF (the file as the body)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{id}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "An uploaded image or GIF",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -1049,6 +1784,53 @@
         }
       }
     },
+    "/api/roulette-results": {
+      "post": {
+        "tags": [
+          "roulette-results"
+        ],
+        "summary": "Post a roulette result to the feeds (guests too)",
+        "security": [
+          {
+            "token": []
+          },
+          {}
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewRouletteResult"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/roulettes": {
       "get": {
         "tags": [
@@ -1063,6 +1845,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RoulettesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tags": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "The tags in use",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The tags.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagsResponse"
                 }
               }
             }
@@ -1428,6 +2241,212 @@
           }
         }
       }
+    },
+    "/api/waking-sands/characters/{id}/picture": {
+      "get": {
+        "tags": [
+          "waking-sands"
+        ],
+        "summary": "A character's picture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waking-sands/room": {
+      "get": {
+        "tags": [
+          "waking-sands"
+        ],
+        "summary": "The room: its characters, who's in, and the day's lines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The room.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandsRoom"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waking-sands/room/characters/{id}": {
+      "post": {
+        "tags": [
+          "waking-sands"
+        ],
+        "summary": "Bring a character into the room",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Who's in the room now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "waking-sands"
+        ],
+        "summary": "Send a character out of the room",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Who's in the room now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waking-sands/room/lines": {
+      "post": {
+        "tags": [
+          "waking-sands"
+        ],
+        "summary": "Say something (the characters' answers arrive live)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewSandsLine"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The line.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandsLineResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1562,6 +2581,19 @@
           "user"
         ]
       },
+      "NewSandsLine": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
       "RoleChange": {
         "type": "object",
         "properties": {
@@ -1635,6 +2667,207 @@
         },
         "required": [
           "character"
+        ]
+      },
+      "NewAttachment": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "gif",
+              "video"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "format": "uri"
+          },
+          "alt": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "kind",
+          "url"
+        ]
+      },
+      "NewArticle": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "body": {
+                "type": "string"
+              },
+              "tagList": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "media": {
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NewAttachment"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "description",
+              "body"
+            ]
+          }
+        },
+        "required": [
+          "article"
+        ]
+      },
+      "ArticleUpdate": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "body": {
+                "type": "string"
+              },
+              "tagList": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "media": {
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NewAttachment"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "article"
+        ]
+      },
+      "NewComment": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "object",
+            "properties": {
+              "body": {
+                "type": "string"
+              },
+              "media": {
+                "maxItems": 1,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NewAttachment"
+                }
+              }
+            },
+            "required": [
+              "body"
+            ]
+          }
+        },
+        "required": [
+          "comment"
+        ]
+      },
+      "NewRouletteResult": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "candidate": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "duty",
+                      "roulette"
+                    ]
+                  },
+                  "id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id"
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "jobId": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "type",
+              "candidate",
+              "mode"
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "result"
         ]
       },
       "ErrorResponse": {
@@ -1775,6 +3008,143 @@
             "$ref": "#/components/schemas/ConfirmationResponse"
           }
         ]
+      },
+      "SandsLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "from": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "memberId": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "from",
+          "name",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "SandsRoom": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "characters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "image": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "title"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "present": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SandsLine"
+            }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "maxPresent": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "maxLineLength": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "maxPresent",
+              "maxLineLength"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "available",
+          "characters",
+          "present",
+          "lines",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "PresentResponse": {
+        "type": "object",
+        "properties": {
+          "present": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "present"
+        ],
+        "additionalProperties": false
+      },
+      "SandsLineResponse": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "$ref": "#/components/schemas/SandsLine"
+          }
+        },
+        "required": [
+          "line"
+        ],
+        "additionalProperties": false
       },
       "Member": {
         "type": "object",
@@ -2008,10 +3378,31 @@
             "items": {
               "$ref": "#/components/schemas/AdminCharacter"
             }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "persona": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "title",
+              "persona"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
-          "characters"
+          "characters",
+          "limits"
         ],
         "additionalProperties": false
       },
@@ -2024,6 +3415,374 @@
         },
         "required": [
           "character"
+        ],
+        "additionalProperties": false
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "following": {
+            "type": "boolean"
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "following",
+          "bio",
+          "image"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "additionalProperties": false
+      },
+      "Attachment": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "image",
+                  "gif"
+                ]
+              },
+              "url": {
+                "type": "string"
+              },
+              "alt": {
+                "type": "string"
+              },
+              "width": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "height": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "kind",
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "video"
+              },
+              "url": {
+                "type": "string"
+              },
+              "videoId": {
+                "type": "string"
+              },
+              "start": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "url",
+              "videoId"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "RouletteCard": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "dutyUnknown": {
+            "type": "boolean"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "job": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "name",
+                  "icon"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "guest": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "detail",
+          "mode",
+          "dutyUnknown",
+          "image",
+          "job",
+          "guest"
+        ],
+        "additionalProperties": false
+      },
+      "Article": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "tagList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoritesCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "roulette": {
+            "$ref": "#/components/schemas/RouletteCard"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "body",
+          "tagList",
+          "createdAt",
+          "updatedAt",
+          "favorited",
+          "favoritesCount",
+          "media",
+          "author"
+        ],
+        "additionalProperties": false
+      },
+      "ArticleResponse": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "$ref": "#/components/schemas/Article"
+          }
+        },
+        "required": [
+          "article"
+        ],
+        "additionalProperties": false
+      },
+      "ArticlesResponse": {
+        "type": "object",
+        "properties": {
+          "articles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Article"
+            }
+          },
+          "articlesCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "articles",
+          "articlesCount"
+        ],
+        "additionalProperties": false
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "body": {
+            "type": "string"
+          },
+          "media": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Attachment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "body",
+          "media",
+          "author"
+        ],
+        "additionalProperties": false
+      },
+      "CommentResponse": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "$ref": "#/components/schemas/Comment"
+          }
+        },
+        "required": [
+          "comment"
+        ],
+        "additionalProperties": false
+      },
+      "CommentsResponse": {
+        "type": "object",
+        "properties": {
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        },
+        "required": [
+          "comments"
+        ],
+        "additionalProperties": false
+      },
+      "TagsResponse": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tags"
         ],
         "additionalProperties": false
       },
@@ -2678,49 +4437,6 @@
         ],
         "additionalProperties": false
       },
-      "Profile": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "following": {
-            "type": "boolean"
-          },
-          "bio": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "image": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "following",
-          "bio",
-          "image"
-        ],
-        "additionalProperties": false
-      },
-      "ProfileResponse": {
-        "type": "object",
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile"
-          }
-        },
-        "required": [
-          "profile"
-        ],
-        "additionalProperties": false
-      },
       "ProvidersResponse": {
         "type": "object",
         "properties": {
@@ -2739,6 +4455,116 @@
         },
         "required": [
           "providers"
+        ],
+        "additionalProperties": false
+      },
+      "MediaResponse": {
+        "type": "object",
+        "properties": {
+          "media": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "width": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "height": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "contentType",
+              "width",
+              "height"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "media"
+        ],
+        "additionalProperties": false
+      },
+      "GifsAvailableResponse": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "additionalProperties": false
+      },
+      "GifsResponse": {
+        "type": "object",
+        "properties": {
+          "gifs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "previewUrl": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                },
+                "height": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "previewUrl",
+                "url",
+                "width",
+                "height"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gifs",
+          "next"
         ],
         "additionalProperties": false
       },

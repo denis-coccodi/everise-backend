@@ -1,4 +1,3 @@
-import {Joi} from 'celebrate';
 import {currentSiteUrl, sitePathRest} from '../site-urls';
 import {youTubeLink, youTubeVideo} from './youtube';
 
@@ -27,33 +26,6 @@ type Attachment =
 
 const MAX_POST_ATTACHMENTS = 4;
 const MAX_COMMENT_ATTACHMENTS = 1;
-
-// One attachment as the site sends it. The server works out the rest (a
-// video's id, whether an image is an upload).
-const attachmentSchema = Joi.object({
-  kind: Joi.string().valid('image', 'gif', 'video').required(),
-  url: Joi.string()
-    .uri({scheme: ['https', 'http']})
-    .max(2000)
-    .required(),
-  alt: Joi.string().allow('').max(200),
-  width: Joi.number().integer().min(1).max(10000),
-  height: Joi.number().integer().min(1).max(10000),
-}).messages({
-  'string.uri': 'An attachment needs a web address.',
-  'any.only': 'An attachment is an image, a GIF or a video.',
-});
-
-function attachmentsSchema(max: number, what: string) {
-  return Joi.array()
-    .items(attachmentSchema)
-    .max(max)
-    .messages({
-      'array.max': `${what} can have at most ${max} ${
-        max === 1 ? 'image, GIF or video' : 'images, GIFs or videos'
-      }.`,
-    });
-}
 
 // Checks what the site sent and keeps only what's needed: a video must be a
 // YouTube video; images must be https (or this site, in local development).
@@ -155,7 +127,6 @@ export {
   MAX_COMMENT_ATTACHMENTS,
   MAX_POST_ATTACHMENTS,
   attachmentsFromText,
-  attachmentsSchema,
   cleanAttachment,
   currentAttachment,
   uploadIdOf,

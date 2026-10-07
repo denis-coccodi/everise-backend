@@ -1,23 +1,14 @@
 import * as express from 'express';
 import {route} from '../api';
-import {config} from '../config';
 import {NotFoundError} from '../errors';
 import {Auth} from '../middleware';
 import {User, UsersService} from '../users';
 import {ProfileResponse} from './profile-schemas';
 import {ProfilesService} from './profiles-service';
+import {profileView} from './profile-view';
 
 function profileBody(member: User, following: boolean) {
-  return {
-    profile: {
-      id: member.id,
-      username: member.username,
-      following,
-      bio: member.bio || null,
-      image:
-        member.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
-    },
-  };
+  return {profile: profileView(member, following)};
 }
 
 class ProfilesRouter {

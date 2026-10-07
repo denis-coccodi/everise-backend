@@ -7,9 +7,6 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Joi's browser build (picked by default) disables email TLD validation.
-  "alias": {"joi": "./node_modules/joi/lib/index.js"},
-
   // Served by Cloudflare before the Worker runs, e.g. /assets/images/avatar-profile.png
   "assets": {"directory": "./public", "binding": "ASSETS"},
 

@@ -1,5 +1,4 @@
-import {config} from '../config';
-import {Profile} from '../profiles';
+import {Profile, profileView} from '../profiles';
 import {Article} from './article';
 
 // An article as the API returns it, for the viewer the profile was read for
@@ -26,14 +25,7 @@ class ArticleDto {
       media: article.media,
       // Only on roulette results, so other articles keep the RealWorld shape.
       ...(article.roulette ? {roulette: article.roulette} : {}),
-      author: {
-        id: author.id,
-        username: author.username,
-        bio: author.bio,
-        image:
-          author.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
-        following: author.following,
-      },
+      author: profileView(author, author.following),
     };
   }
 }

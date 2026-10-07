@@ -15,9 +15,8 @@ const LIMITS = [
 // entry when its file gets split.
 const KNOWN_OVER = {
   'src/users/users-router.ts': 351,
-  'src/articles/articles-router.ts': 588,
-  'src/users/users-service.ts': 522,
-  'src/articles/articles-service.ts': 583,
+  'src/users/users-service.ts': 514,
+  'src/articles/articles-service.ts': 570,
   'src/waking-sands/waking-sands-service.ts': 499,
   'src/duties/xivapi-client.ts': 530,
 };

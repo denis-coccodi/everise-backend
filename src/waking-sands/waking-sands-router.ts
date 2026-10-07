@@ -1,24 +1,22 @@
-import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
+import {route} from '../api';
 import {NotFoundError, UpstreamError} from '../errors';
-import {Auth, routeParam} from '../middleware';
+import {Auth} from '../middleware';
 import {LoadBundledPicture} from '../users';
-import {CHARACTERS, characterById} from './characters';
-import {WakingSandsService} from './waking-sands-service';
+import {characterById} from './characters';
+import {
+  CharacterParams,
+  MAX_LINE_LENGTH,
+  NewSandsLine,
+  PresentResponse,
+  SandsLineResponse,
+  SandsRoom,
+} from './waking-sands-schemas';
+import {MAX_PRESENT, WakingSandsService} from './waking-sands-service';
 
-const CHARACTER_IDS = CHARACTERS.map(character => character.id);
-const MAX_LINE_LENGTH = 1000;
 // A picture can change with a deploy, so it's cached for a day, not for good.
 const PICTURE_CACHE_CONTROL = 'public, max-age=86400';
-
-const characterParam = celebrate({
-  [Segments.PARAMS]: Joi.object().keys({
-    id: Joi.string()
-      .valid(...CHARACTER_IDS)
-      .required(),
-  }),
-});
 
 // The Waking Sands: one room where members talk with FINAL FANTASY XIV
 // characters, and each other. Anyone can watch; talking and bringing
@@ -33,95 +31,106 @@ class WakingSandsRouter {
 
   get router() {
     const router = express.Router();
+    const present = {
+      200: {description: "Who's in the room now.", schema: PresentResponse},
+    };
 
     // The room: the characters, who's in it, and the day's lines.
-    router.get('/waking-sands/room', async (_req, res, next) => {
-      try {
-        return res.json(await this.wakingSands.room());
-      } catch (err) {
-        return next(err);
-      }
-    });
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/waking-sands/room',
+        summary: "The room: its characters, who's in, and the day's lines",
+        responses: {200: {description: 'The room.', schema: SandsRoom}},
+      },
+      async (_req, res) => {
+        res.json({
+          ...(await this.wakingSands.room()),
+          limits: {maxPresent: MAX_PRESENT, maxLineLength: MAX_LINE_LENGTH},
+        });
+      },
+    );
 
     // Brings a character into the room, for everyone.
-    router.post(
-      '/waking-sands/room/characters/:id',
-      this.auth.requireAuth,
-      characterParam,
-      async (req, res, next) => {
-        try {
-          this.requireOpen();
-          const present = await this.wakingSands.invite(
-            req.user!,
-            routeParam(req, 'id'),
-          );
-          return res.json({present});
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/waking-sands/room/characters/:id',
+        summary: 'Bring a character into the room',
+        auth: this.auth.required,
+        params: CharacterParams,
+        responses: present,
+      },
+      async (req, res) => {
+        this.requireOpen();
+        res.json({
+          present: await this.wakingSands.invite(req.user!, req.params.id),
+        });
       },
     );
 
     // Sends a character out of the room.
-    router.delete(
-      '/waking-sands/room/characters/:id',
-      this.auth.requireAuth,
-      characterParam,
-      async (req, res, next) => {
-        try {
-          const present = await this.wakingSands.dismiss(
-            req.user!,
-            routeParam(req, 'id'),
-          );
-          return res.json({present});
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'delete',
+        path: '/waking-sands/room/characters/:id',
+        summary: 'Send a character out of the room',
+        auth: this.auth.required,
+        params: CharacterParams,
+        responses: present,
+      },
+      async (req, res) => {
+        res.json({
+          present: await this.wakingSands.dismiss(req.user!, req.params.id),
+        });
       },
     );
 
     // A member's line. The characters' answers are pushed live as they're
     // written; the request ends when they're done.
-    router.post(
-      '/waking-sands/room/lines',
-      this.auth.requireAuth,
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            text: Joi.string().trim().min(1).max(MAX_LINE_LENGTH).required(),
-          })
-          .required(),
-      }),
-      async (req, res, next) => {
-        try {
-          this.requireOpen();
-          const line = await this.wakingSands.say(req.user!, req.body.text);
-          return res.status(StatusCodes.CREATED).json({line});
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/waking-sands/room/lines',
+        summary: "Say something (the characters' answers arrive live)",
+        auth: this.auth.required,
+        body: NewSandsLine,
+        responses: {
+          201: {description: 'The line.', schema: SandsLineResponse},
+        },
+      },
+      async (req, res) => {
+        this.requireOpen();
+        const line = await this.wakingSands.say(req.user!, req.body.text);
+        res.status(StatusCodes.CREATED).json({line});
       },
     );
 
     // A character's picture, shipped with the backend (public/). Served
     // under /api so the site reaches it through its own address.
-    router.get(
-      '/waking-sands/characters/:id/picture',
-      async (req, res, next) => {
-        try {
-          const picture = characterById(routeParam(req, 'id'))?.picture;
-          const bytes = picture && (await this.loadBundledPicture(picture));
-          if (!bytes) {
-            throw new NotFoundError('picture');
-          }
-          return res
-            .type('image/png')
-            .set('Cache-Control', PICTURE_CACHE_CONTROL)
-            .set('X-Content-Type-Options', 'nosniff')
-            .send(Buffer.from(bytes));
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/waking-sands/characters/:id/picture',
+        summary: "A character's picture",
+        responses: {
+          200: {description: 'The picture.', contentType: 'image/png'},
+        },
+      },
+      async (req, res) => {
+        const picture = characterById(req.params.id)?.picture;
+        const bytes = picture && (await this.loadBundledPicture(picture));
+        if (!bytes) throw new NotFoundError('picture');
+        res
+          .type('image/png')
+          .set('Cache-Control', PICTURE_CACHE_CONTROL)
+          .set('X-Content-Type-Options', 'nosniff')
+          .send(Buffer.from(bytes));
       },
     );
 

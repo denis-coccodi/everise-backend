@@ -19,3 +19,4 @@ export {
   WakingSandsService,
 } from './waking-sands-service';
 export {WakingSandsRouter} from './waking-sands-router';
+export {CharacterParams} from './waking-sands-schemas';

@@ -1,13 +1,11 @@
-import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
-import {ArticleDto} from '../articles';
+import {route} from '../api';
+import {ArticleDto, ArticleResponse} from '../articles';
 import {Auth} from '../middleware';
 import {ProfilesService} from '../profiles';
-import {
-  MAX_COMMENT_LENGTH,
-  RoulettePostsService,
-} from './roulette-posts-service';
+import {NewRouletteResult} from './roulette-post-schemas';
+import {RoulettePostsService} from './roulette-posts-service';
 
 // Posts an accepted roulette result to the feeds. Open to guests (Tataru
 // posts for them), but only ever as a result card the backend builds itself:
@@ -22,53 +20,30 @@ class RoulettePostsRouter {
   get router() {
     const router = express.Router();
 
-    router.post(
-      '/roulette-results',
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({
-            result: Joi.object()
-              .keys({
-                type: Joi.string().max(100).required(),
-                candidate: Joi.object()
-                  .keys({
-                    kind: Joi.string().valid('duty', 'roulette').required(),
-                    id: Joi.number().integer().min(0).required(),
-                  })
-                  .required(),
-                mode: Joi.string().max(100).required(),
-                jobId: Joi.number().integer().min(0),
-              })
-              .required(),
-            comment: Joi.string()
-              .allow('')
-              .max(MAX_COMMENT_LENGTH)
-              .messages({
-                'string.max': `Keep the comment to ${MAX_COMMENT_LENGTH} characters.`,
-              }),
-          })
-          .required(),
-      }),
-      this.auth.optionalAuth,
-      async (req, res, next) => {
-        try {
-          const article = await this.roulettePostsService.post(
-            req.body.result,
-            req.user,
-            req.body.comment,
-            // Cloudflare's client address; one value for local runs.
-            req.header('cf-connecting-ip') ?? 'local',
-          );
-          const author = await this.profilesService.getProfile(
-            article.authorId,
-          );
-
-          return res
-            .status(StatusCodes.CREATED)
-            .json(new ArticleDto(article, false, author));
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/roulette-results',
+        summary: 'Post a roulette result to the feeds (guests too)',
+        auth: this.auth.optional,
+        body: NewRouletteResult,
+        responses: {
+          201: {description: 'The post.', schema: ArticleResponse},
+        },
+      },
+      async (req, res) => {
+        const article = await this.roulettePostsService.post(
+          req.body.result,
+          req.user,
+          req.body.comment,
+          // Cloudflare's client address; one value for local runs.
+          req.header('cf-connecting-ip') ?? 'local',
+        );
+        const author = await this.profilesService.getProfile(article.authorId);
+        res
+          .status(StatusCodes.CREATED)
+          .json(new ArticleDto(article, false, author));
       },
     );
 

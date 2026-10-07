@@ -10,7 +10,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 ## Routers and the API description
 
 - A router class takes its services (and `Auth`) in its constructor and builds an `express.Router` in its `router` getter. `src/app.ts` puts it together and mounts it under `/api`.
-- Every endpoint is defined with `route(router, spec, handler)` from `src/api`. The spec has the method, the path, a summary, `auth` (`this.auth.required` / `this.auth.optional`), zod schemas for `params`, `query` and `body`, and every status it answers with its response schema. From that one definition:
+- Every endpoint is defined with `route(router, spec, handler)` from `src/api`. The spec has the method, the path, a summary, `auth` (`this.auth.required` / `.optional` / `.admin`), zod schemas for `params`, `query` and `body`, and every status it answers with its response schema. From that one definition:
   - the request is checked: a 422 lists one message per failing field (`src/api/messages.ts`), and the handler gets `req.params`, `req.query` and `req.body` parsed and typed;
   - the OpenAPI 3.1 document is built (`GET /api/openapi.json`, browsable at `/api/docs`), and the frontend generates its API types from it;
   - in tests (`CHECK_API_RESPONSES`), every JSON answer is checked against its declared schema. An undeclared status, or a field the schema doesn't name, fails the test with a 500.
@@ -19,7 +19,9 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - `openapi.json` at the repo root is the committed copy of the document. `npm test` rewrites it when routes change and fails once; commit the new file. CI fails while it's out of date.
 - A router only reads the request, calls services, and writes the response (status from `StatusCodes`). Rules and data access belong in the service.
 - Express 5 forwards a rejected async handler to the error middleware by itself: handlers just `throw` or `await`, with no `try { ... } catch (err) { next(err) }`.
-- Routes still on `celebrate` (being moved to `route()`) read params with `routeParam(req, 'id')`, since Express 5 types params as `string | string[]` behind a validator.
+- Don't add plain `router.get(...)` routes: a route outside `route()` is missing from the document and from the response check.
+- Shape answers so that a field means the same everywhere: a member is always `profileView()` (`Profile`), never a hand-made variant.
+- A limit the frontend's forms also enforce goes in the response (e.g. `limits` in `GET /waking-sands/room`), so the frontend doesn't copy the number.
 
 ## Services
 
@@ -39,7 +41,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 
 - No `any` in `src/` (lint fails: `@typescript-eslint/no-explicit-any`). Use `unknown` and narrow it, or write the type. Tests may use `any`.
 - Stored documents are interfaces that extend `Doc`; read them with `db.get<T>()` / `db.find<T>()`.
-- Settings come from `config` (`src/config.ts`), checked once by its Joi schema. Never read `process.env` anywhere else. A new setting goes in the schema, `wrangler.jsonc` (or as a secret), and the test env in `__tests__/utils/env.ts`.
+- Settings come from `config` (`src/config.ts`), checked once by its zod schema (values come out typed). Never read `process.env` anywhere else. A new setting goes in the schema, `wrangler.jsonc` (or as a secret), and the test env in `__tests__/utils/env.ts`.
 - Workers runtime types (`DurableObjectNamespace`, `Request`, `Env`, `ctx.storage`) come from `worker-configuration.d.ts`, made by `wrangler types` on every `npm install` and not committed. After changing `wrangler.jsonc` (a binding, a variable), run `npx wrangler types`. Don't hand-write runtime types.
 - A Durable Object's RPC stub types drop generics; type the stub once where it is wrapped (see `DurableObjectDb`), not at each call.
 
@@ -77,6 +79,6 @@ Keep comments at the density of the surrounding code: a line on what a class or 
 
 ## Dependencies
 
-- The Jest setup is CommonJS (ts-jest). Packages that ship only ESM (celebrate 16, faker 10) can't be loaded by the tests; stay on their last CommonJS major until the test setup changes.
-- `npm audit --omit=dev` must report 0 vulnerabilities. When a fix sits outside a dependency's pinned range, use `overrides` in `package.json` (as for celebrate's lodash), with a compatible version.
+- The Jest setup is CommonJS (ts-jest). Packages that ship only ESM (e.g. faker 10) can't be loaded by the tests; stay on their last CommonJS major until the test setup changes.
+- `npm audit --omit=dev` must report 0 vulnerabilities. When a fix sits outside a dependency's pinned range, use `overrides` in `package.json` (e.g. a transitive package's patched minor), with a compatible version.
 - TypeScript is pinned below what ts-jest supports (`<7` today). TypeScript 6 needs `types` listed in `tsconfig.json` and an explicit `moduleResolution`; the deprecated default makes ts-jest emit nothing ("Unable to process ... outDir").

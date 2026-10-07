@@ -1,6 +1,5 @@
 import * as bcrypt from 'bcryptjs';
 import {randomBytes} from 'crypto';
-import {Joi} from 'celebrate';
 import {config} from '../config';
 import {Db, Doc} from '../db';
 import {
@@ -278,7 +277,6 @@ class UsersService {
     }
 
     if (params.image && params.image !== userData.image) {
-      await this.validateImageOrThrow(params.image);
       userData.image = params.image;
     }
 
@@ -486,9 +484,7 @@ class UsersService {
   }
 
   private async validateEmailOrThrow(email: string) {
-    const validatedEmail = await Joi.string().email().validateAsync(email);
-
-    if (await this.getUserByEmail(validatedEmail)) {
+    if (await this.getUserByEmail(email)) {
       throw new AlreadyExistsError(
         'That email address is already registered. Sign in instead?',
       );
@@ -508,10 +504,6 @@ class UsersService {
     if (password.length < 8) {
       throw new RangeError('Your password needs at least 8 characters.');
     }
-  }
-
-  private async validateImageOrThrow(image: string) {
-    await Joi.string().uri().validateAsync(image);
   }
 
   private async hashPassword(password: string) {
