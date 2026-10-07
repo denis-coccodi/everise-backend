@@ -2,7 +2,7 @@ import {readFile} from 'fs/promises';
 import {join} from 'path';
 import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
-import {DocumentStore} from '../../src/db';
+import {SqlDocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
@@ -10,9 +10,9 @@ import {GifFetch} from '../../src/media';
 import {OAuthFetch} from '../../src/social-login';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
-import {MemoryStorage} from './memory-storage';
+import {SqliteStorage} from './sqlite-storage';
 
-const db = new DocumentStore(new MemoryStorage());
+const db = new SqlDocumentStore(new SqliteStorage());
 
 const xivApi = new FakeXivApi();
 

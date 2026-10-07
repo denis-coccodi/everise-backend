@@ -25,29 +25,29 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite-backed key-value storage) used as a NoSQL document store: the app's 12 collections, no fixed schema (the cached FFXIV data is in the README).</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite) holding documents in one SQL table: the app's 12 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
   <text x="58" y="128" class="note-title">How documents are stored</text>
-  <text x="58" y="152" class="note">Each document is one key-value entry:</text>
+  <text x="58" y="152" class="note">Each document is one row of the docs table:</text>
   <rect x="58" y="162" width="304" height="26" rx="5" fill="#f1f5f9"/>
-  <text x="68" y="180" class="mono">&lt;collection&gt;/&lt;id&gt;  →  JSON document</text>
-  <text x="58" y="210" class="mono" fill="#475569">users/2f1c…    articles/9a7e…</text>
+  <text x="68" y="180" class="mono">collection, id  →  data (JSON)</text>
+  <text x="58" y="210" class="mono" fill="#475569">(users, 2f1c…)  (articles, 9a7e…)</text>
   <text x="58" y="240" class="note">• id (UUID), createdAt and updatedAt are</text>
   <text x="70" y="257" class="note">added by the store to every document.</text>
-  <text x="58" y="280" class="note">• Queries scan a collection's key prefix and</text>
-  <text x="70" y="297" class="note">filter / sort / paginate in memory.</text>
+  <text x="58" y="280" class="note">• Queries are SQL, with an index on every</text>
+  <text x="70" y="297" class="note">filtered field and on createdAt.</text>
   <text x="58" y="320" class="note">• Tags and favorites have no collection: they</text>
   <text x="70" y="337" class="note">are arrays inside each article document.</text>
-  <text x="58" y="358" class="note">• Requests are serialized: no write races.</text>
+  <text x="58" y="358" class="note">• A batch of writes is one transaction.</text>
 
   <!-- users -->
   <g>
     <rect x="440" y="100" width="320" height="340" rx="10" class="box"/>
     <path d="M450,100 h300 a10,10 0 0 1 10,10 v30 h-320 v-30 a10,10 0 0 1 10,-10 z" fill="#7c3aed"/>
     <text x="456" y="126" class="title">users</text>
-    <text x="744" y="126" class="key" text-anchor="end">users/&lt;id&gt;</text>
+    <text x="744" y="126" class="key" text-anchor="end">docs: users</text>
     <rect x="452" y="147" width="26" height="16" rx="3" class="pk"/><text x="465" y="159" class="badge" text-anchor="middle">PK</text>
     <text x="488" y="159" class="field">id</text><text x="744" y="159" class="type" text-anchor="end">uuid</text>
     <text x="488" y="180" class="field">email</text><text x="744" y="180" class="type" text-anchor="end">string</text>
@@ -69,7 +69,7 @@
     <rect x="860" y="100" width="300" height="184" rx="10" class="box"/>
     <path d="M870,100 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#0891b2"/>
     <text x="876" y="126" class="title">follows</text>
-    <text x="1144" y="126" class="key" text-anchor="end">follows/&lt;id&gt;</text>
+    <text x="1144" y="126" class="key" text-anchor="end">docs: follows</text>
     <rect x="872" y="149" width="26" height="16" rx="3" class="pk"/><text x="885" y="161" class="badge" text-anchor="middle">PK</text>
     <text x="908" y="161" class="field">id</text><text x="1144" y="161" class="type" text-anchor="end">uuid</text>
     <rect x="872" y="175" width="26" height="16" rx="3" class="fk"/><text x="885" y="187" class="badge" text-anchor="middle">FK</text>
@@ -85,7 +85,7 @@
     <rect x="440" y="440" width="320" height="366" rx="10" class="box"/>
     <path d="M450,440 h300 a10,10 0 0 1 10,10 v30 h-320 v-30 a10,10 0 0 1 10,-10 z" fill="#059669"/>
     <text x="456" y="466" class="title">articles</text>
-    <text x="744" y="466" class="key" text-anchor="end">articles/&lt;id&gt;</text>
+    <text x="744" y="466" class="key" text-anchor="end">docs: articles</text>
     <rect x="452" y="489" width="26" height="16" rx="3" class="pk"/><text x="465" y="501" class="badge" text-anchor="middle">PK</text>
     <text x="488" y="501" class="field">id</text><text x="744" y="501" class="type" text-anchor="end">uuid</text>
     <rect x="452" y="515" width="26" height="16" rx="3" class="fk"/><text x="465" y="527" class="badge" text-anchor="middle">FK</text>
@@ -108,7 +108,7 @@
     <rect x="40" y="470" width="300" height="236" rx="10" class="box"/>
     <path d="M50,470 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#ea580c"/>
     <text x="56" y="496" class="title">comments</text>
-    <text x="324" y="496" class="key" text-anchor="end">comments/&lt;id&gt;</text>
+    <text x="324" y="496" class="key" text-anchor="end">docs: comments</text>
     <rect x="52" y="519" width="26" height="16" rx="3" class="pk"/><text x="65" y="531" class="badge" text-anchor="middle">PK</text>
     <text x="88" y="531" class="field">id</text><text x="324" y="531" class="type" text-anchor="end">uuid</text>
     <rect x="52" y="545" width="26" height="16" rx="3" class="fk"/><text x="65" y="557" class="badge" text-anchor="middle">FK</text>
@@ -151,7 +151,7 @@
     <rect x="860" y="310" width="300" height="210" rx="10" class="box"/>
     <path d="M870,310 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#db2777"/>
     <text x="876" y="336" class="title">profileImages</text>
-    <text x="1144" y="336" class="key" text-anchor="end">profileImages/&lt;id&gt;</text>
+    <text x="1144" y="336" class="key" text-anchor="end">docs: profileImages</text>
     <rect x="872" y="359" width="26" height="16" rx="3" class="pk"/><text x="885" y="371" class="badge" text-anchor="middle">PK</text>
     <text x="908" y="371" class="field">id</text><text x="1144" y="371" class="type" text-anchor="end">uuid</text>
     <rect x="872" y="385" width="26" height="16" rx="3" class="fk"/><text x="885" y="397" class="badge" text-anchor="middle">FK</text>
@@ -172,7 +172,7 @@
     <rect x="860" y="560" width="300" height="210" rx="10" class="box"/>
     <path d="M870,560 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
     <text x="876" y="586" class="title">postLimits</text>
-    <text x="1144" y="586" class="key" text-anchor="end">postLimits/&lt;key&gt;</text>
+    <text x="1144" y="586" class="key" text-anchor="end">docs: postLimits</text>
     <rect x="872" y="609" width="26" height="16" rx="3" class="pk"/><text x="885" y="621" class="badge" text-anchor="middle">PK</text>
     <text x="908" y="621" class="field">id</text><text x="1144" y="621" class="type" text-anchor="end">user-… / guest-… / guests</text>
     <text x="908" y="647" class="field">lastPostAt</text><text x="1144" y="647" class="type" text-anchor="end">ms?</text>
@@ -187,7 +187,7 @@
     <rect x="440" y="880" width="320" height="284" rx="10" class="box"/>
     <path d="M450,880 h300 a10,10 0 0 1 10,10 v30 h-320 v-30 a10,10 0 0 1 10,-10 z" fill="#0d9488"/>
     <text x="456" y="906" class="title">media</text>
-    <text x="744" y="906" class="key" text-anchor="end">media/&lt;id&gt;</text>
+    <text x="744" y="906" class="key" text-anchor="end">docs: media</text>
     <rect x="452" y="929" width="26" height="16" rx="3" class="pk"/><text x="465" y="941" class="badge" text-anchor="middle">PK</text>
     <text x="488" y="941" class="field">id</text><text x="744" y="941" class="type" text-anchor="end">uuid</text>
     <rect x="452" y="955" width="26" height="16" rx="3" class="fk"/><text x="465" y="967" class="badge" text-anchor="middle">FK</text>
@@ -234,7 +234,7 @@
     <rect x="40" y="924" width="300" height="184" rx="10" class="box"/>
     <path d="M50,924 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
     <text x="56" y="950" class="title">chatUsage</text>
-    <text x="324" y="950" class="key" text-anchor="end">chatUsage/&lt;day&gt;</text>
+    <text x="324" y="950" class="key" text-anchor="end">docs: chatUsage (id: day)</text>
     <rect x="52" y="973" width="26" height="16" rx="3" class="pk"/><text x="65" y="985" class="badge" text-anchor="middle">PK</text>
     <text x="88" y="985" class="field">id</text><text x="324" y="985" class="type" text-anchor="end">YYYY-MM-DD</text>
     <text x="88" y="1011" class="field">neurons</text><text x="324" y="1011" class="type" text-anchor="end">number</text>
@@ -248,7 +248,7 @@
     <rect x="860" y="1120" width="300" height="210" rx="10" class="box"/>
     <path d="M870,1120 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
     <text x="876" y="1146" class="title">characters</text>
-    <text x="1144" y="1146" class="key" text-anchor="end">characters/&lt;id&gt;</text>
+    <text x="1144" y="1146" class="key" text-anchor="end">docs: characters</text>
     <rect x="872" y="1169" width="26" height="16" rx="3" class="pk"/><text x="885" y="1181" class="badge" text-anchor="middle">PK</text>
     <text x="908" y="1181" class="field">id</text><text x="1144" y="1181" class="type" text-anchor="end">tataru / barnaby / …</text>
     <text x="908" y="1207" class="field">title</text><text x="1144" y="1207" class="type" text-anchor="end">string? (unset: default)</text>
@@ -263,7 +263,7 @@
     <rect x="40" y="1130" width="300" height="240" rx="10" class="box"/>
     <path d="M50,1130 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
     <text x="56" y="1156" class="title">sandsLines</text>
-    <text x="324" y="1156" class="key" text-anchor="end">sandsLines/&lt;id&gt;</text>
+    <text x="324" y="1156" class="key" text-anchor="end">docs: sandsLines</text>
     <rect x="52" y="1179" width="26" height="16" rx="3" class="pk"/><text x="65" y="1191" class="badge" text-anchor="middle">PK</text><text x="88" y="1191" class="field">id</text><text x="324" y="1191" class="type" text-anchor="end">uuid</text>
     <text x="88" y="1217" class="field">at</text><text x="324" y="1217" class="type" text-anchor="end">ms (increasing)</text>
     <text x="88" y="1243" class="field">from</text><text x="324" y="1243" class="type" text-anchor="end">member / note / character</text>
@@ -278,7 +278,7 @@
     <rect x="440" y="1190" width="300" height="162" rx="10" class="box"/>
     <path d="M450,1190 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
     <text x="456" y="1216" class="title">sandsRoom</text>
-    <text x="724" y="1216" class="key" text-anchor="end">sandsRoom/room</text>
+    <text x="724" y="1216" class="key" text-anchor="end">docs: sandsRoom (id: room)</text>
     <rect x="452" y="1239" width="26" height="16" rx="3" class="pk"/><text x="465" y="1251" class="badge" text-anchor="middle">PK</text><text x="488" y="1251" class="field">id</text><text x="724" y="1251" class="type" text-anchor="end">room</text>
     <text x="488" y="1277" class="field">present</text><text x="724" y="1277" class="type" text-anchor="end">character ids[]</text>
     <text x="488" y="1303" class="field">busyUntil</text><text x="724" y="1303" class="type" text-anchor="end">ms</text>
@@ -290,7 +290,7 @@
     <rect x="40" y="710" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
     <text x="58" y="738" class="note-title">Legend</text>
     <rect x="58" y="751" width="26" height="16" rx="3" class="pk"/><text x="71" y="763" class="badge" text-anchor="middle">PK</text>
-    <text x="94" y="763" class="note">document id, also the key suffix</text>
+    <text x="94" y="763" class="note">document id (the row key)</text>
     <rect x="58" y="777" width="26" height="16" rx="3" class="fk"/><text x="71" y="789" class="badge" text-anchor="middle">FK</text>
     <text x="94" y="789" class="note">holds another document's id</text>
     <path d="M58,812 H84" class="rel" marker-end="url(#arrow)"/>
@@ -301,6 +301,6 @@
   
   </g>
   <!-- Footer -->
-  <text x="40" y="1440" font-size="12" fill="#64748b">Source: src/db/document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
+  <text x="40" y="1440" font-size="12" fill="#64748b">Source: src/db/sql-document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
   <text x="40" y="1458" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts, src/waking-sands/waking-sands-service.ts, src/waking-sands/characters-service.ts</text>
 </svg>
