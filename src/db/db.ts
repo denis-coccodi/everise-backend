@@ -50,13 +50,15 @@ interface Db {
   // Each of these reads and writes in one call to the database, so no other
   // request's write can come between (a separate get and update can).
 
-  // Adds `value` to the array `field` unless it's there, keeping it sorted.
-  // The document after, or undefined when there's none.
+  // Adds `value` at the end of the array `field` unless it's there, or the
+  // array already has `max` items. The document after, or undefined when
+  // there's none (unless `create`, which makes it).
   addToSet<T extends Doc>(
     collection: string,
     id: string,
     field: string,
     value: string,
+    options?: SetOptions,
   ): Promise<T | undefined>;
   removeFromSet<T extends Doc>(
     collection: string,
@@ -64,6 +66,16 @@ interface Db {
     field: string,
     value: string,
   ): Promise<T | undefined>;
+  // A lease: sets the number `field` to `until` when it's missing or at
+  // most `now` (nobody holds it), creating the document if there's none.
+  // True when this call took it.
+  takeLease(
+    collection: string,
+    id: string,
+    field: string,
+    now: number,
+    until: number,
+  ): Promise<boolean>;
   // Adds the amounts to number fields (missing ones count as 0; a dotted
   // name such as `members.<id>` reaches into an object), creating the
   // document under `id` if there's none.
@@ -82,4 +94,9 @@ interface Db {
   clear(): Promise<void>;
 }
 
-export {Db, Doc, DocData, FindOptions, Where, Write};
+interface SetOptions {
+  max?: number;
+  create?: boolean;
+}
+
+export {Db, Doc, DocData, FindOptions, SetOptions, Where, Write};

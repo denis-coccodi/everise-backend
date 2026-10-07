@@ -132,11 +132,31 @@ describe('SqlDocumentStore', () => {
 
     await db.addToSet('posts', post.id, 'tags', 'a');
     await db.addToSet('posts', post.id, 'tags', 'b');
-    expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['a', 'b']);
+    expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['b', 'a']);
+
+    // Up to `max` items.
+    await db.addToSet('posts', post.id, 'tags', 'c', {max: 2});
+    expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['b', 'a']);
 
     await db.removeFromSet('posts', post.id, 'tags', 'b');
     expect((await db.get<Post>('posts', post.id))!.tags).toEqual(['a']);
     expect(await db.addToSet('posts', 'missing', 'tags', 'a')).toBeUndefined();
+    expect(
+      await db.addToSet('posts', 'new', 'tags', 'a', {create: true}),
+    ).toMatchObject({id: 'new', tags: ['a']});
+  });
+
+  test('gives a lease to one caller until it runs out', async () => {
+    expect(await db.takeLease('rooms', 'room', 'busyUntil', 1000, 2000)).toBe(
+      true,
+    );
+    expect(await db.takeLease('rooms', 'room', 'busyUntil', 1500, 2500)).toBe(
+      false,
+    );
+    expect(await db.takeLease('rooms', 'room', 'busyUntil', 2000, 3000)).toBe(
+      true,
+    );
+    expect(await db.get('rooms', 'room')).toMatchObject({busyUntil: 3000});
   });
 
   test('increments counters, creating the document and nested fields', async () => {

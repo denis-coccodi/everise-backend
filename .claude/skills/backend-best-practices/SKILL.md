@@ -48,7 +48,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 ## Data and concurrency
 
 - Store-wide changes that must happen together go in one `db.batch([...])`.
-- A read, then a write based on what was read, races between two requests: each `Db` call is one RPC to the Durable Object, and other requests' calls can come between. Use the one-step operations instead: `addToSet`/`removeFromSet` for lists of ids, `increment` for counters, `createUnique` for anything that must not be created twice (a check before `create` still gives the nice message; `createUnique` is the guard). A new kind of read-modify-write gets a new one-step operation in `SqlDocumentStore` rather than a get and an update. `__tests__/concurrency` fires such requests together.
+- A read, then a write based on what was read, races between two requests: each `Db` call is one RPC to the Durable Object, and other requests' calls can come between. Use the one-step operations instead: `addToSet`/`removeFromSet` for lists of ids (with `max` for a capped list), `takeLease` for "only one at a time" (renew it with `update` while working, release it with `update`), `increment` for counters, `createUnique` for anything that must not be created twice (a check before `create` still gives the nice message; `createUnique` is the guard). A new kind of read-modify-write gets a new one-step operation in `SqlDocumentStore` rather than a get and an update. `__tests__/concurrency` fires such requests together.
 
 ## Tests
 

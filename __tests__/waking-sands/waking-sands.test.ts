@@ -467,3 +467,21 @@ describe('Workers AI', () => {
     await expect(model.reply(messages)).rejects.toBeInstanceOf(UpstreamError);
   });
 });
+
+describe('the room with requests arriving together', () => {
+  test('two invitations at once never overfill it', async () => {
+    const member = await signedIn();
+    await as(member).invite('tataru').expect(200);
+    await as(member).invite('urianger').expect(200);
+
+    const statuses = (
+      await Promise.all([
+        as(member).invite('yshtola'),
+        as(member).invite('barnaby'),
+      ])
+    ).map(response => response.status);
+
+    expect(statuses.sort()).toEqual([200, 422]);
+    expect((await room()).present).toHaveLength(MAX_PRESENT);
+  });
+});
