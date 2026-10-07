@@ -6,6 +6,7 @@ import {DurableObjectDb, EveriseDb} from './db/everise-db';
 import {R2Bucket, R2FileStore} from './files';
 import {HubLiveFeed, LiveHub, connectToHub} from './live/live-hub';
 import {isAllowedOrigin, isLiveRequest} from './live/live-requests';
+import {HubPartyFinder, PartyFinderHub} from './party-finder/party-finder-hub';
 import {AiBinding, WorkersAiModel} from './waking-sands';
 
 // Express runs inside the Worker through Cloudflare's Node.js HTTP server
@@ -36,6 +37,8 @@ createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   fileStore,
   loadBundledPicture,
   wakingSands: {model: ai ? new WorkersAiModel(ai) : undefined},
+  // The Party Finder board, in its Durable Object (the "PARTY_FINDER" binding).
+  partyFinder: new HubPartyFinder(env.PARTY_FINDER),
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {
@@ -89,4 +92,4 @@ export default {
   },
 };
 
-export {EveriseDb, LiveHub};
+export {EveriseDb, LiveHub, PartyFinderHub};
