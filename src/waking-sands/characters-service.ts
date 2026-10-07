@@ -52,7 +52,7 @@ class CharactersService {
     private readonly usersService: UsersService,
     private readonly profileImagesService: ProfileImagesService,
     private readonly tataru: TataruAccount,
-    private readonly siteUrl: string
+    private readonly siteUrl: string,
   ) {}
 
   async all(): Promise<CharacterProfile[]> {
@@ -62,8 +62,8 @@ class CharactersService {
       this.profile(
         character,
         docs.find(doc => doc.id === character.id),
-        character.id === 'tataru' ? tataru : undefined
-      )
+        character.id === 'tataru' ? tataru : undefined,
+      ),
     );
   }
 
@@ -122,7 +122,7 @@ class CharactersService {
   private profile(
     character: Character,
     doc: CharacterDoc | undefined,
-    account?: {image?: string; bio?: string}
+    account?: {image?: string; bio?: string},
   ): CharacterProfile {
     const shipped = character.picture
       ? `${this.siteUrl}/api/waking-sands/characters/${character.id}/picture`

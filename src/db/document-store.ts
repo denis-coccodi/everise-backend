@@ -23,7 +23,7 @@ class DocumentStore implements Db {
     const docs = await this.storage.list<T>({prefix: `${collection}/`});
 
     let results = [...docs.values()].filter(doc =>
-      (options.where ?? []).every(where => this.matches(doc, where))
+      (options.where ?? []).every(where => this.matches(doc, where)),
     );
 
     const orderBy = options.orderBy ?? [];
@@ -41,7 +41,7 @@ class DocumentStore implements Db {
     const offset = options.offset ?? 0;
     results = results.slice(
       offset,
-      options.limit !== undefined ? offset + options.limit : undefined
+      options.limit !== undefined ? offset + options.limit : undefined,
     );
 
     return results;
@@ -89,7 +89,7 @@ class DocumentStore implements Db {
     const changed = Object.keys(data).some(
       field =>
         JSON.stringify(data[field]) !==
-        JSON.stringify((existing as unknown as DocData)[field])
+        JSON.stringify((existing as unknown as DocData)[field]),
     );
 
     if (!changed) {

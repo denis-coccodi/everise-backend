@@ -50,7 +50,7 @@ class DutiesService {
     private readonly db: Db,
     private readonly xivApi: XivApiClient,
     private readonly images: ImagesService,
-    private readonly now: () => Date = () => new Date()
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   // Downloads everything first, so a failed download leaves the cache as it
@@ -133,7 +133,7 @@ class DutiesService {
           frontlineDuties.find(duty => isSameMap(duty.name, map))?.id ?? null,
         from: from.toISOString(),
         until: until.toISOString(),
-      })
+      }),
     );
 
     return {active: schedule[0], schedule};

@@ -50,7 +50,10 @@ class ImagesService {
   private readonly downloadsId = 'current';
   private readonly indexId = 'index';
 
-  constructor(private readonly db: Db, private readonly xivApi: XivApiClient) {}
+  constructor(
+    private readonly db: Db,
+    private readonly xivApi: XivApiClient,
+  ) {}
 
   // Starts downloading `images` from scratch.
   async plan(images: ImageRef[]): Promise<DownloadProgress> {
@@ -66,7 +69,7 @@ class ImagesService {
   async downloadBatch(): Promise<DownloadProgress & {downloaded: number}> {
     const downloads = await this.db.get<DownloadsDoc>(
       this.stateCollection,
-      this.downloadsId
+      this.downloadsId,
     );
     if (!downloads) {
       return {total: 0, pending: 0, failed: [], downloaded: 0};
@@ -154,7 +157,7 @@ class ImagesService {
 async function inParallel<T>(
   items: T[],
   limit: number,
-  task: (item: T) => Promise<void>
+  task: (item: T) => Promise<void>,
 ) {
   const queue = [...items];
   const worker = async () => {

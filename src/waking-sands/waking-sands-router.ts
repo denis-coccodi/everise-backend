@@ -28,7 +28,7 @@ class WakingSandsRouter {
   constructor(
     private readonly auth: Auth,
     private readonly wakingSands: WakingSandsService,
-    private readonly loadBundledPicture: LoadBundledPicture
+    private readonly loadBundledPicture: LoadBundledPicture,
   ) {}
 
   get router() {
@@ -53,13 +53,13 @@ class WakingSandsRouter {
           this.requireOpen();
           const present = await this.wakingSands.invite(
             req.user!,
-            routeParam(req, 'id')
+            routeParam(req, 'id'),
           );
           return res.json({present});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Sends a character out of the room.
@@ -71,13 +71,13 @@ class WakingSandsRouter {
         try {
           const present = await this.wakingSands.dismiss(
             req.user!,
-            routeParam(req, 'id')
+            routeParam(req, 'id'),
           );
           return res.json({present});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // A member's line. The characters' answers are pushed live as they're
@@ -100,7 +100,7 @@ class WakingSandsRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // A character's picture, shipped with the backend (public/). Served
@@ -122,7 +122,7 @@ class WakingSandsRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;

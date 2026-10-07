@@ -19,7 +19,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -50,7 +50,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toEqual(
-        atOrAfter(article.article.updatedAt)
+        atOrAfter(article.article.updatedAt),
       );
     });
 
@@ -58,7 +58,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -83,7 +83,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toEqual(
-        atOrAfter(article.article.updatedAt)
+        atOrAfter(article.article.updatedAt),
       );
     });
 
@@ -91,7 +91,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -113,7 +113,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toStrictEqual(
-        article.article.updatedAt
+        article.article.updatedAt,
       );
     });
 
@@ -121,7 +121,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -144,7 +144,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toEqual(
-        atOrAfter(article.article.updatedAt)
+        atOrAfter(article.article.updatedAt),
       );
     });
 
@@ -152,7 +152,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -175,7 +175,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toEqual(
-        atOrAfter(article.article.updatedAt)
+        atOrAfter(article.article.updatedAt),
       );
     });
 
@@ -183,7 +183,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -206,7 +206,7 @@ describe('PUT /api/articles/:slug', () => {
         },
       });
       expect(updateArticleResponse.body.article.updatedAt).toEqual(
-        atOrAfter(article.article.updatedAt)
+        atOrAfter(article.article.updatedAt),
       );
     });
   });
@@ -245,11 +245,11 @@ describe('PUT /api/articles/:slug', () => {
       const existingAuthor = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const existingArticle = await articlesClient.createRandomArticle(
-        existingAuthor.user.token
+        existingAuthor.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -268,7 +268,7 @@ describe('PUT /api/articles/:slug', () => {
 
       expect(updateArticleResponse.status).toBe(200);
       expect(updateArticleResponse.body.article.title).toBe(
-        existingArticle.article.title
+        existingArticle.article.title,
       );
       expect(updateArticleResponse.body.article.id).toBe(article.article.id);
     });
@@ -279,7 +279,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -309,7 +309,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -339,7 +339,7 @@ describe('PUT /api/articles/:slug', () => {
       const user = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -372,7 +372,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const updateArticleRequestBody = {
@@ -401,7 +401,7 @@ describe('PUT /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const expiresInSeconds = 1;

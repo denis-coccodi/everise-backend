@@ -9,7 +9,7 @@ function duty(
   row_id: number,
   name: string,
   contentType: number,
-  extra: Record<string, unknown> = {}
+  extra: Record<string, unknown> = {},
 ): Row {
   return {
     row_id,
@@ -195,7 +195,7 @@ function job(
   row_id: number,
   name: string,
   abbreviation: string,
-  extra: Record<string, unknown>
+  extra: Record<string, unknown>,
 ): Row {
   return {
     row_id,

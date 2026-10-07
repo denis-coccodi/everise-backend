@@ -4,7 +4,7 @@ class Profile {
     readonly username: string,
     readonly following: boolean,
     readonly bio?: string,
-    readonly image?: string
+    readonly image?: string,
   ) {}
 }
 

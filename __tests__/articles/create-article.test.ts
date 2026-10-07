@@ -129,7 +129,7 @@ describe('POST /api/articles', () => {
       const existingAuthor = await usersClient.registerRandomUser();
 
       const existingArticle = await articlesClient.createRandomArticle(
-        existingAuthor.user.token
+        existingAuthor.user.token,
       );
 
       const requestBody = {

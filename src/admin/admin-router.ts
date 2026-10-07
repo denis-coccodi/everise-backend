@@ -60,7 +60,7 @@ class AdminRouter {
     private readonly tataru: TataruAccount,
     private readonly stagingAccess: StagingAccess,
     private readonly memberDeletion: MemberDeletion,
-    private readonly characters: CharactersService
+    private readonly characters: CharactersService,
   ) {}
 
   get router() {
@@ -89,7 +89,7 @@ class AdminRouter {
           const {users, count} = await this.usersService.searchMembers(
             search,
             limit,
-            offset
+            offset,
           );
           return res.json({
             users: users.map(memberDto),
@@ -100,7 +100,7 @@ class AdminRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.put(
@@ -122,14 +122,14 @@ class AdminRouter {
         try {
           const user = await this.usersService.setRole(
             routeParam(req, 'id'),
-            req.body.role as AssignableRole
+            req.body.role as AssignableRole,
           );
           const stagingAccess = await this.syncStagingAccess();
           return res.json({user: memberDto(user), stagingAccess});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Deletes a member and everything they posted, for good (the privacy
@@ -189,7 +189,7 @@ class AdminRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // A new picture for Tataru: the file as the request body, with the same
@@ -202,11 +202,11 @@ class AdminRouter {
         const tataru = await this.tataru.get();
         const id = await this.profileImagesService.save(
           tataru.id,
-          new Uint8Array(req.body)
+          new Uint8Array(req.body),
         );
         const updated = await this.usersService.setImage(
           tataru.id,
-          profileImageUrl(id)
+          profileImageUrl(id),
         );
         const oldId = uploadedImageId(tataru.image);
         if (oldId) {
@@ -258,13 +258,13 @@ class AdminRouter {
           }
           const character = await this.characters.update(
             routeParam(req, 'id'),
-            req.body.character
+            req.body.character,
           );
           return res.json({character});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // A new picture for a character: the file as the request body, with the
@@ -279,13 +279,13 @@ class AdminRouter {
           }
           const character = await this.characters.setPicture(
             routeParam(req, 'id'),
-            new Uint8Array(req.body)
+            new Uint8Array(req.body),
           );
           return res.json({character});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;
@@ -293,7 +293,7 @@ class AdminRouter {
 
   private async syncStagingAccess() {
     return this.stagingAccess.sync(
-      await this.usersService.stagingAccessEmails()
+      await this.usersService.stagingAccessEmails(),
     );
   }
 }
@@ -302,7 +302,7 @@ const requireAdmin: express.RequestHandler = (req, _res, next) =>
   next(
     req.user?.role === 'admin'
       ? undefined
-      : new ForbiddenError('Only an admin can do that.')
+      : new ForbiddenError('Only an admin can do that.'),
   );
 
 export {AdminRouter};

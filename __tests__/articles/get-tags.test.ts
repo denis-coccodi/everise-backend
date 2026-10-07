@@ -17,11 +17,11 @@ describe('GET /api/tags', () => {
       const author2 = await usersClient.registerRandomUser();
 
       const article1 = await articlesClient.createRandomArticle(
-        author1.user.token
+        author1.user.token,
       );
 
       const article2 = await articlesClient.createRandomArticle(
-        author2.user.token
+        author2.user.token,
       );
 
       const response = await request(app).get(getTagsUrl).send();

@@ -39,7 +39,7 @@ interface Db {
   update<T extends Doc>(
     collection: string,
     id: string,
-    data: DocData
+    data: DocData,
   ): Promise<T | undefined>;
   delete(collection: string, id: string): Promise<void>;
   // Applies many changes in one call to the database, e.g. everything a

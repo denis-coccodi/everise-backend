@@ -64,8 +64,8 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 ## Before pushing
 
 ```
-npm test          # tests, then tsc, gts lint and the size check
-npx prettier --check src __tests__ scripts
+npm test          # tests, then tsc, gts lint (ESLint 9, eslint.config.js), prettier --check and the size check
+npm run format    # fixes formatting (Prettier 3 via gts; Markdown is left as written)
 ```
 
 Keep comments at the density of the surrounding code: a line on what a class or constant is for, and on any rule that isn't obvious from the code.

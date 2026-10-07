@@ -8,7 +8,7 @@ class InvalidImageError extends HttpError {
     // 413 for a file over the size limit, 422 otherwise.
     readonly status:
       | StatusCodes.REQUEST_TOO_LONG
-      | StatusCodes.UNPROCESSABLE_ENTITY = StatusCodes.UNPROCESSABLE_ENTITY
+      | StatusCodes.UNPROCESSABLE_ENTITY = StatusCodes.UNPROCESSABLE_ENTITY,
   ) {
     super(message);
   }

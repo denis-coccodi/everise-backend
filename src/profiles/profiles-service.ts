@@ -13,7 +13,7 @@ class ProfilesService {
 
   constructor(
     private readonly db: Db,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
   ) {}
 
   async getProfile(userId: string, followerId?: string): Promise<Profile> {

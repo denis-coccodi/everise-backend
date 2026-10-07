@@ -13,7 +13,7 @@ const MEDIA_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 // its bytes), up to the size limit.
 const readMediaBody: express.RequestHandler = (req, res, next) =>
   express.raw({type: () => true, limit: MAX_MEDIA_BYTES})(req, res, err =>
-    next(err?.type === 'entity.too.large' ? tooLarge() : err)
+    next(err?.type === 'entity.too.large' ? tooLarge() : err),
   );
 
 // Images and GIFs for posts and comments: uploads, and a GIF search.
@@ -21,7 +21,7 @@ class MediaRouter {
   constructor(
     private readonly auth: Auth,
     private readonly media: MediaService,
-    private readonly gifs: GifSearch
+    private readonly gifs: GifSearch,
   ) {}
 
   get router() {
@@ -40,13 +40,13 @@ class MediaRouter {
           }
           const media = await this.media.save(
             req.user!.id,
-            new Uint8Array(req.body)
+            new Uint8Array(req.body),
           );
           return res.status(StatusCodes.CREATED).json({media});
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get('/media/:id', async (req, res, next) => {
@@ -72,7 +72,7 @@ class MediaRouter {
 
     // Whether the GIF search is set up, for the site to offer it.
     router.get('/gifs/available', (_req, res) =>
-      res.json({available: this.gifs.available})
+      res.json({available: this.gifs.available}),
     );
 
     // A page of GIFs from GIPHY: `q` to search (trending without it), and
@@ -93,12 +93,12 @@ class MediaRouter {
           }
           const query = req.query as Record<string, string | undefined>;
           return res.json(
-            await this.gifs.search(query.q ?? '', Number(query.offset ?? 0))
+            await this.gifs.search(query.q ?? '', Number(query.offset ?? 0)),
           );
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;

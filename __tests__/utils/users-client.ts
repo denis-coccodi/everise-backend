@@ -60,7 +60,7 @@ class UsersClient {
 
     const updatedUser = await this.updateUser(
       registeredUser.user.token,
-      updateUserParams
+      updateUserParams,
     );
 
     return {

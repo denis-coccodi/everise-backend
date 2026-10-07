@@ -54,7 +54,7 @@ describe('POST /api/roulette-results', () => {
           username: 'Tataru',
           // Her picture is stored like anyone's upload.
           image: expect.stringMatching(
-            new RegExp(`^${config.baseUrl}/api/profile-images/[0-9a-f-]{36}$`)
+            new RegExp(`^${config.baseUrl}/api/profile-images/[0-9a-f-]{36}$`),
           ),
         },
         roulette: {
@@ -78,17 +78,17 @@ describe('POST /api/roulette-results', () => {
       const second = await postAsGuest({result: sastasha});
 
       expect(second.body.article.author.username).toBe(
-        first.body.article.author.username
+        first.body.article.author.username,
       );
       const profile = await request(app).get('/api/profiles/Tataru');
       expect(profile.status).toBe(200);
       expect(profile.body.profile.bio).toContain('roulette results');
       // The same stored picture each time, served like an upload.
       expect(second.body.article.author.image).toBe(
-        first.body.article.author.image
+        first.body.article.author.image,
       );
       const picture = await request(app).get(
-        first.body.article.author.image.slice(config.baseUrl.length)
+        first.body.article.author.image.slice(config.baseUrl.length),
       );
       expect(picture.status).toBe(200);
       expect(picture.headers['content-type']).toBe('image/png');
@@ -289,7 +289,7 @@ describe('POST /api/roulette-results', () => {
           detail: `Map of the day: ${map}`,
           dutyUnknown: false,
         });
-      }
+      },
     );
   });
 
@@ -297,19 +297,19 @@ describe('POST /api/roulette-results', () => {
     test('a guest can post once a minute from one address', async () => {
       clock.now = new Date('2026-10-05T12:00:00Z');
       expect(
-        (await postAsGuest({result: sastasha}, '198.51.100.7')).status
+        (await postAsGuest({result: sastasha}, '198.51.100.7')).status,
       ).toBe(201);
 
       const again = await postAsGuest({result: sastasha}, '198.51.100.7');
       expect(again.status).toBe(429);
       expect(again.headers['retry-after']).toBe('60');
       expect(again.body.errors.body[0]).toBe(
-        'Slow down! Tataru is still filing your last result. Try again in 60 seconds.'
+        'Slow down! Tataru is still filing your last result. Try again in 60 seconds.',
       );
 
       clock.now = new Date('2026-10-05T12:01:00Z');
       expect(
-        (await postAsGuest({result: sastasha}, '198.51.100.7')).status
+        (await postAsGuest({result: sastasha}, '198.51.100.7')).status,
       ).toBe(201);
     });
 
@@ -321,7 +321,7 @@ describe('POST /api/roulette-results', () => {
       const again = await postAs(user.token, {result: sastasha});
       expect(again.status).toBe(429);
       expect(again.body.errors.body[0]).toBe(
-        'You can post another result in 15 seconds.'
+        'You can post another result in 15 seconds.',
       );
     });
 
@@ -334,7 +334,7 @@ describe('POST /api/roulette-results', () => {
       const over = await postAsGuest({result: sastasha});
       expect(over.status).toBe(429);
       expect(over.body.errors.body[0]).toBe(
-        'Tataru has posted enough guest results for now. Sign in to post yours, or try again later.'
+        'Tataru has posted enough guest results for now. Sign in to post yours, or try again later.',
       );
 
       // Signed-in users aren't affected.

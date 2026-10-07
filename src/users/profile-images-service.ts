@@ -39,7 +39,7 @@ class ProfileImagesService {
     }
     if (info.width > MAX_IMAGE_SIDE || info.height > MAX_IMAGE_SIDE) {
       throw new InvalidImageError(
-        `The picture is ${info.width} × ${info.height} pixels; it can be at most ${MAX_IMAGE_SIDE} × ${MAX_IMAGE_SIDE}.`
+        `The picture is ${info.width} × ${info.height} pixels; it can be at most ${MAX_IMAGE_SIDE} × ${MAX_IMAGE_SIDE}.`,
       );
     }
 
@@ -90,7 +90,7 @@ function uploadedImageId(image: string | undefined) {
 function tooLarge() {
   return new InvalidImageError(
     `The picture is too large: it can be at most ${MAX_IMAGE_KB} KB.`,
-    StatusCodes.REQUEST_TOO_LONG
+    StatusCodes.REQUEST_TOO_LONG,
   );
 }
 

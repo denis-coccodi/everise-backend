@@ -20,7 +20,7 @@ async function adminToken() {
   const {user} = await usersClient.registerUser(
     ADMIN.email,
     ADMIN.username,
-    ADMIN.password
+    ADMIN.password,
   );
   return user.token as string;
 }
@@ -91,7 +91,7 @@ describe('editing the Waking Sands characters', () => {
       .set('authorization', `Token ${member.token}`)
       .send({text: 'Hello'});
     expect(model.asked[0][0].content).toStartWith(
-      'You are Urianger, and you only ever answer in riddles.'
+      'You are Urianger, and you only ever answer in riddles.',
     );
   });
 
@@ -110,7 +110,7 @@ describe('editing the Waking Sands characters', () => {
       edited: {title: false, persona: false},
     });
     expect(reset.body.character.persona).toBe(
-      reset.body.character.defaultPersona
+      reset.body.character.defaultPersona,
     );
   });
 
@@ -175,7 +175,7 @@ describe('editing the Waking Sands characters', () => {
         await asMember
           .put('/api/admin/characters/tataru')
           .send({character: {title: 'Mine now'}})
-      ).status
+      ).status,
     ).toBe(403);
 
     const admin = as(await adminToken());

@@ -13,7 +13,7 @@ class ProfileDto {
     username: string,
     following: boolean,
     bio?: string,
-    image?: string
+    image?: string,
   ) {
     this.profile = {
       // What identifies the member in links and API paths.
@@ -30,7 +30,7 @@ class ProfilesRouter {
   constructor(
     private readonly auth: Auth,
     private readonly usersService: UsersService,
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
   ) {}
 
   get router() {
@@ -58,14 +58,14 @@ class ProfilesRouter {
             followee.username,
             true,
             followee.bio,
-            followee.image
+            followee.image,
           );
 
           return res.json(profileDto);
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get(
@@ -85,7 +85,7 @@ class ProfilesRouter {
           if (req.user) {
             isFollowing = await this.profilesService.isFollowing(
               req.user.id,
-              followee.id
+              followee.id,
             );
           }
 
@@ -94,14 +94,14 @@ class ProfilesRouter {
             followee.username,
             isFollowing,
             followee.bio,
-            followee.image
+            followee.image,
           );
 
           return res.json(profileDto);
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.delete(
@@ -126,14 +126,14 @@ class ProfilesRouter {
             followee.username,
             false,
             followee.bio,
-            followee.image
+            followee.image,
           );
 
           return res.json(profileDto);
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;

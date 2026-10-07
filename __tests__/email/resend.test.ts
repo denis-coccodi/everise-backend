@@ -22,7 +22,7 @@ describe('sending email through Resend', () => {
       async (url, init) => {
         calls.push([url, init]);
         return {ok: true, status: 200, json: async () => ({id: 'e1'})};
-      }
+      },
     );
 
     await sender.send(MESSAGE);
@@ -52,7 +52,7 @@ describe('sending email through Resend', () => {
         json: async () => ({
           message: 'The everise.dev domain is not verified.',
         }),
-      })
+      }),
     );
 
     await expect(sender.send(MESSAGE)).rejects.toBeInstanceOf(UpstreamError);

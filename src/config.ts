@@ -114,8 +114,7 @@ const config = {
     apiToken: envVars.CF_ACCESS_API_TOKEN as string | undefined,
     accountId: envVars.CF_ACCOUNT_ID as string | undefined,
     policyId: (envVars.CF_ACCESS_POLICY_ID || envVars.CF_ACCESS_GROUP_ID) as
-      | string
-      | undefined,
+      string | undefined,
   },
 };
 

@@ -16,7 +16,7 @@ class Comment {
     createdAt: Date,
     updatedAt: Date,
     // One image, GIF or video, shown under the text.
-    readonly media: Attachment | null = null
+    readonly media: Attachment | null = null,
   ) {
     this._id = id;
     this._articleId = articleId;

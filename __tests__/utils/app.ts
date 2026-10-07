@@ -62,7 +62,7 @@ const providers = {
 const oauthFetch: OAuthFetch = async (url, init) => {
   providers.calls.push({url, method: init?.method ?? 'GET', body: init?.body});
   const provider = (['google', 'microsoft', 'discord'] as const).find(name =>
-    url.includes(name)
+    url.includes(name),
   );
   const profile = providers.profiles[provider ?? 'facebook'];
   const isToken = /\/(token|oauth\/access_token)\?|\/token$/.test(url);
@@ -196,7 +196,7 @@ const app = createApp(
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
     emailSender,
     wakingSands: {model: characterModel, dailyNeurons: 1000},
-  }
+  },
 );
 
 async function clearDb() {

@@ -20,7 +20,7 @@ async function adminToken() {
   const {user} = await usersClient.registerUser(
     ADMIN.email,
     ADMIN.username,
-    ADMIN.password
+    ADMIN.password,
   );
   return user.token as string;
 }
@@ -76,7 +76,7 @@ describe('roles', () => {
       .send({role: 'user'});
     expect(demoted.body.user.role).toBe('user');
     expect(staging.syncs[staging.syncs.length - 1]).not.toContain(
-      user.email.toLowerCase()
+      user.email.toLowerCase(),
     );
   });
 
@@ -108,10 +108,10 @@ describe('roles', () => {
     expect(response.status).toBe(200);
     const users = response.body.users as {username: string; role: string}[];
     expect(users).toContainEqual(
-      expect.objectContaining({username: user.username, role: 'user'})
+      expect.objectContaining({username: user.username, role: 'user'}),
     );
     expect(users).toContainEqual(
-      expect.objectContaining({username: ADMIN.username, role: 'admin'})
+      expect.objectContaining({username: ADMIN.username, role: 'admin'}),
     );
     expect(users.map(u => u.username)).not.toContain('Tataru');
   });
@@ -124,7 +124,7 @@ describe('roles', () => {
       await usersClient.registerUser(
         `${name.toLowerCase()}@example.com`,
         name,
-        'password123'
+        'password123',
       );
     }
 
@@ -132,16 +132,16 @@ describe('roles', () => {
     expect(all.status).toBe(200);
     expect(all.body.usersCount).toBe(3);
     expect(all.body.users.map((u: {username: string}) => u.username)).toEqual(
-      names
+      names,
     );
 
     const byEmail = await admin.get(`/api/admin/users?search=estinien${tag}@`);
     expect(
-      byEmail.body.users.map((u: {username: string}) => u.username)
+      byEmail.body.users.map((u: {username: string}) => u.username),
     ).toEqual([names[1]]);
 
     const page = await admin.get(
-      `/api/admin/users?search=${tag}&limit=2&offset=2`
+      `/api/admin/users?search=${tag}&limit=2&offset=2`,
     );
     expect(page.body.usersCount).toBe(3);
     expect(page.body.users.map((u: {username: string}) => u.username)).toEqual([
@@ -156,7 +156,7 @@ describe('roles', () => {
     const admin = as(await adminToken());
 
     expect(
-      (await admin.get('/api/admin/users')).body.stagingAccessConnected
+      (await admin.get('/api/admin/users')).body.stagingAccessConnected,
     ).toBe(true);
     staging.connected = false;
     const response = await admin.get('/api/admin/users');
@@ -192,7 +192,7 @@ describe('roles', () => {
   test('POST /api/admin/staging-access writes the testers to Access again', async () => {
     staging.syncs = [];
     const response = await as(await adminToken()).post(
-      '/api/admin/staging-access'
+      '/api/admin/staging-access',
     );
 
     expect(response.status).toBe(200);
@@ -212,7 +212,7 @@ describe("Tataru's profile", () => {
       username: 'Tataru',
       bio: expect.stringContaining('roulette results'),
       image: expect.stringMatching(
-        new RegExp(`^${config.baseUrl}/api/profile-images/`)
+        new RegExp(`^${config.baseUrl}/api/profile-images/`),
       ),
     });
   });
@@ -237,11 +237,11 @@ describe("Tataru's profile", () => {
     expect(picture.body.tataru.image).not.toBe(before.image);
     // The old picture is gone.
     const old = await request(app).get(
-      before.image.slice(config.baseUrl.length)
+      before.image.slice(config.baseUrl.length),
     );
     expect(old.status).toBe(404);
     const served = await request(app).get(
-      picture.body.tataru.image.slice(config.baseUrl.length)
+      picture.body.tataru.image.slice(config.baseUrl.length),
     );
     expect(served.status).toBe(200);
   });
@@ -289,7 +289,7 @@ describe('only admins', () => {
       ]);
 
       expect((await signedOut[method](url)).status).toBe(401);
-    }
+    },
   );
 
   test("a staging tester isn't an admin", async () => {

@@ -36,7 +36,7 @@ class ArticlesClient {
   async updateArticle(
     token: string,
     slug: string,
-    params: UpdateArticleParams
+    params: UpdateArticleParams,
   ) {
     const requestBody = {
       article: {

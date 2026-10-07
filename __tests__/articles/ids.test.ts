@@ -30,7 +30,7 @@ describe('ids in links', () => {
     });
 
     const response = await request(app).get(
-      '/api/articles/duty-found-sastasha-1fb67b60'
+      '/api/articles/duty-found-sastasha-1fb67b60',
     );
 
     expect(response.status).toBe(200);
@@ -38,7 +38,7 @@ describe('ids in links', () => {
     // Said in the answer, so the site can move the old link to the id.
     expect(response.body.article.slug).toBe('duty-found-sastasha-1fb67b60');
     const comments = await request(app).get(
-      '/api/articles/duty-found-sastasha-1fb67b60/comments'
+      '/api/articles/duty-found-sastasha-1fb67b60/comments',
     );
     expect(comments.status).toBe(200);
   });
@@ -55,7 +55,7 @@ describe('ids in links', () => {
     });
 
     const byName = await request(app).get(
-      `/api/profiles/${encodeURIComponent(user.username)}`
+      `/api/profiles/${encodeURIComponent(user.username)}`,
     );
     expect(byName.body.profile.id).toBe(article.author.id);
 
@@ -65,7 +65,7 @@ describe('ids in links', () => {
       .set('authorization', `Token ${user.token}`)
       .send({user: {username: `renamed${Date.now()}`}});
     const renamed = await request(app).get(
-      `/api/profiles/${article.author.id}`
+      `/api/profiles/${article.author.id}`,
     );
     expect(renamed.body.profile.username).toMatch(/^renamed/);
   });

@@ -11,7 +11,7 @@ const site = config.baseUrl;
 async function start(provider: string) {
   const response = await request(app).get(`/api/auth/${provider}`);
   const cookie = (response.headers['set-cookie'] as unknown as string[]).find(
-    c => c.startsWith('social_login=')
+    c => c.startsWith('social_login='),
   )!;
   return {
     response,
@@ -22,7 +22,7 @@ async function start(provider: string) {
 
 // A whole sign-in: off to the provider, and back with its code.
 async function signIn(
-  provider: 'google' | 'facebook' | 'microsoft' | 'discord'
+  provider: 'google' | 'facebook' | 'microsoft' | 'discord',
 ) {
   const {location, cookie} = await start(provider);
   const state = location.searchParams.get('state')!;
@@ -84,13 +84,13 @@ describe('sign-in with Google, Facebook, Microsoft and Discord', () => {
       expect(`${location.origin}${location.pathname}`).toBe(page);
       expect(location.searchParams.get('client_id')).toBe(clientId);
       expect(location.searchParams.get('redirect_uri')).toBe(
-        `${site}/api/auth/${provider}/callback`
+        `${site}/api/auth/${provider}/callback`,
       );
       expect(location.searchParams.get('response_type')).toBe('code');
       expect(cookie).toBe(
-        `social_login=${provider}.${location.searchParams.get('state')}`
+        `social_login=${provider}.${location.searchParams.get('state')}`,
       );
-    }
+    },
   );
 
   test('a new Google account signs up, and is signed in', async () => {
@@ -142,7 +142,7 @@ describe('sign-in with Google, Facebook, Microsoft and Discord', () => {
     });
     expect(providers.calls[0].body).toContain('client_secret=microsoft-secret');
     expect(providers.calls[1].url).toBe(
-      'https://graph.microsoft.com/oidc/userinfo'
+      'https://graph.microsoft.com/oidc/userinfo',
     );
   });
 
@@ -264,7 +264,7 @@ describe('sign-in with Google, Facebook, Microsoft and Discord', () => {
       expect(response.status).toBe(302);
       expect(response.headers.location).toBe(`${site}/login?social=${problem}`);
       expect(sessionToken(response)).toBeUndefined();
-    }
+    },
   );
 
   test('a callback whose state this browser never started signs nobody in', async () => {

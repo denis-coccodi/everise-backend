@@ -34,7 +34,7 @@ class Article {
     readonly updatedAt: Date,
     readonly roulette?: RouletteCard,
     // Images, GIFs and videos, shown apart from the text.
-    readonly media: Attachment[] = []
+    readonly media: Attachment[] = [],
   ) {}
 }
 

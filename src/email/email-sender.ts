@@ -14,7 +14,7 @@ interface EmailSender {
 // How the app reaches Resend; tests pass a fake.
 type EmailFetch = (
   url: string,
-  init: {method: string; headers: Record<string, string>; body: string}
+  init: {method: string; headers: Record<string, string>; body: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 const RESEND_URL = 'https://api.resend.com/emails';
@@ -26,7 +26,7 @@ class ResendEmailSender implements EmailSender {
     private readonly apiKey: string,
     private readonly from: string,
     private readonly fetchFn: EmailFetch = (url, init) =>
-      (fetch as unknown as EmailFetch)(url, init)
+      (fetch as unknown as EmailFetch)(url, init),
   ) {}
 
   async send({to, subject, text, html}: EmailMessage) {
@@ -41,11 +41,11 @@ class ResendEmailSender implements EmailSender {
     if (!response.ok) {
       console.error(
         `Resend answered ${response.status}: ${JSON.stringify(
-          await response.json().catch(() => null)
-        )}`
+          await response.json().catch(() => null),
+        )}`,
       );
       throw new UpstreamError(
-        "The email couldn't be sent. Try again in a few minutes."
+        "The email couldn't be sent. Try again in a few minutes.",
       );
     }
   }
@@ -62,7 +62,7 @@ class ConsoleEmailSender implements EmailSender {
 // The sender for RESEND_API_KEY: Resend, the log ("console"), or none.
 function emailSenderFor(
   apiKey: string | undefined,
-  from: string
+  from: string,
 ): EmailSender | undefined {
   if (!apiKey) return undefined;
   if (apiKey === 'console') return new ConsoleEmailSender();

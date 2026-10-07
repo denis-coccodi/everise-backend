@@ -42,8 +42,9 @@ const room = async () =>
 
 // The lines of the room as "Name: text" (notes in brackets).
 const script = async (): Promise<string[]> =>
-  (await room()).lines.map((line: {from: string; name: string; text: string}) =>
-    line.from === 'note' ? `(${line.text})` : `${line.name}: ${line.text}`
+  (await room()).lines.map(
+    (line: {from: string; name: string; text: string}) =>
+      line.from === 'note' ? `(${line.text})` : `${line.name}: ${line.text}`,
   );
 
 beforeEach(async () => {
@@ -101,13 +102,13 @@ describe('the Waking Sands room', () => {
     "serves %s's picture",
     async id => {
       const response = await request(app).get(
-        `/api/waking-sands/characters/${id}/picture`
+        `/api/waking-sands/characters/${id}/picture`,
       );
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/png');
       expect(response.body.subarray(1, 4).toString()).toBe('PNG');
-    }
+    },
   );
 
   test('a member brings characters in and sends them out, for everyone, live', async () => {
@@ -238,7 +239,7 @@ describe('the Waking Sands room', () => {
     expect(first[0].content).not.toContain('or NONE');
     expect(second[0].content).toContain('or NONE');
     expect(second[1].content).toContain(
-      'Barnaby Bollocksworth: Slew Titan with a spoon, I did.'
+      'Barnaby Bollocksworth: Slew Titan with a spoon, I did.',
     );
   });
 
@@ -247,7 +248,7 @@ describe('the Waking Sands room', () => {
     await as(member).invite('barnaby');
     await as(member).invite('yshtola');
     characters.directions = Array.from({length: 20}, (_, i) =>
-      i % 2 ? "Y'shtola" : 'Barnaby'
+      i % 2 ? "Y'shtola" : 'Barnaby',
     );
 
     await as(member).say('Go on then, argue.');
@@ -277,7 +278,7 @@ describe('the Waking Sands room', () => {
     const [messages] = characters.asked;
     expect(messages[0].content).toStartWith('You are Tataru Taru');
     expect(messages[0].content).toContain(
-      `with ${thancred.username}, ${minfilia.username}.`
+      `with ${thancred.username}, ${minfilia.username}.`,
     );
     expect(messages[0].content).toContain('Swear only if your description');
     expect(messages[0].content).toContain('no slurs');
@@ -428,7 +429,7 @@ describe('Workers AI', () => {
     expect((await model.reply(messages)).text).toBe('Welcome!');
     expect(run).toHaveBeenCalledWith(
       expect.stringMatching(/^@cf\//),
-      expect.objectContaining({messages})
+      expect.objectContaining({messages}),
     );
   });
 
@@ -450,11 +451,11 @@ describe('Workers AI', () => {
 
   test('says the chat is closed once the free Neurons are used up', async () => {
     run.mockRejectedValue(
-      new Error('4006: you have used up your daily free allocation')
+      new Error('4006: you have used up your daily free allocation'),
     );
 
     await expect(model.reply(messages)).rejects.toBeInstanceOf(
-      TooManyRequestsError
+      TooManyRequestsError,
     );
   });
 

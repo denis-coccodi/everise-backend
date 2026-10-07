@@ -24,7 +24,7 @@ function isLiveRequest(request: LiveRequest) {
 // so only the site's own pages (and the configured CORS origins) may connect.
 function isAllowedOrigin(
   request: LiveRequest,
-  allowed: {baseUrl: string; corsOrigins: string[]}
+  allowed: {baseUrl: string; corsOrigins: string[]},
 ) {
   const origin = request.headers.get('Origin');
   return (

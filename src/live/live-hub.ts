@@ -16,7 +16,7 @@ class LiveHub extends DurableObject {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.ctx.setWebSocketAutoResponse(
-      new WebSocketRequestResponsePair(PING, PONG)
+      new WebSocketRequestResponsePair(PING, PONG),
     );
   }
 

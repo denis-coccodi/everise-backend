@@ -172,7 +172,7 @@ interface ContentType {
 class XivApiClient {
   constructor(
     private readonly httpGet: HttpGet,
-    private readonly baseUrl = XIVAPI_URL
+    private readonly baseUrl = XIVAPI_URL,
   ) {}
 
   async fetchDutyData(): Promise<DutyData> {
@@ -185,7 +185,7 @@ class XivApiClient {
         this.readSheet('ClassJob', CLASS_JOB_FIELDS),
       ]);
     const typeNames = new Map(
-      [...contentTypes].map(([id, type]) => [id, type.name])
+      [...contentTypes].map(([id, type]) => [id, type.name]),
     );
     const typeIcons = iconsByName(contentTypes);
 
@@ -195,7 +195,7 @@ class XivApiClient {
       .filter(
         d =>
           KEEP_TYPES.has(d.contentType) ||
-          (FLAGGED_ONLY_TYPES.has(d.contentType) && d.finder === 'Duty Finder')
+          (FLAGGED_ONLY_TYPES.has(d.contentType) && d.finder === 'Duty Finder'),
       );
 
     const roulettes = rouletteRows.rows
@@ -225,7 +225,7 @@ class XivApiClient {
   async fetchImage(image: ImageRef): Promise<Uint8Array | null> {
     const path = encodeURIComponent(iconPath(image.id));
     const response = await this.httpGet(
-      `${this.baseUrl}/asset?path=${path}&format=${image.format}`
+      `${this.baseUrl}/asset?path=${path}&format=${image.format}`,
     );
 
     if (response.status === 404) {
@@ -233,7 +233,7 @@ class XivApiClient {
     }
     if (!response.ok) {
       throw new UpstreamError(
-        `XIVAPI image ${image.id} returned HTTP ${response.status}`
+        `XIVAPI image ${image.id} returned HTTP ${response.status}`,
       );
     }
     return new Uint8Array(await response.arrayBuffer());
@@ -249,7 +249,7 @@ class XivApiClient {
       let url = `${
         this.baseUrl
       }/sheet/${sheet}?limit=500&fields=${encodeURIComponent(
-        fields.join(',')
+        fields.join(','),
       )}`;
       if (after !== undefined) {
         url += `&after=${after}`;
@@ -258,7 +258,7 @@ class XivApiClient {
       const response = await this.httpGet(url);
       if (!response.ok) {
         throw new UpstreamError(
-          `XIVAPI ${sheet} returned HTTP ${response.status}`
+          `XIVAPI ${sheet} returned HTTP ${response.status}`,
         );
       }
 
@@ -282,7 +282,7 @@ class XivApiClient {
       rows.map(({row_id, fields: f}) => [
         row_id,
         {name: String(f.Name), icon: imageId(f['Icon@as(raw)'])},
-      ])
+      ]),
     );
   }
 
@@ -296,7 +296,7 @@ function toDuty(
   id: number,
   f: Record<string, unknown>,
   contentTypes: Map<number, string>,
-  expansions: Map<number, string>
+  expansions: Map<number, string>,
 ): RawDuty {
   let finder: Finder = '';
   if (f['RaidFinderParam@as(raw)']) {
@@ -344,7 +344,7 @@ function toDuty(
 function toRoulette(
   id: number,
   f: Record<string, unknown>,
-  expansions: Map<number, string>
+  expansions: Map<number, string>,
 ): Roulette {
   return {
     id,
@@ -422,7 +422,7 @@ function imagesOf(
   groups: DutyGroup[],
   roulettes: Roulette[],
   rouletteIcon: number | null,
-  jobs: Job[]
+  jobs: Job[],
 ): ImageRef[] {
   const images = new Map<number, ImageRef>();
   const add = (id: number | null, format: ImageRef['format']) => {
@@ -469,7 +469,7 @@ function groupOf(d: RawDuty, allianceMemberType: number | undefined) {
 
 function pvpTypeOf(
   d: RawDuty,
-  rivalWingsMemberType: number | undefined
+  rivalWingsMemberType: number | undefined,
 ): PvpType {
   if (d.contentType !== 'PvP') return '';
   if (d.roulettes.includes('DailyFrontlineChallenge')) return 'Frontline';
@@ -480,7 +480,7 @@ function pvpTypeOf(
 
 function groupDuties(
   duties: RawDuty[],
-  typeIcons: Map<string, number>
+  typeIcons: Map<string, number>,
 ): DutyGroup[] {
   const memberTypeOf = (name: string) =>
     duties.find(d => d.name === name)?.memberType;
@@ -522,7 +522,7 @@ function groupDuties(
         (a, b) =>
           a.level - b.level ||
           a.itemLevel - b.itemLevel ||
-          a.sortKey - b.sortKey
+          a.sortKey - b.sortKey,
       ),
     }));
 }

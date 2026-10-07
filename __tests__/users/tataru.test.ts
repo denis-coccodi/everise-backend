@@ -19,7 +19,7 @@ describe('TataruAccount', () => {
     const tataru = new TataruAccount(users, images, async path => {
       loads.push(path);
       return new Uint8Array(
-        await readFile(join(__dirname, '../../public', path))
+        await readFile(join(__dirname, '../../public', path)),
       );
     });
     return {users, images, tataru, loads};
@@ -60,7 +60,7 @@ describe('TataruAccount', () => {
     const tataru = new TataruAccount(
       users,
       new ProfileImagesService(db),
-      async () => undefined
+      async () => undefined,
     );
 
     const created = await tataru.get();

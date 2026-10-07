@@ -21,7 +21,7 @@ describe('POST /api/profiles/:username/follow', () => {
 
         const updatedFollowee = await usersClient.updateUser(
           followee.user.token,
-          updateFolloweeData
+          updateFolloweeData,
         );
 
         const response = await request(app)
@@ -53,12 +53,12 @@ describe('POST /api/profiles/:username/follow', () => {
 
         const updatedFollowee = await usersClient.updateUser(
           followee.user.token,
-          updateFolloweeData
+          updateFolloweeData,
         );
 
         await profilesClient.followUser(
           follower.user.token,
-          followee.user.username
+          followee.user.username,
         );
 
         const response = await request(app)
@@ -89,7 +89,7 @@ describe('POST /api/profiles/:username/follow', () => {
 
         const updatedFollowee = await usersClient.updateUser(
           followee.user.token,
-          updateFolloweeData
+          updateFolloweeData,
         );
 
         const response = await request(app)

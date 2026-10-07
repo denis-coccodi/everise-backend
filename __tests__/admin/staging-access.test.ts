@@ -41,7 +41,7 @@ function fakeCloudflare(status: Status = {}, errors: {message: string}[] = []) {
       body: init?.body ? JSON.parse(init.body) : undefined,
       auth: init?.headers?.Authorization,
     });
-    const code = method === 'PUT' ? status.put ?? 200 : status.list ?? 200;
+    const code = method === 'PUT' ? (status.put ?? 200) : (status.list ?? 200);
     return {
       ok: code < 300,
       status: code,
@@ -112,7 +112,7 @@ describe('CloudflareStagingAccess', () => {
     expect(result.synced).toBe(false);
     expect(result.message).toContain(
       'no Access policy matches CF_ACCESS_POLICY_ID "nothing-like-it" on account acc; ' +
-        `the policies there are "Admins" (pol-other), "Staging Testers" (${POLICY.id})`
+        `the policies there are "Admins" (pol-other), "Staging Testers" (${POLICY.id})`,
     );
     expect(fake.calls).toHaveLength(1);
   });
@@ -125,7 +125,7 @@ describe('CloudflareStagingAccess', () => {
     const result = await sync(POLICY.id, fake);
 
     expect(result.message).toContain(
-      'listing the Access policies answered 403: Authentication error (the API token needs "Access: Apps and Policies → Edit")'
+      'listing the Access policies answered 403: Authentication error (the API token needs "Access: Apps and Policies → Edit")',
     );
   });
 
@@ -136,7 +136,7 @@ describe('CloudflareStagingAccess', () => {
 
     expect(result.synced).toBe(false);
     expect(result.message).toContain(
-      'updating the policy "Staging Testers" answered 403: Forbidden (the API token needs "Access: Apps and Policies → Edit")'
+      'updating the policy "Staging Testers" answered 403: Forbidden (the API token needs "Access: Apps and Policies → Edit")',
     );
   });
 
@@ -146,7 +146,7 @@ describe('CloudflareStagingAccess', () => {
     const result = await sync(POLICY.id, fake);
 
     expect(result.message).toContain(
-      'updating the policy "Staging Testers" answered 400: include is invalid). The role is saved'
+      'updating the policy "Staging Testers" answered 400: include is invalid). The role is saved',
     );
   });
 
@@ -159,20 +159,20 @@ describe('CloudflareStagingAccess', () => {
 
     expect(result.synced).toBe(false);
     expect(result.message).toContain(
-      "isn't connected on this backend (missing CF_ACCESS_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_POLICY_ID)"
+      "isn't connected on this backend (missing CF_ACCESS_API_TOKEN, CF_ACCOUNT_ID, CF_ACCESS_POLICY_ID)",
     );
     expect(calls).toHaveLength(0);
 
     const partly = new CloudflareStagingAccess(
       {apiToken: 't', accountId: 'a'},
-      fetchFn
+      fetchFn,
     );
     expect(partly.connected).toBe(false);
     expect((await partly.sync(['a@x.test'])).message).toContain(
-      '(missing CF_ACCESS_POLICY_ID)'
+      '(missing CF_ACCESS_POLICY_ID)',
     );
     expect(new CloudflareStagingAccess(settings(), fetchFn).connected).toBe(
-      true
+      true,
     );
   });
 
@@ -180,7 +180,7 @@ describe('CloudflareStagingAccess', () => {
     const {calls, fetchFn} = fakeCloudflare();
 
     const result = await new CloudflareStagingAccess(settings(), fetchFn).sync(
-      []
+      [],
     );
 
     expect(result.synced).toBe(false);

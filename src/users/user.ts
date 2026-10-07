@@ -5,16 +5,12 @@ type Role = 'admin' | 'staging-tester' | 'user';
 
 // The roles an admin can give; admin itself comes from the configuration.
 const ASSIGNABLE_ROLES = ['user', 'staging-tester'] as const;
-type AssignableRole = typeof ASSIGNABLE_ROLES[number];
+type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 // The ways someone can sign in to an account: its password, and the
 // provider accounts (Google, Facebook, Microsoft, Discord) tied to it.
 type SignInMethod =
-  | 'password'
-  | 'google'
-  | 'facebook'
-  | 'microsoft'
-  | 'discord';
+  'password' | 'google' | 'facebook' | 'microsoft' | 'discord';
 
 class User {
   constructor(
@@ -33,7 +29,7 @@ class User {
     // been confirmed yet: it can't be signed in to.
     readonly emailConfirmed = true,
     // A new address from the settings, waiting for its link to be opened.
-    readonly pendingEmail?: string
+    readonly pendingEmail?: string,
   ) {}
 }
 

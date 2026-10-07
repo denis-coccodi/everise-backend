@@ -11,7 +11,7 @@ class Auth {
 
       if (!token) {
         throw new UnauthorizedError(
-          '"token" is required in "authorization" header'
+          '"token" is required in "authorization" header',
         );
       }
 
