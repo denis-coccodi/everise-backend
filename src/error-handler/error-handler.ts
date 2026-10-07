@@ -14,7 +14,7 @@ function errorsBody(messages: string[]) {
 class ErrorHandler {
   public async handleError(error: Error, res: Response) {
     console.error(
-      util.inspect(error, {showHidden: false, depth: null, colors: true})
+      util.inspect(error, {showHidden: false, depth: null, colors: true}),
     );
 
     // The app's own errors carry their status (see HttpError).
@@ -28,7 +28,7 @@ class ErrorHandler {
     // Every message, also when a schema reports several (abortEarly: false).
     if (isCelebrateError(error)) {
       const errors = Array.from(error.details.values()).flatMap(value =>
-        value.details.map(detail => detail.message)
+        value.details.map(detail => detail.message),
       );
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)

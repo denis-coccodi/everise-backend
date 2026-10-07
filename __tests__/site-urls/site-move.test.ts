@@ -53,15 +53,15 @@ describe('moving the site to a new address', () => {
 
     expect(currentSiteUrl(old)).toBe(`${NEW_SITE}/api/media/abc`);
     expect(currentSiteUrl('https://media.giphy.com/x.gif')).toBe(
-      'https://media.giphy.com/x.gif'
+      'https://media.giphy.com/x.gif',
     );
     expect(currentSiteUrl(undefined)).toBeUndefined();
     expect(sitePathRest(old, '/api/media/')).toBe('abc');
     expect(sitePathRest(`${NEW_SITE}/api/media/def`, '/api/media/')).toBe(
-      'def'
+      'def',
     );
     expect(
-      sitePathRest('https://elsewhere.example/api/media/x', '/api/media/')
+      sitePathRest('https://elsewhere.example/api/media/x', '/api/media/'),
     ).toBeUndefined();
   });
 
@@ -74,7 +74,7 @@ describe('moving the site to a new address', () => {
 
     const current = await as(token).get('/api/user');
     expect(current.body.user.image).toBe(
-      first.replace(before.baseUrl, NEW_SITE)
+      first.replace(before.baseUrl, NEW_SITE),
     );
 
     await as(token).put('/api/user/image').send(fixture('vp8.webp'));
@@ -108,13 +108,13 @@ describe('moving the site to a new address', () => {
 
     const read = await as(token).get(`/api/articles/${article.id}`);
     expect(read.body.article.media[0].url).toBe(
-      `${NEW_SITE}/api/media/${posted.id}`
+      `${NEW_SITE}/api/media/${posted.id}`,
     );
     const comments = await as(token).get(
-      `/api/articles/${article.id}/comments`
+      `/api/articles/${article.id}/comments`,
     );
     expect(comments.body.comments[0].media.url).toBe(
-      `${NEW_SITE}/api/media/${commented.id}`
+      `${NEW_SITE}/api/media/${commented.id}`,
     );
 
     await as(token).delete(`/api/articles/${article.id}`);

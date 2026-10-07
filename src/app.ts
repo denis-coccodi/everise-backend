@@ -87,7 +87,7 @@ function createApp(
     gifSearch = {apiKey: config.giphyApiKey},
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
     wakingSands = {},
-  }: AppOptions = {}
+  }: AppOptions = {},
 ) {
   const usersService = new UsersService(db);
 
@@ -106,9 +106,9 @@ function createApp(
     profilesService,
     allFeeds(
       liveFeed,
-      new DiscordAnnouncer(discord.webhookUrl, config.baseUrl, discord.fetch)
+      new DiscordAnnouncer(discord.webhookUrl, config.baseUrl, discord.fetch),
     ),
-    mediaService
+    mediaService,
   );
 
   const auth = new Auth(jwtService);
@@ -118,7 +118,7 @@ function createApp(
   const tataru = new TataruAccount(
     usersService,
     profileImagesService,
-    loadBundledPicture
+    loadBundledPicture,
   );
 
   const emailConfirmation = new EmailConfirmation(
@@ -126,7 +126,7 @@ function createApp(
     usersService,
     emailSender,
     config.baseUrl,
-    now
+    now,
   );
 
   const usersRouter = new UsersRouter(
@@ -134,7 +134,7 @@ function createApp(
     usersService,
     jwtService,
     profileImagesService,
-    emailConfirmation
+    emailConfirmation,
   ).router;
 
   const socialLoginRouter = new SocialLoginRouter(
@@ -142,17 +142,17 @@ function createApp(
     jwtService,
     socialLogin.settings,
     config.baseUrl,
-    socialLogin.fetch
+    socialLogin.fetch,
   ).router;
 
   const discordRouter = new DiscordRouter(
-    new DiscordWidgetReader(discord.guildId, now, discord.fetch)
+    new DiscordWidgetReader(discord.guildId, now, discord.fetch),
   ).router;
 
   const mediaRouter = new MediaRouter(
     auth,
     mediaService,
-    new GifSearch(gifSearch.apiKey, gifSearch.fetch)
+    new GifSearch(gifSearch.apiKey, gifSearch.fetch),
   ).router;
 
   // The Waking Sands characters, as admins edited them.
@@ -161,7 +161,7 @@ function createApp(
     usersService,
     profileImagesService,
     tataru,
-    config.baseUrl
+    config.baseUrl,
   );
 
   const adminRouter = new AdminRouter(
@@ -171,7 +171,7 @@ function createApp(
     tataru,
     stagingAccess,
     new MemberDeletion(db, usersService, profileImagesService, mediaService),
-    charactersService
+    charactersService,
   ).router;
 
   const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
@@ -181,7 +181,7 @@ function createApp(
     auth,
     articlesService,
     usersService,
-    profilesService
+    profilesService,
   ).router;
 
   const xivApiClient = new XivApiClient(httpGet);
@@ -193,13 +193,13 @@ function createApp(
   const dutiesRouter = new DutiesRouter(
     dutiesService,
     imagesService,
-    config.dutiesRefreshKey
+    config.dutiesRefreshKey,
   ).router;
 
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
     new RoulettePostsService(db, dutiesService, articlesService, tataru, now),
-    profilesService
+    profilesService,
   ).router;
 
   const wakingSandsRouter = new WakingSandsRouter(
@@ -210,9 +210,9 @@ function createApp(
       charactersService,
       liveFeed,
       now,
-      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons
+      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
     ),
-    loadBundledPicture
+    loadBundledPicture,
   ).router;
 
   const app = express();
@@ -221,7 +221,7 @@ function createApp(
     cors({
       origin: config.corsOrigins,
       credentials: true,
-    })
+    }),
   );
 
   app.use(express.json());
@@ -255,10 +255,10 @@ function createApp(
       _req: express.Request,
       res: express.Response,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _next: express.NextFunction
+      _next: express.NextFunction,
     ) => {
       await errorHandler.handleError(err, res);
-    }
+    },
   );
 
   return app;

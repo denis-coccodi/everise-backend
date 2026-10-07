@@ -53,11 +53,11 @@ class WorkersAiModel implements CharacterModel {
       if (OUT_OF_NEURONS.test(message)) {
         throw new TooManyRequestsError(
           'The Waking Sands is closed for the rest of the day. Come back after midnight UTC!',
-          secondsToMidnightUtc(new Date())
+          secondsToMidnightUtc(new Date()),
         );
       }
       throw new UpstreamError(
-        `The characters can't answer right now (${message}).`
+        `The characters can't answer right now (${message}).`,
       );
     }
     const text = textOf(output);
@@ -99,7 +99,7 @@ function secondsToMidnightUtc(now: Date) {
   const midnight = Date.UTC(
     now.getUTCFullYear(),
     now.getUTCMonth(),
-    now.getUTCDate() + 1
+    now.getUTCDate() + 1,
   );
   return Math.max(1, Math.ceil((midnight - now.getTime()) / 1000));
 }

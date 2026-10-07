@@ -85,7 +85,7 @@ class WakingSandsService {
     // The Neurons this backend may spend a day (WAKING_SANDS_DAILY_NEURONS).
     // Staging and production share the account's free 10,000, so together
     // they must stay under them.
-    private readonly dailyNeurons: number
+    private readonly dailyNeurons: number,
   ) {}
 
   get available() {
@@ -114,12 +114,12 @@ class WakingSandsService {
     if (present.includes(id)) return present;
     if (present.length >= MAX_PRESENT) {
       throw new RangeError(
-        `The room is full: at most ${MAX_PRESENT} characters at once. Send someone out first.`
+        `The room is full: at most ${MAX_PRESENT} characters at once. Send someone out first.`,
       );
     }
     return this.setPresent(
       [...present, id],
-      `${member.username} invited ${character.name} in.`
+      `${member.username} invited ${character.name} in.`,
     );
   }
 
@@ -131,7 +131,7 @@ class WakingSandsService {
     }
     return this.setPresent(
       present.filter(other => other !== id),
-      `${character.name} leaves; ${member.username} saw them out.`
+      `${character.name} leaves; ${member.username} saw them out.`,
     );
   }
 
@@ -196,7 +196,7 @@ class WakingSandsService {
         await this.publish({type: 'sands-writing', character: speaker.id});
         await this.setBusy(true);
         const {text, neurons} = await this.model.reply(
-          prompt(speaker, present, everyone, lines)
+          prompt(speaker, present, everyone, lines),
         );
         await this.spend(payer, neurons);
         await this.addLine({
@@ -225,17 +225,17 @@ class WakingSandsService {
     lines: LineDoc[],
     present: CharacterProfile[],
     free: CharacterProfile[],
-    mustAnswer: boolean
+    mustAnswer: boolean,
   ) {
     const {text, neurons} = await this.model!.reply(
-      direction(present, free, lines, mustAnswer)
+      direction(present, free, lines, mustAnswer),
     );
     await this.spend(payer, neurons);
     const answer = text.toLowerCase();
     const named = free.find(
       c =>
         answer.includes(c.name.toLowerCase()) ||
-        answer.includes(c.name.split(' ')[0].toLowerCase())
+        answer.includes(c.name.split(' ')[0].toLowerCase()),
     );
     if (named || !mustAnswer) return named;
     // The director said nothing usable: whoever the member named, or anyone.
@@ -270,11 +270,11 @@ class WakingSandsService {
   private async prune(now: number, lines: LineDoc[]) {
     const all = [...lines].sort((a, b) => b.at - a.at);
     const old = all.filter(
-      (doc, index) => doc.at <= now - HISTORY_MS || index >= MAX_LINES
+      (doc, index) => doc.at <= now - HISTORY_MS || index >= MAX_LINES,
     );
     if (old.length > 0) {
       await this.db.batch(
-        old.map(doc => ({op: 'delete', collection: this.lines, id: doc.id}))
+        old.map(doc => ({op: 'delete', collection: this.lines, id: doc.id})),
       );
     }
   }
@@ -328,13 +328,13 @@ class WakingSandsService {
     if ((usage.neurons ?? 0) >= this.dailyNeurons) {
       throw new TooManyRequestsError(
         'The Waking Sands is closed for the rest of the day. Come back after midnight UTC!',
-        secondsToMidnightUtc(now)
+        secondsToMidnightUtc(now),
       );
     }
     if (mine >= this.dailyNeurons * MEMBER_SHARE) {
       throw new TooManyRequestsError(
         "You've talked a great deal today, and the Scions need their rest too. Come back after midnight UTC!",
-        secondsToMidnightUtc(now)
+        secondsToMidnightUtc(now),
       );
     }
   }
@@ -376,7 +376,7 @@ function script(lines: LineDoc[]) {
   return lines
     .slice(-PROMPT_LINES)
     .map(line =>
-      line.from === 'note' ? `(${line.text})` : `${line.name}: ${line.text}`
+      line.from === 'note' ? `(${line.text})` : `${line.name}: ${line.text}`,
     )
     .join('\n');
 }
@@ -388,7 +388,7 @@ function membersIn(lines: LineDoc[]) {
       lines
         .slice(-PROMPT_LINES)
         .filter(line => line.from === 'member')
-        .map(line => line.name)
+        .map(line => line.name),
     ),
   ];
 }
@@ -398,7 +398,7 @@ function direction(
   present: CharacterProfile[],
   free: CharacterProfile[],
   lines: LineDoc[],
-  mustAnswer: boolean
+  mustAnswer: boolean,
 ): ModelMessage[] {
   const cast = present.map(c => `- ${c.name}: ${c.title}`).join('\n');
   const quiet = present.filter(c => !free.includes(c)).map(c => c.name);
@@ -425,7 +425,7 @@ function prompt(
   character: CharacterProfile,
   present: CharacterProfile[],
   everyone: CharacterProfile[],
-  lines: LineDoc[]
+  lines: LineDoc[],
 ): ModelMessage[] {
   const recent = lines.slice(-PROMPT_LINES);
   const members = membersIn(recent);
@@ -456,7 +456,7 @@ How to answer:
     const speaker =
       line.from === 'member'
         ? line.name
-        : everyone.find(other => other.id === line.from)?.name ?? line.name;
+        : (everyone.find(other => other.id === line.from)?.name ?? line.name);
     const message: ModelMessage =
       line.from === character.id
         ? {role: 'assistant', content: line.text}
@@ -486,7 +486,7 @@ How to answer:
 // before it, and not too long.
 function clean(text: string, character: CharacterProfile) {
   const names = [character.name, character.name.split(' ')[0]].map(name =>
-    name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
   );
   const unnamed = text
     .replace(new RegExp(`^\\**(${names.join('|')})\\**\\s*:\\**\\s*`, 'i'), '')

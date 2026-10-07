@@ -2,7 +2,7 @@
 // pass a fake.
 type Fetch = (
   url: string,
-  init?: {method?: string; headers?: Record<string, string>; body?: string}
+  init?: {method?: string; headers?: Record<string, string>; body?: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 interface StagingAccessSettings {
@@ -63,7 +63,7 @@ class CloudflareStagingAccess implements StagingAccess {
   constructor(
     private readonly settings: StagingAccessSettings,
     private readonly fetchFn: Fetch = (url, init) =>
-      (fetch as unknown as Fetch)(url, init)
+      (fetch as unknown as Fetch)(url, init),
   ) {}
 
   get connected() {
@@ -76,7 +76,7 @@ class CloudflareStagingAccess implements StagingAccess {
       return {
         synced: false,
         message: `Staging access isn't connected on this backend (missing ${this.missingSettings().join(
-          ', '
+          ', ',
         )}), so the role is saved but the staging Access list wasn't changed.`,
       };
     }
@@ -104,8 +104,8 @@ class CloudflareStagingAccess implements StagingAccess {
       if (!listed.ok) {
         return failed(
           `listing the Access policies answered ${listed.status}${await reason(
-            listed
-          )}${PERMISSION_HINT}`
+            listed,
+          )}${PERMISSION_HINT}`,
         );
       }
       const {result} = (await listed.json()) as {result?: AccessPolicy[]};
@@ -113,14 +113,14 @@ class CloudflareStagingAccess implements StagingAccess {
       const policy = all.find(
         p =>
           p.id === wanted ||
-          p.name.trim().toLowerCase() === wanted.toLowerCase()
+          p.name.trim().toLowerCase() === wanted.toLowerCase(),
       );
       if (!policy) {
         const seen = all.map(p => `"${p.name}" (${p.id})`).join(', ');
         return failed(
           `no Access policy matches CF_ACCESS_POLICY_ID "${wanted}" on account ${accountId}; the policies there are ${
             seen || 'none'
-          }`
+          }`,
         );
       }
 
@@ -140,7 +140,7 @@ class CloudflareStagingAccess implements StagingAccess {
             updated.status
           }${await reason(updated)}${
             updated.status === 403 ? PERMISSION_HINT : ''
-          }`
+          }`,
         );
       }
       return {

@@ -44,25 +44,25 @@ class RoulettePostsService {
     // The account that posts results for people who aren't signed in.
     private readonly tataru: TataruAccount,
     private readonly now: () => Date = () => new Date(),
-    private readonly random: () => number = Math.random
+    private readonly random: () => number = Math.random,
   ) {}
 
   async post(
     input: RouletteResultInput,
     user: User | undefined,
     comment: string | undefined,
-    clientAddress: string
+    clientAddress: string,
   ): Promise<Article> {
     const guest = !user;
     const text = (comment ?? '').trim();
     if (guest && text) {
       throw new InvalidRouletteResultError(
-        'Sign in to add a comment to your result.'
+        'Sign in to add a comment to your result.',
       );
     }
     if (text.length > MAX_COMMENT_LENGTH) {
       throw new InvalidRouletteResultError(
-        `Keep the comment to ${MAX_COMMENT_LENGTH} characters.`
+        `Keep the comment to ${MAX_COMMENT_LENGTH} characters.`,
       );
     }
 
@@ -110,23 +110,23 @@ class RoulettePostsService {
         guest
           ? `Slow down! Tataru is still filing your last result. Try again in ${seconds} seconds.`
           : `You can post another result in ${seconds} seconds.`,
-        seconds
+        seconds,
       );
     }
 
     if (guest) {
       const all = await this.db.get<PostLimitDoc>(
         this.limitsCollection,
-        'guests'
+        'guests',
       );
       const inWindow = all && now - (all.windowStart ?? 0) < HOUR_MS;
       if (inWindow && (all.count ?? 0) >= GUEST_POSTS_PER_HOUR) {
         const seconds = Math.ceil(
-          ((all.windowStart ?? 0) + HOUR_MS - now) / 1000
+          ((all.windowStart ?? 0) + HOUR_MS - now) / 1000,
         );
         throw new TooManyRequestsError(
           'Tataru has posted enough guest results for now. Sign in to post yours, or try again later.',
-          seconds
+          seconds,
         );
       }
     }
@@ -139,7 +139,7 @@ class RoulettePostsService {
     if (guest) {
       const all = await this.db.get<PostLimitDoc>(
         this.limitsCollection,
-        'guests'
+        'guests',
       );
       const inWindow = all && now - (all.windowStart ?? 0) < HOUR_MS;
       await this.db.set(this.limitsCollection, 'guests', {

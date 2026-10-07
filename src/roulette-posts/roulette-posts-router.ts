@@ -16,7 +16,7 @@ class RoulettePostsRouter {
   constructor(
     private readonly auth: Auth,
     private readonly roulettePostsService: RoulettePostsService,
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
   ) {}
 
   get router() {
@@ -57,10 +57,10 @@ class RoulettePostsRouter {
             req.user,
             req.body.comment,
             // Cloudflare's client address; one value for local runs.
-            req.header('cf-connecting-ip') ?? 'local'
+            req.header('cf-connecting-ip') ?? 'local',
           );
           const author = await this.profilesService.getProfile(
-            article.authorId
+            article.authorId,
           );
 
           return res
@@ -69,7 +69,7 @@ class RoulettePostsRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;

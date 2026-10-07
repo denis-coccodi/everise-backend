@@ -61,7 +61,7 @@ class ArticlesRouter {
     private readonly auth: Auth,
     private readonly articlesService: ArticlesService,
     private readonly usersService: UsersService,
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
   ) {}
 
   get router() {
@@ -101,7 +101,7 @@ class ArticlesRouter {
           });
 
           const authorProfile = await this.profilesService.getProfile(
-            author.id
+            author.id,
           );
 
           const articleDto = new ArticleDto(article, false, authorProfile);
@@ -110,7 +110,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.post(
@@ -127,7 +127,7 @@ class ArticlesRouter {
           const article = await this.articlesService.requireArticle(id);
 
           const authorProfile = await this.profilesService.getProfile(
-            article.authorId
+            article.authorId,
           );
 
           const articleDto = new ArticleDto(article, true, authorProfile);
@@ -136,7 +136,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.post(
@@ -167,11 +167,11 @@ class ArticlesRouter {
             id,
             author.id,
             body,
-            media?.[0]
+            media?.[0],
           );
 
           const authorProfile = await this.profilesService.getProfile(
-            author.id
+            author.id,
           );
 
           const commentDto = new CommentDto(comment, authorProfile);
@@ -180,7 +180,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get(
@@ -225,18 +225,18 @@ class ArticlesRouter {
 
               const authorProfile = await this.profilesService.getProfile(
                 article.authorId,
-                user.id
+                user.id,
               );
 
               return new ArticleDto(article, favorited, authorProfile);
-            })
+            }),
           );
 
           return res.json(new MultipleArticlesDto(articlesDtos));
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get(
@@ -254,12 +254,12 @@ class ArticlesRouter {
           if (req.user) {
             authorProfile = await this.profilesService.getProfile(
               article.authorId,
-              req.user.id
+              req.user.id,
             );
             favorited = article.favoritedBy.includes(req.user.id);
           } else {
             authorProfile = await this.profilesService.getProfile(
-              article.authorId
+              article.authorId,
             );
           }
 
@@ -269,7 +269,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get(
@@ -298,7 +298,7 @@ class ArticlesRouter {
           let authorId;
           if (authorUsername) {
             const author = await this.usersService.findUser(
-              authorUsername as string
+              authorUsername as string,
             );
 
             if (!author) {
@@ -311,12 +311,12 @@ class ArticlesRouter {
           let favoritedByUserId;
           if (favoritedByUsername) {
             const favoritedByUser = await this.usersService.findUser(
-              favoritedByUsername as string
+              favoritedByUsername as string,
             );
 
             if (!favoritedByUser) {
               throw new NotFoundError(
-                `user "${favoritedByUsername}" not found`
+                `user "${favoritedByUsername}" not found`,
               );
             }
 
@@ -362,23 +362,23 @@ class ArticlesRouter {
 
                 authorProfile = await this.profilesService.getProfile(
                   article.authorId,
-                  req.user.id
+                  req.user.id,
                 );
               } else {
                 authorProfile = await this.profilesService.getProfile(
-                  article.authorId
+                  article.authorId,
                 );
               }
 
               return new ArticleDto(article, favorited, authorProfile);
-            })
+            }),
           );
 
           return res.json(new MultipleArticlesDto(articlesDtos));
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get('/tags', async (req, res, next) => {
@@ -415,18 +415,18 @@ class ArticlesRouter {
 
               const authorProfile = await this.profilesService.getProfile(
                 comment.authorId,
-                followerId
+                followerId,
               );
 
               return new CommentDto(comment, authorProfile);
-            })
+            }),
           );
 
           return res.json(new MultipleCommentsDto(commentsDtos));
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.put(
@@ -457,7 +457,7 @@ class ArticlesRouter {
 
           if (author.id !== article.authorId) {
             throw new UnauthorizedError(
-              `user ${author.id} unauthorized to update article ${article.id}`
+              `user ${author.id} unauthorized to update article ${article.id}`,
             );
           }
 
@@ -471,24 +471,24 @@ class ArticlesRouter {
               body: articleBody.body,
               tags: articleBody.tagList,
               media: articleBody.media,
-            }
+            },
           );
 
           const authorProfile = await this.profilesService.getProfile(
-            author.id
+            author.id,
           );
 
           const articleDto = new ArticleDto(
             updatedArticle,
             false,
-            authorProfile
+            authorProfile,
           );
 
           return res.json(articleDto);
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.delete(
@@ -504,7 +504,7 @@ class ArticlesRouter {
 
           if (author.id !== article.authorId) {
             throw new UnauthorizedError(
-              `user ${author.id} unauthorized to delete article ${article.id}`
+              `user ${author.id} unauthorized to delete article ${article.id}`,
             );
           }
 
@@ -514,7 +514,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.delete(
@@ -531,7 +531,7 @@ class ArticlesRouter {
           const article = await this.articlesService.requireArticle(id);
 
           const authorProfile = await this.profilesService.getProfile(
-            article.authorId
+            article.authorId,
           );
 
           const articleDto = new ArticleDto(article, false, authorProfile);
@@ -540,7 +540,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.delete(
@@ -560,7 +560,7 @@ class ArticlesRouter {
 
           if (author.id !== comment.authorId) {
             throw new UnauthorizedError(
-              `user ${author.id} unauthorized to delete comment ${comment.id}`
+              `user ${author.id} unauthorized to delete comment ${comment.id}`,
             );
           }
 
@@ -568,7 +568,7 @@ class ArticlesRouter {
 
           if (comment.articleId !== article.id) {
             throw new NotFoundError(
-              `comment "${commentId}" not found in post ${id}`
+              `comment "${commentId}" not found in post ${id}`,
             );
           }
 
@@ -578,7 +578,7 @@ class ArticlesRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     return router;

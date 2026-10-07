@@ -3,7 +3,7 @@ import {UpstreamError} from '../errors';
 
 // How the app calls GIPHY (the parts of fetch it uses); tests pass a fake.
 type GifFetch = (
-  url: string
+  url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 // A GIF as the site's picker shows it: a small preview, and the larger one
@@ -37,7 +37,7 @@ class GifSearch {
   constructor(
     private readonly apiKey: string | undefined,
     private readonly fetchFn: GifFetch = url =>
-      (fetch as unknown as GifFetch)(url)
+      (fetch as unknown as GifFetch)(url),
   ) {}
 
   get available() {
@@ -59,11 +59,11 @@ class GifSearch {
     const endpoint = words ? 'search' : 'trending';
 
     const response = await this.fetchFn(
-      `https://api.giphy.com/v1/gifs/${endpoint}?${params}`
+      `https://api.giphy.com/v1/gifs/${endpoint}?${params}`,
     );
     if (!response.ok) {
       throw new UpstreamError(
-        `GIF search isn't available right now (GIPHY answered ${response.status}).`
+        `GIF search isn't available right now (GIPHY answered ${response.status}).`,
       );
     }
     const body = (await response.json()) as {

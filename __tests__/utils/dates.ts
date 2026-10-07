@@ -2,7 +2,7 @@
 // at or after `iso`, e.g. an `updatedAt` after an update.
 function atOrAfter(iso: string) {
   return expect.toSatisfy(
-    (value: string) => Date.parse(value) >= Date.parse(iso)
+    (value: string) => Date.parse(value) >= Date.parse(iso),
   );
 }
 

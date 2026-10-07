@@ -26,7 +26,7 @@ async function adminToken() {
   const {user} = await usersClient.registerUser(
     ADMIN.email,
     ADMIN.username,
-    ADMIN.password
+    ADMIN.password,
   );
   return user.token as string;
 }
@@ -44,18 +44,18 @@ describe('DELETE /api/admin/users/:username', () => {
 
     // Their post, with someone else's comment on it.
     const {article: theirs} = await articlesClient.createRandomArticle(
-      gone.token
+      gone.token,
     );
     await articlesClient.addRandomComment(other.token, theirs.id);
     // Someone else's post, which they commented on and favourited, and which
     // the other member favourited too.
     const {article: kept} = await articlesClient.createRandomArticle(
-      other.token
+      other.token,
     );
     await articlesClient.addRandomComment(gone.token, kept.id);
     const {comment: keptComment} = await articlesClient.addRandomComment(
       other.token,
-      kept.id
+      kept.id,
     );
     await articlesClient.favoriteArticle(gone.token, kept.id);
     await articlesClient.favoriteArticle(other.token, kept.id);
@@ -84,29 +84,29 @@ describe('DELETE /api/admin/users/:username', () => {
 
     // The account: no profile, no sign-in, and the old session is over.
     expect(
-      (await request(app).get(`/api/profiles/${gone.username}`)).status
+      (await request(app).get(`/api/profiles/${gone.username}`)).status,
     ).toBe(404);
     expect(
       (
         await request(app)
           .post('/api/users/login')
           .send({user: {email: gone.email, password: 'whatever'}})
-      ).status
+      ).status,
     ).toBe(401);
     expect(
       (
         await request(app)
           .get('/api/user')
           .set('authorization', `Token ${gone.token}`)
-      ).status
+      ).status,
     ).toBe(401);
     // Their post and its comments, their picture.
     expect((await request(app).get(`/api/articles/${theirs.id}`)).status).toBe(
-      404
+      404,
     );
     expect((await request(app).get(picture)).status).toBe(404);
     expect(
-      (await request(app).get(`/api/media/${media.body.media.id}`)).status
+      (await request(app).get(`/api/media/${media.body.media.id}`)).status,
     ).toBe(404);
     // The other post stays, without their comment or favourite.
     const article = await request(app)
@@ -159,7 +159,7 @@ describe('DELETE /api/admin/users/:username', () => {
 
     expect((await deleteMember(user.token, victim.username)).status).toBe(403);
     expect(
-      (await request(app).delete(`/api/admin/users/${victim.username}`)).status
+      (await request(app).delete(`/api/admin/users/${victim.username}`)).status,
     ).toBe(401);
   });
 });

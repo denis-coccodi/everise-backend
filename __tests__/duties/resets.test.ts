@@ -41,7 +41,7 @@ describe('game resets', () => {
     expect(week.from).toStrictEqual(new Date(from));
     expect(week.from.getUTCDay()).toBe(2);
     expect(week.until.getTime() - week.from.getTime()).toBe(
-      7 * 24 * 3600 * 1000
+      7 * 24 * 3600 * 1000,
     );
   });
 

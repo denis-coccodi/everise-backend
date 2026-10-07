@@ -17,7 +17,7 @@ const hubs = env.LIVE;
 // The files in public/, e.g. Tataru's first picture, stored as her upload.
 const assets = env.ASSETS as {
   fetch(
-    request: string
+    request: string,
   ): Promise<{ok: boolean; arrayBuffer(): Promise<ArrayBuffer>}>;
 };
 async function loadBundledPicture(path: string) {

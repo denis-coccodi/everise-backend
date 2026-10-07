@@ -4,11 +4,11 @@ import {URLSearchParams} from 'url';
 // uses); tests pass a fake.
 type OAuthFetch = (
   url: string,
-  init?: {method?: string; headers?: Record<string, string>; body?: string}
+  init?: {method?: string; headers?: Record<string, string>; body?: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 const PROVIDERS = ['google', 'facebook', 'microsoft', 'discord'] as const;
-type Provider = typeof PROVIDERS[number];
+type Provider = (typeof PROVIDERS)[number];
 
 const PROVIDER_NAMES: Record<Provider, string> = {
   google: 'Google',
@@ -39,14 +39,13 @@ interface ProviderProfile {
 // Why a sign-in through a provider didn't finish; the sign-in page explains
 // each one.
 type SocialLoginProblem =
-  | 'cancelled'
-  | 'expired'
-  | 'no-email'
-  | 'failed'
-  | 'unavailable';
+  'cancelled' | 'expired' | 'no-email' | 'failed' | 'unavailable';
 
 class SocialLoginError extends Error {
-  constructor(readonly problem: SocialLoginProblem, detail: string) {
+  constructor(
+    readonly problem: SocialLoginProblem,
+    detail: string,
+  ) {
     super(detail);
   }
 }
@@ -81,7 +80,7 @@ function authorizeUrl(
   provider: Provider,
   clientId: string,
   redirectUri: string,
-  state: string
+  state: string,
 ) {
   const params = new URLSearchParams({
     client_id: clientId,
@@ -104,7 +103,7 @@ async function fetchProfile(
   app: Required<ProviderApp>,
   code: string,
   redirectUri: string,
-  fetchFn: OAuthFetch
+  fetchFn: OAuthFetch,
 ): Promise<ProviderProfile> {
   return PROFILE_READERS[provider](app, code, redirectUri, fetchFn);
 }
@@ -113,7 +112,7 @@ type ProfileReader = (
   app: Required<ProviderApp>,
   code: string,
   redirectUri: string,
-  fetchFn: OAuthFetch
+  fetchFn: OAuthFetch,
 ) => Promise<ProviderProfile>;
 
 // The standard code exchange: a form POST with the app's id and secret.
@@ -123,7 +122,7 @@ async function exchangeCode(
   app: Required<ProviderApp>,
   code: string,
   redirectUri: string,
-  fetchFn: OAuthFetch
+  fetchFn: OAuthFetch,
 ) {
   const token = await json<{access_token?: string}>(
     `${provider}: exchanging the code`,
@@ -137,7 +136,7 @@ async function exchangeCode(
         redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }).toString(),
-    })
+    }),
   );
   return token.access_token ?? '';
 }
@@ -150,7 +149,7 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       app,
       code,
       redirectUri,
-      fetchFn
+      fetchFn,
     );
     const info = await json<{
       sub?: string;
@@ -161,7 +160,7 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       'Google: reading the profile',
       fetchFn('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: {Authorization: `Bearer ${accessToken}`},
-      })
+      }),
     );
     return {
       id: required('Google', info.sub),
@@ -180,8 +179,8 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
           client_secret: app.clientSecret,
           redirect_uri: redirectUri,
           code,
-        })}`
-      )
+        })}`,
+      ),
     );
     // Facebook only shares an address its owner confirmed, and none for
     // accounts made with a phone number.
@@ -191,8 +190,8 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
         `${GRAPH}/me?${new URLSearchParams({
           fields: 'id,name,email',
           access_token: token.access_token ?? '',
-        })}`
-      )
+        })}`,
+      ),
     );
     return {id: required('Facebook', me.id), email: me.email, name: me.name};
   },
@@ -204,7 +203,7 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       app,
       code,
       redirectUri,
-      fetchFn
+      fetchFn,
     );
     // A personal Microsoft account's email is the address it signs in
     // with, which Microsoft confirmed when the account was made.
@@ -212,7 +211,7 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       'Microsoft: reading the profile',
       fetchFn('https://graph.microsoft.com/oidc/userinfo', {
         headers: {Authorization: `Bearer ${accessToken}`},
-      })
+      }),
     );
     return {
       id: required('Microsoft', info.sub),
@@ -228,7 +227,7 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       app,
       code,
       redirectUri,
-      fetchFn
+      fetchFn,
     );
     const me = await json<{
       id?: string;
@@ -240,12 +239,12 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       'Discord: reading the profile',
       fetchFn(`${DISCORD}/users/@me`, {
         headers: {Authorization: `Bearer ${accessToken}`},
-      })
+      }),
     );
     return {
       id: required('Discord', me.id),
       // Discord shares the address even before its owner confirms it.
-      email: me.verified ? me.email ?? undefined : undefined,
+      email: me.verified ? (me.email ?? undefined) : undefined,
       name: me.global_name || me.username,
     };
   },
@@ -260,7 +259,7 @@ function required(provider: string, id: string | undefined) {
 
 async function json<T>(
   step: string,
-  pending: ReturnType<OAuthFetch>
+  pending: ReturnType<OAuthFetch>,
 ): Promise<T> {
   const response = await pending;
   if (!response.ok) {

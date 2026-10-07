@@ -19,17 +19,17 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       await articlesClient.favoriteArticle(
         user1.user.token,
-        article.article.id
+        article.article.id,
       );
 
       await articlesClient.favoriteArticle(
         user2.user.token,
-        article.article.id
+        article.article.id,
       );
 
       const unfavoriteArticleResponse1 = await request(app)
@@ -69,7 +69,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -111,7 +111,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -132,7 +132,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -156,7 +156,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -176,7 +176,7 @@ describe('DELETE /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const expiresInSeconds = 1;

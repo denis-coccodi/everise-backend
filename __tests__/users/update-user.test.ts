@@ -46,7 +46,7 @@ describe('PUT /api/user', () => {
       await usersClient.confirmEmail(requestBody.user.email);
       const loggeduser = await usersClient.login(
         requestBody.user.email,
-        requestBody.user.password
+        requestBody.user.password,
       );
 
       expect(loggeduser.user).toStrictEqual({
@@ -96,7 +96,7 @@ describe('PUT /api/user', () => {
       await usersClient.confirmEmail(requestBody.user.email);
       const loggeduser = await usersClient.login(
         requestBody.user.email,
-        user.password
+        user.password,
       );
 
       expect(loggeduser.user).toStrictEqual({
@@ -145,7 +145,7 @@ describe('PUT /api/user', () => {
 
       const loggeduser = await usersClient.login(
         user.user.email,
-        user.password
+        user.password,
       );
 
       expect(loggeduser.user).toStrictEqual({
@@ -194,7 +194,7 @@ describe('PUT /api/user', () => {
 
       const loggeduser = await usersClient.login(
         user.user.email,
-        user.password
+        user.password,
       );
 
       expect(loggeduser.user).toStrictEqual({
@@ -243,7 +243,7 @@ describe('PUT /api/user', () => {
 
       const loggeduser = await usersClient.login(
         user.user.email,
-        user.password
+        user.password,
       );
 
       expect(loggeduser.user).toStrictEqual({
@@ -293,7 +293,7 @@ describe('PUT /api/user', () => {
 
     const loggeduser = await usersClient.login(
       user.user.email,
-      requestBody.user.password
+      requestBody.user.password,
     );
 
     expect(loggeduser.user).toStrictEqual({
@@ -608,7 +608,7 @@ describe('PUT /api/user darkMode', () => {
     const registered = await usersClient.registerUser(
       email,
       faker.internet.userName(),
-      password
+      password,
     );
     expect(registered.user.darkMode).toBe(true);
 

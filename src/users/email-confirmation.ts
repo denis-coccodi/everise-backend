@@ -42,7 +42,7 @@ class EmailConfirmation {
     private readonly usersService: UsersService,
     private readonly sender: EmailSender | undefined,
     private readonly baseUrl: string,
-    private readonly now: () => Date = () => new Date()
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   get enabled() {
@@ -63,7 +63,7 @@ class EmailConfirmation {
         const wait = Math.ceil(RESEND_SECONDS - sinceLast / 1000);
         throw new TooManyRequestsError(
           `We've just sent a link. Try again in ${wait} seconds.`,
-          wait
+          wait,
         );
       }
       if (now.getTime() - Date.parse(existing.dayStartedAt) < 24 * HOUR_MS) {
@@ -73,7 +73,7 @@ class EmailConfirmation {
       if (sendsToday >= DAILY_SENDS) {
         throw new TooManyRequestsError(
           "That's enough links for today. Try again tomorrow.",
-          24 * 60 * 60
+          24 * 60 * 60,
         );
       }
     }
@@ -113,7 +113,7 @@ class EmailConfirmation {
     const [doc] = await this.findBy('tokenHash', hashOf(token));
     if (!doc || Date.parse(doc.expiresAt) <= this.now().getTime()) {
       throw new RangeError(
-        'This link has expired or was already used. Sign in to get a new one.'
+        'This link has expired or was already used. Sign in to get a new one.',
       );
     }
     const user = await this.usersService.confirmEmail(doc.userId, doc.email);

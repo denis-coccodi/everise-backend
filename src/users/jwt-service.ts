@@ -13,7 +13,7 @@ class JWTService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtSecretKey: string,
-    private readonly jwtOptions: JWTOptions
+    private readonly jwtOptions: JWTOptions,
   ) {
     this.secondsToExpiration = jwtOptions.secondsToExpiration;
   }

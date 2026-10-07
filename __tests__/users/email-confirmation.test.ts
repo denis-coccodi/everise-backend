@@ -62,8 +62,8 @@ describe('email confirmation', () => {
     expect(message.subject).toBe('Confirm your email address for Everise');
     expect(message.text).toContain(
       `${config.baseUrl}/confirm-email?token=${lastConfirmationToken(
-        ALISAIE.email
-      )}`
+        ALISAIE.email,
+      )}`,
     );
     expect(message.text).toContain('Welcome to Everise, Alisaie!');
     expect(message.html).toContain('Confirm my email');
@@ -87,8 +87,8 @@ describe('email confirmation', () => {
     });
     expect(
       (confirmed.headers['set-cookie'] as unknown as string[]).some(c =>
-        c.startsWith('token=')
-      )
+        c.startsWith('token='),
+      ),
     ).toBe(true);
 
     expect((await signIn()).status).toBe(200);
@@ -153,7 +153,7 @@ describe('email confirmation', () => {
     await usersClient.registerUser(
       'urianger@example.com',
       'Urianger',
-      'pass12345'
+      'pass12345',
     );
     mail.sent = [];
 
@@ -184,7 +184,7 @@ describe('email confirmation', () => {
           username: 'Squatter',
           password: 'pass12345',
         })
-      ).status
+      ).status,
     ).toBe(201);
   });
 
@@ -208,7 +208,7 @@ describe('email confirmation', () => {
     at('2026-10-06T12:01:00Z');
     expect((await resend()).status).toBe(202);
     expect((await confirm(lastConfirmationToken(ALISAIE.email))).status).toBe(
-      200
+      200,
     );
   });
 
@@ -235,7 +235,7 @@ describe('email confirmation', () => {
 
     // The password set by whoever signed up no longer opens the account.
     expect((await signIn(ALISAIE.email, 'squatters-password')).status).toBe(
-      401
+      401,
     );
   });
 
@@ -251,7 +251,7 @@ describe('email confirmation', () => {
       const {user} = await usersClient.registerUser(
         ALISAIE.email,
         'Alisaie',
-        ALISAIE.password
+        ALISAIE.password,
       );
 
       const changed = await changeEmail(user.token, 'new@example.com');
@@ -262,7 +262,7 @@ describe('email confirmation', () => {
       const message = mail.sent[mail.sent.length - 1];
       expect(message.to).toBe('new@example.com');
       expect(message.subject).toBe(
-        'Confirm your new email address for Everise'
+        'Confirm your new email address for Everise',
       );
       // Until then, the old address still signs in.
       expect((await signIn()).status).toBe(200);
@@ -280,7 +280,7 @@ describe('email confirmation', () => {
       const {user} = await usersClient.registerUser(
         ALISAIE.email,
         'Alisaie',
-        ALISAIE.password
+        ALISAIE.password,
       );
       await changeEmail(user.token, 'taken@example.com');
       const token = lastConfirmationToken('taken@example.com');
@@ -297,7 +297,7 @@ describe('email confirmation', () => {
       const {user} = await usersClient.registerUser(
         ALISAIE.email,
         'Alisaie',
-        ALISAIE.password
+        ALISAIE.password,
       );
       await changeEmail(user.token, 'new@example.com');
 
@@ -305,7 +305,7 @@ describe('email confirmation', () => {
 
       expect(back.body.user.pendingEmail).toBeNull();
       expect(
-        (await confirm(lastConfirmationToken('new@example.com'))).status
+        (await confirm(lastConfirmationToken('new@example.com'))).status,
       ).toBe(422);
     });
   });

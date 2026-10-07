@@ -74,7 +74,9 @@
       // Set explicitly: the default would be "be-prod-staging".
       "name": "be-staging",
       // Not inherited either.
-      "routes": [{"pattern": "staging.apis.everise.dev", "custom_domain": true}],
+      "routes": [
+        {"pattern": "staging.apis.everise.dev", "custom_domain": true}
+      ],
       "workers_dev": true,
       "durable_objects": {
         "bindings": [

@@ -113,7 +113,7 @@ describe('DiscordAnnouncer', () => {
           job: {name: 'Ninja', icon: 62030},
           guest: false,
         },
-      })
+      }),
     );
 
     const [message] = sent as {
@@ -160,7 +160,7 @@ describe('DiscordAnnouncer', () => {
             videoId: 'aaaaaaaaaaa',
           },
         ],
-      })
+      }),
     );
 
     // Discord doesn't preview links in a message that has a card.
@@ -181,11 +181,11 @@ describe('DiscordAnnouncer', () => {
       event({
         body: 'A link in text: https://youtu.be/dQw4w9WgXcQ here',
         media: [],
-      })
+      }),
     );
 
     expect((sent[0] as {content: string}).content).toBe(
-      '📜 New post by **snek\\_lord**'
+      '📜 New post by **snek\\_lord**',
     );
   });
 
@@ -193,7 +193,7 @@ describe('DiscordAnnouncer', () => {
     const fetchFn = jest.fn();
 
     await new DiscordAnnouncer(undefined, 'https://site', fetchFn).publish(
-      event({})
+      event({}),
     );
 
     expect(fetchFn).not.toHaveBeenCalled();

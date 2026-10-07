@@ -76,7 +76,7 @@ describe('uploading images and GIFs', () => {
     const large = await upload(token, pngOf(1024 * 1024 + 1));
     expect(large.status).toBe(413);
     expect(large.body.errors.body[0]).toBe(
-      'The image is too large: it can be at most 1 MB.'
+      'The image is too large: it can be at most 1 MB.',
     );
 
     const text = await upload(token, Buffer.from('not an image at all'));
@@ -186,7 +186,7 @@ describe('GIF search', () => {
 
     expect(response.status).toBe(502);
     expect(response.body.errors.body[0]).toBe(
-      "GIF search isn't available right now (GIPHY answered 429)."
+      "GIF search isn't available right now (GIPHY answered 429).",
     );
   });
 });

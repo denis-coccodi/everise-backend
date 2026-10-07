@@ -36,7 +36,7 @@ class MemberDeletion {
     private readonly db: Db,
     private readonly usersService: UsersService,
     private readonly profileImagesService: ProfileImagesService,
-    private readonly mediaService: MediaService
+    private readonly mediaService: MediaService,
   ) {}
 
   async delete(key: string): Promise<DeletedMember> {
@@ -46,7 +46,7 @@ class MemberDeletion {
     }
     if (user.role === 'admin') {
       throw new InvalidRoleError(
-        `${user.username} is an admin. Remove them from the backend's ADMIN_EMAILS setting first.`
+        `${user.username} is an admin. Remove them from the backend's ADMIN_EMAILS setting first.`,
       );
     }
 
@@ -63,28 +63,26 @@ class MemberDeletion {
 
     const ownArticles = new Set(articles.map(a => a.id));
     const goneComments = comments.filter(
-      c => c.authorId === user.id || ownArticles.has(c.articleId)
+      c => c.authorId === user.id || ownArticles.has(c.articleId),
     );
     const writes: Write[] = [
       ...articles.map(a => remove('articles', a.id)),
       ...goneComments.map(c => remove('comments', c.id)),
       ...favourites
         .filter(a => !ownArticles.has(a.id))
-        .map(
-          (a): Write => ({
-            op: 'update',
-            collection: 'articles',
-            id: a.id,
-            data: {
-              favoritedBy: (a.favoritedBy ?? []).filter(id => id !== user.id),
-            },
-          })
-        ),
+        .map((a): Write => ({
+          op: 'update',
+          collection: 'articles',
+          id: a.id,
+          data: {
+            favoritedBy: (a.favoritedBy ?? []).filter(id => id !== user.id),
+          },
+        })),
       ...follows
         .filter(f => f.followerId === user.id || f.followeeId === user.id)
         .map(f => remove('follows', f.id)),
       ...(await this.profileImagesService.idsOf(user.id)).map(id =>
-        remove('profileImages', id)
+        remove('profileImages', id),
       ),
       ...(await this.mediaService.deletionsFor(user.id)),
       remove('postLimits', `user-${user.id}`),

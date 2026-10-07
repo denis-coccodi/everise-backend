@@ -32,7 +32,7 @@ describe('POST /api/profiles/:username/follow', () => {
 
       const gotProfile = await profilesClient.getProfile(
         followee.user.username,
-        follower.user.token
+        follower.user.token,
       );
 
       expect(followUserResponse.body).toStrictEqual(gotProfile);
@@ -58,7 +58,7 @@ describe('POST /api/profiles/:username/follow', () => {
 
       const gotProfile = await profilesClient.getProfile(
         followee.user.username,
-        follower.user.token
+        follower.user.token,
       );
 
       expect(followUserResponse2.body).toStrictEqual(gotProfile);

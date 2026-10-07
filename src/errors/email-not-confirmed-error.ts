@@ -9,7 +9,7 @@ class EmailNotConfirmedError extends HttpError {
 
   constructor(readonly email: string) {
     super(
-      `Confirm your email address first: open the link we sent to ${email}.`
+      `Confirm your email address first: open the link we sent to ${email}.`,
     );
   }
 

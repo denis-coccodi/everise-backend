@@ -22,7 +22,7 @@ class DiscordWidgetReader {
     private readonly guildId: string | undefined,
     private readonly now: () => Date,
     private readonly fetchFn: DiscordFetch = url =>
-      (fetch as unknown as DiscordFetch)(url)
+      (fetch as unknown as DiscordFetch)(url),
   ) {}
 
   async read(): Promise<DiscordWidget | null> {
@@ -39,7 +39,7 @@ class DiscordWidgetReader {
   private async fetchWidget(): Promise<DiscordWidget | null> {
     try {
       const response = await this.fetchFn(
-        `https://discord.com/api/guilds/${this.guildId}/widget.json`
+        `https://discord.com/api/guilds/${this.guildId}/widget.json`,
       );
       if (!response.ok) return null;
       const body = (await response.json()) as {

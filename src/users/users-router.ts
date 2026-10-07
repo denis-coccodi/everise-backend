@@ -60,7 +60,7 @@ const PROFILE_IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 // read from its bytes), up to the size limit.
 const readImageBody: express.RequestHandler = (req, res, next) =>
   express.raw({type: () => true, limit: MAX_IMAGE_BYTES})(req, res, err =>
-    next(err?.type === 'entity.too.large' ? tooLarge() : err)
+    next(err?.type === 'entity.too.large' ? tooLarge() : err),
   );
 
 const COOKIE_NAME = 'token';
@@ -76,7 +76,7 @@ const COOKIE_OPTIONS = {
 function setSessionCookie(
   res: express.Response,
   token: string,
-  secondsToExpiration: number
+  secondsToExpiration: number,
 ) {
   res.cookie(COOKIE_NAME, token, {
     ...COOKIE_OPTIONS,
@@ -90,7 +90,7 @@ class UsersRouter {
     private readonly usersService: UsersService,
     private readonly jwtService: JWTService,
     private readonly profileImagesService: ProfileImagesService,
-    private readonly emailConfirmation: EmailConfirmation
+    private readonly emailConfirmation: EmailConfirmation,
   ) {}
 
   // Signs the browser in as this user, and answers with them.
@@ -119,7 +119,7 @@ class UsersRouter {
             })
             .required(),
         },
-        ALL_ERRORS
+        ALL_ERRORS,
       ),
       async (req, res, next) => {
         try {
@@ -130,7 +130,7 @@ class UsersRouter {
             email,
             username,
             password,
-            !confirming
+            !confirming,
           );
 
           // Signed in only once the link in the email is opened.
@@ -145,7 +145,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.post(
@@ -163,7 +163,7 @@ class UsersRouter {
             })
             .required(),
         },
-        ALL_ERRORS
+        ALL_ERRORS,
       ),
       async (req, res, next) => {
         try {
@@ -172,7 +172,7 @@ class UsersRouter {
           try {
             const isValidPassword = await this.usersService.verifyPassword(
               email,
-              password
+              password,
             );
 
             if (!isValidPassword) {
@@ -194,7 +194,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Opens a confirmation link: confirms the address and signs in.
@@ -212,7 +212,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Sends a sign-up's link again. Answers the same whether or not the
@@ -227,7 +227,7 @@ class UsersRouter {
             })
             .required(),
         },
-        ALL_ERRORS
+        ALL_ERRORS,
       ),
       async (req, res, next) => {
         try {
@@ -238,7 +238,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.post('/users/logout', (_req, res) => {
@@ -275,7 +275,7 @@ class UsersRouter {
             })
             .required(),
         },
-        ALL_ERRORS
+        ALL_ERRORS,
       ),
       this.auth.requireAuth,
       async (req, res, next) => {
@@ -288,7 +288,7 @@ class UsersRouter {
           const updatedUser = await this.usersService.updateUser(
             user.id,
             updateUserData,
-            {confirmNewEmail: this.emailConfirmation.enabled}
+            {confirmNewEmail: this.emailConfirmation.enabled},
           );
           if (
             updatedUser.pendingEmail &&
@@ -296,7 +296,7 @@ class UsersRouter {
           ) {
             await this.emailConfirmation.send(
               updatedUser,
-              updatedUser.pendingEmail
+              updatedUser.pendingEmail,
             );
           }
 
@@ -308,7 +308,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Uploads a new profile picture (the file as the request body) and
@@ -326,11 +326,11 @@ class UsersRouter {
 
           const id = await this.profileImagesService.save(
             user.id,
-            new Uint8Array(req.body)
+            new Uint8Array(req.body),
           );
           const updated = await this.usersService.setImage(
             user.id,
-            profileImageUrl(id)
+            profileImageUrl(id),
           );
           await this.deleteUploadedImage(user);
 
@@ -338,7 +338,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     // Removes the profile picture, back to the default one.
@@ -355,7 +355,7 @@ class UsersRouter {
         } catch (err) {
           return next(err);
         }
-      }
+      },
     );
 
     router.get('/profile-images/:id', async (req, res, next) => {

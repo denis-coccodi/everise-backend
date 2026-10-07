@@ -50,7 +50,7 @@ class EveriseDb extends DurableObject {
 class DurableObjectDb implements Db {
   constructor(
     private readonly namespace: DurableObjectNamespace<EveriseDb>,
-    private readonly name = DB_NAME
+    private readonly name = DB_NAME,
   ) {}
 
   // The RPC stub's types wrap every result (for promise pipelining) and drop

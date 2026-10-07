@@ -16,7 +16,7 @@ describe('DELETE /api/profiles/:username/follow', () => {
 
       await profilesClient.followUser(
         follower.user.token,
-        followee.user.username
+        followee.user.username,
       );
 
       const unfollowUserResponse = await request(app)
@@ -37,7 +37,7 @@ describe('DELETE /api/profiles/:username/follow', () => {
 
       const gotProfile = await profilesClient.getProfile(
         followee.user.username,
-        followee.user.token
+        followee.user.token,
       );
 
       expect(unfollowUserResponse.body).toStrictEqual(gotProfile);
@@ -65,7 +65,7 @@ describe('DELETE /api/profiles/:username/follow', () => {
 
       const gotProfile = await profilesClient.getProfile(
         followee.user.username,
-        followee.user.token
+        followee.user.token,
       );
 
       expect(unfollowUserResponse.body).toStrictEqual(gotProfile);
@@ -88,12 +88,12 @@ describe('DELETE /api/profiles/:username/follow', () => {
       expect(unfollowUserResponse1.status).toBe(200);
       expect(unfollowUserResponse2.status).toBe(200);
       expect(unfollowUserResponse2.body).toStrictEqual(
-        unfollowUserResponse1.body
+        unfollowUserResponse1.body,
       );
 
       const gotProfile = await profilesClient.getProfile(
         followee.user.username,
-        followee.user.token
+        followee.user.token,
       );
 
       expect(unfollowUserResponse2.body).toStrictEqual(gotProfile);

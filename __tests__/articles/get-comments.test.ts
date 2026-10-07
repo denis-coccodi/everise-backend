@@ -22,22 +22,22 @@ describe('GET /api/articles/:slug/comments', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article = await articlesClient.createRandomArticle(
-          articleAuthor.user.token
+          articleAuthor.user.token,
         );
 
         const comment1 = await articlesClient.addRandomComment(
           author1.user.token,
-          article.article.id
+          article.article.id,
         );
 
         const comment2 = await articlesClient.addRandomComment(
           author2.user.token,
-          article.article.id
+          article.article.id,
         );
 
         const comment3 = await articlesClient.addRandomComment(
           author1.user.token,
-          article.article.id
+          article.article.id,
         );
 
         await profilesClient.followUser(user.user.token, author1.user.username);
@@ -123,7 +123,7 @@ describe('GET /api/articles/:slug/comments', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const requestBody = {
@@ -153,7 +153,7 @@ describe('GET /api/articles/:slug/comments', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const requestBody = {
@@ -179,7 +179,7 @@ describe('GET /api/articles/:slug/comments', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const expiresInSeconds = 1;

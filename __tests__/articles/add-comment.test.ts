@@ -15,7 +15,7 @@ describe('POST /api/articles/:slug/comments', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const requestBody = {
@@ -77,7 +77,7 @@ describe('POST /api/articles/:slug/comments', () => {
         const author = await usersClient.registerRandomUser();
 
         const article = await articlesClient.createRandomArticle(
-          author.user.token
+          author.user.token,
         );
 
         const requestBody = {
@@ -104,7 +104,7 @@ describe('POST /api/articles/:slug/comments', () => {
         const author = await usersClient.registerRandomUser();
 
         const article = await articlesClient.createRandomArticle(
-          author.user.token
+          author.user.token,
         );
 
         const requestBody = {
@@ -134,7 +134,7 @@ describe('POST /api/articles/:slug/comments', () => {
         const author = await usersClient.registerRandomUser();
 
         const article = await articlesClient.createRandomArticle(
-          author.user.token
+          author.user.token,
         );
 
         const requestBody = {
@@ -166,7 +166,7 @@ describe('POST /api/articles/:slug/comments', () => {
         const author = await usersClient.registerRandomUser();
 
         const article = await articlesClient.createRandomArticle(
-          author.user.token
+          author.user.token,
         );
 
         const requestBody = {

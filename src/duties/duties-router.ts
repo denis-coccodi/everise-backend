@@ -17,7 +17,7 @@ class DutiesRouter {
   constructor(
     private readonly dutiesService: DutiesService,
     private readonly imagesService: ImagesService,
-    private readonly refreshKey: string | undefined
+    private readonly refreshKey: string | undefined,
   ) {}
 
   get router() {
@@ -47,7 +47,7 @@ class DutiesRouter {
     router.get('/resets', (_req, res) =>
       res
         .set('Cache-Control', LIVE_CACHE_CONTROL)
-        .json(this.dutiesService.getResets())
+        .json(this.dutiesService.getResets()),
     );
 
     router.get('/roulettes', async (_req, res, next) => {

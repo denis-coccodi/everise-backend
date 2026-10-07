@@ -55,7 +55,7 @@ describe('attachments on posts', () => {
           {kind: 'image', url: 'https://example.com/cat.png'},
           {kind: 'gif', url: 'https://media.giphy.com/media/x/giphy.gif'},
           {kind: 'video', url: 'https://youtu.be/dQw4w9WgXcQ?t=42', alt: ''},
-        ])
+        ]),
       );
 
     expect(response.status).toBe(201);
@@ -72,7 +72,7 @@ describe('attachments on posts', () => {
       },
     ]);
     const read = await request(app).get(
-      `/api/articles/${response.body.article.id}`
+      `/api/articles/${response.body.article.id}`,
     );
     expect(read.body.article.media).toHaveLength(4);
   });
@@ -86,7 +86,7 @@ describe('attachments on posts', () => {
       .send(newPost([image, image, image, image, image]));
     expect(five.status).toBe(422);
     expect(five.body.errors.body).toContain(
-      'A post can have at most 4 images, GIFs or videos.'
+      'A post can have at most 4 images, GIFs or videos.',
     );
 
     const notYouTube = await as(token)
@@ -94,7 +94,7 @@ describe('attachments on posts', () => {
       .send(newPost([{kind: 'video', url: 'https://vimeo.com/123'}]));
     expect(notYouTube.status).toBe(422);
     expect(notYouTube.body.errors.body).toContain(
-      'That video link isn’t a YouTube video.'
+      'That video link isn’t a YouTube video.',
     );
 
     const http = await as(token)
@@ -102,7 +102,7 @@ describe('attachments on posts', () => {
       .send(newPost([{kind: 'image', url: 'http://example.com/a.png'}]));
     expect(http.status).toBe(422);
     expect(http.body.errors.body).toContain(
-      'Images must have an https address.'
+      'Images must have an https address.',
     );
   });
 
@@ -134,15 +134,15 @@ describe('attachments on posts', () => {
     await as(author.token).delete(`/api/articles/${article.id}`);
 
     expect((await request(app).get(`/api/media/${posted.id}`)).status).toBe(
-      404
+      404,
     );
     expect((await request(app).get(`/api/media/${commented.id}`)).status).toBe(
-      404
+      404,
     );
     expect(
       await db.find('comments', {
         where: [{field: 'articleId', op: '==', value: article.id}],
-      })
+      }),
     ).toEqual([]);
   });
 
@@ -158,7 +158,7 @@ describe('attachments on posts', () => {
           newPost([
             {kind: 'gif', url: mine.url},
             {kind: 'gif', url: theirs.url},
-          ])
+          ]),
         )
     ).body;
 
@@ -169,7 +169,7 @@ describe('attachments on posts', () => {
     expect(updated.body.article.media).toEqual([]);
     expect((await request(app).get(`/api/media/${mine.id}`)).status).toBe(404);
     expect((await request(app).get(`/api/media/${theirs.id}`)).status).toBe(
-      200
+      200,
     );
   });
 
@@ -186,7 +186,7 @@ describe('attachments on posts', () => {
     await upload(token);
 
     expect((await request(app).get(`/api/media/${unused.id}`)).status).toBe(
-      404
+      404,
     );
     expect((await request(app).get(`/api/media/${used.id}`)).status).toBe(200);
   });
@@ -210,7 +210,7 @@ describe('attachments on comments', () => {
       .send({comment: {body: 'x', media: [image, image]}});
     expect(two.status).toBe(422);
     expect(two.body.errors.body).toContain(
-      'A comment can have at most 1 image, GIF or video.'
+      'A comment can have at most 1 image, GIF or video.',
     );
 
     const empty = await as(token)
@@ -218,7 +218,7 @@ describe('attachments on comments', () => {
       .send({comment: {body: ' '}});
     expect(empty.status).toBe(422);
     expect(empty.body.errors.body).toContain(
-      'Write a comment, or add an image, GIF or video.'
+      'Write a comment, or add an image, GIF or video.',
     );
   });
 
@@ -236,11 +236,11 @@ describe('attachments on comments', () => {
     ).body;
 
     await as(token).delete(
-      `/api/articles/${article.id}/comments/${comment.id}`
+      `/api/articles/${article.id}/comments/${comment.id}`,
     );
 
     expect((await request(app).get(`/api/media/${uploaded.id}`)).status).toBe(
-      404
+      404,
     );
   });
 });
@@ -273,7 +273,7 @@ describe('posts from before attachments', () => {
       .send({article: {media: read.body.article.media.slice(0, 1)}});
     const stored = await db.get<Doc & {body: string; media: unknown[]}>(
       'articles',
-      article.id
+      article.id,
     );
     expect(stored?.body).toBe('Hello\n\nBye');
     expect(stored?.media).toHaveLength(1);

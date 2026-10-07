@@ -42,7 +42,7 @@ function frontlineMapAt(at: Date): FrontlineDay {
 // The map in play at `at`, followed by the next days' maps.
 function frontlineSchedule(at: Date, days: number): FrontlineDay[] {
   return Array.from({length: days}, (_, i) =>
-    frontlineMapAt(new Date(at.getTime() + i * DAY_MS))
+    frontlineMapAt(new Date(at.getTime() + i * DAY_MS)),
   );
 }
 

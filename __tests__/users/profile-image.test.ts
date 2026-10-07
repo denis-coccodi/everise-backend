@@ -13,7 +13,7 @@ const fixture = (name: string) =>
 function upload(
   token: string,
   body: Buffer,
-  type = 'application/octet-stream'
+  type = 'application/octet-stream',
 ) {
   return request(app)
     .put(imageUrl)
@@ -45,14 +45,14 @@ describe('profile pictures', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.user.image).toStartWith(
-      `${config.baseUrl}/api/profile-images/`
+      `${config.baseUrl}/api/profile-images/`,
     );
 
     const served = await getImage(pathOf(response.body.user.image));
     expect(served.status).toBe(200);
     expect(served.headers['content-type']).toBe('image/png');
     expect(served.headers['cache-control']).toBe(
-      'public, max-age=31536000, immutable'
+      'public, max-age=31536000, immutable',
     );
     expect(served.headers['x-content-type-options']).toBe('nosniff');
     expect(served.body).toStrictEqual(png);
@@ -69,7 +69,7 @@ describe('profile pictures', () => {
     const response = await upload(
       user.token,
       fixture('small.jpg'),
-      'image/png'
+      'image/png',
     );
 
     const served = await getImage(pathOf(response.body.user.image));
@@ -128,7 +128,7 @@ describe('profile pictures', () => {
         .get('/api/user')
         .set('authorization', `Token ${user.token}`);
       expect(current.body.user.image).toBe(user.image);
-    }
+    },
   );
 
   test('PUT /api/user/image without signing in should return 401', async () => {
@@ -150,7 +150,7 @@ describe('profile pictures', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.user.image).toBe(
-      `${config.baseUrl}/assets/images/avatar-profile.png`
+      `${config.baseUrl}/assets/images/avatar-profile.png`,
     );
     expect((await getImage(pathOf(uploaded.body.user.image))).status).toBe(404);
   });

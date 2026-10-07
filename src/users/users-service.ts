@@ -88,7 +88,7 @@ function isAdminEmail(email: string) {
 
 function roleOf(doc: UserDoc): Role {
   if (doc.system) return 'user';
-  return isAdminEmail(doc.email) ? 'admin' : doc.role ?? 'user';
+  return isAdminEmail(doc.email) ? 'admin' : (doc.role ?? 'user');
 }
 
 function signInMethodsOf(doc: UserDoc): SignInMethod[] {
@@ -112,7 +112,7 @@ function toUser(doc: UserDoc): User {
     !!doc.system,
     signInMethodsOf(doc),
     doc.emailConfirmed !== false,
-    doc.pendingEmail
+    doc.pendingEmail,
   );
 }
 
@@ -132,7 +132,7 @@ class UsersService {
     email: string,
     username: string,
     password: string,
-    confirmed = true
+    confirmed = true,
   ): Promise<User> {
     await this.removeUnconfirmed(email);
 
@@ -153,7 +153,7 @@ class UsersService {
 
     const userDoc = await this.db.create<UserDoc>(
       this.usersCollection,
-      userData
+      userData,
     );
 
     return toUser(userDoc);
@@ -163,7 +163,7 @@ class UsersService {
   // else the one with the same email (tying them together from now on),
   // else a new one. `created` says which.
   async signInWithProvider(
-    signIn: ProviderSignIn
+    signIn: ProviderSignIn,
   ): Promise<{user: User; created: boolean}> {
     const field = PROVIDER_FIELDS[signIn.provider];
     const [tied] = await this.db.find<UserDoc>(this.usersCollection, {
@@ -179,12 +179,12 @@ class UsersService {
     }
     const email = signIn.email.toLowerCase();
     const sameEmail = (await this.db.find<UserDoc>(this.usersCollection)).find(
-      doc => doc.email.toLowerCase() === email
+      doc => doc.email.toLowerCase() === email,
     );
     if (sameEmail) {
       if (sameEmail.system) {
         throw new AlreadyExistsError(
-          'That email belongs to an account nobody can sign in to.'
+          'That email belongs to an account nobody can sign in to.',
         );
       }
       // The provider has confirmed the email. An account whose email wasn't
@@ -196,7 +196,7 @@ class UsersService {
         sameEmail.id,
         unconfirmed
           ? {[field]: signIn.id, emailConfirmed: true, passwordHash: undefined}
-          : {[field]: signIn.id}
+          : {[field]: signIn.id},
       );
       return {user: toUser(linked!), created: false};
     }
@@ -238,7 +238,7 @@ class UsersService {
   async updateUser(
     userId: string,
     params: UpdateUserParams,
-    {confirmNewEmail = false} = {}
+    {confirmNewEmail = false} = {},
   ): Promise<User> {
     const userData = await this.db.get<UserDoc>(this.usersCollection, userId);
 
@@ -293,7 +293,7 @@ class UsersService {
         bio: userData.bio,
         image: userData.image,
         darkMode: userData.darkMode,
-      }
+      },
     );
 
     return toUser(updatedData!);
@@ -309,7 +309,7 @@ class UsersService {
       const updated = await this.db.update<UserDoc>(
         this.usersCollection,
         userId,
-        {email, pendingEmail: undefined, emailConfirmed: true}
+        {email, pendingEmail: undefined, emailConfirmed: true},
       );
       return toUser(updated!);
     }
@@ -317,12 +317,12 @@ class UsersService {
       const updated = await this.db.update<UserDoc>(
         this.usersCollection,
         userId,
-        {emailConfirmed: true}
+        {emailConfirmed: true},
       );
       return toUser(updated!);
     }
     throw new RangeError(
-      'This link is for an email address the account no longer uses.'
+      'This link is for an email address the account no longer uses.',
     );
   }
 
@@ -334,7 +334,7 @@ class UsersService {
       userId,
       {
         image,
-      }
+      },
     );
 
     if (!updated) {
@@ -398,7 +398,7 @@ class UsersService {
       user =>
         !term ||
         user.username.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term)
+        user.email.toLowerCase().includes(term),
     );
     return {
       users: matches.slice(offset, offset + limit),
@@ -417,7 +417,7 @@ class UsersService {
     }
     if (isAdminEmail(doc.email)) {
       throw new InvalidRoleError(
-        `${doc.username} is an admin. Admins are set in the backend's ADMIN_EMAILS setting.`
+        `${doc.username} is an admin. Admins are set in the backend's ADMIN_EMAILS setting.`,
       );
     }
 
@@ -426,7 +426,7 @@ class UsersService {
       doc.id,
       {
         role,
-      }
+      },
     );
     return toUser(updated!);
   }
@@ -469,7 +469,7 @@ class UsersService {
     ).filter(
       doc =>
         doc.email.toLowerCase() === email.toLowerCase() ||
-        new Date(doc.createdAt).getTime() < cutoff
+        new Date(doc.createdAt).getTime() < cutoff,
     );
     for (const doc of stale) {
       await this.db.delete(this.usersCollection, doc.id);
@@ -490,7 +490,7 @@ class UsersService {
 
     if (await this.getUserByEmail(validatedEmail)) {
       throw new AlreadyExistsError(
-        'That email address is already registered. Sign in instead?'
+        'That email address is already registered. Sign in instead?',
       );
     }
   }

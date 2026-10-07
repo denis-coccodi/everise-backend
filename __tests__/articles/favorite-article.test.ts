@@ -19,7 +19,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const favoriteArticleResponse1 = await request(app)
@@ -76,7 +76,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -97,7 +97,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -121,7 +121,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -141,7 +141,7 @@ describe('POST /api/articles/:slug/favorite', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const expiresInSeconds = 1;

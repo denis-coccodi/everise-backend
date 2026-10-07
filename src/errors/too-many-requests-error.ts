@@ -5,7 +5,10 @@ import {HttpError} from './http-error';
 class TooManyRequestsError extends HttpError {
   readonly status = StatusCodes.TOO_MANY_REQUESTS;
 
-  constructor(message: string, readonly retryAfterSeconds: number) {
+  constructor(
+    message: string,
+    readonly retryAfterSeconds: number,
+  ) {
     super(message);
   }
 

@@ -51,7 +51,7 @@ if (shrunk.length > 0) console.log('Shrunk:\n  ' + shrunk.join('\n  '));
 if (over.length > 0) {
   console.error(
     'Too long; split it (a router per resource, plain functions, a smaller service):\n  ' +
-      over.join('\n  ')
+      over.join('\n  '),
   );
   process.exit(1);
 }

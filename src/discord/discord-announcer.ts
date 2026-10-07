@@ -8,7 +8,7 @@ import {
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
   url: string,
-  init?: {method?: string; headers?: Record<string, string>; body?: string}
+  init?: {method?: string; headers?: Record<string, string>; body?: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 type ArticleEvent = ArticleCreated['article'];
@@ -27,7 +27,7 @@ class DiscordAnnouncer implements LiveFeed {
     // The site people use: the links and pictures point there.
     private readonly siteUrl: string,
     private readonly fetchFn: DiscordFetch = (url, init) =>
-      (fetch as unknown as DiscordFetch)(url, init)
+      (fetch as unknown as DiscordFetch)(url, init),
   ) {}
 
   async publish(event: LiveEvent): Promise<void> {
@@ -158,8 +158,8 @@ function allFeeds(...feeds: LiveFeed[]): LiveFeed {
     async publish(event) {
       await Promise.all(
         feeds.map(feed =>
-          feed.publish(event).catch(err => console.error('feed failed', err))
-        )
+          feed.publish(event).catch(err => console.error('feed failed', err)),
+        ),
       );
     },
   };

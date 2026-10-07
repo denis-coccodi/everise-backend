@@ -105,7 +105,7 @@ function toArticle(doc: ArticleDoc): Article {
     doc.createdAt,
     doc.updatedAt,
     doc.roulette,
-    attachments.map(currentAttachment)
+    attachments.map(currentAttachment),
   );
 }
 
@@ -117,7 +117,7 @@ function toComment(doc: CommentDoc): Comment {
     doc.body,
     doc.createdAt,
     doc.updatedAt,
-    doc.media ? currentAttachment(doc.media) : null
+    doc.media ? currentAttachment(doc.media) : null,
   );
 }
 
@@ -135,12 +135,12 @@ class ArticlesService {
     private readonly usersService: UsersService,
     private readonly profilesService: ProfilesService,
     private readonly liveFeed: LiveFeed = noLiveFeed,
-    private readonly mediaService?: MediaService
+    private readonly mediaService?: MediaService,
   ) {}
 
   async createArticle(
     authorId: string,
-    params: CreateArticleParams
+    params: CreateArticleParams,
   ): Promise<Article> {
     const author = await this.usersService.getUserById(authorId);
     if (!author) {
@@ -168,7 +168,7 @@ class ArticlesService {
 
     const articleDoc = await this.db.create<ArticleDoc>(
       this.articlesCollection,
-      articleData
+      articleData,
     );
     await this.mediaService?.claim(authorId, uploadsIn(media));
 
@@ -180,7 +180,7 @@ class ArticlesService {
   async getArticleById(articleId: string): Promise<Article | undefined> {
     const articleDoc = await this.db.get<ArticleDoc>(
       this.articlesCollection,
-      articleId
+      articleId,
     );
 
     return articleDoc && toArticle(articleDoc);
@@ -197,7 +197,7 @@ class ArticlesService {
       {
         where: [{field: 'slug', op: '==', value: key}],
         limit: 1,
-      }
+      },
     );
 
     return articleDoc && toArticle(articleDoc);
@@ -239,7 +239,7 @@ class ArticlesService {
 
     if (params.favoritedByUserId) {
       const user = await this.usersService.getUserById(
-        params.favoritedByUserId
+        params.favoritedByUserId,
       );
 
       if (!user) {
@@ -265,7 +265,7 @@ class ArticlesService {
 
     const articleDocs = await this.db.find<ArticleDoc>(
       this.articlesCollection,
-      {where, orderBy: params.orderBy, limit, offset}
+      {where, orderBy: params.orderBy, limit, offset},
     );
 
     return articleDocs.map(toArticle);
@@ -293,12 +293,12 @@ class ArticlesService {
             ],
             authorId: followedUserId,
           });
-        })
+        }),
       )
     ).flat();
 
     followedUserArticles.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
 
     if (params.offset) {
@@ -318,11 +318,11 @@ class ArticlesService {
 
   async updateArticle(
     articleId: string,
-    params: UpdateArticleParams
+    params: UpdateArticleParams,
   ): Promise<Article> {
     const articleData = await this.db.get<ArticleDoc>(
       this.articlesCollection,
-      articleId
+      articleId,
     );
 
     if (!articleData) {
@@ -356,7 +356,7 @@ class ArticlesService {
       const kept = new Set(uploadsIn(media));
       await this.mediaService?.release(
         articleData.authorId,
-        uploadsIn(before).filter(id => !kept.has(id))
+        uploadsIn(before).filter(id => !kept.has(id)),
       );
       await this.mediaService?.claim(articleData.authorId, [...kept]);
     }
@@ -379,7 +379,7 @@ class ArticlesService {
         tags: articleData.tags,
         favoritedBy: articleData.favoritedBy,
         ...(media ? {media} : {}),
-      }
+      },
     );
 
     return toArticle(updatedDoc!);
@@ -394,13 +394,13 @@ class ArticlesService {
 
     await this.mediaService?.release(
       article.authorId,
-      uploadsIn(article.media)
+      uploadsIn(article.media),
     );
     for (const comment of comments) {
       if (comment.media) {
         await this.mediaService?.release(
           comment.authorId,
-          uploadsIn([comment.media])
+          uploadsIn([comment.media]),
         );
       }
     }
@@ -462,7 +462,7 @@ class ArticlesService {
     articleId: string,
     authorId: string,
     body: string,
-    attachment?: AttachmentInput
+    attachment?: AttachmentInput,
   ): Promise<Comment> {
     if (!(await this.getArticleById(articleId))) {
       throw new NotFoundError(`article ${articleId} not found`);
@@ -486,7 +486,7 @@ class ArticlesService {
 
     const commentDoc = await this.db.create<CommentDoc>(
       this.commentsCollection,
-      commentData
+      commentData,
     );
     if (media) {
       await this.mediaService?.claim(authorId, uploadsIn([media]));
@@ -499,7 +499,7 @@ class ArticlesService {
     key: string,
     authorId: string,
     body: string,
-    attachment?: AttachmentInput
+    attachment?: AttachmentInput,
   ): Promise<Comment> {
     const article = await this.requireArticle(key);
 
@@ -509,7 +509,7 @@ class ArticlesService {
   async getCommentById(commentId: string): Promise<Comment | undefined> {
     const commentDoc = await this.db.get<CommentDoc>(
       this.commentsCollection,
-      commentId
+      commentId,
     );
 
     return commentDoc && toComment(commentDoc);
@@ -530,7 +530,7 @@ class ArticlesService {
 
     const commentDocs = await this.db.find<CommentDoc>(
       this.commentsCollection,
-      {where, orderBy: params.orderBy}
+      {where, orderBy: params.orderBy},
     );
 
     return commentDocs.map(toComment);
@@ -546,7 +546,7 @@ class ArticlesService {
     if (comment.media) {
       await this.mediaService?.release(
         comment.authorId,
-        uploadsIn([comment.media])
+        uploadsIn([comment.media]),
       );
     }
     await this.db.delete(this.commentsCollection, comment.id);

@@ -10,7 +10,7 @@ const wsRequest = (url: string, headers: Record<string, string>) => ({
   headers: {
     get: (name: string) =>
       Object.entries(headers).find(
-        ([key]) => key.toLowerCase() === name.toLowerCase()
+        ([key]) => key.toLowerCase() === name.toLowerCase(),
       )?.[1] ?? null,
   },
 });
@@ -90,7 +90,7 @@ describe('live updates', () => {
 
       expect(response.status).toBe(201);
       const saved = await request(app).get(
-        `/api/articles/${response.body.article.id}`
+        `/api/articles/${response.body.article.id}`,
       );
       expect(saved.status).toBe(200);
     });
@@ -100,16 +100,16 @@ describe('live updates', () => {
     test('only WebSocket upgrades to /api/live go to the hub', () => {
       expect(
         isLiveRequest(
-          wsRequest('https://x.dev/api/live', {Upgrade: 'websocket'})
-        )
+          wsRequest('https://x.dev/api/live', {Upgrade: 'websocket'}),
+        ),
       ).toBe(true);
       expect(isLiveRequest(wsRequest('https://x.dev/api/live', {}))).toBe(
-        false
+        false,
       );
       expect(
         isLiveRequest(
-          wsRequest('https://x.dev/api/articles', {Upgrade: 'websocket'})
-        )
+          wsRequest('https://x.dev/api/articles', {Upgrade: 'websocket'}),
+        ),
       ).toBe(false);
     });
 
@@ -121,7 +121,7 @@ describe('live updates', () => {
       const from = (origin: string) =>
         isAllowedOrigin(
           wsRequest('https://x.dev/api/live', {Origin: origin}),
-          allowed
+          allowed,
         );
 
       expect(from('https://staging.everisefc.workers.dev')).toBe(true);
@@ -129,7 +129,7 @@ describe('live updates', () => {
       expect(from('https://evil.example')).toBe(false);
       // Not a browser: no cross-site risk.
       expect(
-        isAllowedOrigin(wsRequest('https://x.dev/api/live', {}), allowed)
+        isAllowedOrigin(wsRequest('https://x.dev/api/live', {}), allowed),
       ).toBe(true);
     });
   });

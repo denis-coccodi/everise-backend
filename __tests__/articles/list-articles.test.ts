@@ -28,22 +28,22 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         const article3 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await profilesClient.followUser(user.user.token, author2.user.username);
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -81,11 +81,11 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         await articlesClient.createRandomArticle(author1.user.token);
@@ -94,7 +94,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const tag = 'mytag';
@@ -102,13 +102,13 @@ describe('GET /api/articles/:slug', () => {
         await articlesClient.updateArticle(
           author1.user.token,
           article1.article.id,
-          {tagList: [...article1.article.tagList, tag]}
+          {tagList: [...article1.article.tagList, tag]},
         );
 
         await articlesClient.updateArticle(
           author2.user.token,
           article2.article.id,
-          {tagList: [...article2.article.tagList, tag]}
+          {tagList: [...article2.article.tagList, tag]},
         );
 
         const response = await request(app)
@@ -148,11 +148,11 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         await articlesClient.createRandomArticle(author1.user.token);
@@ -161,7 +161,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -192,7 +192,7 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await articlesClient.createRandomArticle(author2.user.token);
@@ -203,7 +203,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -233,22 +233,22 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         const article3 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await profilesClient.followUser(user.user.token, author2.user.username);
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -277,13 +277,12 @@ describe('GET /api/articles/:slug', () => {
 
         const user = await usersClient.registerRandomUser();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const articles: any[] = [];
 
         for (let i = 0; i < defaultLimit + 1; i++) {
           const author = await usersClient.registerRandomUser();
           const article = await articlesClient.createRandomArticle(
-            author.user.token
+            author.user.token,
           );
           articles.push(article);
         }
@@ -311,7 +310,7 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await articlesClient.createRandomArticle(author2.user.token);
@@ -322,7 +321,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -354,22 +353,22 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         const article3 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await profilesClient.followUser(user.user.token, author2.user.username);
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app).get(listArticlesUrl).send();
@@ -404,11 +403,11 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         await articlesClient.createRandomArticle(author1.user.token);
@@ -417,7 +416,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const tag = 'mytag';
@@ -425,13 +424,13 @@ describe('GET /api/articles/:slug', () => {
         await articlesClient.updateArticle(
           author1.user.token,
           article1.article.id,
-          {tagList: [...article1.article.tagList, tag]}
+          {tagList: [...article1.article.tagList, tag]},
         );
 
         await articlesClient.updateArticle(
           author2.user.token,
           article2.article.id,
-          {tagList: [...article2.article.tagList, tag]}
+          {tagList: [...article2.article.tagList, tag]},
         );
 
         const response = await request(app)
@@ -470,11 +469,11 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         await articlesClient.createRandomArticle(author1.user.token);
@@ -483,7 +482,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -513,7 +512,7 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await articlesClient.createRandomArticle(author2.user.token);
@@ -524,7 +523,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -553,22 +552,22 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         const article2 = await articlesClient.createRandomArticle(
-          author2.user.token
+          author2.user.token,
         );
 
         const article3 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await profilesClient.followUser(user.user.token, author2.user.username);
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)
@@ -594,13 +593,12 @@ describe('GET /api/articles/:slug', () => {
       test('given no limit filter should return at most 20 articles', async () => {
         const defaultLimit = 20;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const articles: any[] = [];
 
         for (let i = 0; i < defaultLimit + 1; i++) {
           const author = await usersClient.registerRandomUser();
           const article = await articlesClient.createRandomArticle(
-            author.user.token
+            author.user.token,
           );
           articles.push(article);
         }
@@ -625,7 +623,7 @@ describe('GET /api/articles/:slug', () => {
         const author2 = await usersClient.registerRandomUser();
 
         const article1 = await articlesClient.createRandomArticle(
-          author1.user.token
+          author1.user.token,
         );
 
         await articlesClient.createRandomArticle(author2.user.token);
@@ -636,7 +634,7 @@ describe('GET /api/articles/:slug', () => {
 
         await articlesClient.favoriteArticle(
           user.user.token,
-          article1.article.id
+          article1.article.id,
         );
 
         const response = await request(app)

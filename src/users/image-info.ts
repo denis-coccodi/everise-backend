@@ -28,7 +28,7 @@ function readImageInfo(bytes: Uint8Array): ImageInfo | null {
       return sized(
         'image/gif',
         data.getUint16(6, true),
-        data.getUint16(8, true)
+        data.getUint16(8, true),
       );
     }
 
@@ -54,7 +54,7 @@ function readWebp(data: DataView, chunk: string): ImageInfo | null {
       return sized(
         'image/webp',
         data.getUint16(26, true) & 0x3fff,
-        data.getUint16(28, true) & 0x3fff
+        data.getUint16(28, true) & 0x3fff,
       );
     case 'VP8L': {
       // Lossless: 14-bit sizes minus one, packed after a 0x2f signature.
@@ -62,7 +62,7 @@ function readWebp(data: DataView, chunk: string): ImageInfo | null {
       return sized(
         'image/webp',
         (bits & 0x3fff) + 1,
-        ((bits >> 14) & 0x3fff) + 1
+        ((bits >> 14) & 0x3fff) + 1,
       );
     }
     case 'VP8X':
@@ -95,7 +95,7 @@ function readJpeg(data: DataView): ImageInfo | null {
       return sized(
         'image/jpeg',
         data.getUint16(offset + 7),
-        data.getUint16(offset + 5)
+        data.getUint16(offset + 5),
       );
     }
     offset += 2 + length;

@@ -33,10 +33,10 @@ function youTubeVideo(link: string): YouTubeVideo | undefined {
     url.hostname === 'youtu.be'
       ? path[0]
       : path[0] === 'watch'
-      ? url.searchParams.get('v')
-      : ['shorts', 'live', 'embed'].includes(path[0])
-      ? path[1]
-      : undefined;
+        ? url.searchParams.get('v')
+        : ['shorts', 'live', 'embed'].includes(path[0])
+          ? path[1]
+          : undefined;
   if (!id || !ID.test(id)) return undefined;
   return {
     id,

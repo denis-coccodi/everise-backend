@@ -32,8 +32,7 @@ const DEALERS_CHOICE = "Everyone on the same job: dealer's choice";
 const AWKTRAIL_MIN_LEVEL = 50;
 
 type Candidate =
-  | {kind: 'duty'; duty: Duty}
-  | {kind: 'roulette'; roulette: Roulette};
+  {kind: 'duty'; duty: Duty} | {kind: 'roulette'; roulette: Roulette};
 
 function findCandidate(input: RouletteResultInput, data: DutyData): Candidate {
   const {type, candidate} = input;
@@ -58,7 +57,7 @@ function findCandidate(input: RouletteResultInput, data: DutyData): Candidate {
     }
   }
   throw new InvalidRouletteResultError(
-    "That duty isn't one the roulette can land on."
+    "That duty isn't one the roulette can land on.",
   );
 }
 
@@ -90,7 +89,7 @@ function runModes(candidate: Candidate, type: string, canDeal: boolean) {
 function buildRouletteCard(
   input: RouletteResultInput,
   data: DutyData,
-  guest: boolean
+  guest: boolean,
 ): RouletteCard {
   const candidate = findCandidate(input, data);
   const dealable = data.jobs.filter(job => !job.limited);
@@ -99,7 +98,7 @@ function buildRouletteCard(
     !runModes(candidate, input.type, dealable.length > 0).includes(input.mode)
   ) {
     throw new InvalidRouletteResultError(
-      "Those party settings aren't possible for that duty."
+      "Those party settings aren't possible for that duty.",
     );
   }
 

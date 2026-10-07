@@ -15,7 +15,7 @@ describe('DELETE /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const deleteArticleResponse = await request(app)
@@ -57,7 +57,7 @@ describe('DELETE /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -78,7 +78,7 @@ describe('DELETE /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -99,7 +99,7 @@ describe('DELETE /api/articles/:slug', () => {
       const user = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -123,7 +123,7 @@ describe('DELETE /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const response = await request(app)
@@ -143,7 +143,7 @@ describe('DELETE /api/articles/:slug', () => {
       const author = await usersClient.registerRandomUser();
 
       const article = await articlesClient.createRandomArticle(
-        author.user.token
+        author.user.token,
       );
 
       const expiresInSeconds = 1;

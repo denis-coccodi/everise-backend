@@ -27,7 +27,7 @@ class TataruAccount {
   constructor(
     private readonly usersService: UsersService,
     private readonly profileImagesService: ProfileImagesService,
-    private readonly loadBundledPicture: LoadBundledPicture
+    private readonly loadBundledPicture: LoadBundledPicture,
   ) {}
 
   async get(): Promise<User> {

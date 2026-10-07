@@ -112,7 +112,7 @@ describe('FFXIV duties', () => {
 
         expect(response.status).toBe(401);
         expect(xivApi.requests).toBeEmpty();
-      }
+      },
     );
 
     test('given the key, should cache the lists and return a summary', async () => {
@@ -153,7 +153,7 @@ describe('FFXIV duties', () => {
       await refresh();
 
       xivApi.sheets.ContentFinderCondition.push(
-        duty(10, 'Copperbell Mines', 2)
+        duty(10, 'Copperbell Mines', 2),
       );
       await refresh();
 
@@ -167,7 +167,7 @@ describe('FFXIV duties', () => {
         'PvP',
       ]);
       expect(
-        response.body.groups[0].duties.map((d: {name: string}) => d.name)
+        response.body.groups[0].duties.map((d: {name: string}) => d.name),
       ).toStrictEqual(['Sastasha', 'Copperbell Mines']);
     });
   });
@@ -242,7 +242,7 @@ describe('FFXIV duties', () => {
       const response = await request(app).get('/api/duties').send();
 
       const treasure = response.body.groups.find(
-        (g: {name: string}) => g.name === 'Treasure Hunt'
+        (g: {name: string}) => g.name === 'Treasure Hunt',
       );
       expect(treasure.duties[0]).toMatchObject({
         name: 'the Excitatron 6000',
@@ -255,7 +255,7 @@ describe('FFXIV duties', () => {
       const response = await request(app).get('/api/duties').send();
 
       const treasure = response.body.groups.find(
-        (g: {name: string}) => g.name === 'Treasure Hunt'
+        (g: {name: string}) => g.name === 'Treasure Hunt',
       );
       // The fake game data marks all four as allowed.
       expect(treasure.duties[0]).toMatchObject({
@@ -320,7 +320,7 @@ describe('FFXIV duties', () => {
         response.body.groups.map((g: {name: string; icon: number | null}) => [
           g.name,
           g.icon,
-        ])
+        ]),
       ).toStrictEqual([
         ['Dungeons', 61801],
         ['Trials — Extreme', 61804],
@@ -381,14 +381,14 @@ describe('FFXIV duties', () => {
 
         expect(response.status).toBe(401);
         expect(xivApi.requests).toBeEmpty();
-      }
+      },
     );
 
     test('should be downloaded in batches until none are pending', async () => {
       // Enough extra duties, each with its own banner, for several batches.
       for (let row = 1000; row < 1060; row++) {
         xivApi.sheets.ContentFinderCondition.push(
-          duty(row, `Dungeon ${row}`, 2)
+          duty(row, `Dungeon ${row}`, 2),
         );
       }
       const started = await refresh();
@@ -423,13 +423,13 @@ describe('FFXIV duties', () => {
       expect(icon.headers['content-type']).toBe('image/png');
       expect(icon.headers['cache-control']).toBe('public, max-age=604800');
       expect(icon.body).toStrictEqual(
-        Buffer.from(imageBytes('ui/icon/062000/062119_hr1.tex', 'png'))
+        Buffer.from(imageBytes('ui/icon/062000/062119_hr1.tex', 'png')),
       );
 
       const banner = await getImage(112001);
       expect(banner.headers['content-type']).toBe('image/jpeg');
       expect(banner.body).toStrictEqual(
-        Buffer.from(imageBytes('ui/icon/112000/112001_hr1.tex', 'jpg'))
+        Buffer.from(imageBytes('ui/icon/112000/112001_hr1.tex', 'jpg')),
       );
     });
 
@@ -463,7 +463,7 @@ describe('FFXIV duties', () => {
         xivApi.sheets.ContentFinderCondition.map(row =>
           row.row_id === 1
             ? {...row, fields: {...row.fields, 'Image@as(raw)': 0}}
-            : row
+            : row,
         );
       const started = await refresh();
       expect(started.body.images.pending).toBe(IMAGE_COUNT - 1);
@@ -475,7 +475,7 @@ describe('FFXIV duties', () => {
       await downloadAllImages();
 
       expect(
-        xivApi.requests.filter(url => url.includes('/asset?'))
+        xivApi.requests.filter(url => url.includes('/asset?')),
       ).toHaveLength(IMAGE_COUNT - 1);
       expect((await getImage(112001)).status).toBe(404);
       expect((await getImage(112002)).status).toBe(200);
@@ -491,7 +491,7 @@ describe('FFXIV duties', () => {
 
     function namesWhere(
       body: {groups: {duties: {name: string}[]}[]},
-      test: (duty: Record<string, unknown>) => boolean
+      test: (duty: Record<string, unknown>) => boolean,
     ) {
       return body.groups
         .flatMap(g => g.duties)
@@ -527,7 +527,7 @@ describe('FFXIV duties', () => {
         until: new Date('2026-10-05T15:00:00Z'),
       });
       expect(frontlineMapAt(BORDERLAND_RUINS_DAY).map).toBe(
-        'the Borderland Ruins (Secure)'
+        'the Borderland Ruins (Secure)',
       );
     });
 
@@ -540,13 +540,13 @@ describe('FFXIV duties', () => {
         const response = await request(app).get('/api/duties').send();
 
         const pvp = response.body.groups.find(
-          (g: {name: string}) => g.name === 'PvP'
+          (g: {name: string}) => g.name === 'PvP',
         );
         expect(
           pvp.duties.map((d: {name: string; pvpType: string}) => [
             d.name,
             d.pvpType,
-          ])
+          ]),
         ).toIncludeSameMembers([
           ['Seal Rock (Seize)', 'Frontline'],
           ['the Borderland Ruins (Secure)', 'Frontline'],
@@ -557,7 +557,7 @@ describe('FFXIV duties', () => {
           ],
         ]);
         expect(
-          namesWhere(response.body, d => d.pvpType !== '' && !d.pvp)
+          namesWhere(response.body, d => d.pvpType !== '' && !d.pvp),
         ).toBeEmpty();
       });
 
@@ -572,9 +572,9 @@ describe('FFXIV duties', () => {
           const response = await request(app).get('/api/duties').send();
 
           expect(
-            namesWhere(response.body, d => d.activeFrontline === true)
+            namesWhere(response.body, d => d.activeFrontline === true),
           ).toStrictEqual([map]);
-        }
+        },
       );
 
       test('GET /api/frontline should return today and the rest of the cycle', async () => {
@@ -591,8 +591,8 @@ describe('FFXIV duties', () => {
         });
         expect(
           response.body.schedule.map(
-            (d: {map: string; dutyId: number | null}) => [d.map, d.dutyId]
-          )
+            (d: {map: string; dutyId: number | null}) => [d.map, d.dutyId],
+          ),
         ).toStrictEqual([
           ['Seal Rock (Seize)', 130],
           ['the Borderland Ruins (Secure)', 127],
@@ -618,7 +618,7 @@ describe('FFXIV duties', () => {
         const day = frontlineMapAt(new Date(before));
         expect(day.until).toStrictEqual(new Date(after));
         expect(frontlineMapAt(new Date(after)).from).toStrictEqual(
-          new Date(after)
+          new Date(after),
         );
       }
     });

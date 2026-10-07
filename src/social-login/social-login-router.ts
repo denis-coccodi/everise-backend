@@ -40,7 +40,7 @@ class SocialLoginRouter {
     // The site people use; the providers send them back to its /api.
     private readonly siteUrl: string,
     private readonly fetchFn: OAuthFetch = (url, init) =>
-      (fetch as unknown as OAuthFetch)(url, init)
+      (fetch as unknown as OAuthFetch)(url, init),
   ) {}
 
   get router() {
@@ -49,7 +49,7 @@ class SocialLoginRouter {
     // The providers this backend is set up for, so the site shows only
     // their buttons.
     router.get('/auth/providers', (_req, res) =>
-      res.json({providers: PROVIDERS.filter(p => this.app(p))})
+      res.json({providers: PROVIDERS.filter(p => this.app(p))}),
     );
 
     router.get('/auth/:provider', (req, res) => {
@@ -65,7 +65,7 @@ class SocialLoginRouter {
         maxAge: 1000 * STATE_SECONDS,
       });
       return res.redirect(
-        authorizeUrl(provider, app.clientId, this.redirectUri(provider), state)
+        authorizeUrl(provider, app.clientId, this.redirectUri(provider), state),
       );
     });
 
@@ -79,13 +79,13 @@ class SocialLoginRouter {
         if (!app) {
           throw new SocialLoginError(
             'unavailable',
-            `${provider} is not set up`
+            `${provider} is not set up`,
           );
         }
         if (req.query.error) {
           throw new SocialLoginError(
             'cancelled',
-            `${provider} answered ${req.query.error}`
+            `${provider} answered ${req.query.error}`,
           );
         }
         const {code, state} = req.query;
@@ -96,7 +96,7 @@ class SocialLoginRouter {
         ) {
           throw new SocialLoginError(
             'expired',
-            `${provider}: the state doesn't match the one this browser started`
+            `${provider}: the state doesn't match the one this browser started`,
           );
         }
 
@@ -105,7 +105,7 @@ class SocialLoginRouter {
           app,
           code,
           this.redirectUri(provider),
-          this.fetchFn
+          this.fetchFn,
         );
         const {user} = await this.usersService.signInWithProvider({
           provider,
@@ -115,7 +115,7 @@ class SocialLoginRouter {
         setSessionCookie(
           res,
           this.jwtService.getToken(user),
-          this.jwtService.secondsToExpiration
+          this.jwtService.secondsToExpiration,
         );
         return res.redirect(`${this.siteUrl}/`);
       } catch (err) {
@@ -123,8 +123,8 @@ class SocialLoginRouter {
           err instanceof SocialLoginError
             ? err.problem
             : err instanceof MissingEmailError
-            ? 'no-email'
-            : 'failed';
+              ? 'no-email'
+              : 'failed';
         if (problem === 'failed') {
           console.error(`Social sign-in failed: ${(err as Error).message}`);
         }
