@@ -16,6 +16,7 @@ function entry(
     world?: {id: number; name: string};
     category?: string;
     duty?: string | null;
+    dutyType?: string;
     updatedSecondsAgo?: number;
     secondsRemaining?: number;
     searchArea?: {world: boolean; one_player_per_job: boolean};
@@ -50,7 +51,7 @@ function entry(
             content_kind: 'UltimateRaids',
           }
         : null,
-      duty_type: 'Normal',
+      duty_type: changes.dutyType ?? 'Normal',
       beginners_welcome: false,
       seconds_remaining: changes.secondsRemaining ?? 3600,
       min_item_level: 0,
@@ -110,6 +111,8 @@ describe('GET /api/party-finder', () => {
     expect(response.body).toMatchObject({
       dataCentre: 'Light',
       fetchedAt: clock.now!.toISOString(),
+      // The game's role icons and the beginners' sprout.
+      icons: {tank: 62581, healer: 62582, dps: 62583, beginner: 61523},
     });
     expect(response.body.worlds).toContainEqual({id: 66, name: 'Odin'});
     expect(response.body.worlds).toHaveLength(8);
@@ -131,11 +134,24 @@ describe('GET /api/party-finder', () => {
         dutyComplete: false,
         loot: 'lootmaster',
         parties: 1,
-        // The open slots say which roles they take.
+        // A job's framed icon; the open slots say which jobs they take.
         slots: [
-          {job: 'PLD', roles: []},
-          {job: null, roles: ['tank']},
-          {job: null, roles: ['healer', 'dps']},
+          {job: 'PLD', icon: 62119, roles: [], accepts: []},
+          {
+            job: null,
+            icon: null,
+            roles: ['tank'],
+            accepts: [{role: 'tank', jobs: ['PLD', 'WAR', 'DRK', 'GNB']}],
+          },
+          {
+            job: null,
+            icon: null,
+            roles: ['healer', 'dps'],
+            accepts: [
+              {role: 'healer', jobs: ['WHM', 'SCH', 'AST', 'SGE']},
+              {role: 'dps', jobs: ['BLM']},
+            ],
+          },
         ],
         updatedAt: new Date(clock.now!.getTime() - 60_000).toISOString(),
         expiresAt: new Date(clock.now!.getTime() + 3_540_000).toISOString(),
@@ -202,6 +218,43 @@ describe('GET /api/party-finder', () => {
         onePlayerPerJob: false,
       },
     ]);
+  });
+
+  test("names maps, deep dungeons and roulettes, not the duty xivpf's API mistakes them for", async () => {
+    const named = (
+      id: number,
+      category: string,
+      duty: string,
+      dutyType = 'Other',
+    ) => entry({id, category, duty, dutyType, updatedSecondsAgo: id});
+    xivpf.listings = [
+      named(1, 'TreasureHunt', 'Copperbell Mines (Hard)'),
+      named(2, 'DeepDungeon', 'The Keeper of the Lake'),
+      named(3, 'DutyRoulette', 'The Aurum Vale', 'Roulette'),
+      // A map newer than the site's list, and a FATE's zone: no name.
+      named(4, 'TreasureHunt', 'The Stone Vigil (Hard)'),
+      named(5, 'Fate', 'Blunderville'),
+      named(6, 'Dungeon', 'Copperbell Mines (Hard)', 'Normal'),
+    ];
+
+    const response = await board();
+
+    const duties = Object.fromEntries(
+      response.body.listings.map(
+        (l: {id: string; duty: string | null; highEnd: boolean}) => [
+          l.id,
+          [l.duty, l.highEnd],
+        ],
+      ),
+    );
+    expect(duties).toStrictEqual({
+      '66-1': ['Kumbhiraskin Treasure Map', false],
+      '66-2': ["Pilgrim's Traverse", false],
+      '66-3': ['Duty Roulette: Expert', false],
+      '66-4': [null, false],
+      '66-5': [null, false],
+      '66-6': ['Copperbell Mines (Hard)', true],
+    });
   });
 
   test("skips entries it doesn't understand", async () => {

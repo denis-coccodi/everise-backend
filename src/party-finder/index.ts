@@ -8,3 +8,4 @@ export {
   XivpfFetch,
 } from './party-finder-board';
 export {PartyFinderRouter} from './party-finder-router';
+export {PARTY_FINDER_IMAGES} from './xivpf-duties';

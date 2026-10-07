@@ -10,12 +10,16 @@ const PartyFinderListing = z.strictObject({
   id: z.string(),
   recruiter: z.string(),
   description: z.string(),
-  // The world it was made on, and the recruiter's own.
+  // The world it was made on (where the party gathers: the game's
+  // "Location"), and the recruiter's own.
   world: World,
   homeWorld: World,
   // xivpf's category name, e.g. "HighEndDuty", "TheHunt"; "None" for a
   // listing without a duty.
   category: z.string(),
+  // The duty, or for a Treasure Hunt the map, for a Deep Dungeon the
+  // dungeon, for a Duty Roulette the roulette; null when it has none or
+  // can't be told.
   duty: z.string().nullable(),
   highEnd: z.boolean(),
   // Only joinable from its own world (the Hunt, FATEs...); the others from
@@ -28,9 +32,16 @@ const PartyFinderListing = z.strictObject({
   dutyComplete: z.boolean(),
   loot: z.enum(['normal', 'greed-only', 'lootmaster']),
   parties: z.number().int(),
-  // Each slot: the job in it, or (job null) the roles it's open to.
+  // Each slot: the job in it and its icon (an image id for
+  // GET /api/images/:id), or (job null) the roles it's open to and the jobs
+  // it accepts, by role.
   slots: z.array(
-    z.strictObject({job: z.string().nullable(), roles: z.array(Role)}),
+    z.strictObject({
+      job: z.string().nullable(),
+      icon: z.number().int().nullable(),
+      roles: z.array(Role),
+      accepts: z.array(z.strictObject({role: Role, jobs: z.array(z.string())})),
+    }),
   ),
   updatedAt: isoDate,
   expiresAt: isoDate,
@@ -43,6 +54,14 @@ const PartyFinderResponse = responseSchema(
     worlds: z.array(World),
     // When the site last read the listings from xivpf.
     fetchedAt: isoDate,
+    // The Party Finder's icons (image ids for GET /api/images/:id): an open
+    // slot's roles, and the sprout of a listing that welcomes beginners.
+    icons: z.strictObject({
+      tank: z.number().int(),
+      healer: z.number().int(),
+      dps: z.number().int(),
+      beginner: z.number().int(),
+    }),
     listings: z.array(PartyFinderListing),
   }),
 );
