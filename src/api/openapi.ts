@@ -81,24 +81,37 @@ function operation(spec: RouteSpec) {
     },
   };
 
-  const bodyType =
-    spec.bodyType === 'multipart' ? 'multipart/form-data' : 'application/json';
   return {
     tags: [spec.tag ?? spec.path.split('/')[1]],
     summary: spec.summary,
+    description: spec.auth?.mode === 'admin' ? 'Admins only.' : undefined,
     security:
-      spec.auth?.mode === 'required'
+      spec.auth?.mode === 'required' || spec.auth?.mode === 'admin'
         ? [{token: []}]
         : spec.auth?.mode === 'optional'
           ? [{token: []}, {}]
           : undefined,
     parameters: parameters(spec),
-    requestBody: spec.body && {
-      required: !spec.body.safeParse(undefined).success,
-      content: {[bodyType]: {schema: ref(spec.body, requestSchemas)}},
-    },
+    requestBody: requestBody(spec),
     responses,
   };
+}
+
+function requestBody(spec: RouteSpec) {
+  if (spec.bodyType === 'image') {
+    return {
+      required: true,
+      content: {'image/*': {schema: {type: 'string', format: 'binary'}}},
+    };
+  }
+  return (
+    spec.body && {
+      required: !spec.body.safeParse(undefined).success,
+      content: {
+        'application/json': {schema: ref(spec.body, requestSchemas)},
+      },
+    }
+  );
 }
 
 // The OpenAPI 3.1 document of every route defined with route(): served at

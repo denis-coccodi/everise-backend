@@ -1,6 +1,6 @@
-import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
+import {route} from '../api';
 import {config} from '../config';
 import {
   EmailNotConfirmedError,
@@ -20,14 +20,15 @@ import {
 import {EmailConfirmation} from './email-confirmation';
 import {User} from './user';
 import {
-  ALL_ERRORS,
-  bio,
-  email,
-  image,
-  newPassword,
-  signInPassword,
-  username,
-} from './user-fields';
+  ConfirmationResponse,
+  EmailConfirmationToken,
+  LoginUser,
+  NewUser,
+  RegistrationResponse,
+  ResendConfirmation,
+  UserResponse,
+  UserUpdate,
+} from './user-schemas';
 import {UsersService} from './users-service';
 
 class UserDto {
@@ -102,283 +103,235 @@ class UsersRouter {
 
   get router() {
     const router = express.Router();
+    const signedIn = {200: {description: 'The user.', schema: UserResponse}};
 
-    router.post(
-      '/users',
-      celebrate(
-        {
-          [Segments.BODY]: Joi.object()
-            .keys({
-              user: Joi.object()
-                .keys({
-                  email: email().required(),
-                  username: username().required(),
-                  password: newPassword().required(),
-                })
-                .required(),
-            })
-            .required(),
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/users',
+        summary: 'Sign up',
+        body: NewUser,
+        responses: {
+          201: {
+            description:
+              'Signed in, or (when emails are confirmed) a link was sent.',
+            schema: RegistrationResponse,
+          },
         },
-        ALL_ERRORS,
-      ),
-      async (req, res, next) => {
-        try {
-          const {email, username, password} = req.body.user;
-          const confirming = this.emailConfirmation.enabled;
+      },
+      async (req, res) => {
+        const {email, username, password} = req.body.user;
+        const confirming = this.emailConfirmation.enabled;
+        const user = await this.usersService.registerUser(
+          email,
+          username,
+          password,
+          !confirming,
+        );
 
-          const user = await this.usersService.registerUser(
-            email,
-            username,
-            password,
-            !confirming,
-          );
-
-          // Signed in only once the link in the email is opened.
-          if (confirming) {
-            await this.emailConfirmation.send(user, user.email);
-            return res
-              .status(StatusCodes.CREATED)
-              .json({confirmation: {email: user.email}});
-          }
-
-          return res.status(StatusCodes.CREATED).json(this.signIn(res, user));
-        } catch (err) {
-          return next(err);
+        // Signed in only once the link in the email is opened.
+        if (confirming) {
+          await this.emailConfirmation.send(user, user.email);
+          res
+            .status(StatusCodes.CREATED)
+            .json({confirmation: {email: user.email}});
+          return;
         }
+        res.status(StatusCodes.CREATED).json(this.signIn(res, user));
       },
     );
 
-    router.post(
-      '/users/login',
-      celebrate(
-        {
-          [Segments.BODY]: Joi.object()
-            .keys({
-              user: Joi.object()
-                .keys({
-                  email: email().required(),
-                  password: signInPassword().required(),
-                })
-                .required(),
-            })
-            .required(),
-        },
-        ALL_ERRORS,
-      ),
-      async (req, res, next) => {
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/users/login',
+        summary: 'Sign in with email and password',
+        body: LoginUser,
+        responses: signedIn,
+      },
+      async (req, res) => {
+        const {email, password} = req.body.user;
         try {
-          const {email, password} = req.body.user;
-
-          try {
-            const isValidPassword = await this.usersService.verifyPassword(
-              email,
-              password,
-            );
-
-            if (!isValidPassword) {
-              throw new InvalidCredentialsError();
-            }
-          } catch (err) {
-            if (err instanceof NotFoundError) {
-              throw new InvalidCredentialsError();
-            }
-            throw err;
+          if (!(await this.usersService.verifyPassword(email, password))) {
+            throw new InvalidCredentialsError();
           }
-
-          const user = (await this.usersService.getUserByEmail(email))!;
-          if (!user.emailConfirmed) {
-            throw new EmailNotConfirmedError(user.email);
-          }
-
-          return res.json(this.signIn(res, user));
         } catch (err) {
-          return next(err);
+          if (err instanceof NotFoundError) throw new InvalidCredentialsError();
+          throw err;
         }
+
+        const user = (await this.usersService.getUserByEmail(email))!;
+        if (!user.emailConfirmed) throw new EmailNotConfirmedError(user.email);
+        res.json(this.signIn(res, user));
       },
     );
 
     // Opens a confirmation link: confirms the address and signs in.
-    router.post(
-      '/users/confirm-email',
-      celebrate({
-        [Segments.BODY]: Joi.object()
-          .keys({token: Joi.string().max(200).required()})
-          .required(),
-      }),
-      async (req, res, next) => {
-        try {
-          const user = await this.emailConfirmation.confirm(req.body.token);
-          return res.json(this.signIn(res, user));
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/users/confirm-email',
+        summary: 'Open an email confirmation link (the token from it)',
+        body: EmailConfirmationToken,
+        responses: signedIn,
+      },
+      async (req, res) => {
+        const user = await this.emailConfirmation.confirm(req.body.token);
+        res.json(this.signIn(res, user));
       },
     );
 
     // Sends a sign-up's link again. Answers the same whether or not the
     // address has an account waiting, so it can't be used to find one out.
-    router.post(
-      '/users/confirm-email/resend',
-      celebrate(
-        {
-          [Segments.BODY]: Joi.object()
-            .keys({
-              user: Joi.object().keys({email: email().required()}).required(),
-            })
-            .required(),
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/users/confirm-email/resend',
+        summary: "Send a sign-up's confirmation link again",
+        body: ResendConfirmation,
+        responses: {
+          202: {description: 'Sent, if needed.', schema: ConfirmationResponse},
         },
-        ALL_ERRORS,
-      ),
-      async (req, res, next) => {
-        try {
-          await this.emailConfirmation.resend(req.body.user.email);
-          return res.status(StatusCodes.ACCEPTED).json({
-            confirmation: {email: req.body.user.email},
-          });
-        } catch (err) {
-          return next(err);
-        }
+      },
+      async (req, res) => {
+        await this.emailConfirmation.resend(req.body.user.email);
+        res
+          .status(StatusCodes.ACCEPTED)
+          .json({confirmation: {email: req.body.user.email}});
       },
     );
 
-    router.post('/users/logout', (_req, res) => {
-      res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
-      return res.status(StatusCodes.NO_CONTENT).send();
-    });
+    route(
+      router,
+      {
+        method: 'post',
+        path: '/users/logout',
+        summary: 'Sign out (clears the session cookie)',
+        responses: {204: {description: 'Signed out.'}},
+      },
+      (_req, res) => {
+        res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
+        res.status(StatusCodes.NO_CONTENT).send();
+      },
+    );
 
-    router.get('/user', this.auth.requireAuth, async (req, res) => {
-      const user = req.user!;
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/user',
+        summary: 'The signed-in user',
+        auth: this.auth.required,
+        responses: signedIn,
+      },
+      (req, res) => {
+        res.json(this.toDto(req.user!));
+      },
+    );
 
-      const token = this.jwtService.getToken(user);
-
-      const userDto = new UserDto(user, token);
-
-      return res.json(userDto);
-    });
-
-    router.put(
-      '/user',
-      celebrate(
-        {
-          [Segments.BODY]: Joi.object()
-            .keys({
-              user: Joi.object()
-                .keys({
-                  email: email(),
-                  username: username(),
-                  password: newPassword(),
-                  bio: bio(),
-                  image: image(),
-                  darkMode: Joi.boolean(),
-                })
-                .required(),
-            })
-            .required(),
-        },
-        ALL_ERRORS,
-      ),
-      this.auth.requireAuth,
-      async (req, res, next) => {
-        try {
-          const user = req.user!;
-
-          const {user: updateUserData} = req.body;
-
-          // A new email address is used once its link is opened.
-          const updatedUser = await this.usersService.updateUser(
-            user.id,
-            updateUserData,
-            {confirmNewEmail: this.emailConfirmation.enabled},
-          );
-          if (
-            updatedUser.pendingEmail &&
-            updatedUser.pendingEmail !== user.pendingEmail
-          ) {
-            await this.emailConfirmation.send(
-              updatedUser,
-              updatedUser.pendingEmail,
-            );
-          }
-
-          const token = this.jwtService.getToken(updatedUser);
-
-          const userDto = new UserDto(updatedUser, token);
-
-          return res.json(userDto);
-        } catch (err) {
-          return next(err);
+    route(
+      router,
+      {
+        method: 'put',
+        path: '/user',
+        summary: 'Change the settings',
+        auth: this.auth.required,
+        body: UserUpdate,
+        responses: signedIn,
+      },
+      async (req, res) => {
+        const user = req.user!;
+        // A new email address is used once its link is opened.
+        const updated = await this.usersService.updateUser(
+          user.id,
+          req.body.user,
+          {confirmNewEmail: this.emailConfirmation.enabled},
+        );
+        if (
+          updated.pendingEmail &&
+          updated.pendingEmail !== user.pendingEmail
+        ) {
+          await this.emailConfirmation.send(updated, updated.pendingEmail);
         }
+        res.json(this.toDto(updated));
       },
     );
 
     // Uploads a new profile picture (the file as the request body) and
     // replaces the old one.
-    router.put(
-      '/user/image',
-      this.auth.requireAuth,
+    route(
+      router,
+      {
+        method: 'put',
+        path: '/user/image',
+        summary: 'Upload a profile picture (the file as the body)',
+        auth: this.auth.required,
+        bodyType: 'image',
+        responses: signedIn,
+      },
       readImageBody,
-      async (req, res, next) => {
-        try {
-          const user = req.user!;
-          if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
-            throw new InvalidImageError('Choose a picture to upload.');
-          }
-
-          const id = await this.profileImagesService.save(
-            user.id,
-            new Uint8Array(req.body),
-          );
-          const updated = await this.usersService.setImage(
-            user.id,
-            profileImageUrl(id),
-          );
-          await this.deleteUploadedImage(user);
-
-          return res.json(this.toDto(updated));
-        } catch (err) {
-          return next(err);
+      async (req, res) => {
+        const user = req.user!;
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+          throw new InvalidImageError('Choose a picture to upload.');
         }
+        const id = await this.profileImagesService.save(
+          user.id,
+          new Uint8Array(req.body),
+        );
+        const updated = await this.usersService.setImage(
+          user.id,
+          profileImageUrl(id),
+        );
+        await this.deleteUploadedImage(user);
+        res.json(this.toDto(updated));
       },
     );
 
     // Removes the profile picture, back to the default one.
-    router.delete(
-      '/user/image',
-      this.auth.requireAuth,
-      async (req, res, next) => {
-        try {
-          const user = req.user!;
-          const updated = await this.usersService.setImage(user.id, undefined);
-          await this.deleteUploadedImage(user);
-
-          return res.json(this.toDto(updated));
-        } catch (err) {
-          return next(err);
-        }
+    route(
+      router,
+      {
+        method: 'delete',
+        path: '/user/image',
+        summary: 'Remove the profile picture',
+        auth: this.auth.required,
+        responses: signedIn,
+      },
+      async (req, res) => {
+        const user = req.user!;
+        const updated = await this.usersService.setImage(user.id, undefined);
+        await this.deleteUploadedImage(user);
+        res.json(this.toDto(updated));
       },
     );
 
-    router.get('/profile-images/:id', async (req, res, next) => {
-      try {
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/profile-images/:id',
+        summary: 'An uploaded profile picture',
+        tag: 'user',
+        responses: {200: {description: 'The picture.', contentType: 'image/*'}},
+      },
+      async (req, res) => {
         const image = await this.profileImagesService.get(req.params.id);
-        if (!image) {
-          throw new NotFoundError('profile image');
-        }
-
-        return (
-          res
-            .type(image.contentType)
-            .set('Cache-Control', PROFILE_IMAGE_CACHE_CONTROL)
-            // The type comes from the file's bytes; never let a browser guess
-            // another, or run anything inside it.
-            .set('X-Content-Type-Options', 'nosniff')
-            .set('Content-Security-Policy', "default-src 'none'; sandbox")
-            .send(Buffer.from(image.data))
-        );
-      } catch (err) {
-        return next(err);
-      }
-    });
+        if (!image) throw new NotFoundError('profile image');
+        res
+          .type(image.contentType)
+          .set('Cache-Control', PROFILE_IMAGE_CACHE_CONTROL)
+          // The type comes from the file's bytes; never let a browser guess
+          // another, or run anything inside it.
+          .set('X-Content-Type-Options', 'nosniff')
+          .set('Content-Security-Policy', "default-src 'none'; sandbox")
+          .send(Buffer.from(image.data));
+      },
+    );
 
     return router;
   }

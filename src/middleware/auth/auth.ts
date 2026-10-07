@@ -1,9 +1,9 @@
 import {NextFunction, Request, RequestHandler, Response} from 'express';
-import {UnauthorizedError} from '../../errors';
+import {ForbiddenError, UnauthorizedError} from '../../errors';
 import {JWTService} from '../../users';
 
 interface AuthCheck {
-  mode: 'required' | 'optional';
+  mode: 'required' | 'optional' | 'admin';
   handler: RequestHandler;
 }
 
@@ -60,6 +60,18 @@ class Auth {
   // that checks it. The OpenAPI document reads the mode.
   readonly required: AuthCheck = {mode: 'required', handler: this.requireAuth};
   readonly optional: AuthCheck = {mode: 'optional', handler: this.optionalAuth};
+  // Signed in as an admin (ADMIN_EMAILS).
+  readonly admin: AuthCheck = {
+    mode: 'admin',
+    handler: (req, res, next) =>
+      this.requireAuth(req, res, err => {
+        if (err) return next(err);
+        if (req.user?.role !== 'admin') {
+          return next(new ForbiddenError('Only an admin can do that.'));
+        }
+        return next();
+      }),
+  };
 
   private getToken = (req: Request) => {
     if (req.cookies?.token) {
