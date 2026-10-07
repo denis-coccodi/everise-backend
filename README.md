@@ -2,7 +2,26 @@
 
 A [TypeScript](https://www.typescriptlang.org/) backend for **Everise**, the Everise FC community site. It runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/) with a [Durable Object](https://developers.cloudflare.com/durable-objects/) as its database, all on the free plan.
 
-It covers users and authentication, profiles and follows, articles, comments, favorites, tags, feeds and pagination.
+[**everise.dev**](https://everise.dev) · [Frontend](https://github.com/denis-coccodi/everise-frontend) · [API docs](https://apis.everise.dev/api/docs) · [OpenAPI document](https://apis.everise.dev/api/openapi.json)
+
+It covers users and authentication (email and password with email confirmation, or Google, Facebook, Microsoft and Discord), profiles and follows, posts, comments, favorites, tags, feeds and pagination, image uploads and GIF search, live updates over WebSockets, a Final Fantasy XIV Duty Roulette from cached game data, Discord announcements, an AI chat room with game characters (Workers AI), and admin tools.
+
+## Tech stack
+
+| Part        | Choice                                                                                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime     | [Cloudflare Workers](https://developers.cloudflare.com/workers/), Node.js compatibility                                                                    |
+| Language    | [TypeScript 6](https://www.typescriptlang.org/), strict, no `any` in `src/`                                                                                |
+| HTTP        | [Express 5](https://expressjs.com/), through Cloudflare's Node.js HTTP server support                                                                      |
+| Validation  | [zod 4](https://zod.dev): request checks, typed handlers, and the OpenAPI 3.1 document ([API description](#api-description))                               |
+| Database    | A [Durable Object](https://developers.cloudflare.com/durable-objects/) with SQLite storage: documents in a SQL table with indexes, one-step atomic updates |
+| Files       | [R2](https://developers.cloudflare.com/r2/) for uploaded images, served through the edge cache                                                           |
+| Real time   | WebSockets on a second Durable Object (hibernating), for the live feed and the chat room                                                                  |
+| AI          | [Workers AI](https://developers.cloudflare.com/workers-ai/) (Gemma), within the free daily budget                                                          |
+| Auth        | JWTs in an HTTP-only cookie, bcrypt passwords, OAuth sign-in, email confirmation through [Resend](https://resend.com)                                     |
+| Tests       | [Jest 30](https://jestjs.io) and supertest against the real app and SQLite (`node:sqlite`); every response checked against its schema                      |
+| Quality     | [gts](https://github.com/google/gts) (ESLint 9, Prettier 3), file size limits, a committed OpenAPI document checked in CI                                 |
+| Delivery    | GitHub Actions: tests on every pull request, staging deploy and smoke test on merge, production by hand; staging behind Cloudflare Access                   |
 
 # How it works
 
@@ -16,18 +35,40 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
                                                                 └─ /api/*     Express app ──RPC──> Durable Object "EveriseDb"
 ```
 
-| Folder             | Contents                                                           |
-| ------------------ | ------------------------------------------------------------------ |
-| `src/worker.ts`    | Worker entry point: starts the Express app and exports `EveriseDb` |
-| `src/app.ts`       | Express setup: CORS, JSON, cookies, routers, error handler         |
-| `src/users`        | Registration, login, logout, current user, JWTs                    |
-| `src/social-login` | Sign-in and sign-up with Google, Facebook, Microsoft and Discord   |
-| `src/profiles`     | Profiles and follows                                               |
-| `src/articles`     | Articles, comments, favorites, tags and feeds                      |
-| `src/middleware`   | Authentication (`requireAuth` / `optionalAuth`)                    |
-| `src/db`           | The SQL document store and the `EveriseDb` Durable Object          |
-| `__tests__`        | API tests, one file per endpoint                                   |
-| `public`           | Static assets, e.g. the default avatar                             |
+Code is organised by feature: each folder has its router, service, schemas and an `index.ts` that the others import from.
+
+| Folder               | Contents                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/worker.ts`      | Worker entry point: starts the Express app, routes WebSockets, caches uploads, exports the Durable Objects |
+| `src/app.ts`         | Express setup: CORS, JSON, cookies, routers, error handler                                      |
+| `src/api`            | `route()`, the zod helpers and the OpenAPI document (`/api/openapi.json`, `/api/docs`)          |
+| `src/errors`         | `HttpError` and the errors the API answers with                                                 |
+| `src/users`          | Registration, login, logout, current user, JWTs, profile pictures, email confirmation           |
+| `src/social-login`   | Sign-in and sign-up with Google, Facebook, Microsoft and Discord                                |
+| `src/profiles`       | Profiles and follows                                                                            |
+| `src/articles`       | Posts, comments, favorites, tags and feeds                                                      |
+| `src/media`          | Image and GIF uploads, attachments, GIPHY search, YouTube links                                 |
+| `src/files`          | Where uploaded files' bytes live (R2 in the Worker, memory in tests)                            |
+| `src/duties`         | The cached Final Fantasy XIV data and its images                                                |
+| `src/roulette-posts` | Posting roulette results, by members and guests                                                 |
+| `src/waking-sands`   | The AI chat room and its characters                                                             |
+| `src/live`           | Live updates: the WebSocket hub Durable Object                                                  |
+| `src/discord`        | Announcements and the server widget                                                             |
+| `src/admin`          | Roles, staging access, member deletion, Tataru and the characters                               |
+| `src/middleware`     | Authentication (`Auth`: required, optional, admin)                                              |
+| `src/db`             | The SQL document store and the `EveriseDb` Durable Object                                       |
+| `__tests__`          | API tests, one folder per feature, plus concurrency and OpenAPI checks                          |
+| `public`             | Static assets, e.g. the default avatar                                                          |
+
+## API description
+
+Every endpoint is defined once, with `route()` (`src/api`): its method and path, who may call it, [zod](https://zod.dev) schemas for its parameters, query and body, and a schema for each answer. That one definition:
+
+- **checks each request.** A 422 lists one message per failing field, and the handler gets the values parsed and typed;
+- **builds the API's description**, OpenAPI 3.1: **`GET /api/openapi.json`**, browsable and testable at **[`/api/docs`](https://apis.everise.dev/api/docs)** (Swagger UI);
+- **checks every answer in the tests.** With `CHECK_API_RESPONSES` (on in the tests), an answer that doesn't match its schema, or a status the route doesn't declare, fails with a 500.
+
+`openapi.json` at the repository root is the committed copy. `npm test` rewrites it when routes change and fails once, so the change is committed with the code. The [frontend](https://github.com/denis-coccodi/everise-frontend) generates its API types from that file (`openapi-typescript`), and its CI fails when they drift, so the two sides can't disagree about a field. Limits the forms also enforce (e.g. the chat's line length) are sent in the answers instead of being copied.
 
 ## Endpoints
 
@@ -188,6 +229,8 @@ An accepted roulette result is posted to the feeds as an article tagged `roulett
 
 Errors keep the RealWorld shape, `{"errors": {"body": ["…"]}}`. The sign-up, sign-in and settings endpoints return messages written for the person filling in the form (`src/users/user-fields.ts`), all of them at once: "Enter a valid email address, like name@example.com.", "That username is taken. Try another one.", "Wrong email or password." (which never says whether the email exists).
 
+Every error the API answers on purpose extends `HttpError` (`src/errors`), which carries its status, any headers (e.g. `Retry-After`) and extra fields, so the one error handler needs no list of cases. Anything else is a 500 with "internal server error"; the details go to the log only.
+
 ## FFXIV duties
 
 The backend keeps a copy of Final Fantasy XIV game data, read from [XIVAPI](https://v2.xivapi.com/api/docs), which serves the game's own data sheets: every duty and duty roulette (`ContentFinderCondition`, `ContentRoulette`), the combat jobs (`ClassJob`), and the images they refer to.
@@ -331,7 +374,19 @@ curl http://localhost:8080/api/tags
    ```
 1. Run `npm test`.
 
-The tests run the Express app in Node against an in-memory SQLite database, so they need nothing else running. After the tests, `npm test` also type-checks and lints the code.
+The tests run the Express app in Node against an in-memory SQLite database (`node:sqlite`, the same store code as the Durable Object), so they need nothing else running. Every answer is checked against its declared schema, and `__tests__/concurrency` fires requests together to prove the one-step database operations hold. After the tests, `npm test` also type-checks, lints, checks formatting (Prettier) and checks file sizes; it must exit 0 before pushing.
+
+## Code conventions
+
+The rules the code follows are written down for people and AI assistants alike in [`.claude/skills/backend-best-practices/SKILL.md`](.claude/skills/backend-best-practices/SKILL.md). In short:
+
+- **By feature, in layers.** A router only reads the request, calls services and writes the answer; rules and data access live in services, which get everything they use (database, other services, the clock) through their constructor, so tests can replace it.
+- **One definition per endpoint** with `route()` and zod ([API description](#api-description)); no hand-written routes, no copied limits.
+- **Errors** extend `HttpError`, with messages written for the person reading them.
+- **Types:** strict TypeScript, no `any` in `src/` (lint fails), settings read once through a zod schema (`src/config.ts`), Workers types generated by `wrangler types`.
+- **Data:** a read that leads to a write uses the store's one-step operations (`addToSet`, `increment`, `createUnique`, `takeLease`), never a get and an update; file bytes go to R2, written before their document and deleted before it.
+- **Size limits** (`npm run sizes`): routers at most 300 lines, services and other files 350. A file that grows past them is split, never exempted.
+- **Dependencies** are kept current; CI and pull requests run the same `npm test`.
 
 # Deployment
 
@@ -356,8 +411,8 @@ Three GitHub Actions workflows:
 
 **CI/CD** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
 
-1. **test**: installs dependencies and runs `npm test` (tests, type-check and lint).
-1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user and, with email confirmation on, checks that signing in waits for the emailed link (otherwise it creates an article and reads it back), and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
+1. **test**: installs dependencies and runs `npm test` (tests, type-check, lint, format and size checks).
+1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user and, with email confirmation on, checks that signing in waits for the emailed link (otherwise it creates an article and reads it back, and uploads an image and reads that back), and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
 
 Pull requests only run **test**, and it must pass before the PR can be merged. Each staging run leaves one smoke-test user (unconfirmed, with email confirmation on) in the staging database, and one Resend email.
 
@@ -389,7 +444,7 @@ The `production` GitHub environment only accepts the `main` branch.
 `scripts/smoke.sh` can be run against any running instance:
 
 ```
-sh scripts/smoke.sh create <base-url> /tmp/jar.txt   # register, create an article, read it back
+sh scripts/smoke.sh create <base-url> /tmp/jar.txt   # register, create an article and upload an image, read them back
 sh scripts/smoke.sh verify <base-url> /tmp/jar.txt   # after a restart or redeploy: is the data still there?
 ```
 
