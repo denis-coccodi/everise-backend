@@ -10,17 +10,6 @@ const LIMITS = [
   {kind: 'other TypeScript', test: f => f.endsWith('.ts'), max: 350},
 ];
 
-// Files that were already over their limit when the check came in, each held
-// to the size it had then: they may shrink, never grow. Lower or remove an
-// entry when its file gets split.
-const KNOWN_OVER = {
-  'src/users/users-router.ts': 351,
-  'src/users/users-service.ts': 440,
-  'src/articles/articles-service.ts': 570,
-  'src/waking-sands/waking-sands-service.ts': 475,
-  'src/duties/xivapi-client.ts': 530,
-};
-
 const files = [];
 const walk = dir => {
   for (const entry of readdirSync(dir, {withFileTypes: true})) {
@@ -32,20 +21,16 @@ const walk = dir => {
 walk('src');
 
 const over = [];
-const shrunk = [];
 for (const file of files) {
   const limit = LIMITS.find(l => l.test(file));
   if (!limit) continue;
   const lines = readFileSync(file, 'utf8').trimEnd().split('\n').length;
-  const max = KNOWN_OVER[file] ?? limit.max;
+  const {max} = limit;
   if (lines > max) {
     over.push(`${file}: ${lines} lines (a ${limit.kind} may have ${max})`);
-  } else if (file in KNOWN_OVER && lines < max) {
-    shrunk.push(`${file}: ${lines} lines; lower its KNOWN_OVER entry`);
   }
 }
 
-if (shrunk.length > 0) console.log('Shrunk:\n  ' + shrunk.join('\n  '));
 if (over.length > 0) {
   console.error(
     'Too long; split it (a router per resource, plain functions, a smaller service):\n  ' +

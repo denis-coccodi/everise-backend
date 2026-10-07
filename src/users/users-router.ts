@@ -5,18 +5,11 @@ import {config} from '../config';
 import {
   EmailNotConfirmedError,
   InvalidCredentialsError,
-  InvalidImageError,
   NotFoundError,
 } from '../errors';
 import {Auth} from '../middleware';
 import {JWTService} from './jwt-service';
-import {
-  MAX_IMAGE_BYTES,
-  ProfileImagesService,
-  profileImageUrl,
-  tooLarge,
-  uploadedImageId,
-} from './profile-images-service';
+import {ProfileImagesService} from './profile-images-service';
 import {EmailConfirmation} from './email-confirmation';
 import {User} from './user';
 import {
@@ -30,6 +23,7 @@ import {
   UserUpdate,
 } from './user-schemas';
 import {UsersService} from './users-service';
+import {addProfilePictureRoutes, readImageBody} from './profile-picture-routes';
 
 class UserDto {
   readonly user;
@@ -53,16 +47,6 @@ class UserDto {
     };
   }
 }
-
-// An uploaded picture's id never gets new content, so it can be cached for good.
-const PROFILE_IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
-
-// The raw request body, whatever its content type (the picture's format is
-// read from its bytes), up to the size limit.
-const readImageBody: express.RequestHandler = (req, res, next) =>
-  express.raw({type: () => true, limit: MAX_IMAGE_BYTES})(req, res, err =>
-    next(err?.type === 'entity.too.large' ? tooLarge() : err),
-  );
 
 const COOKIE_NAME = 'token';
 const COOKIE_OPTIONS = {
@@ -261,86 +245,14 @@ class UsersRouter {
       },
     );
 
-    // Uploads a new profile picture (the file as the request body) and
-    // replaces the old one.
-    route(
-      router,
-      {
-        method: 'put',
-        path: '/user/image',
-        summary: 'Upload a profile picture (the file as the body)',
-        auth: this.auth.required,
-        bodyType: 'image',
-        responses: signedIn,
-      },
-      readImageBody,
-      async (req, res) => {
-        const user = req.user!;
-        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
-          throw new InvalidImageError('Choose a picture to upload.');
-        }
-        const id = await this.profileImagesService.save(
-          user.id,
-          new Uint8Array(req.body),
-        );
-        const updated = await this.usersService.setImage(
-          user.id,
-          profileImageUrl(id),
-        );
-        await this.deleteUploadedImage(user);
-        res.json(this.toDto(updated));
-      },
-    );
-
-    // Removes the profile picture, back to the default one.
-    route(
-      router,
-      {
-        method: 'delete',
-        path: '/user/image',
-        summary: 'Remove the profile picture',
-        auth: this.auth.required,
-        responses: signedIn,
-      },
-      async (req, res) => {
-        const user = req.user!;
-        const updated = await this.usersService.setImage(user.id, undefined);
-        await this.deleteUploadedImage(user);
-        res.json(this.toDto(updated));
-      },
-    );
-
-    route(
-      router,
-      {
-        method: 'get',
-        path: '/profile-images/:id',
-        summary: 'An uploaded profile picture',
-        tag: 'user',
-        responses: {200: {description: 'The picture.', contentType: 'image/*'}},
-      },
-      async (req, res) => {
-        const image = await this.profileImagesService.get(req.params.id);
-        if (!image) throw new NotFoundError('profile image');
-        res
-          .type(image.contentType)
-          .set('Cache-Control', PROFILE_IMAGE_CACHE_CONTROL)
-          // The type comes from the file's bytes; never let a browser guess
-          // another, or run anything inside it.
-          .set('X-Content-Type-Options', 'nosniff')
-          .set('Content-Security-Policy', "default-src 'none'; sandbox")
-          .send(Buffer.from(image.data));
-      },
-    );
+    addProfilePictureRoutes(router, {
+      auth: this.auth,
+      usersService: this.usersService,
+      profileImagesService: this.profileImagesService,
+      toDto: user => this.toDto(user),
+    });
 
     return router;
-  }
-
-  private async deleteUploadedImage(user: User) {
-    const id = uploadedImageId(user.image);
-    if (id) {
-      await this.profileImagesService.delete(user.id, id);
-    }
   }
 
   private toDto(user: User) {
