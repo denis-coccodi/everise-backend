@@ -2,29 +2,13 @@ import * as util from 'util';
 import {Response} from 'express';
 import {isCelebrateError} from 'celebrate';
 import {StatusCodes} from 'http-status-codes';
-import {
-  AlreadyExistsError,
-  EmailNotConfirmedError,
-  ForbiddenError,
-  InvalidCredentialsError,
-  InvalidImageError,
-  InvalidRoleError,
-  InvalidRouletteResultError,
-  NotFoundError,
-  TooManyRequestsError,
-  UnauthorizedError,
-  UpstreamError,
-} from '../errors';
 import {JsonWebTokenError} from 'jsonwebtoken';
+import {HttpError} from '../errors';
 
-class ErrorsDto {
-  public readonly errors;
-
-  constructor(errors: string[]) {
-    this.errors = {
-      body: errors,
-    };
-  }
+// Every error answer has the same shape: {errors: {body: [messages]}}, plus
+// any fields the error adds.
+function errorsBody(messages: string[]) {
+  return {errors: {body: messages}};
 }
 
 class ErrorHandler {
@@ -33,6 +17,14 @@ class ErrorHandler {
       util.inspect(error, {showHidden: false, depth: null, colors: true})
     );
 
+    // The app's own errors carry their status (see HttpError).
+    if (error instanceof HttpError) {
+      return res
+        .status(error.status)
+        .set(error.headers())
+        .json({...errorsBody([error.publicMessage]), ...error.extraBody()});
+    }
+
     // Every message, also when a schema reports several (abortEarly: false).
     if (isCelebrateError(error)) {
       const errors = Array.from(error.details.values()).flatMap(value =>
@@ -40,91 +32,25 @@ class ErrorHandler {
       );
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .json(new ErrorsDto(errors));
+        .json(errorsBody(errors));
     }
 
+    // Thrown by validation helpers for a value out of its allowed range.
     if (error instanceof RangeError) {
       return res
         .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof InvalidCredentialsError) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof InvalidImageError) {
-      return res.status(error.status).json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof InvalidRoleError) {
-      return res
-        .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof InvalidRouletteResultError) {
-      return res
-        .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof TooManyRequestsError) {
-      return res
-        .status(StatusCodes.TOO_MANY_REQUESTS)
-        .set('Retry-After', String(error.retryAfterSeconds))
-        .json(new ErrorsDto([error.message]));
-    }
-
-    // Its own status, so the sign-in page can offer to send the link again.
-    if (error instanceof EmailNotConfirmedError) {
-      return res.status(StatusCodes.FORBIDDEN).json({
-        ...new ErrorsDto([error.message]),
-        unconfirmedEmail: error.email,
-      });
-    }
-
-    if (error instanceof ForbiddenError) {
-      return res
-        .status(StatusCodes.FORBIDDEN)
-        .json(new ErrorsDto([error.message]));
+        .json(errorsBody([error.message]));
     }
 
     if (error instanceof JsonWebTokenError) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
-        .json(new ErrorsDto(['unauthorized']));
-    }
-
-    if (error instanceof AlreadyExistsError) {
-      return res
-        .status(StatusCodes.UNPROCESSABLE_ENTITY)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof NotFoundError) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json(new ErrorsDto([error.message]));
-    }
-
-    if (error instanceof UnauthorizedError) {
-      return res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json(new ErrorsDto(['unauthorized']));
-    }
-
-    if (error instanceof UpstreamError) {
-      return res
-        .status(StatusCodes.BAD_GATEWAY)
-        .json(new ErrorsDto([error.message]));
+        .json(errorsBody(['unauthorized']));
     }
 
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(new ErrorsDto(['internal server error']));
+      .json(errorsBody(['internal server error']));
   }
 }
 

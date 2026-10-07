@@ -1,3 +1,12 @@
 {
-  "extends": "./node_modules/gts/"
+  "extends": "./node_modules/gts/",
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "error"
+  },
+  "overrides": [
+    {
+      "files": ["__tests__/**/*.ts"],
+      "rules": {"@typescript-eslint/no-explicit-any": "off"}
+    }
+  ]
 }
