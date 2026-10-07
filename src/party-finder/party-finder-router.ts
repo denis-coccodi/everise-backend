@@ -3,6 +3,7 @@ import {route} from '../api';
 import {UpstreamError} from '../errors';
 import {PartyFinderSource} from './party-finder-board';
 import {PartyFinderQuery, PartyFinderResponse} from './party-finder-schemas';
+import {PARTY_FINDER_ICONS} from './xivpf-duties';
 
 // The Party Finder page: a data centre's listings, as xivpf.com collects
 // them from players' Remote Party Finder plugin. Open to everyone.
@@ -31,7 +32,9 @@ class PartyFinderRouter {
           );
         }
         // The same for everyone, and fresh for a short while.
-        res.set('Cache-Control', 'public, max-age=15').json(board);
+        res
+          .set('Cache-Control', 'public, max-age=15')
+          .json({...board, icons: PARTY_FINDER_ICONS});
       },
     );
 

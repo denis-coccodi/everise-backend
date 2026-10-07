@@ -8,6 +8,7 @@ import {
   Role,
   Roulette,
 } from './duty';
+import {PARTY_FINDER_IMAGES} from '../party-finder';
 
 // XIVAPI's records read as duties, roulettes, jobs and their images.
 
@@ -211,6 +212,7 @@ function imagesOf(
   };
 
   jobs.forEach(job => add(job.icon, 'png'));
+  PARTY_FINDER_IMAGES.forEach(id => add(id, 'png'));
   groups.forEach(group => add(group.icon, 'png'));
   add(rouletteIcon, 'png');
   roulettes.forEach(roulette => add(roulette.image, 'jpg'));

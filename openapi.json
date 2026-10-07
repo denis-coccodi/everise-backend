@@ -4523,6 +4523,38 @@
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
+          "icons": {
+            "type": "object",
+            "properties": {
+              "tank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "healer": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dps": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "beginner": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "tank",
+              "healer",
+              "dps",
+              "beginner"
+            ],
+            "additionalProperties": false
+          },
           "listings": {
             "type": "array",
             "items": {
@@ -4641,6 +4673,18 @@
                           "null"
                         ]
                       },
+                      "icon": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
                       "roles": {
                         "type": "array",
                         "items": {
@@ -4651,11 +4695,40 @@
                             "dps"
                           ]
                         }
+                      },
+                      "accepts": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "tank",
+                                "healer",
+                                "dps"
+                              ]
+                            },
+                            "jobs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "role",
+                            "jobs"
+                          ],
+                          "additionalProperties": false
+                        }
                       }
                     },
                     "required": [
                       "job",
-                      "roles"
+                      "icon",
+                      "roles",
+                      "accepts"
                     ],
                     "additionalProperties": false
                   }
@@ -4700,6 +4773,7 @@
           "dataCentre",
           "worlds",
           "fetchedAt",
+          "icons",
           "listings"
         ],
         "additionalProperties": false
