@@ -1,18 +1,18 @@
 import 'jest-extended';
-import {DocumentStore} from '../../src/db';
+import {SqlDocumentStore} from '../../src/db';
 import {
   ProfileImagesService,
   TataruAccount,
   UsersService,
   uploadedImageId,
 } from '../../src/users';
-import {MemoryStorage} from '../utils/memory-storage';
+import {SqliteStorage} from '../utils/sqlite-storage';
 import {readFile} from 'fs/promises';
 import {join} from 'path';
 
 describe('TataruAccount', () => {
   async function setup() {
-    const db = new DocumentStore(new MemoryStorage());
+    const db = new SqlDocumentStore(new SqliteStorage());
     const users = new UsersService(db);
     const images = new ProfileImagesService(db);
     const loads: string[] = [];
@@ -55,7 +55,7 @@ describe('TataruAccount', () => {
   });
 
   test('keeps her as she is when the bundled picture is missing', async () => {
-    const db = new DocumentStore(new MemoryStorage());
+    const db = new SqlDocumentStore(new SqliteStorage());
     const users = new UsersService(db);
     const tataru = new TataruAccount(
       users,

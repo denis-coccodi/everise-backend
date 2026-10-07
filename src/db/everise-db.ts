@@ -1,16 +1,29 @@
 import {DurableObject} from 'cloudflare:workers';
 import {Db, DocData, FindOptions, Write} from './db';
-import {DocumentStore} from './document-store';
+import {copyKeyValueDocuments} from './key-value-copy';
+import {SqlDocumentStore} from './sql-document-store';
 
 // The Durable Object instance that holds the whole database. The name selects
 // the storage: a different name is a different, empty database.
 const DB_NAME = 'everise';
 
-// A single Durable Object instance holds the whole database. Its storage is
-// strongly consistent and requests to it are serialized, so read-then-write
-// sequences (e.g. "is this username taken?") don't race each other.
+// A single Durable Object instance holds the whole database, in its SQLite
+// storage (SqlDocumentStore). Each call runs on its own, but two calls from
+// one request can have another request's calls between them.
 class EveriseDb extends DurableObject {
-  private readonly store = new DocumentStore(this.ctx.storage);
+  private readonly store: SqlDocumentStore;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.store = new SqlDocumentStore(ctx.storage);
+    // Before the first request: the data from before the SQL table.
+    void ctx.blockConcurrencyWhile(async () => {
+      const copied = await copyKeyValueDocuments(ctx.storage, this.store);
+      if (copied > 0) {
+        console.log(`Copied ${copied} documents from key-value storage.`);
+      }
+    });
+  }
 
   get(collection: string, id: string) {
     return this.store.get(collection, id);

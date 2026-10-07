@@ -5,17 +5,18 @@ description: How the EveriseDb document store is laid out (collections, fields, 
 
 # Everise database structure
 
-The whole database is one Durable Object instance, named `everise`, of the class `EveriseDb` (SQLite-backed, `src/db/everise-db.ts`), wrapping `DocumentStore` (`src/db/document-store.ts`).
+The whole database is one Durable Object instance, named `everise`, of the class `EveriseDb` (SQLite-backed, `src/db/everise-db.ts`), wrapping `SqlDocumentStore` (`src/db/sql-document-store.ts`).
 
 - The instance name selects the storage: a different name is a different, empty database. Never change `DB_NAME` without a data copy.
 - Both environments' databases were recreated empty in October 2026 (namespaces `be-prod_EveriseDb`, `be-staging_EveriseDb`); `wrangler.jsonc` has one migration, `v1`. Applied migrations must never be edited or removed: add new ones.
 
-- Key: `<collection>/<id>`; value: the JSON document.
+- Table `docs`: `collection`, `id` (primary key together), `data` (the fields as JSON; dates as `{"$date": ms}`, bytes as `{"$bytes": base64}`, see `src/db/json-values.ts`), `created_at`, `updated_at` (ms). Table `meta`: one-time steps done (the key-value copy).
+- Before the SQL table (until October 2026) documents were key-value entries `<collection>/<id>`; `src/db/key-value-copy.ts` copies them once on the Durable Object's first start and leaves them as a backup.
 - The store adds `id` (UUID), `createdAt`, `updatedAt` to every document. An update that changes no field keeps `updatedAt`.
-- `find` lists by key prefix, then filters (`==`, `array-contains`), sorts and paginates in memory. No indexes.
-- Requests to the Durable Object are serialized, so read-then-write uniqueness checks (username, email) are safe.
+- `find` is one SQL query (`==` via `json_extract`, `array-contains` via `json_each`, ORDER BY, LIMIT/OFFSET, ties by id). Field names are written into the SQL (checked as plain words) so SQLite can use the expression indexes; every filtered field must be in `INDEXED`.
+- Each call is atomic and `batch` is a transaction, but a read and a later write are two RPC calls: another request's calls can come between them.
 - References are plain ids; nothing enforces them. Services check existence.
-- Tests use the same `DocumentStore` on in-memory storage (`__tests__/utils/memory-storage.ts`).
+- Tests use the same `SqlDocumentStore` on in-memory SQLite (`__tests__/utils/sqlite-storage.ts`, `node:sqlite`).
 - No backup job exists. Durable Objects have 30-day point-in-time recovery, unused by the app.
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |

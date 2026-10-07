@@ -25,7 +25,7 @@ Browser ──> frontend Worker "prod" ──/api/*, service binding──> Work
 | `src/profiles`     | Profiles and follows                                               |
 | `src/articles`     | Articles, comments, favorites, tags and feeds                      |
 | `src/middleware`   | Authentication (`requireAuth` / `optionalAuth`)                    |
-| `src/db`           | The document store and the `EveriseDb` Durable Object              |
+| `src/db`           | The SQL document store and the `EveriseDb` Durable Object          |
 | `__tests__`        | API tests, one file per endpoint                                   |
 | `public`           | Static assets, e.g. the default avatar                             |
 
@@ -215,17 +215,19 @@ The Frontline daily map isn't in the game data, so it is computed without any AP
 
 ![Database structure](docs/db-structure.svg)
 
-The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app uses it as a small NoSQL document store (`src/db`):
+The database is a single instance, named `everise`, of the `EveriseDb` Durable Object class, with SQLite-backed storage. The app keeps documents in one SQL table there (`src/db`):
 
-- **Documents and keys.** Every document is a JSON value stored under the key `<collection>/<id>`, e.g. `users/2f1c…`. The app's collections are `users`, `follows`, `articles`, `comments`, `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`), `media` (images and GIFs uploaded for posts and comments, one document each with the bytes and the uploader's `userId`), `emailConfirmations` (the confirmation link waiting to be opened, one per account, holding its token's hash), `postLimits` (when each person last posted a roulette result, and the guests' hourly count) `chatUsage` (the Neurons the Waking Sands spent each UTC day, in all and per member) and `characters` (what admins changed about a Waking Sands character: title, personality, picture), `sandsLines` (the Waking Sands room's last day of lines) and `sandsRoom` (who's in the room, and whether a round of answers is running). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
+- **Documents.** Every document is a row of the `docs` table: its `collection` and `id`, its fields as JSON in `data` (dates as `{"$date": ms}`, bytes as `{"$bytes": base64}`, read back as `Date` and `Uint8Array`), and `created_at`/`updated_at`. The app's collections are `users`, `follows`, `articles`, `comments`, `profileImages` (uploaded pictures, one document each with the bytes and the owner's `userId`), `media` (images and GIFs uploaded for posts and comments, one document each with the bytes and the uploader's `userId`), `emailConfirmations` (the confirmation link waiting to be opened, one per account, holding its token's hash), `postLimits` (when each person last posted a roulette result, and the guests' hourly count) `chatUsage` (the Neurons the Waking Sands spent each UTC day, in all and per member) and `characters` (what admins changed about a Waking Sands character: title, personality, picture), `sandsLines` (the Waking Sands room's last day of lines) and `sandsRoom` (who's in the room, and whether a round of answers is running). The cached FFXIV data adds `dutyGroups` (one document per duty group), `dutyRoulettes`, `jobs` and `dutyRefreshes` (one document each), which every refresh replaces, and `gameImages` (one document per image, its id the game's icon id, holding the bytes) with `gameImageDownloads` (the refresh's pending downloads and an index of the stored images).
 - **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
-- **Queries.** `find` lists a collection by key prefix, then filters (`==` or `array-contains`), sorts and paginates in memory. This is fine at this app's scale but would need indexes for large data.
-- **Consistency.** The Durable Object handles one request at a time and its storage is strongly consistent, so checks like "is this username taken?" can't race.
-- **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `DocumentStore` on an in-memory storage, so they exercise the real query logic.
+- **Queries.** `find` is one SQL query: `==` and `array-contains` filters (`json_extract`, `json_each`), sorting, `LIMIT`/`OFFSET`. Every field a service filters on has an index (`INDEXED` in `src/db/sql-document-store.ts`), as does the creation date; a new filter on another field should add one.
+- **Consistency.** Each call to the database runs on its own, and a `batch` is one transaction. A service's read and its write are two calls, though, and another request's calls can come between them.
+- **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `SqlDocumentStore` on an in-memory SQLite database (`node:sqlite`), so they run the real SQL.
 
 Data is stored durably by Cloudflare. Locally it lives in `.wrangler/state`.
+
+Until October 2026 the documents were key-value entries (`<collection>/<id>`). On its first start, the Durable Object copies them into the `docs` table once (`src/db/key-value-copy.ts`, recorded in the `meta` table) before answering any request; the key-value entries are left as they were, as a backup.
 
 The instance name selects the storage: a different name is a different, empty database. Every deploy counts articles before and after and fails if any were lost.
 
@@ -328,7 +330,7 @@ curl http://localhost:8080/api/tags
    ```
 1. Run `npm test`.
 
-The tests run the Express app in Node against an in-memory document store, so they need nothing else running. After the tests, `npm test` also type-checks and lints the code.
+The tests run the Express app in Node against an in-memory SQLite database, so they need nothing else running. After the tests, `npm test` also type-checks and lints the code.
 
 # Deployment
 

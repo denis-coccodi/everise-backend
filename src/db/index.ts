@@ -1,2 +1,3 @@
 export {Db, Doc} from './db';
-export {DocumentStore, KeyValueStorage} from './document-store';
+export {KeyValueList, copyKeyValueDocuments} from './key-value-copy';
+export {SqlDocumentStore, SqlStorage} from './sql-document-store';

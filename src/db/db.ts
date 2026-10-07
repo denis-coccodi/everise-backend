@@ -28,8 +28,8 @@ type Write =
   | {op: 'delete'; collection: string; id: string}
   | {op: 'update'; collection: string; id: string; data: DocData};
 
-// A minimal NoSQL document store. Implemented by `DocumentStore`, which runs
-// inside the `EveriseDb` Durable Object in production and in memory in tests.
+// A minimal document store. Implemented by `SqlDocumentStore`, which runs
+// inside the `EveriseDb` Durable Object, and on in-memory SQLite in tests.
 interface Db {
   get<T extends Doc>(collection: string, id: string): Promise<T | undefined>;
   find<T extends Doc>(collection: string, options?: FindOptions): Promise<T[]>;
