@@ -1,4 +1,6 @@
 import * as express from 'express';
+import {route} from '../api';
+import {DiscordWidgetResponse} from './discord-schemas';
 import {DiscordWidgetReader} from './discord-widget';
 
 // The Discord server's widget for the home page: who's online, from
@@ -9,15 +11,22 @@ class DiscordRouter {
   get router() {
     const router = express.Router();
 
-    router.get('/discord/widget', async (_req, res, next) => {
-      try {
-        return res
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/discord/widget',
+        summary: "Who's online on the Discord server",
+        responses: {
+          200: {description: 'The widget.', schema: DiscordWidgetResponse},
+        },
+      },
+      async (_req, res) => {
+        res
           .set('Cache-Control', 'public, max-age=60')
           .json({widget: await this.widget.read()});
-      } catch (err) {
-        return next(err);
-      }
-    });
+      },
+    );
 
     return router;
   }

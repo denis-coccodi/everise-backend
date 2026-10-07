@@ -1,1 +1,1 @@
-export {Auth} from './auth';
+export {Auth, AuthCheck} from './auth';

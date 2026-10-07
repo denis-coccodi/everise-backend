@@ -22,7 +22,7 @@ class ErrorHandler {
       return res
         .status(error.status)
         .set(error.headers())
-        .json({...errorsBody([error.publicMessage]), ...error.extraBody()});
+        .json({...errorsBody(error.messages()), ...error.extraBody()});
     }
 
     // Every message, also when a schema reports several (abortEarly: false).

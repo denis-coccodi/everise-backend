@@ -1,6 +1,11 @@
-import {NextFunction, Request, Response} from 'express';
+import {NextFunction, Request, RequestHandler, Response} from 'express';
 import {UnauthorizedError} from '../../errors';
 import {JWTService} from '../../users';
+
+interface AuthCheck {
+  mode: 'required' | 'optional';
+  handler: RequestHandler;
+}
 
 class Auth {
   constructor(private readonly jwtService: JWTService) {}
@@ -51,6 +56,11 @@ class Auth {
     }
   };
 
+  // For route(): whether a route needs a signed-in user, and the middleware
+  // that checks it. The OpenAPI document reads the mode.
+  readonly required: AuthCheck = {mode: 'required', handler: this.requireAuth};
+  readonly optional: AuthCheck = {mode: 'optional', handler: this.optionalAuth};
+
   private getToken = (req: Request) => {
     if (req.cookies?.token) {
       return req.cookies.token as string;
@@ -69,4 +79,4 @@ class Auth {
   };
 }
 
-export {Auth};
+export {Auth, AuthCheck};
