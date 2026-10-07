@@ -12,6 +12,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - A router class takes its services (and `Auth`) in its constructor and builds an `express.Router` in its `router` getter. `src/app.ts` puts it together and mounts it under `/api`.
 - Every route checks its input with `celebrate` (`Segments.BODY`, `PARAMS`, `QUERY`). Give limits a message the user can read (`.messages({'string.max': ...})`) and take the numbers from constants the service exports. Don't copy them.
 - Sign-in: `this.auth.requireAuth` / `this.auth.optionalAuth`; `req.user` is then set (or `undefined`).
+- Read route params with `routeParam(req, 'id')` (`src/middleware`), not `req.params.id`: Express 5 types a param as `string | string[]` whenever a validator sits before the handler.
 - A router only reads the request, calls services, and writes the response (status from `StatusCodes`, body as a DTO). Rules and data access belong in the service.
 - Express 5 forwards a rejected async handler to the error middleware by itself. New handlers just `throw` or `await`; they don't need `try { ... } catch (err) { next(err) }`. The older handlers still have that wrapper; take it out when you are editing one of them anyway.
 
@@ -34,6 +35,8 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - No `any` in `src/` (lint fails: `@typescript-eslint/no-explicit-any`). Use `unknown` and narrow it, or write the type. Tests may use `any`.
 - Stored documents are interfaces that extend `Doc`; read them with `db.get<T>()` / `db.find<T>()`.
 - Settings come from `config` (`src/config.ts`), checked once by its Joi schema. Never read `process.env` anywhere else. A new setting goes in the schema, `wrangler.jsonc` (or as a secret), and the test env in `__tests__/utils/env.ts`.
+- Workers runtime types (`DurableObjectNamespace`, `Request`, `Env`, `ctx.storage`) come from `worker-configuration.d.ts`, made by `wrangler types` on every `npm install` and not committed. After changing `wrangler.jsonc` (a binding, a variable), run `npx wrangler types`. Don't hand-write runtime types.
+- A Durable Object's RPC stub types drop generics; type the stub once where it is wrapped (see `DurableObjectDb`), not at each call.
 
 ## Data and concurrency
 
@@ -45,6 +48,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - Tests go through the HTTP API with `supertest` against the app from `__tests__/utils` (in-memory store, fake clock, fake XIVAPI). Clients like `usersClient` make the setup short.
 - Every new route gets tests for the success case, its validation messages, sign-in (401) and permissions (403), and any limit (429 with `Retry-After`).
 - Fix time and chance through the service's `now`/`random`. Tests never call the real network; external services have fakes in `__tests__/utils`.
+- The API sends dates as ISO strings. Compare them with `atOrAfter(iso)` from `__tests__/utils`, not jest-extended's date matchers, which need `Date` objects.
 
 ## Size limits (`npm run sizes`, part of `npm test`)
 
@@ -65,3 +69,9 @@ npx prettier --check src __tests__ scripts
 ```
 
 Keep comments at the density of the surrounding code: a line on what a class or constant is for, and on any rule that isn't obvious from the code.
+
+## Dependencies
+
+- The Jest setup is CommonJS (ts-jest). Packages that ship only ESM (celebrate 16, faker 10) can't be loaded by the tests; stay on their last CommonJS major until the test setup changes.
+- `npm audit --omit=dev` must report 0 vulnerabilities. When a fix sits outside a dependency's pinned range, use `overrides` in `package.json` (as for celebrate's lodash), with a compatible version.
+- TypeScript is pinned below what ts-jest supports (`<7` today). TypeScript 6 needs `types` listed in `tsconfig.json` and an explicit `moduleResolution`; the deprecated default makes ts-jest emit nothing ("Unable to process ... outDir").

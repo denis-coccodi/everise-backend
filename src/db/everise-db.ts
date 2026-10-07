@@ -1,5 +1,4 @@
 import {DurableObject} from 'cloudflare:workers';
-import type {DurableObjectNamespace} from 'cloudflare:workers';
 import {Db, DocData, FindOptions, Write} from './db';
 import {DocumentStore} from './document-store';
 
@@ -50,12 +49,14 @@ class EveriseDb extends DurableObject {
 // so a fresh one is created per call (this is cheap).
 class DurableObjectDb implements Db {
   constructor(
-    private readonly namespace: DurableObjectNamespace<Db>,
+    private readonly namespace: DurableObjectNamespace<EveriseDb>,
     private readonly name = DB_NAME
   ) {}
 
-  private get stub() {
-    return this.namespace.getByName(this.name);
+  // The RPC stub's types wrap every result (for promise pipelining) and drop
+  // the store's generics; the values are copies of the same documents.
+  private get stub(): Db {
+    return this.namespace.getByName(this.name) as unknown as Db;
   }
 
   get: Db['get'] = (collection, id) => this.stub.get(collection, id);

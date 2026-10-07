@@ -3,7 +3,7 @@ import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {config} from '../config';
 import {NotFoundError, UnauthorizedError} from '../errors';
-import {Auth} from '../middleware';
+import {Auth, routeParam} from '../middleware';
 import {Profile, ProfilesService} from '../profiles';
 import {UsersService} from '../users';
 import {ArticleDto} from './article-dto';
@@ -120,7 +120,7 @@ class ArticlesRouter {
         try {
           const user = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           await this.articlesService.favoriteArticle(id, user.id);
 
@@ -159,7 +159,7 @@ class ArticlesRouter {
         try {
           const author = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const {body, media} = req.body.comment;
 
@@ -244,7 +244,7 @@ class ArticlesRouter {
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const article = await this.articlesService.requireArticle(id);
 
@@ -396,7 +396,7 @@ class ArticlesRouter {
       this.auth.optionalAuth,
       async (req, res, next) => {
         try {
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const comments = await this.articlesService.listComments({
             orderBy: [
@@ -451,7 +451,7 @@ class ArticlesRouter {
         try {
           const author = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const article = await this.articlesService.requireArticle(id);
 
@@ -498,7 +498,7 @@ class ArticlesRouter {
         try {
           const author = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           const article = await this.articlesService.requireArticle(id);
 
@@ -524,7 +524,7 @@ class ArticlesRouter {
         try {
           const user = req.user!;
 
-          const {id} = req.params;
+          const id = routeParam(req, 'id');
 
           await this.articlesService.unfavoriteArticle(id, user.id);
 
@@ -549,8 +549,8 @@ class ArticlesRouter {
       async (req, res, next) => {
         try {
           const author = req.user!;
-
-          const {id, commentId} = req.params;
+          const id = routeParam(req, 'id');
+          const commentId = routeParam(req, 'commentId');
 
           const comment = await this.articlesService.getCommentById(commentId);
 

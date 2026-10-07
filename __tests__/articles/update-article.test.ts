@@ -3,7 +3,7 @@ import request from 'supertest';
 import slugify from 'slugify';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
-import {articlesClient, clearDb, jwt, usersClient} from '../utils';
+import {atOrAfter, articlesClient, clearDb, jwt, usersClient} from '../utils';
 
 describe('PUT /api/articles/:slug', () => {
   function makeUpdateArticleUrl(slug: string) {
@@ -49,8 +49,8 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
-        article.article.updatedAt
+      expect(updateArticleResponse.body.article.updatedAt).toEqual(
+        atOrAfter(article.article.updatedAt)
       );
     });
 
@@ -82,8 +82,8 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
-        article.article.updatedAt
+      expect(updateArticleResponse.body.article.updatedAt).toEqual(
+        atOrAfter(article.article.updatedAt)
       );
     });
 
@@ -143,8 +143,8 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
-        article.article.updatedAt
+      expect(updateArticleResponse.body.article.updatedAt).toEqual(
+        atOrAfter(article.article.updatedAt)
       );
     });
 
@@ -174,8 +174,8 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
-        article.article.updatedAt
+      expect(updateArticleResponse.body.article.updatedAt).toEqual(
+        atOrAfter(article.article.updatedAt)
       );
     });
 
@@ -205,8 +205,8 @@ describe('PUT /api/articles/:slug', () => {
           updatedAt: expect.toBeDateString(),
         },
       });
-      expect(updateArticleResponse.body.article.updatedAt).toBeAfterOrEqualTo(
-        article.article.updatedAt
+      expect(updateArticleResponse.body.article.updatedAt).toEqual(
+        atOrAfter(article.article.updatedAt)
       );
     });
   });

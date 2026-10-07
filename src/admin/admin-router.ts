@@ -2,7 +2,7 @@ import {celebrate, Joi, Segments} from 'celebrate';
 import * as express from 'express';
 import {config} from '../config';
 import {ForbiddenError, InvalidImageError} from '../errors';
-import {Auth} from '../middleware';
+import {Auth, routeParam} from '../middleware';
 import {
   ASSIGNABLE_ROLES,
   AssignableRole,
@@ -121,7 +121,7 @@ class AdminRouter {
       async (req, res, next) => {
         try {
           const user = await this.usersService.setRole(
-            req.params.id,
+            routeParam(req, 'id'),
             req.body.role as AssignableRole
           );
           const stagingAccess = await this.syncStagingAccess();
@@ -136,7 +136,7 @@ class AdminRouter {
     // policy's "Deleting your data"). Admins and system accounts can't be.
     router.delete('/admin/users/:id', async (req, res, next) => {
       try {
-        const deleted = await this.memberDeletion.delete(req.params.id);
+        const deleted = await this.memberDeletion.delete(routeParam(req, 'id'));
         // A deleted staging tester loses staging access too.
         const stagingAccess = deleted.wasStagingTester
           ? await this.syncStagingAccess()
@@ -251,13 +251,13 @@ class AdminRouter {
       async (req, res, next) => {
         try {
           if (
-            req.params.id !== 'tataru' &&
+            routeParam(req, 'id') !== 'tataru' &&
             req.body.character.bio !== undefined
           ) {
             throw new RangeError('Only Tataru has a bio.');
           }
           const character = await this.characters.update(
-            req.params.id,
+            routeParam(req, 'id'),
             req.body.character
           );
           return res.json({character});
@@ -278,7 +278,7 @@ class AdminRouter {
             throw new InvalidImageError('Choose a picture to upload.');
           }
           const character = await this.characters.setPicture(
-            req.params.id,
+            routeParam(req, 'id'),
             new Uint8Array(req.body)
           );
           return res.json({character});
