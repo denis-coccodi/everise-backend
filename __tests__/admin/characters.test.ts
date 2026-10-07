@@ -46,6 +46,7 @@ describe('editing the Waking Sands characters', () => {
       'urianger',
       'yshtola',
       'barnaby',
+      'bernadette',
     ]);
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
@@ -112,6 +113,42 @@ describe('editing the Waking Sands characters', () => {
     expect(reset.body.character.persona).toBe(
       reset.body.character.defaultPersona,
     );
+  });
+
+  test('Bernadette is edited like the others: title, personality and picture', async () => {
+    const admin = as(await adminToken());
+
+    const saved = await admin.put('/api/admin/characters/bernadette').send({
+      character: {
+        title: 'Astrologian on holiday',
+        persona: 'You are Bernie, and every card you draw is the Balance.',
+      },
+    });
+    const pictured = await admin
+      .put('/api/admin/characters/bernadette/image')
+      .set('content-type', 'image/png')
+      .send(png);
+
+    expect(saved.status).toBe(200);
+    expect(saved.body.character).toMatchObject({
+      title: 'Astrologian on holiday',
+      persona: 'You are Bernie, and every card you draw is the Balance.',
+      edited: {title: true, persona: true},
+    });
+    expect(saved.body.character.defaultPersona).toContain('Astrologian');
+    expect(pictured.status).toBe(200);
+    expect(pictured.body.character.image).toContain('/api/profile-images/');
+    const listed = await request(app).get('/api/waking-sands/room');
+    expect(listed.body.characters[4]).toMatchObject({
+      id: 'bernadette',
+      title: 'Astrologian on holiday',
+      image: pictured.body.character.image,
+    });
+
+    // Back to her defaults, for the other tests.
+    await admin
+      .put('/api/admin/characters/bernadette')
+      .send({character: {title: '', persona: ''}});
   });
 
   test("Tataru's bio is her account's", async () => {

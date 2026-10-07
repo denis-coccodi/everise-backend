@@ -95,10 +95,16 @@ describe('the Waking Sands room', () => {
         title: 'Self-proclaimed primal slayer and a right bad influence',
         image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
       },
+      {
+        id: 'bernadette',
+        name: 'Bernadette Starling',
+        title: 'Astrologian of Vesper Bay, fortunes by the Twelve',
+        image: `${config.baseUrl}/api/waking-sands/characters/bernadette/picture`,
+      },
     ]);
   });
 
-  test.each(['urianger', 'yshtola', 'barnaby'])(
+  test.each(['urianger', 'yshtola', 'barnaby', 'bernadette'])(
     "serves %s's picture",
     async id => {
       const response = await request(app).get(
