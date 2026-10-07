@@ -1,4 +1,4 @@
-import {RequestHandler, Router} from 'express';
+import {Request, RequestHandler, Router} from 'express';
 import {z} from 'zod';
 import {config} from '../config';
 import {ValidationError} from '../errors';
@@ -34,8 +34,9 @@ interface RouteSpec<
   // Query values arrive as strings: use z.coerce for numbers.
   query?: Q;
   body?: B;
-  // How the body is sent: JSON, or a form with a file.
-  bodyType?: 'json' | 'multipart';
+  // How the body is sent: JSON, or a picture's bytes as they are (checked by
+  // the handler, which reads them with readImageBody).
+  bodyType?: 'json' | 'image';
   responses: Record<number, ResponseSpec>;
 }
 
@@ -63,7 +64,7 @@ function route<
     Output<P, Record<string, string>>,
     unknown,
     Output<B, unknown>,
-    Output<Q, Record<string, never>>
+    Output<Q, Request['query']>
   >[]
 ) {
   routeSpecs.set(`${spec.method} ${spec.path}`, spec as RouteSpec);

@@ -14,8 +14,7 @@ const LIMITS = [
 // to the size it had then: they may shrink, never grow. Lower or remove an
 // entry when its file gets split.
 const KNOWN_OVER = {
-  'src/admin/admin-router.ts': 308,
-  'src/users/users-router.ts': 398,
+  'src/users/users-router.ts': 351,
   'src/articles/articles-router.ts': 588,
   'src/users/users-service.ts': 522,
   'src/articles/articles-service.ts': 583,
