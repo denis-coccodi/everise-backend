@@ -203,7 +203,7 @@ The backend keeps a copy of Final Fantasy XIV game data, read from [XIVAPI](http
 
 Run both after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)), which makes all the calls. Before the first refresh the lists are empty, with `fetchedAt: null`.
 
-Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. A duty anyone can enter at level 1 but that syncs to a level (treasure dungeons) takes the sync level as its `level`, and duties outside the Duty Finder and Raid Finder report no Duty Finder settings (the game marks them anyway). `src/duties/xivapi-client.ts` has the rules.
+Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. A duty anyone can enter at level 1 but that syncs to a level (treasure dungeons) takes the sync level as its `level`, and duties outside the Duty Finder and Raid Finder report no Duty Finder settings (the game marks them anyway). `src/duties/xivapi-records.ts` has the rules.
 
 ### Game resets
 

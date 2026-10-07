@@ -66,7 +66,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 | other `.ts`    | 350       |
 
 - When a file hits its limit, split it rather than squeezing it: a separate router per resource (e.g. comments apart from articles), pure helpers in their own file (as `roulette-result.ts` is), or a smaller service for one job.
-- `KNOWN_OVER` in `scripts/check-sizes.mjs` holds the files that were already too long when the check came in, each at its size then. They may shrink, never grow. When one gets split, lower or remove its entry (the script says when).
+- No file is exempt: never raise a limit or add an exception to make a file pass.
 
 ## Before pushing
 

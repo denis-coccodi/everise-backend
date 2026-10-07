@@ -21,18 +21,18 @@ The whole database is one Durable Object instance, named `everise`, of the class
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |
-| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru), emailConfirmed? (false until a password sign-up opens its link; unset: confirmed), pendingEmail? (a new address waiting for its link) | `src/users/users-service.ts` (`UserDoc`) |
+| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), system? (an account the app posts as: Tataru), emailConfirmed? (false until a password sign-up opens its link; unset: confirmed), pendingEmail? (a new address waiting for its link) | `src/users/user-doc.ts` (`UserDoc`) |
 | `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
-| `articles` | authorId → users, slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, media? (up to 4 attachments: image, gif or YouTube video; unset on posts from before, whose media is in the body), roulette? (a roulette result card) | `src/articles/articles-service.ts` (`ArticleDoc`) |
-| `comments` | articleId → articles, authorId → users, body, media? (one attachment) | `src/articles/articles-service.ts` (`CommentDoc`) |
+| `articles` | authorId → users, slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, media? (up to 4 attachments: image, gif or YouTube video; unset on posts from before, whose media is in the body), roulette? (a roulette result card) | `src/articles/article-docs.ts` (`ArticleDoc`) |
+| `comments` | articleId → articles, authorId → users, body, media? (one attachment) | `src/articles/article-docs.ts` (`CommentDoc`) |
 | `media` | userId → users, contentType, width, height, data (≤ 1 MB), uploadedAt (ms, the daily limit), attached? (false until a post or comment uses it; swept a day later) | `src/media/media-service.ts` (`MediaDoc`) |
 | `emailConfirmations` | userId → users, email (the address the link went to), tokenHash (SHA-256), expiresAt, lastSentAt, sendsToday, dayStartedAt (one per account; deleted when opened) | `src/users/email-confirmation.ts` (`ConfirmationDoc`) |
 | `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`) | `src/roulette-posts/roulette-posts-service.ts` |
 | `profileImages` | userId → users (or `character:<id>` for a Waking Sands character's picture), contentType, data (bytes, ≤ 300 KB); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
 | `characters` | title?, persona?, image? (an uploaded picture's URL; the file is a `profileImages` document owned by `character:<id>`) (id: the character's id, e.g. `barnaby`; unset fields keep the default from `characters.ts`) | `src/waking-sands/characters-service.ts` (`CharacterDoc`) |
-| `sandsLines` | at (ms, strictly increasing), from (`member`, `note` or a character id), name, image?, userId? → users (a member's line), text (the room's last day, at most 200; older ones deleted on write) | `src/waking-sands/waking-sands-service.ts` (`LineDoc`) |
-| `sandsRoom` | present[] (character ids), busyUntil (ms; a round of answers is running) (one document, id `room`) | `src/waking-sands/waking-sands-service.ts` (`RoomDoc`) |
-| `chatUsage` | neurons, members ({users.id: Neurons}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/waking-sands-service.ts` (`UsageDoc`) |
+| `sandsLines` | at (ms, strictly increasing), from (`member`, `note` or a character id), name, image?, userId? → users (a member's line), text (the room's last day, at most 200; older ones deleted on write) | `src/waking-sands/sands-docs.ts` (`LineDoc`) |
+| `sandsRoom` | present[] (character ids), busyUntil (ms; a round of answers is running) (one document, id `room`) | `src/waking-sands/sands-docs.ts` (`RoomDoc`) |
+| `chatUsage` | neurons, members ({users.id: Neurons}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/sands-docs.ts` (`UsageDoc`) |
 
 Tags and favorites have no collection of their own; they are arrays on articles.
 

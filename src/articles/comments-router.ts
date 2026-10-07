@@ -6,6 +6,7 @@ import {Auth} from '../middleware';
 import {ProfilesService, profileView} from '../profiles';
 import {CommentResponse, CommentsResponse, NewComment} from './article-schemas';
 import {ArticlesService} from './articles-service';
+import {CommentsService} from './comments-service';
 import {Comment} from './comment';
 
 const noContent = {204: {description: 'Done.'}};
@@ -15,6 +16,7 @@ class CommentsRouter {
   constructor(
     private readonly auth: Auth,
     private readonly articlesService: ArticlesService,
+    private readonly commentsService: CommentsService,
     private readonly profilesService: ProfilesService,
   ) {}
 
@@ -48,7 +50,7 @@ class CommentsRouter {
         },
       },
       async (req, res) => {
-        const comments = await this.articlesService.listComments({
+        const comments = await this.commentsService.listComments({
           orderBy: [{field: 'createdAt', direction: 'desc'}],
           article: req.params.id,
         });
@@ -74,7 +76,7 @@ class CommentsRouter {
       },
       async (req, res) => {
         const {body, media} = req.body.comment;
-        const comment = await this.articlesService.addCommentTo(
+        const comment = await this.commentsService.addCommentTo(
           req.params.id,
           req.user!.id,
           body,
@@ -98,7 +100,7 @@ class CommentsRouter {
       async (req, res) => {
         const {id, commentId} = req.params;
         const user = req.user!;
-        const comment = await this.articlesService.getCommentById(commentId);
+        const comment = await this.commentsService.getCommentById(commentId);
         if (!comment) {
           throw new NotFoundError(`comment "${commentId}" not found`);
         }
@@ -113,7 +115,7 @@ class CommentsRouter {
             `comment "${commentId}" not found in post ${id}`,
           );
         }
-        await this.articlesService.deleteCommentById(comment.id);
+        await this.commentsService.deleteCommentById(comment.id);
         res.sendStatus(StatusCodes.NO_CONTENT);
       },
     );

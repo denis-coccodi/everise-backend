@@ -1,129 +1,23 @@
-import slugify from 'slugify';
-import {Db, Doc} from '../db';
+import {Db} from '../db';
 import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
-import {Article, RouletteCard} from './article';
-import {ArticleDto} from './article-dto';
-import {Comment} from './comment';
+import {Article} from './article';
+import {announceArticle} from './announce-article';
 import {ProfilesService} from '../profiles';
 import {LiveFeed, noLiveFeed} from '../live/live-feed';
-import {
-  Attachment,
-  attachmentsFromText,
-  cleanAttachment,
-  currentAttachment,
-  uploadIdOf,
-} from '../media/attachments';
+import {attachmentsFromText, cleanAttachment} from '../media/attachments';
 import {MediaService} from '../media/media-service';
-
-// What the site sends for an attachment; checked and tidied before saving.
-type AttachmentInput = Parameters<typeof cleanAttachment>[0];
-
-interface CreateArticleParams {
-  title: string;
-  description: string;
-  body: string;
-  tags?: string[];
-  roulette?: RouletteCard;
-  media?: AttachmentInput[];
-}
-
-interface ListArticlesParams {
-  orderBy: {
-    field: 'createdAt';
-    direction: 'asc' | 'desc';
-  }[];
-  tag?: string;
-  authorId?: string;
-  favoritedByUserId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-interface UserFeedParams {
-  userId: string;
-  limit?: number;
-  offset?: number;
-}
-
-interface UpdateArticleParams {
-  title?: string;
-  description?: string;
-  body?: string;
-  tags?: string[];
-  favoritedBy?: string[];
-  media?: AttachmentInput[];
-}
-
-interface ListCommentsParams {
-  orderBy: {
-    field: 'createdAt';
-    direction: 'asc' | 'desc';
-  }[];
-  // The post's id (or an old link's slug).
-  article?: string;
-}
-
-interface ArticleDoc extends Doc {
-  authorId: string;
-  // Only on posts made before they had ids in their links, to keep those
-  // links working: a slug made from the title.
-  slug?: string;
-  title: string;
-  description: string;
-  body: string;
-  tags: string[];
-  favoritedBy: string[];
-  roulette?: RouletteCard;
-  // Unset on posts from before attachments: their media is in the text.
-  media?: Attachment[];
-}
-
-interface CommentDoc extends Doc {
-  articleId: string;
-  authorId: string;
-  body: string;
-  media?: Attachment;
-}
-
-function toArticle(doc: ArticleDoc): Article {
-  // A post from before attachments shows its text's media as attachments,
-  // like new posts; the stored post isn't changed.
-  const {attachments, text} = doc.media
-    ? {attachments: doc.media, text: doc.body}
-    : attachmentsFromText(doc.body);
-  return new Article(
-    doc.id,
-    doc.authorId,
-    doc.slug,
-    doc.title,
-    doc.description,
-    text,
-    doc.tags,
-    doc.favoritedBy,
-    doc.createdAt,
-    doc.updatedAt,
-    doc.roulette,
-    attachments.map(currentAttachment),
-  );
-}
-
-function toComment(doc: CommentDoc): Comment {
-  return new Comment(
-    doc.id,
-    doc.articleId,
-    doc.authorId,
-    doc.body,
-    doc.createdAt,
-    doc.updatedAt,
-    doc.media ? currentAttachment(doc.media) : null,
-  );
-}
-
-// The site's own uploads among some attachments, by id.
-function uploadsIn(media: Attachment[]): string[] {
-  return media.flatMap(item => uploadIdOf(item) ?? []);
-}
+import {
+  ArticleDoc,
+  CommentDoc,
+  CreateArticleParams,
+  ListArticlesParams,
+  UpdateArticleParams,
+  UserFeedParams,
+  tidyTags,
+  toArticle,
+  uploadsIn,
+} from './article-docs';
 
 class ArticlesService {
   private readonly articlesCollection = 'articles';
@@ -149,7 +43,7 @@ class ArticlesService {
     let tags: string[] = [];
 
     if (params.tags) {
-      tags = this.prepareTags(params.tags);
+      tags = tidyTags(params.tags);
     }
 
     const media = (params.media ?? []).map(cleanAttachment);
@@ -171,7 +65,7 @@ class ArticlesService {
     );
     await this.mediaService?.claim(authorId, uploadsIn(media));
 
-    await this.announce(articleDoc);
+    await announceArticle(this.liveFeed, this.profilesService, articleDoc);
 
     return toArticle(articleDoc);
   }
@@ -349,11 +243,7 @@ class ArticlesService {
     }
 
     if (params.tags) {
-      articleData.tags = this.prepareTags(params.tags);
-    }
-
-    if (params.favoritedBy) {
-      articleData.favoritedBy = this.prepareFavoritedBy(params.favoritedBy);
+      articleData.tags = tidyTags(params.tags);
     }
 
     const updatedDoc = await this.db.update<ArticleDoc>(
@@ -364,7 +254,6 @@ class ArticlesService {
         description: articleData.description,
         body: articleData.body,
         tags: articleData.tags,
-        favoritedBy: articleData.favoritedBy,
         ...(media ? {media} : {}),
       },
     );
@@ -443,127 +332,6 @@ class ArticlesService {
       'favoritedBy',
       user.id,
     );
-  }
-
-  async addComment(
-    articleId: string,
-    authorId: string,
-    body: string,
-    attachment?: AttachmentInput,
-  ): Promise<Comment> {
-    if (!(await this.getArticleById(articleId))) {
-      throw new NotFoundError(`article ${articleId} not found`);
-    }
-
-    if (!(await this.usersService.getUserById(authorId))) {
-      throw new NotFoundError(`user "${authorId}" not found`);
-    }
-
-    const media = attachment ? cleanAttachment(attachment) : undefined;
-    if (!body.trim() && !media) {
-      throw new RangeError('Write a comment, or add an image, GIF or video.');
-    }
-
-    const commentData = {
-      articleId,
-      authorId,
-      body,
-      ...(media ? {media} : {}),
-    };
-
-    const commentDoc = await this.db.create<CommentDoc>(
-      this.commentsCollection,
-      commentData,
-    );
-    if (media) {
-      await this.mediaService?.claim(authorId, uploadsIn([media]));
-    }
-
-    return toComment(commentDoc);
-  }
-
-  async addCommentTo(
-    key: string,
-    authorId: string,
-    body: string,
-    attachment?: AttachmentInput,
-  ): Promise<Comment> {
-    const article = await this.requireArticle(key);
-
-    return await this.addComment(article.id, authorId, body, attachment);
-  }
-
-  async getCommentById(commentId: string): Promise<Comment | undefined> {
-    const commentDoc = await this.db.get<CommentDoc>(
-      this.commentsCollection,
-      commentId,
-    );
-
-    return commentDoc && toComment(commentDoc);
-  }
-
-  async listComments(params: ListCommentsParams): Promise<Comment[]> {
-    if (params.orderBy.length === 0) {
-      throw new RangeError('"params.orderBy" must have at least 1 element');
-    }
-
-    const where = [];
-
-    if (params.article) {
-      const article = await this.requireArticle(params.article);
-
-      where.push({field: 'articleId', op: '==' as const, value: article.id});
-    }
-
-    const commentDocs = await this.db.find<CommentDoc>(
-      this.commentsCollection,
-      {where, orderBy: params.orderBy},
-    );
-
-    return commentDocs.map(toComment);
-  }
-
-  async deleteCommentById(commentId: string) {
-    const comment = await this.getCommentById(commentId);
-
-    if (!comment) {
-      throw new NotFoundError(`comment "${commentId}" not found`);
-    }
-
-    if (comment.media) {
-      await this.mediaService?.release(
-        comment.authorId,
-        uploadsIn([comment.media]),
-      );
-    }
-    await this.db.delete(this.commentsCollection, comment.id);
-  }
-
-  // Tells the live feeds about a new article. The article is saved either
-  // way: live updates are a convenience, and pages catch up on reload.
-  private async announce(doc: ArticleDoc) {
-    try {
-      // As anyone who isn't signed in sees it.
-      const author = await this.profilesService.getProfile(doc.authorId);
-      await this.liveFeed.publish({
-        type: 'article-created',
-        article: new ArticleDto(toArticle(doc), false, author).article,
-      });
-    } catch (err) {
-      console.error('live update failed', err);
-    }
-  }
-
-  private prepareTags(tags: string[]) {
-    tags = [...new Set(tags.map(tag => slugify(tag.toLowerCase())))];
-    tags.sort();
-    return tags;
-  }
-
-  private prepareFavoritedBy(favoritedBy: string[]) {
-    favoritedBy = Array.from(new Set(favoritedBy));
-    favoritedBy.sort();
-    return favoritedBy;
   }
 }
 

@@ -7,7 +7,12 @@ import {
   MemberDeletion,
   StagingAccess,
 } from './admin';
-import {ArticlesRouter, ArticlesService, CommentsRouter} from './articles';
+import {
+  ArticlesRouter,
+  ArticlesService,
+  CommentsRouter,
+  CommentsService,
+} from './articles';
 import {config} from './config';
 import {Db} from './db';
 import {
@@ -111,6 +116,12 @@ function createApp(
     ),
     mediaService,
   );
+  const commentsService = new CommentsService(
+    db,
+    articlesService,
+    usersService,
+    mediaService,
+  );
 
   const auth = new Auth(jwtService);
 
@@ -187,6 +198,7 @@ function createApp(
   const commentsRouter = new CommentsRouter(
     auth,
     articlesService,
+    commentsService,
     profilesService,
   ).router;
 

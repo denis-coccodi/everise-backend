@@ -1,25 +1,19 @@
-import * as bcrypt from 'bcryptjs';
 import {randomBytes} from 'crypto';
 import {config} from '../config';
 import {Db} from '../db';
-import {
-  AlreadyExistsError,
-  InvalidRoleError,
-  MissingEmailError,
-  NotFoundError,
-} from '../errors';
+import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
 import {AssignableRole, User} from './user';
 import {
   UpdateUserParams,
   UserDoc,
   SystemUserParams,
   ProviderSignIn,
-  PROVIDER_FIELDS,
-  PROVIDER_NAMES,
   RESERVED_USERNAMES,
   isAdminEmail,
   toUser,
 } from './user-doc';
+import {checkNewPassword, hashPassword, passwordMatches} from './passwords';
+import {ProviderSignIns} from './provider-sign-ins';
 
 // How long an unconfirmed sign-up keeps its username.
 const UNCONFIRMED_DAYS = 7;
@@ -45,9 +39,9 @@ class UsersService {
 
     await this.validateUsernameOrThrow(username);
 
-    await this.validatePasswordOrThrow(password);
+    checkNewPassword(password);
 
-    const passwordHash = await this.hashPassword(password);
+    const passwordHash = await hashPassword(password);
 
     const userData = {
       email,
@@ -72,66 +66,9 @@ class UsersService {
     return toUser(userDoc);
   }
 
-  // Signs in with a provider's account: the account it was tied to before,
-  // else the one with the same email (tying them together from now on),
-  // else a new one. `created` says which.
-  async signInWithProvider(
-    signIn: ProviderSignIn,
-    attempt = 1,
-  ): Promise<{user: User; created: boolean}> {
-    const field = PROVIDER_FIELDS[signIn.provider];
-    const [tied] = await this.db.find<UserDoc>(this.usersCollection, {
-      where: [{field, op: '==', value: signIn.id}],
-      limit: 1,
-    });
-    if (tied) {
-      return {user: toUser(tied), created: false};
-    }
-
-    if (!signIn.email) {
-      throw new MissingEmailError(PROVIDER_NAMES[signIn.provider]);
-    }
-    const email = signIn.email.toLowerCase();
-    const sameEmail = (await this.db.find<UserDoc>(this.usersCollection)).find(
-      doc => doc.email.toLowerCase() === email,
-    );
-    if (sameEmail) {
-      if (sameEmail.system) {
-        throw new AlreadyExistsError(
-          'That email belongs to an account nobody can sign in to.',
-        );
-      }
-      // The provider has confirmed the email. An account whose email wasn't
-      // confirmed may have been made by someone else with this address, so
-      // its password goes: the owner can set a new one in the settings.
-      const unconfirmed = sameEmail.emailConfirmed === false;
-      const linked = await this.db.update<UserDoc>(
-        this.usersCollection,
-        sameEmail.id,
-        unconfirmed
-          ? {[field]: signIn.id, emailConfirmed: true, passwordHash: undefined}
-          : {[field]: signIn.id},
-      );
-      return {user: toUser(linked!), created: false};
-    }
-
-    const userDoc = await this.db.createUnique<UserDoc>(
-      this.usersCollection,
-      {
-        email,
-        username: await this.freeUsername(signIn.name, email),
-        [field]: signIn.id,
-      },
-      [['email'], ['username'], [field]],
-    );
-    // Another request made the account meanwhile: sign in to that one.
-    if (!userDoc && attempt < 3) {
-      return this.signInWithProvider(signIn, attempt + 1);
-    }
-    if (!userDoc) {
-      throw new AlreadyExistsError('That account was just taken. Try again.');
-    }
-    return {user: toUser(userDoc), created: true};
+  // Signs in with a provider's account (see ProviderSignIns).
+  async signInWithProvider(signIn: ProviderSignIn) {
+    return new ProviderSignIns(this.db, this).signInWithProvider(signIn);
   }
 
   async getUserById(userId: string): Promise<User | undefined> {
@@ -189,8 +126,8 @@ class UsersService {
     }
 
     if (params.password) {
-      await this.validatePasswordOrThrow(params.password);
-      const passwordHash = await this.hashPassword(params.password);
+      checkNewPassword(params.password);
+      const passwordHash = await hashPassword(params.password);
       userData.passwordHash = passwordHash;
     }
 
@@ -283,7 +220,7 @@ class UsersService {
     const userDoc = await this.db.create<UserDoc>(this.usersCollection, {
       ...params,
       username,
-      passwordHash: await this.hashPassword(randomBytes(32).toString('hex')),
+      passwordHash: await hashPassword(randomBytes(32).toString('hex')),
       system: true,
     });
 
@@ -302,7 +239,7 @@ class UsersService {
       return false;
     }
 
-    return await bcrypt.compare(password, userDoc.passwordHash);
+    return await passwordMatches(password, userDoc.passwordHash);
   }
 
   // Everyone who registered, without the system accounts, by username.
@@ -363,24 +300,6 @@ class UsersService {
     return [...new Set([...config.adminEmails, ...testers])].sort();
   }
 
-  // A username for a new account made through a provider: the person's
-  // name without spaces or symbols (else their email's first part), with a
-  // number added when it's taken. They can change it in Settings.
-  private async freeUsername(name: string | undefined, email: string) {
-    const tidy = (text: string) =>
-      text.replace(/[^\p{L}\p{N}._-]/gu, '').slice(0, 30);
-    const base = tidy(name ?? '') || tidy(email.split('@')[0]) || 'adventurer';
-    for (let n = 1; ; n++) {
-      const candidate = n === 1 ? base : `${base}${n}`;
-      if (
-        !RESERVED_USERNAMES.includes(candidate.toLowerCase()) &&
-        !(await this.getUserByUsername(candidate))
-      ) {
-        return candidate;
-      }
-    }
-  }
-
   // Unconfirmed sign-ups with this email, and any older than
   // UNCONFIRMED_DAYS: nobody could sign in to them, and they would keep the
   // email or username from someone else.
@@ -424,16 +343,6 @@ class UsersService {
     ) {
       throw new AlreadyExistsError('That username is taken. Try another one.');
     }
-  }
-
-  private validatePasswordOrThrow(password: string) {
-    if (password.length < 8) {
-      throw new RangeError('Your password needs at least 8 characters.');
-    }
-  }
-
-  private async hashPassword(password: string) {
-    return await bcrypt.hash(password, 8);
   }
 }
 
