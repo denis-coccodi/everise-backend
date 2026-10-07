@@ -98,7 +98,7 @@ describe('the Waking Sands room', () => {
       {
         id: 'bernadette',
         name: 'Bernadette Starling',
-        title: 'Star-reader of Vesper Bay, fortunes by the Twelve',
+        title: 'Astrologian of Vesper Bay, fortunes by the Twelve',
         image: `${config.baseUrl}/api/waking-sands/characters/bernadette/picture`,
       },
     ]);
