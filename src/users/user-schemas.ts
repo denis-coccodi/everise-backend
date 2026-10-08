@@ -50,6 +50,10 @@ const RegistrationResponse = responseSchema(
   z.union([UserResponse, ConfirmationResponse]),
 );
 
+// The bot check's token (Cloudflare Turnstile), sent by the sign-up,
+// sign-in and resend forms; needed once the backend has Turnstile's secret.
+const turnstileToken = () => z.string().max(2048).optional();
+
 const NewUser = requestSchema(
   'NewUser',
   z.object({
@@ -58,12 +62,16 @@ const NewUser = requestSchema(
       username: username(),
       password: newPassword(),
     }),
+    turnstileToken: turnstileToken(),
   }),
 );
 
 const LoginUser = requestSchema(
   'LoginUser',
-  z.object({user: z.object({email: email(), password: signInPassword()})}),
+  z.object({
+    user: z.object({email: email(), password: signInPassword()}),
+    turnstileToken: turnstileToken(),
+  }),
 );
 
 const EmailConfirmationToken = requestSchema(
@@ -73,7 +81,10 @@ const EmailConfirmationToken = requestSchema(
 
 const ResendConfirmation = requestSchema(
   'ResendConfirmation',
-  z.object({user: z.object({email: email()})}),
+  z.object({
+    user: z.object({email: email()}),
+    turnstileToken: turnstileToken(),
+  }),
 );
 
 // The settings: only the fields being changed.

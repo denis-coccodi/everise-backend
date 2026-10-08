@@ -2535,6 +2535,10 @@
               "username",
               "password"
             ]
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 2048
           }
         },
         "required": [
@@ -2561,6 +2565,10 @@
               "email",
               "password"
             ]
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 2048
           }
         },
         "required": [
@@ -2595,6 +2603,10 @@
             "required": [
               "email"
             ]
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 2048
           }
         },
         "required": [

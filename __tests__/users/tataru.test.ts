@@ -1,6 +1,6 @@
 import 'jest-extended';
 import {SqlDocumentStore} from '../../src/db';
-import {MemoryFileStore} from '../../src/files';
+import {MemoryFileStore, UploadStorage} from '../../src/files';
 import {
   ProfileImagesService,
   TataruAccount,
@@ -15,7 +15,11 @@ describe('TataruAccount', () => {
   async function setup() {
     const db = new SqlDocumentStore(new SqliteStorage());
     const users = new UsersService(db);
-    const images = new ProfileImagesService(db, new MemoryFileStore());
+    const images = new ProfileImagesService(
+      db,
+      new MemoryFileStore(),
+      new UploadStorage(db, 1024 * 1024 * 1024),
+    );
     const loads: string[] = [];
     const tataru = new TataruAccount(users, images, async path => {
       loads.push(path);
@@ -60,7 +64,11 @@ describe('TataruAccount', () => {
     const users = new UsersService(db);
     const tataru = new TataruAccount(
       users,
-      new ProfileImagesService(db, new MemoryFileStore()),
+      new ProfileImagesService(
+        db,
+        new MemoryFileStore(),
+        new UploadStorage(db, 1024 * 1024 * 1024),
+      ),
       async () => undefined,
     );
 

@@ -1,5 +1,6 @@
 export {HttpError} from './http-error';
 export {AlreadyExistsError} from './already-exists-error';
+export {BotCheckError} from './bot-check-error';
 export {EmailNotConfirmedError} from './email-not-confirmed-error';
 export {ForbiddenError} from './forbidden-error';
 export {InvalidCredentialsError} from './invalid-credentials-error';
@@ -8,6 +9,7 @@ export {InvalidRoleError} from './invalid-role-error';
 export {InvalidRouletteResultError} from './invalid-roulette-result-error';
 export {MissingEmailError} from './missing-email-error';
 export {NotFoundError} from './not-found-error';
+export {StorageFullError} from './storage-full-error';
 export {TooManyRequestsError} from './too-many-requests-error';
 export {UnauthorizedError} from './unauthorized-error';
 export {UpstreamError} from './upstream-error';

@@ -25,7 +25,7 @@ import {
 import {emailSenderFor, EmailSender} from './email';
 import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
-import {FileStore, MemoryFileStore} from './files';
+import {FileStore, MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
 import {
@@ -34,6 +34,7 @@ import {
   PartyFinderSource,
 } from './party-finder';
 import {ProfilesRouter, ProfilesService} from './profiles';
+import {TurnstileFetch, TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
   OAuthFetch,
@@ -88,6 +89,15 @@ interface AppOptions {
   // The Party Finder listings (xivpf.com). In the Worker, the Durable Object
   // that reads them; otherwise a board in this process.
   partyFinder?: PartyFinderSource;
+  // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
+  // and how the app reaches siteverify. Without a secret, nothing is checked.
+  turnstile?: {
+    secretKey?: string;
+    hostnames?: string[];
+    fetch?: TurnstileFetch;
+  };
+  // The bytes everyone's uploads may keep together.
+  uploadStorageBytes?: number;
 }
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
@@ -106,6 +116,8 @@ function createApp(
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
     wakingSands = {},
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
+    turnstile = config.turnstile,
+    uploadStorageBytes = config.uploadStorageBytes,
   }: AppOptions = {},
 ) {
   const usersService = new UsersService(db);
@@ -117,7 +129,9 @@ function createApp(
 
   const profilesService = new ProfilesService(db, usersService);
 
-  const mediaService = new MediaService(db, fileStore, now);
+  const uploadStorage = new UploadStorage(db, uploadStorageBytes);
+
+  const mediaService = new MediaService(db, fileStore, uploadStorage, now);
 
   const articlesService = new ArticlesService(
     db,
@@ -138,7 +152,11 @@ function createApp(
 
   const auth = new Auth(jwtService);
 
-  const profileImagesService = new ProfileImagesService(db, fileStore);
+  const profileImagesService = new ProfileImagesService(
+    db,
+    fileStore,
+    uploadStorage,
+  );
 
   const tataru = new TataruAccount(
     usersService,
@@ -160,6 +178,11 @@ function createApp(
     jwtService,
     profileImagesService,
     emailConfirmation,
+    new TurnstileVerifier(
+      turnstile.secretKey,
+      turnstile.hostnames ?? config.turnstile.hostnames,
+      turnstile.fetch,
+    ),
   ).router;
 
   const socialLoginRouter = new SocialLoginRouter(
