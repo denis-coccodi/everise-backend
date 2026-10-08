@@ -1,4 +1,9 @@
-import {DATA_CENTRES, DataCentre, dataCentreOf} from './data-centres';
+import {
+  DATA_CENTRES,
+  DATA_CENTRE_NAMES,
+  DataCentre,
+  dataCentreOf,
+} from './data-centres';
 import {PartyFinderListing, XivpfListing, toListing} from './xivpf-listing';
 
 // How the board reaches xivpf; tests pass a fake.
@@ -98,32 +103,37 @@ class PartyFinderBoard implements PartyFinderSource {
   }
 }
 
-// The followed data centres' listings, the latest first, each once. xivpf
-// keeps a listing per world it was reported on, so one whose recruiter
-// changed worlds can be there twice: the latest report is the one kept.
-// Entries that don't have the expected shape are skipped.
+// Every data centre's listings, the latest first, each once. xivpf keeps a
+// listing per world it was reported on, so one whose recruiter changed
+// worlds can be there twice: the latest report is the one kept. Entries
+// that don't have the expected shape are skipped.
 function byDataCentre(all: unknown[]) {
-  const latest: Record<DataCentre, Map<string, PartyFinderListing>> = {
-    Light: new Map(),
-    Chaos: new Map(),
-  };
+  const latest = new Map<DataCentre, Map<string, PartyFinderListing>>(
+    DATA_CENTRE_NAMES.map(name => [name, new Map()]),
+  );
   for (const entry of all) {
     try {
       const xivpf = entry as XivpfListing;
       const dataCentre = dataCentreOf(xivpf.listing.created_world.id);
-      if (!dataCentre) continue;
+      const listings = dataCentre && latest.get(dataCentre);
+      if (!listings) continue;
       const listing = toListing(xivpf);
-      const seen = latest[dataCentre].get(listing.id);
+      const seen = listings.get(listing.id);
       if (!seen || listing.updatedAt > seen.updatedAt) {
-        latest[dataCentre].set(listing.id, listing);
+        listings.set(listing.id, listing);
       }
     } catch {
       // Not a listing we understand.
     }
   }
-  const newestFirst = (map: Map<string, PartyFinderListing>) =>
-    [...map.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  return {Light: newestFirst(latest.Light), Chaos: newestFirst(latest.Chaos)};
+  return Object.fromEntries(
+    [...latest].map(([name, listings]) => [
+      name,
+      [...listings.values()].sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt),
+      ),
+    ]),
+  ) as Record<DataCentre, PartyFinderListing[]>;
 }
 
 export {

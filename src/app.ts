@@ -267,7 +267,11 @@ function createApp(
   app.use('/api', socialLoginRouter);
 
   app.use('/api', discordRouter);
-  app.use('/api', new PartyFinderRouter(partyFinder).router);
+  app.use(
+    '/api',
+    new PartyFinderRouter(partyFinder, () => dutiesService.dutiesByName(), now)
+      .router,
+  );
   app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);

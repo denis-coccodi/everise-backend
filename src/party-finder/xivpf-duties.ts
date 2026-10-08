@@ -185,14 +185,49 @@ const PARTY_FINDER_ICONS = {
   beginner: 61523,
 };
 
-// Every icon the Party Finder page shows that the duty data doesn't have
-// already (it keeps the jobs' icons): the classes' and the above. The duty
-// data's refresh downloads them with its own (GET /api/images/:id).
+// The game's duty type icons (ContentType sheet), by Party Finder category:
+// a listing's duty gives its own (an ultimate's, an extreme's), these are
+// for listings whose duty isn't in the duty data (maps, FATEs, the Hunt...).
+const CATEGORY_ICONS: Record<string, number> = {
+  DutyRoulette: 61807,
+  Dungeon: 61801,
+  Guildhest: 61803,
+  Trial: 61804,
+  Raid: 61802,
+  HighEndDuty: 61802,
+  PvP: 61806,
+  GoldSaucer: 61820,
+  Fate: 61809,
+  TreasureHunt: 61808,
+  TheHunt: 61819,
+  GatheringForay: 61815,
+  DeepDungeon: 61824,
+  FieldOperation: 61838,
+  VariantAndCriterionDungeon: 61846,
+};
+
+function categoryIcon(category: string): number | null {
+  return CATEGORY_ICONS[category] ?? null;
+}
+
+// Every icon the Party Finder page shows that the duty data may not have
+// already (it keeps the jobs' and its duty types' icons): the classes',
+// the above and the categories'. The duty data's refresh downloads them
+// with its own (GET /api/images/:id).
 const PARTY_FINDER_IMAGES = [
-  ...['GLA', 'PGL', 'MRD', 'LNC', 'ARC', 'CNJ', 'THM', 'ACN', 'ROG'].map(
-    code => JOB_ICON_BASE + JOB_IDS[code],
-  ),
-  ...Object.values(PARTY_FINDER_ICONS),
+  ...new Set([
+    ...['GLA', 'PGL', 'MRD', 'LNC', 'ARC', 'CNJ', 'THM', 'ACN', 'ROG'].map(
+      code => JOB_ICON_BASE + JOB_IDS[code],
+    ),
+    ...Object.values(PARTY_FINDER_ICONS),
+    ...Object.values(CATEGORY_ICONS),
+  ]),
 ];
 
-export {PARTY_FINDER_ICONS, PARTY_FINDER_IMAGES, dutyName, jobIcon};
+export {
+  PARTY_FINDER_ICONS,
+  PARTY_FINDER_IMAGES,
+  categoryIcon,
+  dutyName,
+  jobIcon,
+};
