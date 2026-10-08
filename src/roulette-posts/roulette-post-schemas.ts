@@ -27,6 +27,9 @@ const NewRouletteResult = requestSchema(
         error: `Keep the comment to ${MAX_COMMENT_LENGTH} characters.`,
       })
       .optional(),
+    // Also announce it in the Everise Discord. Signed-in people only:
+    // Tataru's posts for guests stay on the site.
+    shareToDiscord: z.boolean().optional(),
   }),
 );
 

@@ -20,3 +20,4 @@ export {profilesClient} from './profiles-client';
 export {articlesClient} from './articles-client';
 export * as jwt from './jwt';
 export {atOrAfter} from './dates';
+export {xivpfEntry} from './xivpf-entries';

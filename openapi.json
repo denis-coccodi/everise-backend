@@ -1174,6 +1174,37 @@
         }
       }
     },
+    "/api/discord/sharing": {
+      "get": {
+        "tags": [
+          "discord"
+        ],
+        "summary": "Whether members can share in the Everise Discord",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Whether.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordSharingResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/discord/widget": {
       "get": {
         "tags": [
@@ -1620,6 +1651,98 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PartyFinderResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/party-finder/discord": {
+      "post": {
+        "tags": [
+          "party-finder"
+        ],
+        "summary": "Share a Party Finder listing in the Everise Discord",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPartyFinderDiscordShare"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sent to the channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyFinderDiscordShareResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/party-finder/posts": {
+      "post": {
+        "tags": [
+          "party-finder"
+        ],
+        "summary": "Share a Party Finder listing as a post",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPartyFinderPost"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleResponse"
                 }
               }
             }
@@ -2844,6 +2967,9 @@
               "description",
               "body"
             ]
+          },
+          "shareToDiscord": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -2914,6 +3040,77 @@
           "comment"
         ]
       },
+      "NewPartyFinderPost": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string",
+            "enum": [
+              "Light",
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Elemental",
+              "Gaia",
+              "Mana",
+              "Meteor",
+              "Materia"
+            ]
+          },
+          "listingId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "shareToDiscord": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dataCentre",
+          "listingId"
+        ]
+      },
+      "NewPartyFinderDiscordShare": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string",
+            "enum": [
+              "Light",
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Elemental",
+              "Gaia",
+              "Mana",
+              "Meteor",
+              "Materia"
+            ]
+          },
+          "listingId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "dataCentre",
+          "listingId"
+        ]
+      },
       "NewRouletteResult": {
         "type": "object",
         "properties": {
@@ -2966,6 +3163,9 @@
           "comment": {
             "type": "string",
             "maxLength": 280
+          },
+          "shareToDiscord": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -3629,6 +3829,381 @@
           }
         ]
       },
+      "PartyFinderResponse": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string",
+            "enum": [
+              "Light",
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Elemental",
+              "Gaia",
+              "Mana",
+              "Meteor",
+              "Materia"
+            ]
+          },
+          "worlds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dataCentres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Light",
+                      "Chaos",
+                      "Aether",
+                      "Crystal",
+                      "Dynamis",
+                      "Primal",
+                      "Elemental",
+                      "Gaia",
+                      "Mana",
+                      "Meteor",
+                      "Materia"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "dataCentres"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "icons": {
+            "type": "object",
+            "properties": {
+              "tank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "healer": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dps": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "beginner": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "tank",
+              "healer",
+              "dps",
+              "beginner"
+            ],
+            "additionalProperties": false
+          },
+          "listings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "recruiter": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "world": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "homeWorld": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "category": {
+                  "type": "string"
+                },
+                "duty": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "dutyIcon": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "level": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sortKey": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "highEnd": {
+                  "type": "boolean"
+                },
+                "worldOnly": {
+                  "type": "boolean"
+                },
+                "onePlayerPerJob": {
+                  "type": "boolean"
+                },
+                "beginnersWelcome": {
+                  "type": "boolean"
+                },
+                "minItemLevel": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "objective": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "completion",
+                        "practice",
+                        "loot"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "dutyComplete": {
+                  "type": "boolean"
+                },
+                "loot": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "greed-only",
+                    "lootmaster"
+                  ]
+                },
+                "parties": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "slots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "job": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "icon": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "roles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "tank",
+                            "healer",
+                            "dps"
+                          ]
+                        }
+                      },
+                      "accepts": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "tank",
+                                "healer",
+                                "dps"
+                              ]
+                            },
+                            "jobs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "role",
+                            "jobs"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "job",
+                      "icon",
+                      "roles",
+                      "accepts"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "recruiter",
+                "description",
+                "world",
+                "homeWorld",
+                "category",
+                "duty",
+                "dutyIcon",
+                "level",
+                "sortKey",
+                "highEnd",
+                "worldOnly",
+                "onePlayerPerJob",
+                "beginnersWelcome",
+                "minItemLevel",
+                "objective",
+                "dutyComplete",
+                "loot",
+                "parties",
+                "slots",
+                "updatedAt",
+                "expiresAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "dataCentre",
+          "worlds",
+          "regions",
+          "fetchedAt",
+          "icons",
+          "listings"
+        ],
+        "additionalProperties": false
+      },
       "RouletteCard": {
         "type": "object",
         "properties": {
@@ -3700,6 +4275,301 @@
         ],
         "additionalProperties": false
       },
+      "PartyFinderPost": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string"
+          },
+          "icons": {
+            "type": "object",
+            "properties": {
+              "tank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "healer": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dps": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "beginner": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "tank",
+              "healer",
+              "dps",
+              "beginner"
+            ],
+            "additionalProperties": false
+          },
+          "listing": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "recruiter": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "world": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "homeWorld": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "category": {
+                "type": "string"
+              },
+              "duty": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dutyIcon": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "level": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sortKey": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "highEnd": {
+                "type": "boolean"
+              },
+              "worldOnly": {
+                "type": "boolean"
+              },
+              "onePlayerPerJob": {
+                "type": "boolean"
+              },
+              "beginnersWelcome": {
+                "type": "boolean"
+              },
+              "minItemLevel": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "objective": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "completion",
+                      "practice",
+                      "loot"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dutyComplete": {
+                "type": "boolean"
+              },
+              "loot": {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "greed-only",
+                  "lootmaster"
+                ]
+              },
+              "parties": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "job": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "icon": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "tank",
+                          "healer",
+                          "dps"
+                        ]
+                      }
+                    },
+                    "accepts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "tank",
+                              "healer",
+                              "dps"
+                            ]
+                          },
+                          "jobs": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "jobs"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "job",
+                    "icon",
+                    "roles",
+                    "accepts"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "recruiter",
+              "description",
+              "world",
+              "homeWorld",
+              "category",
+              "duty",
+              "dutyIcon",
+              "level",
+              "sortKey",
+              "highEnd",
+              "worldOnly",
+              "onePlayerPerJob",
+              "beginnersWelcome",
+              "minItemLevel",
+              "objective",
+              "dutyComplete",
+              "loot",
+              "parties",
+              "slots",
+              "updatedAt",
+              "expiresAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "dataCentre",
+          "icons",
+          "listing"
+        ],
+        "additionalProperties": false
+      },
       "Article": {
         "type": "object",
         "properties": {
@@ -3750,6 +4620,9 @@
           },
           "roulette": {
             "$ref": "#/components/schemas/RouletteCard"
+          },
+          "partyFinder": {
+            "$ref": "#/components/schemas/PartyFinderPost"
           },
           "author": {
             "$ref": "#/components/schemas/Profile"
@@ -4539,378 +5412,16 @@
         ],
         "additionalProperties": false
       },
-      "PartyFinderResponse": {
+      "PartyFinderDiscordShareResponse": {
         "type": "object",
         "properties": {
-          "dataCentre": {
-            "type": "string",
-            "enum": [
-              "Light",
-              "Chaos",
-              "Aether",
-              "Crystal",
-              "Dynamis",
-              "Primal",
-              "Elemental",
-              "Gaia",
-              "Mana",
-              "Meteor",
-              "Materia"
-            ]
-          },
-          "worlds": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "name"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "regions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "dataCentres": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "Light",
-                      "Chaos",
-                      "Aether",
-                      "Crystal",
-                      "Dynamis",
-                      "Primal",
-                      "Elemental",
-                      "Gaia",
-                      "Mana",
-                      "Meteor",
-                      "Materia"
-                    ]
-                  }
-                }
-              },
-              "required": [
-                "name",
-                "dataCentres"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "fetchedAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "icons": {
-            "type": "object",
-            "properties": {
-              "tank": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "healer": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "dps": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "beginner": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": [
-              "tank",
-              "healer",
-              "dps",
-              "beginner"
-            ],
-            "additionalProperties": false
-          },
-          "listings": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "recruiter": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "world": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "name": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name"
-                  ],
-                  "additionalProperties": false
-                },
-                "homeWorld": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "name": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name"
-                  ],
-                  "additionalProperties": false
-                },
-                "category": {
-                  "type": "string"
-                },
-                "duty": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "dutyIcon": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "level": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "sortKey": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "highEnd": {
-                  "type": "boolean"
-                },
-                "worldOnly": {
-                  "type": "boolean"
-                },
-                "onePlayerPerJob": {
-                  "type": "boolean"
-                },
-                "beginnersWelcome": {
-                  "type": "boolean"
-                },
-                "minItemLevel": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "objective": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "completion",
-                        "practice",
-                        "loot"
-                      ]
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "dutyComplete": {
-                  "type": "boolean"
-                },
-                "loot": {
-                  "type": "string",
-                  "enum": [
-                    "normal",
-                    "greed-only",
-                    "lootmaster"
-                  ]
-                },
-                "parties": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "slots": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "job": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "icon": {
-                        "anyOf": [
-                          {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "roles": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "enum": [
-                            "tank",
-                            "healer",
-                            "dps"
-                          ]
-                        }
-                      },
-                      "accepts": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "role": {
-                              "type": "string",
-                              "enum": [
-                                "tank",
-                                "healer",
-                                "dps"
-                              ]
-                            },
-                            "jobs": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "role",
-                            "jobs"
-                          ],
-                          "additionalProperties": false
-                        }
-                      }
-                    },
-                    "required": [
-                      "job",
-                      "icon",
-                      "roles",
-                      "accepts"
-                    ],
-                    "additionalProperties": false
-                  }
-                },
-                "updatedAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                },
-                "expiresAt": {
-                  "type": "string",
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                }
-              },
-              "required": [
-                "id",
-                "recruiter",
-                "description",
-                "world",
-                "homeWorld",
-                "category",
-                "duty",
-                "dutyIcon",
-                "level",
-                "sortKey",
-                "highEnd",
-                "worldOnly",
-                "onePlayerPerJob",
-                "beginnersWelcome",
-                "minItemLevel",
-                "objective",
-                "dutyComplete",
-                "loot",
-                "parties",
-                "slots",
-                "updatedAt",
-                "expiresAt"
-              ],
-              "additionalProperties": false
-            }
+          "shared": {
+            "type": "boolean",
+            "const": true
           }
         },
         "required": [
-          "dataCentre",
-          "worlds",
-          "regions",
-          "fetchedAt",
-          "icons",
-          "listings"
+          "shared"
         ],
         "additionalProperties": false
       },
@@ -5150,6 +5661,18 @@
         },
         "required": [
           "widget"
+        ],
+        "additionalProperties": false
+      },
+      "DiscordSharingResponse": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available"
         ],
         "additionalProperties": false
       }

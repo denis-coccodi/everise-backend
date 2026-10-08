@@ -39,6 +39,7 @@ class RoulettePostsRouter {
           req.body.comment,
           // Cloudflare's client address; one value for local runs.
           req.header('cf-connecting-ip') ?? 'local',
+          req.body.shareToDiscord,
         );
         const author = await this.profilesService.getProfile(article.authorId);
         res

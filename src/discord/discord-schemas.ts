@@ -22,4 +22,10 @@ const DiscordWidgetResponse = responseSchema(
   }),
 );
 
-export {DiscordWidgetResponse};
+// Whether members can share in the Everise Discord (its webhook is set).
+const DiscordSharingResponse = responseSchema(
+  'DiscordSharingResponse',
+  z.strictObject({available: z.boolean()}),
+);
+
+export {DiscordSharingResponse, DiscordWidgetResponse};

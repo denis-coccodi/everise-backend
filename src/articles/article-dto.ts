@@ -25,6 +25,7 @@ class ArticleDto {
       media: article.media,
       // Only on roulette results, so other articles keep the RealWorld shape.
       ...(article.roulette ? {roulette: article.roulette} : {}),
+      ...(article.partyFinder ? {partyFinder: article.partyFinder} : {}),
       author: profileView(author, author.following),
     };
   }

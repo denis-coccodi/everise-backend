@@ -5,6 +5,7 @@ import {
   MAX_POST_ATTACHMENTS,
 } from '../media/attachments';
 import {AttachmentSchema, newAttachments} from '../media/attachment-schemas';
+import {PartyFinderIcons, PartyFinderListingSchema} from '../party-finder';
 import {ProfileSchema} from '../profiles';
 
 // A roulette result shown as a card, built by the backend from its own duty
@@ -27,6 +28,17 @@ const RouletteCardSchema = responseSchema(
   }),
 );
 
+// A Party Finder listing shared as a post: the listing as it was then (it
+// ends within the hour), on its data centre, with the icons to show it.
+const PartyFinderPostSchema = responseSchema(
+  'PartyFinderPost',
+  z.strictObject({
+    dataCentre: z.string(),
+    icons: PartyFinderIcons,
+    listing: PartyFinderListingSchema,
+  }),
+);
+
 const ArticleSchema = responseSchema(
   'Article',
   z.strictObject({
@@ -46,6 +58,8 @@ const ArticleSchema = responseSchema(
     media: z.array(AttachmentSchema),
     // Only on roulette results.
     roulette: RouletteCardSchema.optional(),
+    // Only on shared Party Finder listings.
+    partyFinder: PartyFinderPostSchema.optional(),
     author: ProfileSchema,
   }),
 );
@@ -105,6 +119,8 @@ const NewArticle = requestSchema(
       tagList: z.array(text()).optional(),
       media: newAttachments(MAX_POST_ATTACHMENTS, 'A post'),
     }),
+    // Also announce it in the Everise Discord (only when asked).
+    shareToDiscord: z.boolean().optional(),
   }),
 );
 
@@ -159,6 +175,7 @@ export {
   FeedQuery,
   NewArticle,
   NewComment,
+  PartyFinderPostSchema,
   RouletteCardSchema,
   TagsResponse,
 };
