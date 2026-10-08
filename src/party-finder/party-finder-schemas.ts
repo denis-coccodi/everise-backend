@@ -21,6 +21,12 @@ const PartyFinderListing = z.strictObject({
   // dungeon, for a Duty Roulette the roulette; null when it has none or
   // can't be told.
   duty: z.string().nullable(),
+  // The duty type's icon (an image id for GET /api/images/:id), as the game
+  // shows it before the name: an ultimate's, a raid's, a map's...
+  dutyIcon: z.number().int().nullable(),
+  // The duty's place in the game's order (higher: newer, listed first);
+  // null when it isn't in the duty data (maps, FATEs, no duty...).
+  sortKey: z.number().int().nullable(),
   highEnd: z.boolean(),
   // Only joinable from its own world (the Hunt, FATEs...); the others from
   // anywhere on the data centre.
@@ -52,6 +58,13 @@ const PartyFinderResponse = responseSchema(
   z.strictObject({
     dataCentre: z.enum(DATA_CENTRE_NAMES),
     worlds: z.array(World),
+    // Every data centre, by region (Europe first), for the page's list.
+    regions: z.array(
+      z.strictObject({
+        name: z.string(),
+        dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
+      }),
+    ),
     // When the site last read the listings from xivpf.
     fetchedAt: isoDate,
     // The Party Finder's icons (image ids for GET /api/images/:id): an open
@@ -69,7 +82,7 @@ const PartyFinderResponse = responseSchema(
 const PartyFinderQuery = z.object({
   dataCentre: z
     .enum(DATA_CENTRE_NAMES, {
-      error: `Pick a data centre: ${DATA_CENTRE_NAMES.join(' or ')}.`,
+      error: `Pick one of the game's data centres: ${DATA_CENTRE_NAMES.join(', ')}.`,
     })
     .default('Light'),
 });

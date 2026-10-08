@@ -153,6 +153,25 @@ class DutiesService {
     };
   }
 
+  // Each duty's sort key and type icon, by name in lower case (the game
+  // data writes "the Omega Protocol", players' plugins "The Omega
+  // Protocol"): the Party Finder orders its listings and marks their duty
+  // type with them.
+  async dutiesByName() {
+    const groups = await this.findGroups();
+    return new Map(
+      groups.flatMap(group =>
+        group.duties.map(
+          duty =>
+            [
+              duty.name.toLowerCase(),
+              {sortKey: duty.sortKey, icon: group.icon},
+            ] as const,
+        ),
+      ),
+    );
+  }
+
   private findGroups() {
     return this.db.find<DutyGroupDoc>(this.groupsCollection, {
       orderBy: [{field: 'order', direction: 'asc'}],

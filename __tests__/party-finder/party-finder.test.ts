@@ -117,6 +117,16 @@ describe('GET /api/party-finder', () => {
     });
     expect(response.body.worlds).toContainEqual({id: 66, name: 'Odin'});
     expect(response.body.worlds).toHaveLength(8);
+    // Every data centre, by region, Europe (and Light) first.
+    expect(response.body.regions).toStrictEqual([
+      {name: 'Europe', dataCentres: ['Light', 'Chaos']},
+      {
+        name: 'North America',
+        dataCentres: ['Aether', 'Crystal', 'Dynamis', 'Primal'],
+      },
+      {name: 'Japan', dataCentres: ['Elemental', 'Gaia', 'Mana', 'Meteor']},
+      {name: 'Oceania', dataCentres: ['Materia']},
+    ]);
     expect(response.body.listings).toStrictEqual([
       {
         id: '1789630212-1',
@@ -126,6 +136,9 @@ describe('GET /api/party-finder', () => {
         homeWorld: {id: 67, name: 'Shiva'},
         category: 'HighEndDuty',
         duty: 'The Unending Coil of Bahamut (Ultimate)',
+        // Not in the duty data (no refresh here): the category's icon.
+        dutyIcon: 61802,
+        sortKey: null,
         highEnd: true,
         worldOnly: false,
         onePlayerPerJob: true,
@@ -173,12 +186,59 @@ describe('GET /api/party-finder', () => {
     expect(xivpf.reads).toBe(1);
   });
 
-  test('says which data centres there are', async () => {
+  test('shows any data centre: a Crystal listing on Crystal', async () => {
+    xivpf.listings = [
+      entry(),
+      entry({id: 3, world: {id: 91, name: 'Balmung'}}),
+    ];
+
     const response = await board('?dataCentre=Crystal');
+
+    expect(response.body.dataCentre).toBe('Crystal');
+    expect(response.body.worlds).toContainEqual({id: 91, name: 'Balmung'});
+    expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
+      '1789630212-3',
+    ]);
+  });
+
+  test('says which data centres there are', async () => {
+    const response = await board('?dataCentre=Narnia');
 
     expect(response.status).toBe(422);
     expect(response.body.errors.body).toEqual([
-      'Pick a data centre: Light or Chaos.',
+      "Pick one of the game's data centres: Light, Chaos, Aether, Crystal, Dynamis, Primal, Elemental, Gaia, Mana, Meteor, Materia.",
+    ]);
+  });
+
+  test("gives a listing its duty's place in the game's order and its type icon, from the duty data", async () => {
+    // The fake duty data has "Dancing Mad (Ultimate)": SortKey 4, an
+    // ultimate (icon 61832), and "the Excitatron 6000" (SortKey 7, a treasure hunt), which
+    // players' plugins write with a capital T.
+    await request(app)
+      .post('/api/duties/refresh')
+      .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!)
+      .send();
+    xivpf.listings = [
+      entry({id: 1, duty: 'Dancing Mad (Ultimate)'}),
+      entry({id: 2, category: 'TreasureHunt', duty: null, dutyType: 'Other'}),
+      entry({id: 3, category: 'TreasureHunt', duty: 'The Excitatron 6000'}),
+    ];
+
+    const response = await board();
+
+    expect(
+      response.body.listings.map(
+        (l: {
+          duty: string | null;
+          dutyIcon: number;
+          sortKey: number | null;
+        }) => [l.duty, l.dutyIcon, l.sortKey],
+      ),
+    ).toEqual([
+      ['Dancing Mad (Ultimate)', 61832, 4],
+      // No duty: the category's icon, no place in the order.
+      [null, 61808, null],
+      ['The Excitatron 6000', 61808, 7],
     ]);
   });
 

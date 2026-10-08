@@ -1,14 +1,35 @@
 import * as express from 'express';
 import {route} from '../api';
 import {UpstreamError} from '../errors';
+import {REGION_LIST} from './data-centres';
 import {PartyFinderSource} from './party-finder-board';
 import {PartyFinderQuery, PartyFinderResponse} from './party-finder-schemas';
-import {PARTY_FINDER_ICONS} from './xivpf-duties';
+import {PARTY_FINDER_ICONS, categoryIcon} from './xivpf-duties';
+import {PartyFinderListing} from './xivpf-listing';
+
+// A duty's sort key and type icon, by its name in lower case.
+type DutiesByName = () => Promise<
+  ReadonlyMap<string, {sortKey: number; icon: number | null}>
+>;
+
+// The duty data changes only with a refresh: it's read again after this.
+const DUTIES_CACHE_MS = 10 * 60 * 1000;
 
 // The Party Finder page: a data centre's listings, as xivpf.com collects
-// them from players' Remote Party Finder plugin. Open to everyone.
+// them from players' Remote Party Finder plugin. Open to everyone. Each
+// listing gets its duty's sort key (the game's own order, the newest first)
+// and its duty type's icon from the duty data.
 class PartyFinderRouter {
-  constructor(private readonly source: PartyFinderSource) {}
+  private duties?: {
+    at: number;
+    byName: Awaited<ReturnType<DutiesByName>>;
+  };
+
+  constructor(
+    private readonly source: PartyFinderSource,
+    private readonly dutiesByName: DutiesByName,
+    private readonly now: () => Date,
+  ) {}
 
   get router() {
     const router = express.Router();
@@ -31,15 +52,41 @@ class PartyFinderRouter {
             "The Party Finder listings can't be reached right now. Try again in a minute.",
           );
         }
+        const duties = await this.readDuties();
         // The same for everyone, and fresh for a short while.
-        res
-          .set('Cache-Control', 'public, max-age=15')
-          .json({...board, icons: PARTY_FINDER_ICONS});
+        res.set('Cache-Control', 'public, max-age=15').json({
+          ...board,
+          regions: REGION_LIST,
+          icons: PARTY_FINDER_ICONS,
+          listings: board.listings.map(listing => withDuty(listing, duties)),
+        });
       },
     );
 
     return router;
   }
+
+  private async readDuties() {
+    const now = this.now().getTime();
+    if (!this.duties || now - this.duties.at >= DUTIES_CACHE_MS) {
+      this.duties = {at: now, byName: await this.dutiesByName()};
+    }
+    return this.duties.byName;
+  }
 }
 
-export {PartyFinderRouter};
+function withDuty(
+  listing: PartyFinderListing,
+  duties: Awaited<ReturnType<DutiesByName>>,
+) {
+  const duty = listing.duty
+    ? duties.get(listing.duty.toLowerCase())
+    : undefined;
+  return {
+    ...listing,
+    dutyIcon: duty?.icon ?? categoryIcon(listing.category),
+    sortKey: duty?.sortKey ?? null,
+  };
+}
+
+export {DutiesByName, PartyFinderRouter};

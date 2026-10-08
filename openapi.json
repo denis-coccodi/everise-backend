@@ -1599,7 +1599,16 @@
               "type": "string",
               "enum": [
                 "Light",
-                "Chaos"
+                "Chaos",
+                "Aether",
+                "Crystal",
+                "Dynamis",
+                "Primal",
+                "Elemental",
+                "Gaia",
+                "Mana",
+                "Meteor",
+                "Materia"
               ]
             }
           }
@@ -4494,7 +4503,16 @@
             "type": "string",
             "enum": [
               "Light",
-              "Chaos"
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Elemental",
+              "Gaia",
+              "Mana",
+              "Meteor",
+              "Materia"
             ]
           },
           "worlds": {
@@ -4514,6 +4532,41 @@
               "required": [
                 "id",
                 "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dataCentres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Light",
+                      "Chaos",
+                      "Aether",
+                      "Crystal",
+                      "Dynamis",
+                      "Primal",
+                      "Elemental",
+                      "Gaia",
+                      "Mana",
+                      "Meteor",
+                      "Materia"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "dataCentres"
               ],
               "additionalProperties": false
             }
@@ -4612,6 +4665,30 @@
                   "type": [
                     "string",
                     "null"
+                  ]
+                },
+                "dutyIcon": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sortKey": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "highEnd": {
@@ -4752,6 +4829,8 @@
                 "homeWorld",
                 "category",
                 "duty",
+                "dutyIcon",
+                "sortKey",
                 "highEnd",
                 "worldOnly",
                 "onePlayerPerJob",
@@ -4772,6 +4851,7 @@
         "required": [
           "dataCentre",
           "worlds",
+          "regions",
           "fetchedAt",
           "icons",
           "listings"

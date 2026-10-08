@@ -45,8 +45,9 @@ function getImage(id: number) {
 
 // The images in the fake game data: the job icons (62100 + job id), the duty
 // type icons, and the roulette and duty banners (112000 + duty row), plus
-// the Party Finder's: 9 class icons, 3 role icons and the beginners' sprout.
-const IMAGE_COUNT = 6 + 5 + 1 + 1 + 9 + 13;
+// the Party Finder's: 9 class icons, 3 role icons, the beginners' sprout,
+// and the 9 category icons the fake duty types don't have already.
+const IMAGE_COUNT = 6 + 5 + 1 + 1 + 9 + 13 + 9;
 
 describe('FFXIV duties', () => {
   beforeEach(async () => {
