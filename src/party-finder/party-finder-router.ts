@@ -7,7 +7,7 @@ import {PartyFinderQuery, PartyFinderResponse} from './party-finder-schemas';
 import {PARTY_FINDER_ICONS, categoryIcon} from './xivpf-duties';
 import {PartyFinderListing} from './xivpf-listing';
 
-// A duty's sort key and type icon, by its name (the duty data's).
+// A duty's sort key and type icon, by its name in lower case.
 type DutiesByName = () => Promise<
   ReadonlyMap<string, {sortKey: number; icon: number | null}>
 >;
@@ -79,7 +79,9 @@ function withDuty(
   listing: PartyFinderListing,
   duties: Awaited<ReturnType<DutiesByName>>,
 ) {
-  const duty = listing.duty ? duties.get(listing.duty) : undefined;
+  const duty = listing.duty
+    ? duties.get(listing.duty.toLowerCase())
+    : undefined;
   return {
     ...listing,
     dutyIcon: duty?.icon ?? categoryIcon(listing.category),
