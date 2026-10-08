@@ -36,6 +36,10 @@ const PartyFinderPostSchema = responseSchema(
     dataCentre: z.string(),
     icons: PartyFinderIcons,
     listing: PartyFinderListingSchema,
+    // The site's card for it as a picture (an upload), made by the
+    // member's browser when they shared it; shown in Discord and in link
+    // previews.
+    picture: z.string().optional(),
   }),
 );
 

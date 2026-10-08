@@ -2,11 +2,13 @@ import {Article, ArticlesService} from '../articles';
 import {Db, Doc} from '../db';
 import {DiscordAnnouncer} from '../discord';
 import {
+  InvalidImageError,
   NotFoundError,
   TooManyRequestsError,
   UnavailableError,
   UpstreamError,
 } from '../errors';
+import {MediaService} from '../media';
 import {
   DataCentre,
   PartyFinderReader,
@@ -26,6 +28,14 @@ interface ShareLimitDoc extends Doc {
   until?: number;
 }
 
+// Which listing a member shares, and the picture of the site's card for it
+// they uploaded (optional).
+interface ListingRef {
+  dataCentre: DataCentre;
+  listingId: string;
+  pictureId?: string;
+}
+
 // Members share Party Finder listings: as a post in the feeds, with their
 // words (a snapshot of the listing, which ends within the hour), and, when
 // they ask, in the Everise Discord; or straight to the Discord channel. The
@@ -39,50 +49,48 @@ class PartyFinderSharesService {
     private readonly articlesService: ArticlesService,
     private readonly profilesService: ProfilesService,
     private readonly discord: DiscordAnnouncer,
+    private readonly mediaService: MediaService,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
   async post(
     user: User,
-    dataCentre: DataCentre,
-    listingId: string,
+    ref: ListingRef,
     comment: string | undefined,
     shareToDiscord = false,
   ): Promise<Article> {
-    const shared = await this.find(dataCentre, listingId);
+    const shared = await this.find(ref.dataCentre, ref.listingId);
     await this.takeTurn(`pf-post-${user.id}`, POST_INTERVAL_SECONDS);
+    const picture = await this.pictureOf(user, ref.pictureId);
     const {listing} = shared;
+    const dataCentre = ref.dataCentre;
     const remaining = listing.slots.filter(slot => !slot.job).length;
     return this.articlesService.createArticle(user.id, {
       title: `Party Finder: ${listingName(listing)}`,
       description: `${listing.world.name} (${dataCentre}) · ${remaining} ${remaining === 1 ? 'player' : 'players'} needed`,
       body: (comment ?? '').trim(),
       tags: ['party-finder'],
-      partyFinder: shared,
+      partyFinder: {...shared, ...(picture ? {picture} : {})},
       shareToDiscord,
     });
   }
 
-  async toDiscord(
-    user: User,
-    dataCentre: DataCentre,
-    listingId: string,
-    comment: string | undefined,
-  ) {
+  async toDiscord(user: User, ref: ListingRef, comment: string | undefined) {
     if (!this.discord.available) {
       throw new UnavailableError(
         "Sharing to the Everise Discord isn't set up on this site.",
       );
     }
-    const shared = await this.find(dataCentre, listingId);
+    const shared = await this.find(ref.dataCentre, ref.listingId);
     await this.takeTurn(`pf-discord-${user.id}`, DISCORD_INTERVAL_SECONDS);
+    const picture = await this.pictureOf(user, ref.pictureId);
     const profile = profileView(
       await this.profilesService.getProfile(user.id),
       false,
     );
     const sent = await this.discord.shareListing(
       {username: profile.username, image: profile.image},
-      {dataCentre: shared.dataCentre, listing: shared.listing},
+      {dataCentre: shared.dataCentre, listing: shared.listing, picture},
       comment ?? '',
     );
     if (!sent) {
@@ -90,6 +98,16 @@ class PartyFinderSharesService {
         "Discord didn't take the message. Try again in a minute.",
       );
     }
+  }
+
+  // The picture of the card, when the member uploaded one: theirs only.
+  private async pictureOf(user: User, pictureId: string | undefined) {
+    if (!pictureId) return undefined;
+    const url = await this.mediaService.use(user.id, pictureId);
+    if (!url) {
+      throw new InvalidImageError("That picture isn't one of your uploads.");
+    }
+    return url;
   }
 
   // The listing as it is now, with what the page needs to show it.

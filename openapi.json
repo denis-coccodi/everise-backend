@@ -3068,6 +3068,11 @@
             "type": "string",
             "maxLength": 280
           },
+          "pictureId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
           "shareToDiscord": {
             "type": "boolean"
           }
@@ -3104,6 +3109,11 @@
           "comment": {
             "type": "string",
             "maxLength": 280
+          },
+          "pictureId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "required": [
@@ -4561,6 +4571,9 @@
               "expiresAt"
             ],
             "additionalProperties": false
+          },
+          "picture": {
+            "type": "string"
           }
         },
         "required": [

@@ -225,6 +225,7 @@ function createApp(
       articlesService,
       profilesService,
       discordAnnouncer,
+      mediaService,
       now,
     ),
     profilesService,
