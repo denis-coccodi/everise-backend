@@ -3,7 +3,7 @@ import {randomUUID} from 'crypto';
 import {config} from '../config';
 import {Db, Doc} from '../db';
 import {InvalidImageError, TooManyRequestsError} from '../errors';
-import {FileStore} from '../files';
+import {FileStore, StoredFile, UploadStorage} from '../files';
 import {ImageType, readImageInfo} from '../users/image-info';
 
 // Images and GIFs people upload for their posts and comments: the bytes in
@@ -50,6 +50,7 @@ class MediaService {
   constructor(
     private readonly db: Db,
     private readonly files: FileStore,
+    private readonly storage: UploadStorage,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -71,19 +72,25 @@ class MediaService {
     const uploads = await this.uploadsOf(userId);
     this.checkDailyLimit(uploads);
     this.checkStorage(uploads, data.byteLength);
+    await this.storage.reserve(data.byteLength);
 
     // The file first: a document never names a file that isn't there.
     const id = randomUUID();
-    await this.files.put(fileKey(id), data, info.type);
-    await this.db.set(this.collection, id, {
-      userId,
-      contentType: info.type,
-      width: info.width,
-      height: info.height,
-      size: data.byteLength,
-      uploadedAt: this.now().getTime(),
-      attached: false,
-    });
+    try {
+      await this.files.put(fileKey(id), data, info.type);
+      await this.db.set(this.collection, id, {
+        userId,
+        contentType: info.type,
+        width: info.width,
+        height: info.height,
+        size: data.byteLength,
+        uploadedAt: this.now().getTime(),
+        attached: false,
+      });
+    } catch (err) {
+      await this.storage.release(data.byteLength);
+      throw err;
+    }
     return {
       id,
       url: mediaUrl(id),
@@ -98,6 +105,7 @@ class MediaService {
     if (!doc) return undefined;
     if (doc.data) {
       await this.files.put(fileKey(id), doc.data, doc.contentType);
+      await this.storage.count(doc.data.byteLength);
       await this.db.update(this.collection, id, {
         data: undefined,
         size: doc.data.byteLength,
@@ -108,14 +116,17 @@ class MediaService {
     return data && {contentType: doc.contentType, data};
   }
 
-  // The ids of everything a person uploaded, e.g. to delete with their
-  // account (deleteFiles, then the documents).
-  async idsOf(userId: string) {
-    return (await this.uploadsOf(userId)).map(doc => doc.id);
+  // Everything a person uploaded, e.g. to delete with their account
+  // (deleteFiles, then the documents).
+  async filesOf(userId: string): Promise<StoredFile[]> {
+    return (await this.uploadsOf(userId)).map(storedFile);
   }
 
-  async deleteFiles(ids: string[]) {
-    await this.files.delete(ids.map(fileKey));
+  async deleteFiles(stored: StoredFile[]) {
+    await this.files.delete(stored.map(file => fileKey(file.id)));
+    await this.storage.release(
+      stored.reduce((total, file) => total + file.size, 0),
+    );
   }
 
   // Marks a person's uploads as used by a post or comment.
@@ -149,7 +160,7 @@ class MediaService {
   // to try again.
   private async remove(docs: MediaDoc[]) {
     if (docs.length === 0) return;
-    await this.deleteFiles(docs.map(doc => doc.id));
+    await this.deleteFiles(docs.map(storedFile));
     await this.db.batch(
       docs.map(doc => ({
         op: 'delete',
@@ -200,6 +211,12 @@ class MediaService {
       where: [{field: 'userId', op: '==', value: userId}],
     });
   }
+}
+
+// An upload and its bytes in the file store (none while they're still in
+// its document: those were never counted in).
+function storedFile(doc: MediaDoc): StoredFile {
+  return {id: doc.id, size: doc.data ? 0 : (doc.size ?? 0)};
 }
 
 // Where an upload's bytes are in the file store.

@@ -62,8 +62,8 @@ class MemberDeletion {
     ]);
 
     const [pictures, uploads] = await Promise.all([
-      this.profileImagesService.idsOf(user.id),
-      this.mediaService.idsOf(user.id),
+      this.profileImagesService.filesOf(user.id),
+      this.mediaService.filesOf(user.id),
     ]);
     const ownArticles = new Set(articles.map(a => a.id));
     const goneComments = comments.filter(
@@ -85,8 +85,8 @@ class MemberDeletion {
       ...follows
         .filter(f => f.followerId === user.id || f.followeeId === user.id)
         .map(f => remove('follows', f.id)),
-      ...pictures.map(id => remove('profileImages', id)),
-      ...uploads.map(id => remove('media', id)),
+      ...pictures.map(file => remove('profileImages', file.id)),
+      ...uploads.map(file => remove('media', file.id)),
       remove('postLimits', `user-${user.id}`),
       remove('users', user.id),
     ];

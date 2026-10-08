@@ -3,7 +3,7 @@ import {randomUUID} from 'crypto';
 import {config} from '../config';
 import {Db, Doc} from '../db';
 import {InvalidImageError} from '../errors';
-import {FileStore} from '../files';
+import {FileStore, StoredFile, UploadStorage} from '../files';
 import {sitePathRest} from '../site-urls';
 import {ImageType, readImageInfo} from './image-info';
 
@@ -33,6 +33,7 @@ class ProfileImagesService {
   constructor(
     private readonly db: Db,
     private readonly files: FileStore,
+    private readonly storage: UploadStorage,
   ) {}
 
   // Checks an upload against the limits and stores it; returns its id.
@@ -51,14 +52,21 @@ class ProfileImagesService {
       );
     }
 
+    await this.storage.reserve(data.byteLength);
+
     // The file first: a document never names a file that isn't there.
     const id = randomUUID();
-    await this.files.put(fileKey(id), data, info.type);
-    await this.db.set(this.collection, id, {
-      userId,
-      contentType: info.type,
-      size: data.byteLength,
-    });
+    try {
+      await this.files.put(fileKey(id), data, info.type);
+      await this.db.set(this.collection, id, {
+        userId,
+        contentType: info.type,
+        size: data.byteLength,
+      });
+    } catch (err) {
+      await this.storage.release(data.byteLength);
+      throw err;
+    }
     return id;
   }
 
@@ -67,6 +75,7 @@ class ProfileImagesService {
     if (!doc) return undefined;
     if (doc.data) {
       await this.files.put(fileKey(id), doc.data, doc.contentType);
+      await this.storage.count(doc.data.byteLength);
       await this.db.update(this.collection, id, {
         data: undefined,
         size: doc.data.byteLength,
@@ -77,27 +86,36 @@ class ProfileImagesService {
     return data && {contentType: doc.contentType, data};
   }
 
-  // The ids of every picture a user uploaded, e.g. to delete them with the
-  // account (deleteFiles, then the documents).
-  async idsOf(userId: string) {
+  // Every picture a user uploaded, e.g. to delete them with the account
+  // (deleteFiles, then the documents).
+  async filesOf(userId: string) {
     const docs = await this.db.find<ProfileImageDoc>(this.collection, {
       where: [{field: 'userId', op: '==', value: userId}],
     });
-    return docs.map(doc => doc.id);
+    return docs.map(storedFile);
   }
 
-  async deleteFiles(ids: string[]) {
-    await this.files.delete(ids.map(fileKey));
+  async deleteFiles(stored: StoredFile[]) {
+    await this.files.delete(stored.map(file => fileKey(file.id)));
+    await this.storage.release(
+      stored.reduce((total, file) => total + file.size, 0),
+    );
   }
 
   // Deletes a user's picture; another user's is left alone.
   async delete(userId: string, id: string) {
     const doc = await this.db.get<ProfileImageDoc>(this.collection, id);
     if (doc?.userId === userId) {
-      await this.deleteFiles([id]);
+      await this.deleteFiles([storedFile(doc)]);
       await this.db.delete(this.collection, id);
     }
   }
+}
+
+// A picture and its bytes in the file store (none while they're still in
+// its document: those were never counted in).
+function storedFile(doc: ProfileImageDoc): StoredFile {
+  return {id: doc.id, size: doc.data ? 0 : (doc.size ?? 0)};
 }
 
 // Where a picture's bytes are in the file store.

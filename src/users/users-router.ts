@@ -8,6 +8,7 @@ import {
   NotFoundError,
 } from '../errors';
 import {Auth} from '../middleware';
+import {TurnstileAction, TurnstileVerifier} from '../turnstile';
 import {JWTService} from './jwt-service';
 import {ProfileImagesService} from './profile-images-service';
 import {EmailConfirmation} from './email-confirmation';
@@ -76,6 +77,7 @@ class UsersRouter {
     private readonly jwtService: JWTService,
     private readonly profileImagesService: ProfileImagesService,
     private readonly emailConfirmation: EmailConfirmation,
+    private readonly turnstile: TurnstileVerifier,
   ) {}
 
   // Signs the browser in as this user, and answers with them.
@@ -83,6 +85,15 @@ class UsersRouter {
     const token = this.jwtService.getToken(user);
     setSessionCookie(res, token, this.jwtService.secondsToExpiration);
     return new UserDto(user, token);
+  }
+
+  // Refuses the form when Turnstile says a script sent it.
+  private botCheck(
+    req: express.Request,
+    token: string | undefined,
+    action: TurnstileAction,
+  ) {
+    return this.turnstile.verify(token, action, req.header('cf-connecting-ip'));
   }
 
   get router() {
@@ -105,6 +116,7 @@ class UsersRouter {
         },
       },
       async (req, res) => {
+        await this.botCheck(req, req.body.turnstileToken, 'signup');
         const {email, username, password} = req.body.user;
         const confirming = this.emailConfirmation.enabled;
         const user = await this.usersService.registerUser(
@@ -136,6 +148,7 @@ class UsersRouter {
         responses: signedIn,
       },
       async (req, res) => {
+        await this.botCheck(req, req.body.turnstileToken, 'login');
         const {email, password} = req.body.user;
         try {
           if (!(await this.usersService.verifyPassword(email, password))) {
@@ -182,6 +195,7 @@ class UsersRouter {
         },
       },
       async (req, res) => {
+        await this.botCheck(req, req.body.turnstileToken, 'resend');
         await this.emailConfirmation.resend(req.body.user.email);
         res
           .status(StatusCodes.ACCEPTED)

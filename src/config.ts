@@ -48,6 +48,13 @@ const envVarsSchema = z.object({
   // key, emails aren't confirmed.
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().min(1).default('Everise <noreply@everise.dev>'),
+  // The bot check on sign-up, sign-in and resending a confirmation link
+  // (Cloudflare Turnstile's secret key). Without it, nothing is checked.
+  TURNSTILE_SECRET_KEY: z.string().optional(),
+  // The MB everyone's uploads may keep in R2 together. The account's free
+  // 10 GB are shared by staging and production, so the two settings together
+  // must stay under them.
+  UPLOAD_STORAGE_MB: z.coerce.number().int().min(0).default(1024),
   // The Workers AI Neurons the Waking Sands may spend a day. The account's
   // free 10,000 are shared by staging and production, so the two settings
   // together must stay under them. 0 (the default) keeps the chat closed.
@@ -107,6 +114,12 @@ const config = {
     resendApiKey: envVars.RESEND_API_KEY,
     from: envVars.EMAIL_FROM,
   },
+  turnstile: {
+    secretKey: envVars.TURNSTILE_SECRET_KEY,
+    // Tokens are only taken from the site's own pages.
+    hostnames: [new URL(envVars.BASE_URL).hostname],
+  },
+  uploadStorageBytes: envVars.UPLOAD_STORAGE_MB * 1024 * 1024,
   wakingSandsDailyNeurons: envVars.WAKING_SANDS_DAILY_NEURONS,
   checkApiResponses: envVars.CHECK_API_RESPONSES,
   stagingAccess: {

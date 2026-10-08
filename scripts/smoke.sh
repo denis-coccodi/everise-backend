@@ -8,7 +8,9 @@
 #           "check your email" and signing in is refused until the link is
 #           opened, so that is checked instead of the article. The address
 #           is Resend's test inbox (delivered+...@resend.dev), which accepts
-#           the email and delivers it nowhere.
+#           the email and delivers it nowhere. When the API has the bot check
+#           (TURNSTILE_SECRET_KEY set), a script can't sign up: the refusal
+#           (403) is checked and the steps that need an account are skipped.
 #   verify: log the saved user in again and fetch the saved article (by its id),
 #           e.g. after a restart or redeploy, to check the data persisted
 #           (or, for an unconfirmed sign-up, that sign-in is still refused).
@@ -25,9 +27,10 @@ CF_ACCESS_CLIENT_ID=${CF_ACCESS_CLIENT_ID:-}
 CF_ACCESS_CLIENT_SECRET=${CF_ACCESS_CLIENT_SECRET:-}
 
 # req <expected-status> <label> <curl args...>; the body is JSON unless CT
-# names another type.
+# names another type. ALSO names a second status that passes too.
 req() {
   expected=$1; label=$2; shift 2
+  also=${ALSO:-}
   if [ -n "$CF_ACCESS_CLIENT_ID" ]; then
     set -- -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" "$@"
   fi
@@ -35,7 +38,7 @@ req() {
   code=$(printf '%s' "$out" | tail -n 1)
   BODY=$(printf '%s\n' "$out" | sed '$d' | sed '$d')
   redirect=$(printf '%s' "$out" | tail -n 2 | head -n 1)
-  if [ "$code" = "$expected" ]; then
+  if [ "$code" = "$expected" ] || { [ -n "$also" ] && [ "$code" = "$also" ]; }; then
     echo "ok   [$code] $label"
   else
     echo "FAIL [$code, expected $expected] $label"
@@ -70,9 +73,19 @@ case "$MODE" in
     U="smoke$(date +%s)"
     E="delivered+$U@resend.dev"
     echo "$U" > "$J.user"
-    rm -f "$J.unconfirmed"
+    rm -f "$J.unconfirmed" "$J.botcheck"
+    ALSO=403
     req 201 "register $U"   -X POST "$B/api/users" -d "{\"user\":{\"email\":\"$E\",\"username\":\"$U\",\"password\":\"Passw0rd!\"}}"
+    ALSO=
     case "$BODY" in
+      *"not a bot"*)
+        echo "     the bot check is on: a sign-up without its token is refused"
+        touch "$J.botcheck"
+        ;;
+      *'"errors"'*)
+        echo "FAIL the sign-up was refused for another reason"
+        FAILED=1
+        ;;
       *'"confirmation"'*)
         echo "     a confirmation link was emailed"
         touch "$J.unconfirmed"
@@ -95,7 +108,9 @@ case "$MODE" in
   verify)
     U=$(cat "$J.user")
     E="delivered+$U@resend.dev"
-    if [ -f "$J.unconfirmed" ]; then
+    if [ -f "$J.botcheck" ]; then
+      echo "ok   no account to check: the bot check refused the sign-up"
+    elif [ -f "$J.unconfirmed" ]; then
       req 403 "login $U (unconfirmed)" -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$E\",\"password\":\"Passw0rd!\"}}"
     else
       req 200 "login $U"      -X POST "$B/api/users/login" -d "{\"user\":{\"email\":\"$E\",\"password\":\"Passw0rd!\"}}"
