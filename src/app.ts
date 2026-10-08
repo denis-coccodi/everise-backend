@@ -34,6 +34,7 @@ import {
   PartyFinderSource,
 } from './party-finder';
 import {ProfilesRouter, ProfilesService} from './profiles';
+import {SitemapRouter} from './sitemap';
 import {TurnstileFetch, TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {
@@ -310,6 +311,8 @@ function createApp(
   app.use('/api', wakingSandsRouter);
 
   app.use('/api', adminRouter);
+
+  app.use('/api', new SitemapRouter(db).router);
 
   // The API's description, built from the routes above.
   app.use('/api', docsRouter());
