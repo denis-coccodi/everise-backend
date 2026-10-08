@@ -138,6 +138,7 @@ describe('GET /api/party-finder', () => {
         duty: 'The Unending Coil of Bahamut (Ultimate)',
         // Not in the duty data (no refresh here): the category's icon.
         dutyIcon: 61802,
+        level: null,
         sortKey: null,
         highEnd: true,
         worldOnly: false,
@@ -211,8 +212,9 @@ describe('GET /api/party-finder', () => {
   });
 
   test("gives a listing its duty's place in the game's order and its type icon, from the duty data", async () => {
-    // The fake duty data has "Dancing Mad (Ultimate)": SortKey 4, an
-    // ultimate (icon 61832), and "the Excitatron 6000" (SortKey 7, a treasure hunt), which
+    // The fake duty data has "Dancing Mad (Ultimate)": level 100, SortKey 4,
+    // an ultimate (icon 61832), and "the Excitatron 6000" (level 90, SortKey 7,
+    // a treasure hunt), which
     // players' plugins write with a capital T.
     await request(app)
       .post('/api/duties/refresh')
@@ -231,14 +233,15 @@ describe('GET /api/party-finder', () => {
         (l: {
           duty: string | null;
           dutyIcon: number;
+          level: number | null;
           sortKey: number | null;
-        }) => [l.duty, l.dutyIcon, l.sortKey],
+        }) => [l.duty, l.dutyIcon, l.level, l.sortKey],
       ),
     ).toEqual([
-      ['Dancing Mad (Ultimate)', 61832, 4],
+      ['Dancing Mad (Ultimate)', 61832, 100, 4],
       // No duty: the category's icon, no place in the order.
-      [null, 61808, null],
-      ['The Excitatron 6000', 61808, 7],
+      [null, 61808, null, null],
+      ['The Excitatron 6000', 61808, 90, 7],
     ]);
   });
 

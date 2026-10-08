@@ -24,8 +24,11 @@ const PartyFinderListing = z.strictObject({
   // The duty type's icon (an image id for GET /api/images/:id), as the game
   // shows it before the name: an ultimate's, a raid's, a map's...
   dutyIcon: z.number().int().nullable(),
-  // The duty's place in the game's order (higher: newer, listed first);
-  // null when it isn't in the duty data (maps, FATEs, no duty...).
+  // The duty's level: the game lists the highest first within a category.
+  // Null when the duty isn't in the duty data (maps, FATEs, no duty...).
+  level: z.number().int().nullable(),
+  // The duty's place in the game's own order (higher: newer), for duties of
+  // the same level; null as level is.
   sortKey: z.number().int().nullable(),
   highEnd: z.boolean(),
   // Only joinable from its own world (the Hunt, FATEs...); the others from

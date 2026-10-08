@@ -153,7 +153,7 @@ class DutiesService {
     };
   }
 
-  // Each duty's sort key and type icon, by name in lower case (the game
+  // Each duty's level, sort key and type icon, by name in lower case (the game
   // data writes "the Omega Protocol", players' plugins "The Omega
   // Protocol"): the Party Finder orders its listings and marks their duty
   // type with them.
@@ -165,7 +165,7 @@ class DutiesService {
           duty =>
             [
               duty.name.toLowerCase(),
-              {sortKey: duty.sortKey, icon: group.icon},
+              {level: duty.level, sortKey: duty.sortKey, icon: group.icon},
             ] as const,
         ),
       ),

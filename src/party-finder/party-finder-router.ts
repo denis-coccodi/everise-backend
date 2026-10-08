@@ -7,9 +7,9 @@ import {PartyFinderQuery, PartyFinderResponse} from './party-finder-schemas';
 import {PARTY_FINDER_ICONS, categoryIcon} from './xivpf-duties';
 import {PartyFinderListing} from './xivpf-listing';
 
-// A duty's sort key and type icon, by its name in lower case.
+// A duty's level, sort key and type icon, by its name in lower case.
 type DutiesByName = () => Promise<
-  ReadonlyMap<string, {sortKey: number; icon: number | null}>
+  ReadonlyMap<string, {level: number; sortKey: number; icon: number | null}>
 >;
 
 // The duty data changes only with a refresh: it's read again after this.
@@ -17,8 +17,9 @@ const DUTIES_CACHE_MS = 10 * 60 * 1000;
 
 // The Party Finder page: a data centre's listings, as xivpf.com collects
 // them from players' Remote Party Finder plugin. Open to everyone. Each
-// listing gets its duty's sort key (the game's own order, the newest first)
-// and its duty type's icon from the duty data.
+// listing gets its duty's level and sort key (the game lists the highest
+// level first, then by the game's own order) and its duty type's icon from
+// the duty data.
 class PartyFinderRouter {
   private duties?: {
     at: number;
@@ -85,6 +86,7 @@ function withDuty(
   return {
     ...listing,
     dutyIcon: duty?.icon ?? categoryIcon(listing.category),
+    level: duty?.level ?? null,
     sortKey: duty?.sortKey ?? null,
   };
 }
