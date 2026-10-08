@@ -86,6 +86,7 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | GET    | `/api/auth/:provider/callback`          |          | The provider's redirect back; signs in and redirects to the site                                            |
 | GET    | `/api/discord/widget`                   | required | Who's online on the Discord server: `{widget}`, null when its widget is off ([Discord](#discord))           |
 | GET    | `/api/party-finder`                     |          | A data centre's Party Finder listings (`?dataCentre=Light`, any data centre) ([Party Finder](#party-finder)) |
+| GET    | `/api/sitemap`                          |          | What the site's `sitemap.xml` lists: `{articles: [{id, updatedAt}], dataCentres}`, the newest 5,000 posts first, cached for an hour |
 | GET    | `/api/user`                             | required | Current user                                                                                                |
 | PUT    | `/api/user`                             | required | Update the current user                                                                                     |
 | PUT    | `/api/user/image`                       | required | Upload a profile picture ([Profile pictures](#profile-pictures))                                            |
