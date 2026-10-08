@@ -7,7 +7,7 @@ import {
   currentAttachment,
   uploadIdOf,
 } from '../media/attachments';
-import {Article, RouletteCard} from './article';
+import {Article, PartyFinderPost, RouletteCard} from './article';
 import {Comment} from './comment';
 // Posts and comments as the database stores them, and the parameters the services take.
 
@@ -20,7 +20,10 @@ interface CreateArticleParams {
   body: string;
   tags?: string[];
   roulette?: RouletteCard;
+  partyFinder?: PartyFinderPost;
   media?: AttachmentInput[];
+  // Also announce it in the Everise Discord.
+  shareToDiscord?: boolean;
 }
 
 interface ListArticlesParams {
@@ -69,6 +72,7 @@ interface ArticleDoc extends Doc {
   tags: string[];
   favoritedBy: string[];
   roulette?: RouletteCard;
+  partyFinder?: PartyFinderPost;
   // Unset on posts from before attachments: their media is in the text.
   media?: Attachment[];
 }
@@ -99,6 +103,7 @@ function toArticle(doc: ArticleDoc): Article {
     doc.updatedAt,
     doc.roulette,
     attachments.map(currentAttachment),
+    doc.partyFinder,
   );
 }
 

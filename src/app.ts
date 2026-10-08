@@ -1,12 +1,8 @@
 import cookieParser from 'cookie-parser';
+import {AppOptions} from './app-options';
 import cors from 'cors';
 import express from 'express';
-import {
-  AdminRouter,
-  CloudflareStagingAccess,
-  MemberDeletion,
-  StagingAccess,
-} from './admin';
+import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
 import {
   ArticlesRouter,
   ArticlesService,
@@ -22,84 +18,41 @@ import {
   ImagesService,
   XivApiClient,
 } from './duties';
-import {emailSenderFor, EmailSender} from './email';
+import {emailSenderFor} from './email';
 import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
-import {FileStore, MemoryFileStore, UploadStorage} from './files';
+import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
 import {
   PartyFinderBoard,
+  PartyFinderReader,
   PartyFinderRouter,
-  PartyFinderSource,
 } from './party-finder';
+import {
+  PartyFinderSharesRouter,
+  PartyFinderSharesService,
+} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {SitemapRouter} from './sitemap';
-import {TurnstileFetch, TurnstileVerifier} from './turnstile';
+import {TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
-import {
-  OAuthFetch,
-  SocialLoginRouter,
-  SocialLoginSettings,
-} from './social-login';
-import {GifFetch, GifSearch, MediaRouter, MediaService} from './media';
-import {
-  DiscordAnnouncer,
-  DiscordFetch,
-  DiscordRouter,
-  DiscordWidgetReader,
-  allFeeds,
-} from './discord';
+import {SocialLoginRouter} from './social-login';
+import {GifSearch, MediaRouter, MediaService} from './media';
+import {DiscordAnnouncer, DiscordRouter, DiscordWidgetReader} from './discord';
 import {
   EmailConfirmation,
   JWTService,
-  LoadBundledPicture,
   ProfileImagesService,
   TataruAccount,
   UsersRouter,
   UsersService,
 } from './users';
 import {
-  CharacterModel,
   CharactersService,
   WakingSandsRouter,
   WakingSandsService,
 } from './waking-sands';
-
-interface AppOptions {
-  // Where uploaded images' bytes are kept (R2 in the Worker; memory without).
-  fileStore?: FileStore;
-  // Reads a picture from public/ (the Worker's static assets).
-  loadBundledPicture?: LoadBundledPicture;
-  // Where staging testers are given access to the staging site.
-  stagingAccess?: StagingAccess;
-  // Sign-in with Google and Facebook: the apps' settings, and how the app
-  // reaches the providers.
-  socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
-  // Announcements in a Discord channel and the server's widget.
-  discord?: {webhookUrl?: string; guildId?: string; fetch?: DiscordFetch};
-  // The GIF search: GIPHY's key, and how the app reaches it.
-  gifSearch?: {apiKey?: string; fetch?: GifFetch};
-  // Sends the email confirmation links; without one, emails aren't
-  // confirmed.
-  emailSender?: EmailSender;
-  // The Waking Sands: what writes the characters' lines (Workers AI), and
-  // the Neurons it may spend a day. Without a model, or with no Neurons,
-  // the chat isn't open.
-  wakingSands?: {model?: CharacterModel; dailyNeurons?: number};
-  // The Party Finder listings (xivpf.com). In the Worker, the Durable Object
-  // that reads them; otherwise a board in this process.
-  partyFinder?: PartyFinderSource;
-  // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
-  // and how the app reaches siteverify. Without a secret, nothing is checked.
-  turnstile?: {
-    secretKey?: string;
-    hostnames?: string[];
-    fetch?: TurnstileFetch;
-  };
-  // The bytes everyone's uploads may keep together.
-  uploadStorageBytes?: number;
-}
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
 function createApp(
@@ -134,15 +87,20 @@ function createApp(
 
   const mediaService = new MediaService(db, fileStore, uploadStorage, now);
 
+  // The Everise Discord channel: only what members choose to share.
+  const discordAnnouncer = new DiscordAnnouncer(
+    discord.webhookUrl,
+    config.baseUrl,
+    discord.fetch,
+  );
+
   const articlesService = new ArticlesService(
     db,
     usersService,
     profilesService,
-    allFeeds(
-      liveFeed,
-      new DiscordAnnouncer(discord.webhookUrl, config.baseUrl, discord.fetch),
-    ),
+    liveFeed,
     mediaService,
+    discordAnnouncer,
   );
   const commentsService = new CommentsService(
     db,
@@ -197,6 +155,7 @@ function createApp(
   const discordRouter = new DiscordRouter(
     auth,
     new DiscordWidgetReader(discord.guildId, now, discord.fetch),
+    discordAnnouncer.available,
   ).router;
 
   const mediaRouter = new MediaRouter(
@@ -252,6 +211,25 @@ function createApp(
     config.dutiesRefreshKey,
   ).router;
 
+  const partyFinderReader = new PartyFinderReader(
+    partyFinder,
+    () => dutiesService.dutiesByName(),
+    now,
+  );
+
+  const partyFinderSharesRouter = new PartyFinderSharesRouter(
+    auth,
+    new PartyFinderSharesService(
+      db,
+      partyFinderReader,
+      articlesService,
+      profilesService,
+      discordAnnouncer,
+      now,
+    ),
+    profilesService,
+  ).router;
+
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
     new RoulettePostsService(db, dutiesService, articlesService, tataru, now),
@@ -291,11 +269,8 @@ function createApp(
   app.use('/api', socialLoginRouter);
 
   app.use('/api', discordRouter);
-  app.use(
-    '/api',
-    new PartyFinderRouter(partyFinder, () => dutiesService.dutiesByName(), now)
-      .router,
-  );
+  app.use('/api', new PartyFinderRouter(partyFinderReader).router);
+  app.use('/api', partyFinderSharesRouter);
   app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);

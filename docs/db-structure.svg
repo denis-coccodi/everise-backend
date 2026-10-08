@@ -97,7 +97,7 @@
     <text x="488" y="657" class="field">tags</text><text x="744" y="657" class="type" text-anchor="end">string[]</text>
     <rect x="452" y="671" width="26" height="16" rx="3" class="fk"/><text x="465" y="683" class="badge" text-anchor="middle">FK</text>
     <text x="488" y="683" class="field">favoritedBy</text><text x="744" y="683" class="type" text-anchor="end">users.id[]</text>
-    <text x="488" y="709" class="field">roulette</text><text x="744" y="709" class="type" text-anchor="end">object? (result card)</text>
+    <text x="488" y="709" class="field">roulette, partyFinder</text><text x="744" y="709" class="type" text-anchor="end">object?</text>
     <text x="488" y="735" class="field">media</text><text x="744" y="735" class="type" text-anchor="end">attachment[]? (≤ 4)</text>
     <text x="488" y="761" class="field">createdAt</text><text x="744" y="761" class="type" text-anchor="end">Date</text>
     <text x="488" y="787" class="field">updatedAt</text><text x="744" y="787" class="type" text-anchor="end">Date</text>
@@ -174,7 +174,7 @@
     <text x="876" y="586" class="title">postLimits</text>
     <text x="1144" y="586" class="key" text-anchor="end">docs: postLimits</text>
     <rect x="872" y="609" width="26" height="16" rx="3" class="pk"/><text x="885" y="621" class="badge" text-anchor="middle">PK</text>
-    <text x="908" y="621" class="field">id</text><text x="1144" y="621" class="type" text-anchor="end">user-… / guest-… / guests</text>
+    <text x="908" y="621" class="field">id</text><text x="1144" y="621" class="type" text-anchor="end">user-… / guest-… / guests / pf-…</text>
     <text x="908" y="647" class="field">lastPostAt</text><text x="1144" y="647" class="type" text-anchor="end">ms?</text>
     <text x="908" y="673" class="field">windowStart</text><text x="1144" y="673" class="type" text-anchor="end">ms?</text>
     <text x="908" y="699" class="field">count</text><text x="1144" y="699" class="type" text-anchor="end">number?</text>

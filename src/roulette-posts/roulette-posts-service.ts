@@ -52,6 +52,7 @@ class RoulettePostsService {
     user: User | undefined,
     comment: string | undefined,
     clientAddress: string,
+    shareToDiscord = false,
   ): Promise<Article> {
     const guest = !user;
     const text = (comment ?? '').trim();
@@ -78,6 +79,8 @@ class RoulettePostsService {
       body: guest ? this.guestLine() : text,
       tags: ['roulette'],
       roulette: card,
+      // Tataru only posts on the site.
+      shareToDiscord: !guest && shareToDiscord,
     });
 
     await this.recordPost(limitKey, guest);

@@ -88,6 +88,8 @@ class MemberDeletion {
       ...pictures.map(file => remove('profileImages', file.id)),
       ...uploads.map(file => remove('media', file.id)),
       remove('postLimits', `user-${user.id}`),
+      remove('postLimits', `pf-post-${user.id}`),
+      remove('postLimits', `pf-discord-${user.id}`),
       remove('users', user.id),
     ];
     // The files first: if the database step fails, a retry finds the

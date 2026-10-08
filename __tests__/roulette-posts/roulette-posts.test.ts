@@ -2,7 +2,7 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {GUEST_LINES} from '../../src/roulette-posts/roulette-posts-service';
-import {app, clearDb, clock, usersClient, xivApi} from '../utils';
+import {app, clearDb, clock, discord, usersClient, xivApi} from '../utils';
 
 const postUrl = '/api/roulette-results';
 
@@ -163,6 +163,40 @@ describe('POST /api/roulette-results', () => {
       expect(response.body.errors.body).toEqual([
         'Keep the comment to 280 characters.',
       ]);
+    });
+  });
+
+  describe('sharing in the Everise Discord', () => {
+    beforeEach(() => {
+      discord.sent = [];
+      discord.webhookStatus = 204;
+    });
+
+    test('a member chooses: announced only when they ask', async () => {
+      const {user} = await usersClient.registerRandomUser();
+
+      expect((await postAs(user.token, {result: sastasha})).status).toBe(201);
+      expect(discord.sent).toEqual([]);
+
+      clock.now = new Date(Date.now() + 60_000);
+      const shared = await postAs(user.token, {
+        result: sastasha,
+        comment: 'Wish me luck',
+        shareToDiscord: true,
+      });
+      expect(shared.status).toBe(201);
+      expect(discord.sent).toHaveLength(1);
+      expect(discord.sent[0].body.content).toContain('spun the duty roulette!');
+    });
+
+    test("Tataru's posts for guests stay on the site", async () => {
+      const response = await postAsGuest({
+        result: sastasha,
+        shareToDiscord: true,
+      });
+
+      expect(response.status).toBe(201);
+      expect(discord.sent).toEqual([]);
     });
   });
 

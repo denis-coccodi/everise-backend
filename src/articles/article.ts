@@ -1,4 +1,9 @@
+import {z} from 'zod';
 import {Attachment} from '../media/attachments';
+import type {PartyFinderPostSchema} from './article-schemas';
+
+// A Party Finder listing shared as a post, as it was then.
+type PartyFinderPost = z.infer<typeof PartyFinderPostSchema>;
 
 // A roulette result shown as a card, like the roulette's "Duty Found"
 // window. Built by the backend from its own duty data, never from the client.
@@ -35,7 +40,8 @@ class Article {
     readonly roulette?: RouletteCard,
     // Images, GIFs and videos, shown apart from the text.
     readonly media: Attachment[] = [],
+    readonly partyFinder?: PartyFinderPost,
   ) {}
 }
 
-export {Article, RouletteCard};
+export {Article, PartyFinderPost, RouletteCard};

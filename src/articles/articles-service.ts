@@ -2,7 +2,7 @@ import {Db} from '../db';
 import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
 import {Article} from './article';
-import {announceArticle} from './announce-article';
+import {ArticleAnnouncer, announceArticle} from './announce-article';
 import {ProfilesService} from '../profiles';
 import {LiveFeed, noLiveFeed} from '../live/live-feed';
 import {attachmentsFromText, cleanAttachment} from '../media/attachments';
@@ -29,6 +29,8 @@ class ArticlesService {
     private readonly profilesService: ProfilesService,
     private readonly liveFeed: LiveFeed = noLiveFeed,
     private readonly mediaService?: MediaService,
+    // The Everise Discord, for posts whose author asks.
+    private readonly discord?: ArticleAnnouncer,
   ) {}
 
   async createArticle(
@@ -57,6 +59,7 @@ class ArticlesService {
       favoritedBy: [],
       media,
       ...(params.roulette ? {roulette: params.roulette} : {}),
+      ...(params.partyFinder ? {partyFinder: params.partyFinder} : {}),
     };
 
     const articleDoc = await this.db.create<ArticleDoc>(
@@ -65,7 +68,12 @@ class ArticlesService {
     );
     await this.mediaService?.claim(authorId, uploadsIn(media));
 
-    await announceArticle(this.liveFeed, this.profilesService, articleDoc);
+    await announceArticle(
+      this.liveFeed,
+      this.profilesService,
+      articleDoc,
+      params.shareToDiscord ? this.discord : undefined,
+    );
 
     return toArticle(articleDoc);
   }

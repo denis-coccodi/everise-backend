@@ -56,6 +56,15 @@ const PartyFinderListing = z.strictObject({
   expiresAt: isoDate,
 });
 
+// The Party Finder's icons (image ids for GET /api/images/:id): an open
+// slot's roles, and the sprout of a listing that welcomes beginners.
+const PartyFinderIcons = z.strictObject({
+  tank: z.number().int(),
+  healer: z.number().int(),
+  dps: z.number().int(),
+  beginner: z.number().int(),
+});
+
 const PartyFinderResponse = responseSchema(
   'PartyFinderResponse',
   z.strictObject({
@@ -70,14 +79,7 @@ const PartyFinderResponse = responseSchema(
     ),
     // When the site last read the listings from xivpf.
     fetchedAt: isoDate,
-    // The Party Finder's icons (image ids for GET /api/images/:id): an open
-    // slot's roles, and the sprout of a listing that welcomes beginners.
-    icons: z.strictObject({
-      tank: z.number().int(),
-      healer: z.number().int(),
-      dps: z.number().int(),
-      beginner: z.number().int(),
-    }),
+    icons: PartyFinderIcons,
     listings: z.array(PartyFinderListing),
   }),
 );
@@ -90,4 +92,9 @@ const PartyFinderQuery = z.object({
     .default('Light'),
 });
 
-export {PartyFinderQuery, PartyFinderResponse};
+export {
+  PartyFinderIcons,
+  PartyFinderListing,
+  PartyFinderQuery,
+  PartyFinderResponse,
+};

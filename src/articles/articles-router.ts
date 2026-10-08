@@ -99,6 +99,7 @@ class ArticlesRouter {
           body,
           tags: tagList,
           media,
+          shareToDiscord: req.body.shareToDiscord,
         });
         res
           .status(StatusCodes.CREATED)

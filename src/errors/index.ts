@@ -12,5 +12,6 @@ export {NotFoundError} from './not-found-error';
 export {StorageFullError} from './storage-full-error';
 export {TooManyRequestsError} from './too-many-requests-error';
 export {UnauthorizedError} from './unauthorized-error';
+export {UnavailableError} from './unavailable-error';
 export {UpstreamError} from './upstream-error';
 export {ValidationError} from './validation-error';

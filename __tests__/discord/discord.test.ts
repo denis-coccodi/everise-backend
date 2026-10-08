@@ -2,7 +2,7 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {DiscordAnnouncer, DiscordFetch} from '../../src/discord';
-import {ArticleEvent, LiveEvent} from '../../src/live/live-feed';
+import {ArticleEvent} from '../../src/live/live-feed';
 import {app, articlesClient, clock, discord, usersClient} from '../utils';
 
 const site = config.baseUrl;
@@ -13,9 +13,27 @@ describe('announcing new posts in Discord', () => {
     discord.webhookStatus = 204;
   });
 
-  test('a new post is announced in the channel, linking back, pinging nobody', async () => {
+  const newPost = (token: string, shareToDiscord?: boolean) =>
+    request(app)
+      .post('/api/articles')
+      .set('authorization', `Token ${token}`)
+      .send({
+        article: {title: 'Hello', description: 'd', body: 'b', tagList: []},
+        shareToDiscord,
+      });
+
+  test('a post stays on the site unless its author asks', async () => {
     const {user} = await usersClient.registerRandomUser();
-    const {article} = await articlesClient.createRandomArticle(user.token);
+
+    await articlesClient.createRandomArticle(user.token);
+    await newPost(user.token, false);
+
+    expect(discord.sent).toEqual([]);
+  });
+
+  test('a post shared to Discord is announced in the channel, linking back, pinging nobody', async () => {
+    const {user} = await usersClient.registerRandomUser();
+    const {article} = (await newPost(user.token, true)).body;
 
     expect(discord.sent).toHaveLength(1);
     const [{url, body}] = discord.sent;
@@ -44,17 +62,7 @@ describe('announcing new posts in Discord', () => {
     discord.webhookStatus = 500;
     const {user} = await usersClient.registerRandomUser();
 
-    const response = await request(app)
-      .post('/api/articles')
-      .set('authorization', `Token ${user.token}`)
-      .send({
-        article: {
-          title: 'Still here',
-          description: 'd',
-          body: 'b',
-          tagList: [],
-        },
-      });
+    const response = await newPost(user.token, true);
 
     expect(response.status).toBe(201);
     expect(discord.sent).toHaveLength(1);
@@ -62,9 +70,8 @@ describe('announcing new posts in Discord', () => {
 });
 
 describe('DiscordAnnouncer', () => {
-  const event = (article: Partial<ArticleEvent['article']>): LiveEvent => ({
-    type: 'article-created',
-    article: {
+  const post = (article: Partial<ArticleEvent['article']>) =>
+    ({
       id: expect.any(String),
       title: 'Duty Found',
       description: 'A roulette result',
@@ -83,8 +90,7 @@ describe('DiscordAnnouncer', () => {
         following: false,
       },
       ...article,
-    } as ArticleEvent['article'],
-  });
+    }) as ArticleEvent['article'];
 
   function announcer() {
     const sent: Record<string, unknown>[] = [];
@@ -101,8 +107,8 @@ describe('DiscordAnnouncer', () => {
   test("a roulette result shows the duty, the party and the duty's banner", async () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
-    await discordAnnouncer.publish(
-      event({
+    await discordAnnouncer.announceArticle(
+      post({
         roulette: {
           type: 'Dungeon',
           name: 'The Aurum Vale',
@@ -135,7 +141,7 @@ describe('DiscordAnnouncer', () => {
   test('a post shows its first image', async () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
-    await discordAnnouncer.publish(event({}));
+    await discordAnnouncer.announceArticle(post({}));
 
     expect((sent[0] as {embeds: {image: unknown}[]}).embeds[0].image).toEqual({
       url: 'https://example.com/pic.png',
@@ -145,8 +151,8 @@ describe('DiscordAnnouncer', () => {
   test("a post's first YouTube video follows the card as a message of its own, where Discord plays it", async () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
-    await discordAnnouncer.publish(
-      event({
+    await discordAnnouncer.announceArticle(
+      post({
         // Only the first video is relayed.
         media: [
           {
@@ -177,8 +183,8 @@ describe('DiscordAnnouncer', () => {
   test('a post without a video has just the headline', async () => {
     const {sent, announcer: discordAnnouncer} = announcer();
 
-    await discordAnnouncer.publish(
-      event({
+    await discordAnnouncer.announceArticle(
+      post({
         body: 'A link in text: https://youtu.be/dQw4w9WgXcQ here',
         media: [],
       }),
@@ -192,9 +198,11 @@ describe('DiscordAnnouncer', () => {
   test('announces nothing without a webhook', async () => {
     const fetchFn = jest.fn();
 
-    await new DiscordAnnouncer(undefined, 'https://site', fetchFn).publish(
-      event({}),
-    );
+    await new DiscordAnnouncer(
+      undefined,
+      'https://site',
+      fetchFn,
+    ).announceArticle(post({}));
 
     expect(fetchFn).not.toHaveBeenCalled();
   });

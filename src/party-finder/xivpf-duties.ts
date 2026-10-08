@@ -210,6 +210,32 @@ function categoryIcon(category: string): number | null {
   return CATEGORY_ICONS[category] ?? null;
 }
 
+// xivpf's categories (the game's Party Finder tabs), as the site names them
+// (the frontend's listing-filters.ts too).
+const CATEGORY_NAMES: Record<string, string> = {
+  DutyRoulette: 'Duty Roulette',
+  Dungeon: 'Dungeons',
+  Guildhest: 'Guildhests',
+  Trial: 'Trials',
+  Raid: 'Raids',
+  HighEndDuty: 'High-end Duty',
+  PvP: 'PvP',
+  GoldSaucer: 'Gold Saucer',
+  Fate: 'FATEs',
+  TreasureHunt: 'Treasure Hunt',
+  TheHunt: 'The Hunt',
+  GatheringForay: 'Gathering Forays',
+  DeepDungeon: 'Deep Dungeons',
+  FieldOperation: 'Field Operations',
+  VariantAndCriterionDungeon: 'V&C Dungeons',
+  None: 'No duty',
+};
+
+// What a listing is for: its duty, or its category without one.
+function listingName(listing: {duty: string | null; category: string}) {
+  return listing.duty ?? CATEGORY_NAMES[listing.category] ?? listing.category;
+}
+
 // Every icon the Party Finder page shows that the duty data may not have
 // already (it keeps the jobs' and its duty types' icons): the classes',
 // the above and the categories'. The duty data's refresh downloads them
@@ -230,4 +256,5 @@ export {
   categoryIcon,
   dutyName,
   jobIcon,
+  listingName,
 };
