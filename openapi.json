@@ -4679,6 +4679,18 @@
                     }
                   ]
                 },
+                "level": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "sortKey": {
                   "anyOf": [
                     {
@@ -4830,6 +4842,7 @@
                 "category",
                 "duty",
                 "dutyIcon",
+                "level",
                 "sortKey",
                 "highEnd",
                 "worldOnly",
