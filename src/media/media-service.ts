@@ -141,6 +141,16 @@ class MediaService {
     );
   }
 
+  // One of a person's uploads put to use, e.g. the picture of a Party Finder
+  // listing they shared: where it's served, or undefined when it isn't
+  // theirs. Kept from then on, like an attachment.
+  async use(userId: string, id: string) {
+    const [doc] = await this.ownedOf(userId, [id]);
+    if (!doc) return undefined;
+    await this.claim(userId, [id]);
+    return mediaUrl(id);
+  }
+
   // Deletes a person's uploads that a deleted post or comment (or a removed
   // attachment) used. Someone else's upload is left alone.
   async release(userId: string, ids: string[]) {

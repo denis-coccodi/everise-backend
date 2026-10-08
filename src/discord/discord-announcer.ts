@@ -1,8 +1,9 @@
 import {URL} from 'url';
 import type {ArticleDto} from '../articles/article-dto';
 import {LiveEvent, LiveFeed} from '../live/live-feed';
-import {ShownListing} from '../party-finder';
-import {Sharer, articleMessages, listingMessage} from './discord-messages';
+import {Sharer, fromDiscord} from './discord-format';
+import {articleMessages} from './discord-messages';
+import {SharedListing, listingMessage} from './listing-message';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
@@ -38,13 +39,12 @@ class DiscordAnnouncer {
     }
   }
 
-  // A listing shared on its own; false when Discord didn't take it.
-  async shareListing(
-    sharer: Sharer,
-    shared: {dataCentre: string; listing: ShownListing},
-    comment: string,
-  ) {
-    const page = `${this.siteUrl}/party-finder/${shared.dataCentre.toLowerCase()}`;
+  // A listing shared on its own, linking to it on its data centre's Party
+  // Finder page; false when Discord didn't take it.
+  async shareListing(sharer: Sharer, shared: SharedListing, comment: string) {
+    const page = fromDiscord(
+      `${this.siteUrl}/party-finder/${shared.dataCentre.toLowerCase()}?listing=${encodeURIComponent(shared.listing.id)}`,
+    );
     return this.send(
       listingMessage(sharer, shared, comment, page, this.siteUrl),
     );

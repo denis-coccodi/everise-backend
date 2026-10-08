@@ -37,11 +37,11 @@ class PartyFinderSharesRouter {
         },
       },
       async (req, res) => {
-        const {dataCentre, listingId, comment, shareToDiscord} = req.body;
+        const {dataCentre, listingId, comment, shareToDiscord, pictureId} =
+          req.body;
         const article = await this.sharesService.post(
           req.user!,
-          dataCentre,
-          listingId,
+          {dataCentre, listingId, pictureId},
           comment,
           shareToDiscord,
         );
@@ -68,11 +68,10 @@ class PartyFinderSharesRouter {
         },
       },
       async (req, res) => {
-        const {dataCentre, listingId, comment} = req.body;
+        const {dataCentre, listingId, comment, pictureId} = req.body;
         await this.sharesService.toDiscord(
           req.user!,
-          dataCentre,
-          listingId,
+          {dataCentre, listingId, pictureId},
           comment,
         );
         res.status(StatusCodes.ACCEPTED).json({shared: true});

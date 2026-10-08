@@ -46,7 +46,8 @@ describe('announcing new posts in Discord', () => {
       embeds: [
         {
           title: article.title,
-          url: `${site}/article/${article.id}`,
+          // Opening it asks for sign-in first (anyone in the channel sees it).
+          url: `${site}/article/${article.id}?from=discord`,
           author: {
             name: user.username,
             url: `${site}/profile/${encodeURIComponent(user.username)}`,

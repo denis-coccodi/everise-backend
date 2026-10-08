@@ -1,4 +1,6 @@
 import 'jest-extended';
+import {readFileSync} from 'fs';
+import {join} from 'path';
 import request from 'supertest';
 import {createApp} from '../../src/app';
 import {SqlDocumentStore} from '../../src/db';
@@ -31,6 +33,16 @@ beforeEach(() => {
 afterAll(() => {
   clock.now = undefined;
 });
+
+// The card's picture, as the member's browser uploads it: its id.
+async function upload(as: string) {
+  const png = readFileSync(join(__dirname, '../fixtures/images/small.png'));
+  const response = await request(app)
+    .post('/api/media')
+    .set('authorization', `Token ${as}`)
+    .send(png);
+  return response.body.media.id as string;
+}
 
 const share = (path: string, body: object, as: string | null = token) => {
   const req = request(app).post(`/api/party-finder/${path}`).send(body);
@@ -101,9 +113,58 @@ describe('POST /api/party-finder/posts', () => {
     expect(fields).toContainEqual(
       expect.objectContaining({name: 'Location', value: 'Odin (Light)'}),
     );
+    // Who's in, what's still needed by role, the conditions.
     expect(fields).toContainEqual(
-      expect.objectContaining({name: 'Players needed', value: '2'}),
+      expect.objectContaining({name: 'Needs 2 of 3', value: '🛡️ · 💚/⚔️'}),
     );
+    expect(fields).toContainEqual(
+      expect.objectContaining({name: 'In the party', value: 'PLD'}),
+    );
+    expect(fields).toContainEqual(
+      expect.objectContaining({
+        name: 'Conditions',
+        value: '[Practice] [Lootmaster] [One Player per Job]',
+      }),
+    );
+    // High-end duty's red, and the site's name under the card.
+    expect(body.embeds).toMatchObject([
+      {color: 0xc0392b, footer: {text: 'Everise Party Finder · Light'}},
+    ]);
+  });
+
+  test("shows the card's picture the member uploaded, in the post and in Discord", async () => {
+    const pictureId = await upload(token);
+
+    const response = await share('posts', {
+      dataCentre: 'Light',
+      listingId: LISTING,
+      pictureId,
+      shareToDiscord: true,
+    });
+
+    expect(response.status).toBe(201);
+    const picture = response.body.article.partyFinder.picture as string;
+    expect(picture).toMatch(new RegExp(`/api/media/${pictureId}$`));
+    expect(discord.sent[0].body).toMatchObject({
+      embeds: [{image: {url: picture}}],
+    });
+  });
+
+  test("someone else's upload can't be the picture", async () => {
+    const {
+      user: {token: other},
+    } = await usersClient.registerRandomUser();
+
+    const response = await share('posts', {
+      dataCentre: 'Light',
+      listingId: LISTING,
+      pictureId: await upload(other),
+    });
+
+    expect(response.status).toBe(422);
+    expect(response.body.errors.body).toEqual([
+      "That picture isn't one of your uploads.",
+    ]);
   });
 
   test("a listing that's gone, a guest, or a second share too soon is refused", async () => {
@@ -158,8 +219,11 @@ describe('POST /api/party-finder/discord', () => {
     expect(discord.sent).toHaveLength(1);
     const [{body}] = discord.sent;
     expect(body.content).toMatch(/\n> Anyone\?$/);
+    // The listing on its data centre's page; opening it asks for sign-in.
     expect(
-      (body.embeds as {url: string}[])[0].url.endsWith('/party-finder/light'),
+      (body.embeds as {url: string}[])[0].url.endsWith(
+        `/party-finder/light?listing=${LISTING}&from=discord`,
+      ),
     ).toBe(true);
     // No post was made.
     const feed = await request(app).get('/api/articles?tag=party-finder');

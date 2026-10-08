@@ -16,6 +16,9 @@ const listing = {
       error: `Keep the message to ${MAX_SHARE_COMMENT} characters.`,
     })
     .optional(),
+  // The site's card for the listing as a picture, uploaded first
+  // (POST /api/media): its id. Shown in Discord.
+  pictureId: z.string().min(1).max(100).optional(),
 };
 
 const NewPartyFinderPost = requestSchema(
