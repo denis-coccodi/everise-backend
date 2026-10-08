@@ -1,9 +1,11 @@
-name: Refresh FFXIV duties
+name: Refresh game data from XIVAPI
 
-# Started by hand: Actions → Refresh FFXIV duties → Run workflow → pick the
-# target. Asks the backend to re-download the game data from XIVAPI (duties,
-# roulettes, jobs: POST /api/duties/refresh), then every image it refers to
-# (POST /api/duties/refresh/images, a batch per call). Nothing is deployed.
+# Started by hand: Actions → Refresh game data from XIVAPI → Run workflow →
+# pick the target. Asks the backend to re-download the game data it keeps
+# from XIVAPI (duties, roulettes, jobs: POST /api/duties/refresh), then every
+# image the site shows from it: duty banners and type icons, job, role and
+# Party Finder icons (POST /api/duties/refresh/images, a batch per call).
+# Nothing is deployed.
 #
 # Needs a DUTIES_REFRESH_KEY secret in each GitHub environment (staging,
 # production), equal to the Worker secret of the same name:
@@ -19,7 +21,7 @@ on:
         default: staging
 
 concurrency:
-  group: refresh-duties-${{ inputs.target }}
+  group: refresh-game-data-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
@@ -31,7 +33,7 @@ jobs:
     environment: ${{ inputs.target }}
     permissions: {}
     steps:
-      - name: Refresh the cached lists
+      - name: Refresh the stored game data and images
         env:
           TARGET: ${{ inputs.target }}
           DUTIES_REFRESH_KEY: ${{ secrets.DUTIES_REFRESH_KEY }}

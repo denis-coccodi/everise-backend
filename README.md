@@ -256,7 +256,7 @@ The backend keeps a copy of Final Fantasy XIV game data, read from [XIVAPI](http
 - **`POST /api/duties/refresh`** downloads the duties, roulettes and jobs again and replaces the cached copies. It needs the `DUTIES_REFRESH_KEY` secret in an `X-Refresh-Key` header, and is disabled when the secret is unset. A failed download returns 502 and leaves the cached data unchanged. Its response's `images` (`{total, pending, failed}`) starts the image downloads.
 - **`POST /api/duties/refresh/images`** (same key) downloads the next 25 images; call it until `pending` is 0. A Worker on the free plan may make only 50 outbound requests per call, so the roughly 530 images take about 22 calls. Every refresh downloads all of them again; until a batch replaces an image, the old copy is still served, and after the last batch images the new data no longer refers to are deleted. Images XIVAPI doesn't have are listed in `failed`; a batch that fails on an XIVAPI error returns 502 and stays pending for the next call.
 
-Run both after a game patch, through the **Refresh FFXIV duties** workflow ([CI/CD](#cicd)), which makes all the calls. Before the first refresh the lists are empty, with `fetchedAt: null`.
+Run both after a game patch, through the **Refresh game data from XIVAPI** workflow ([CI/CD](#cicd)), which makes all the calls. Before the first refresh the lists are empty, with `fetchedAt: null`.
 
 Some of the game's flags are unreliable, so the grouping relies on duty names and types: Extreme, Unreal and Savage are recognised by their names, alliance raids by their 24-player party size, and quest battles, tutorials and other non-duties are left out. A duty anyone can enter at level 1 but that syncs to a level (treasure dungeons) takes the sync level as its `level`, and duties outside the Duty Finder and Raid Finder report no Duty Finder settings (the game marks them anyway). `src/duties/xivapi-records.ts` has the rules.
 
@@ -431,7 +431,7 @@ To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pi
 
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
 
-**Refresh FFXIV duties** (`.github/workflows/refresh-duties.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh FFXIV duties** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
+**Refresh game data from XIVAPI** (`.github/workflows/refresh-game-data.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh game data from XIVAPI** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
 
 ### Contributing
 
