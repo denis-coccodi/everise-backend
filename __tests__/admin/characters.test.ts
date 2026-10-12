@@ -51,16 +51,15 @@ describe('editing the Waking Sands characters', () => {
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
       name: 'Tataru Taru',
-      bio: expect.stringContaining('roulette results'),
-      image: expect.stringContaining('/api/profile-images/'),
+      image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
       edited: {title: false, persona: false},
     });
+    expect(tataru.persona).toContain('roulette results');
     expect(tataru.persona).toBe(tataru.defaultPersona);
     expect(barnaby).toMatchObject({
       name: 'Barnaby Rostnsthalsyn',
       image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
     });
-    expect(barnaby).not.toHaveProperty('bio');
   });
 
   test("an admin changes a character's title and personality, which the chat then uses", async () => {
@@ -151,23 +150,6 @@ describe('editing the Waking Sands characters', () => {
       .send({character: {title: '', persona: ''}});
   });
 
-  test("Tataru's bio is her account's", async () => {
-    const admin = as(await adminToken());
-
-    const saved = await admin
-      .put('/api/admin/characters/tataru')
-      .send({character: {bio: 'Every gil accounted for.'}});
-
-    expect(saved.body.character.bio).toBe('Every gil accounted for.');
-    const profile = await request(app).get('/api/profiles/Tataru');
-    expect(profile.body.profile.bio).toBe('Every gil accounted for.');
-
-    const others = await admin
-      .put('/api/admin/characters/barnaby')
-      .send({character: {bio: 'Nope.'}});
-    expect(others.status).toBe(422);
-  });
-
   test("an admin changes a character's picture; the old upload is deleted", async () => {
     const admin = as(await adminToken());
 
@@ -191,16 +173,45 @@ describe('editing the Waking Sands characters', () => {
     expect(listed.body.characters[3].image).toBe(second.body.character.image);
   });
 
-  test("Tataru's new picture is her account's", async () => {
+  test("Tataru's title and picture are her posts' author's, on guests' roulette results", async () => {
     const admin = as(await adminToken());
-
+    await admin
+      .put('/api/admin/characters/tataru')
+      .send({character: {title: 'Keeper of the ledger'}});
     const saved = await admin
       .put('/api/admin/characters/tataru/image')
       .set('content-type', 'image/png')
       .send(png);
+    await request(app)
+      .post('/api/duties/refresh')
+      .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!)
+      .send();
 
-    const profile = await request(app).get('/api/profiles/Tataru');
-    expect(profile.body.profile.image).toBe(saved.body.character.image);
+    const posted = await request(app)
+      .post('/api/roulette-results')
+      .set('cf-connecting-ip', '198.51.100.7')
+      .send({
+        result: {
+          type: 'Dungeons',
+          candidate: {kind: 'duty', id: 1},
+          mode: 'Regular',
+        },
+      });
+
+    expect(posted.status).toBe(201);
+    expect(posted.body.article.author).toStrictEqual({
+      id: 'character:tataru',
+      username: 'Tataru Taru',
+      following: false,
+      bio: 'Keeper of the ledger',
+      image: saved.body.character.image,
+      character: 'tataru',
+    });
+
+    // Back to her defaults, for the other tests.
+    await admin
+      .put('/api/admin/characters/tataru')
+      .send({character: {title: ''}});
   });
 
   test('only admins, and only known characters', async () => {

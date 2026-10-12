@@ -37,10 +37,8 @@ class ArticlesService {
     authorId: string,
     params: CreateArticleParams,
   ): Promise<Article> {
-    const author = await this.usersService.getUserById(authorId);
-    if (!author) {
-      throw new NotFoundError(`user "${authorId}" not found`);
-    }
+    // A member, or a Waking Sands character (Tataru, for guests).
+    await this.profilesService.getProfile(authorId);
 
     let tags: string[] = [];
 

@@ -1,16 +1,9 @@
 import * as express from 'express';
 import {route} from '../api';
 import {Auth} from '../middleware';
-import {
-  ProfileImagesService,
-  TataruAccount,
-  UsersService,
-  profileImageUrl,
-  readImageBody,
-  uploadedImageId,
-} from '../users';
+import {UsersService, readImageBody} from '../users';
 import {CharacterParams, CharactersService} from '../waking-sands';
-import {memberDto, tataruDto, uploadedFile} from './admin-dtos';
+import {memberDto, uploadedFile} from './admin-dtos';
 import {
   AdminCharacterResponse,
   AdminCharactersResponse,
@@ -22,22 +15,18 @@ import {
   RoleChange,
   RoleChangeResponse,
   StagingAccessResponse,
-  TataruResponse,
-  TataruUpdate,
 } from './admin-schemas';
 import {MemberDeletion} from './member-deletion';
 import {StagingAccess} from './staging-access';
 
 // The admin's tools, all under /api/admin and only for admins (ADMIN_EMAILS):
 // members and their roles (a staging tester may open the staging site, kept
-// in Cloudflare Access by StagingAccess), Tataru's profile, and the Waking
-// Sands characters.
+// in Cloudflare Access by StagingAccess), and the Waking Sands characters
+// (Tataru among them, who posts guests' roulette results).
 class AdminRouter {
   constructor(
     private readonly auth: Auth,
     private readonly usersService: UsersService,
-    private readonly profileImagesService: ProfileImagesService,
-    private readonly tataru: TataruAccount,
     private readonly stagingAccess: StagingAccess,
     private readonly memberDeletion: MemberDeletion,
     private readonly characters: CharactersService,
@@ -97,7 +86,7 @@ class AdminRouter {
     );
 
     // Deletes a member and everything they posted, for good (the privacy
-    // policy's "Deleting your data"). Admins and system accounts can't be.
+    // policy's "Deleting your data"). Admins can't be.
     route(
       router,
       {
@@ -144,72 +133,8 @@ class AdminRouter {
       },
     );
 
-    const tataruResponses = {
-      200: {description: "Tataru's profile.", schema: TataruResponse},
-    };
-
-    route(
-      router,
-      {
-        method: 'get',
-        path: '/admin/tataru',
-        summary: "Tataru's profile",
-        auth,
-        responses: tataruResponses,
-      },
-      async (_req, res) => {
-        res.json(tataruDto(await this.tataru.get()));
-      },
-    );
-
-    route(
-      router,
-      {
-        method: 'put',
-        path: '/admin/tataru',
-        summary: "Change Tataru's bio",
-        auth,
-        body: TataruUpdate,
-        responses: tataruResponses,
-      },
-      async (req, res) => {
-        const tataru = await this.tataru.get();
-        const updated = await this.usersService.updateUser(tataru.id, {
-          bio: req.body.tataru.bio,
-        });
-        res.json(tataruDto(updated));
-      },
-    );
-
-    // A new picture for Tataru: the file as the request body, with the same
-    // checks as anyone's upload. The old one is deleted.
-    route(
-      router,
-      {
-        method: 'put',
-        path: '/admin/tataru/image',
-        summary: "Upload Tataru's picture (the file as the body)",
-        auth,
-        bodyType: 'image',
-        responses: tataruResponses,
-      },
-      readImageBody,
-      async (req, res) => {
-        const file = uploadedFile(req.body);
-        const tataru = await this.tataru.get();
-        const id = await this.profileImagesService.save(tataru.id, file);
-        const updated = await this.usersService.setImage(
-          tataru.id,
-          profileImageUrl(id),
-        );
-        const oldId = uploadedImageId(tataru.image);
-        if (oldId) await this.profileImagesService.delete(tataru.id, oldId);
-        res.json(tataruDto(updated));
-      },
-    );
-
     // The Waking Sands characters as admins edit them: title, personality
-    // (with the default, to go back to) and picture; Tataru's bio too.
+    // (with the default, to go back to) and picture.
     route(
       router,
       {
@@ -234,7 +159,7 @@ class AdminRouter {
     };
 
     // Changes a character; an empty title or personality goes back to the
-    // default. Only Tataru has a bio.
+    // default.
     route(
       router,
       {
@@ -247,12 +172,6 @@ class AdminRouter {
         responses: characterResponses,
       },
       async (req, res) => {
-        if (
-          req.params.id !== 'tataru' &&
-          req.body.character.bio !== undefined
-        ) {
-          throw new RangeError('Only Tataru has a bio.');
-        }
         const character = await this.characters.update(
           req.params.id,
           req.body.character,

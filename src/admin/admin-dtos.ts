@@ -19,16 +19,6 @@ function memberDto(user: User) {
   };
 }
 
-function tataruDto(tataru: User) {
-  return {
-    tataru: {
-      username: tataru.username,
-      bio: tataru.bio || null,
-      image: pictureOf(tataru),
-    },
-  };
-}
-
 // A file as the body: the checks every upload gets.
 function uploadedFile(body: unknown) {
   if (!Buffer.isBuffer(body) || body.length === 0) {
@@ -37,4 +27,4 @@ function uploadedFile(body: unknown) {
   return new Uint8Array(body);
 }
 
-export {memberDto, tataruDto, uploadedFile};
+export {memberDto, uploadedFile};

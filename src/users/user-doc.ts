@@ -36,16 +36,6 @@ interface UserDoc extends Doc {
   pendingEmail?: string;
   // Given by an admin; admins themselves come from ADMIN_EMAILS.
   role?: AssignableRole;
-  // An account the app posts as, e.g. Tataru for guests. Nobody can sign in
-  // as it: its password is random and never stored anywhere else.
-  system?: boolean;
-}
-
-interface SystemUserParams {
-  username: string;
-  email: string;
-  bio: string;
-  image?: string;
 }
 
 // Someone signing in with a provider, as the provider vouches for them;
@@ -72,7 +62,8 @@ const PROVIDER_NAMES = {
   discord: 'Discord',
 } as const;
 
-// Usernames kept for system accounts, compared without case.
+// Usernames nobody can take, compared without case: the name Tataru, who
+// posts guests' roulette results, is the Waking Sands character's.
 const RESERVED_USERNAMES = ['tataru'];
 
 function isAdminEmail(email: string) {
@@ -80,7 +71,6 @@ function isAdminEmail(email: string) {
 }
 
 function roleOf(doc: UserDoc): Role {
-  if (doc.system) return 'user';
   return isAdminEmail(doc.email) ? 'admin' : (doc.role ?? 'user');
 }
 
@@ -102,7 +92,6 @@ function toUser(doc: UserDoc): User {
     currentSiteUrl(doc.image),
     doc.darkMode,
     roleOf(doc),
-    !!doc.system,
     signInMethodsOf(doc),
     doc.emailConfirmed !== false,
     doc.pendingEmail,
@@ -112,7 +101,6 @@ function toUser(doc: UserDoc): User {
 export {
   UpdateUserParams,
   UserDoc,
-  SystemUserParams,
   ProviderSignIn,
   SignInProvider,
   PROVIDER_FIELDS,

@@ -15,6 +15,23 @@ interface Character {
   picture?: string;
 }
 
+// Who a character is as a post's author (Tataru posts guests' roulette
+// results) and as the owner of their uploaded pictures: not a member.
+const CHARACTER_PREFIX = 'character:';
+
+function characterAuthorId(id: string) {
+  return `${CHARACTER_PREFIX}${id}`;
+}
+
+// The character an author id names, if it names one.
+function characterOfAuthor(authorId: string) {
+  return authorId.startsWith(CHARACTER_PREFIX)
+    ? characterById(authorId.slice(CHARACTER_PREFIX.length))
+    : undefined;
+}
+
+// Tataru also posts guests' roulette results to the feeds, as their author
+// (roulette-posts).
 const TATARU: Character = {
   id: 'tataru',
   name: 'Tataru Taru',
@@ -23,7 +40,7 @@ const TATARU: Character = {
 - You keep the Scions' books and guard every gil; you love a good bargain and are proud of your head for business.
 - You are cheerful, energetic and kind, a little bossy about money, and fiercely loyal to your friends. You sew outfits for the Scions and fuss over adventurers who look tired or hungry.
 - You speak warmly and brightly, with the odd "Oh!" or "Hmph!", and call the member by name.
-- On this site you also post roulette results for adventurers who forgot to sign in, for a modest fee.`,
+- On this site you also post the roulette results of adventurers who spin it without signing in, for a modest fee.`,
   picture: '/assets/images/characters/tataru.jpg',
 };
 
@@ -94,4 +111,11 @@ function characterById(id: string) {
   return CHARACTERS.find(character => character.id === id);
 }
 
-export {Character, characterById, CHARACTERS};
+export {
+  Character,
+  characterAuthorId,
+  characterById,
+  characterOfAuthor,
+  CHARACTERS,
+  TATARU,
+};

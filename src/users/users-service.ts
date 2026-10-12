@@ -1,4 +1,3 @@
-import {randomBytes} from 'crypto';
 import {config} from '../config';
 import {Db} from '../db';
 import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
@@ -6,7 +5,6 @@ import {AssignableRole, User} from './user';
 import {
   UpdateUserParams,
   UserDoc,
-  SystemUserParams,
   ProviderSignIn,
   RESERVED_USERNAMES,
   isAdminEmail,
@@ -205,28 +203,6 @@ class UsersService {
     return toUser(updated);
   }
 
-  // The system account with this username, created on first use.
-  async getOrCreateSystemUser(params: SystemUserParams): Promise<User> {
-    const existing = await this.findUserDoc('username', params.username);
-    if (existing?.system) {
-      return toUser(existing);
-    }
-    // A person registered the name before it was reserved: the system
-    // account takes a longer one.
-    const username = existing
-      ? `${params.username} (Everise)`
-      : params.username;
-
-    const userDoc = await this.db.create<UserDoc>(this.usersCollection, {
-      ...params,
-      username,
-      passwordHash: await hashPassword(randomBytes(32).toString('hex')),
-      system: true,
-    });
-
-    return toUser(userDoc);
-  }
-
   async verifyPassword(email: string, password: string): Promise<boolean> {
     const userDoc = await this.findUserDoc('email', email);
 
@@ -242,11 +218,10 @@ class UsersService {
     return await passwordMatches(password, userDoc.passwordHash);
   }
 
-  // Everyone who registered, without the system accounts, by username.
+  // Everyone who registered, by username.
   async listMembers(): Promise<User[]> {
     const docs = await this.db.find<UserDoc>(this.usersCollection);
     return docs
-      .filter(doc => !doc.system)
       .map(toUser)
       .sort((a, b) => a.username.localeCompare(b.username));
   }
@@ -267,13 +242,12 @@ class UsersService {
     };
   }
 
-  // Gives a member a role. Admins come from the configuration, and system
-  // accounts have none.
+  // Gives a member a role. Admins come from the configuration.
   async setRole(key: string, role: AssignableRole): Promise<User> {
     const found = await this.findUser(key);
     const doc =
       found && (await this.db.get<UserDoc>(this.usersCollection, found.id));
-    if (!doc || doc.system) {
+    if (!doc) {
       throw new NotFoundError(`user "${key}" not found`);
     }
     if (isAdminEmail(doc.email)) {

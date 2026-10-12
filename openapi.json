@@ -193,136 +193,6 @@
         }
       }
     },
-    "/api/admin/tataru": {
-      "get": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Tataru's profile",
-        "description": "Admins only.",
-        "security": [
-          {
-            "token": []
-          }
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Tataru's profile.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TataruResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "An error; `errors.body` says what went wrong.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Change Tataru's bio",
-        "description": "Admins only.",
-        "security": [
-          {
-            "token": []
-          }
-        ],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TataruUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Tataru's profile.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TataruResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "An error; `errors.body` says what went wrong.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/tataru/image": {
-      "put": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Upload Tataru's picture (the file as the body)",
-        "description": "Admins only.",
-        "security": [
-          {
-            "token": []
-          }
-        ],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "image/*": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Tataru's profile.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TataruResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "An error; `errors.body` says what went wrong.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/admin/users": {
       "get": {
         "tags": [
@@ -2834,25 +2704,6 @@
           "role"
         ]
       },
-      "TataruUpdate": {
-        "type": "object",
-        "properties": {
-          "tataru": {
-            "type": "object",
-            "properties": {
-              "bio": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          }
-        },
-        "required": [
-          "tataru"
-        ]
-      },
       "CharacterUpdate": {
         "type": "object",
         "properties": {
@@ -2879,12 +2730,6 @@
                   {
                     "type": "null"
                   }
-                ]
-              },
-              "bio": {
-                "type": [
-                  "string",
-                  "null"
                 ]
               }
             }
@@ -3596,38 +3441,6 @@
         ],
         "additionalProperties": false
       },
-      "TataruResponse": {
-        "type": "object",
-        "properties": {
-          "tataru": {
-            "type": "object",
-            "properties": {
-              "username": {
-                "type": "string"
-              },
-              "bio": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "image": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "username",
-              "bio",
-              "image"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "tataru"
-        ],
-        "additionalProperties": false
-      },
       "AdminCharacter": {
         "type": "object",
         "properties": {
@@ -3648,12 +3461,6 @@
           },
           "image": {
             "type": "string"
-          },
-          "bio": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "edited": {
             "type": "object",
@@ -3749,6 +3556,9 @@
             ]
           },
           "image": {
+            "type": "string"
+          },
+          "character": {
             "type": "string"
           }
         },

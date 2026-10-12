@@ -3,7 +3,6 @@ import {StatusCodes} from 'http-status-codes';
 import {route} from '../api';
 import {NotFoundError, UpstreamError} from '../errors';
 import {Auth} from '../middleware';
-import {LoadBundledPicture} from '../users';
 import {characterById} from './characters';
 import {
   CharacterParams,
@@ -14,6 +13,10 @@ import {
   SandsRoom,
 } from './waking-sands-schemas';
 import {MAX_PRESENT, WakingSandsService} from './waking-sands-service';
+
+// Reads a picture shipped with the backend (public/), e.g. a character's;
+// undefined when it can't be read.
+type LoadBundledPicture = (path: string) => Promise<Uint8Array | undefined>;
 
 // A picture can change with a deploy, so it's cached for a day, not for good.
 const PICTURE_CACHE_CONTROL = 'public, max-age=86400';
@@ -127,7 +130,7 @@ class WakingSandsRouter {
         const bytes = picture && (await this.loadBundledPicture(picture));
         if (!bytes) throw new NotFoundError('picture');
         res
-          .type('image/png')
+          .type(picture.slice(picture.lastIndexOf('.')))
           .set('Cache-Control', PICTURE_CACHE_CONTROL)
           .set('X-Content-Type-Options', 'nosniff')
           .send(Buffer.from(bytes));
@@ -144,4 +147,4 @@ class WakingSandsRouter {
   }
 }
 
-export {WakingSandsRouter};
+export {LoadBundledPicture, WakingSandsRouter};

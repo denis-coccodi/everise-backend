@@ -74,7 +74,7 @@ describe('live updates', () => {
         {type: 'article-created', article: response.body.article},
       ]);
       expect((live.events[0] as ArticleEvent).article).toMatchObject({
-        author: {username: 'Tataru'},
+        author: {username: 'Tataru Taru', character: 'tataru'},
         roulette: {name: 'Sastasha', guest: true},
       });
     });

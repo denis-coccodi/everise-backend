@@ -1,16 +1,16 @@
 import {Db, Doc} from '../db';
-import {NotFoundError, TooManyRequestsError} from '../errors';
+import {NotFoundError} from '../errors';
 import {LiveFeed} from '../live/live-feed';
 import {User} from '../users';
-import {CharacterModel, secondsToMidnightUtc} from './character-model';
+import {CharacterModel} from './character-model';
 import {CharacterProfile, CharactersService} from './characters-service';
-import {LineDoc, RoomDoc, RoomLine, UsageDoc} from './sands-docs';
+import {NeuronBudget} from './neuron-budget';
+import {LineDoc, RoomDoc, RoomLine} from './sands-docs';
 import {
   MAX_PRESENT,
   MEMBER_SHARE,
   TURNS_EACH,
   clean,
-  day,
   direction,
   prompt,
   toLine,
@@ -33,7 +33,6 @@ const ROOM = 'room';
 class WakingSandsService {
   private readonly lines = 'sandsLines';
   private readonly rooms = 'sandsRoom';
-  private readonly usage = 'chatUsage';
 
   constructor(
     private readonly db: Db,
@@ -41,14 +40,11 @@ class WakingSandsService {
     private readonly charactersService: CharactersService,
     private readonly liveFeed: LiveFeed,
     private readonly now: () => Date,
-    // The Neurons this backend may spend a day (WAKING_SANDS_DAILY_NEURONS).
-    // Staging and production share the account's free 10,000, so together
-    // they must stay under them.
-    private readonly dailyNeurons: number,
+    private readonly budget: NeuronBudget,
   ) {}
 
   get available() {
-    return !!this.model && this.dailyNeurons > 0;
+    return !!this.model && this.budget.available;
   }
 
   // Everything the page needs: the characters, who's here, the day's lines.
@@ -115,7 +111,7 @@ class WakingSandsService {
   // A member's line, and the characters' answers. If a round is already
   // running, it answers this line too, and this request returns at once.
   async say(member: User, text: string) {
-    await this.checkBudget(member.id);
+    await this.budget.check(member.id);
     const line = await this.addLine({
       from: 'member',
       name: member.username,
@@ -168,7 +164,7 @@ class WakingSandsService {
       // Alone, a character answers once: there's nobody to talk back to.
       if (free.length === 0 || (present.length === 1 && turn > 0)) break;
       try {
-        await this.checkBudget(payer);
+        await this.budget.check(payer);
       } catch {
         break;
       }
@@ -187,7 +183,7 @@ class WakingSandsService {
         const {text, neurons} = await this.model.reply(
           prompt(speaker, present, everyone, lines),
         );
-        await this.spend(payer, neurons);
+        await this.budget.spend(payer, neurons);
         await this.addLine({
           from: speaker.id,
           name: speaker.name,
@@ -219,7 +215,7 @@ class WakingSandsService {
     const {text, neurons} = await this.model!.reply(
       direction(present, free, lines, mustAnswer),
     );
-    await this.spend(payer, neurons);
+    await this.budget.spend(payer, neurons);
     const answer = text.toLowerCase();
     const named = free.find(
       c =>
@@ -289,38 +285,6 @@ class WakingSandsService {
     } catch (err) {
       console.error('Live update failed', err);
     }
-  }
-
-  // Refuses once the member's or the site's Neurons for the day are spent.
-  // A reply costs a few, so the last one may go a little over.
-  private async checkBudget(memberId: string) {
-    const now = this.now();
-    const usage = await this.usageOf(now);
-    const mine = usage.members?.[memberId] ?? 0;
-    if ((usage.neurons ?? 0) >= this.dailyNeurons) {
-      throw new TooManyRequestsError(
-        'The Waking Sands is closed for the rest of the day. Come back after midnight UTC!',
-        secondsToMidnightUtc(now),
-      );
-    }
-    if (mine >= this.dailyNeurons * MEMBER_SHARE) {
-      throw new TooManyRequestsError(
-        "You've talked a great deal today, and the Scions need their rest too. Come back after midnight UTC!",
-        secondsToMidnightUtc(now),
-      );
-    }
-  }
-
-  private async spend(memberId: string, neurons: number) {
-    // Added in one step, so rounds ending together all count.
-    await this.db.increment(this.usage, day(this.now()), {
-      neurons,
-      [`members.${memberId}`]: neurons,
-    });
-  }
-
-  private async usageOf(now: Date): Promise<Partial<UsageDoc>> {
-    return (await this.db.get<UsageDoc>(this.usage, day(now))) ?? {};
   }
 }
 

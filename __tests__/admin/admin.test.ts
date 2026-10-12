@@ -1,8 +1,5 @@
 import 'jest-extended';
-import {readFileSync} from 'fs';
-import {join} from 'path';
 import request from 'supertest';
-import {config} from '../../src/config';
 import {app, staging, usersClient} from '../utils';
 
 // ADMIN_EMAILS is admin@example.com in the tests (utils/env.ts).
@@ -98,9 +95,8 @@ describe('roles', () => {
     expect(response.body.stagingAccess.synced).toBe(false);
   });
 
-  test('lists the members with their roles, without Tataru', async () => {
+  test('lists the members with their roles', async () => {
     const admin = as(await adminToken());
-    await admin.get('/api/admin/tataru');
     const {user} = await usersClient.registerRandomUser();
 
     const response = await admin.get('/api/admin/users');
@@ -113,7 +109,6 @@ describe('roles', () => {
     expect(users).toContainEqual(
       expect.objectContaining({username: ADMIN.username, role: 'admin'}),
     );
-    expect(users.map(u => u.username)).not.toContain('Tataru');
   });
 
   test('finds members by part of their username or email, any case, a page at a time', async () => {
@@ -164,9 +159,8 @@ describe('roles', () => {
     expect(response.body.stagingAccessConnected).toBe(false);
   });
 
-  test("can't change an admin, give Tataru a role, or give an unknown role", async () => {
+  test("can't change an admin, give Tataru (a character, not a member) a role, or give an unknown role", async () => {
     const admin = as(await adminToken());
-    await admin.get('/api/admin/tataru');
     const {user} = await usersClient.registerRandomUser();
 
     const toAdmin = await admin
@@ -201,72 +195,11 @@ describe('roles', () => {
   });
 });
 
-describe("Tataru's profile", () => {
-  const png = readFileSync(join(__dirname, '../fixtures/images/small.png'));
-
-  test('an admin sees her, with her picture stored as an upload', async () => {
-    const response = await as(await adminToken()).get('/api/admin/tataru');
-
-    expect(response.status).toBe(200);
-    expect(response.body.tataru).toStrictEqual({
-      username: 'Tataru',
-      bio: expect.stringContaining('roulette results'),
-      image: expect.stringMatching(
-        new RegExp(`^${config.baseUrl}/api/profile-images/`),
-      ),
-    });
-  });
-
-  test('an admin edits her bio and picture', async () => {
-    const admin = as(await adminToken());
-    const before = (await admin.get('/api/admin/tataru')).body.tataru;
-
-    const bio = await admin
-      .put('/api/admin/tataru')
-      .send({tataru: {bio: 'Gil first, questions later.'}});
-    expect(bio.status).toBe(200);
-    expect(bio.body.tataru.bio).toBe('Gil first, questions later.');
-    const profile = await request(app).get('/api/profiles/Tataru');
-    expect(profile.body.profile.bio).toBe('Gil first, questions later.');
-
-    const picture = await admin
-      .put('/api/admin/tataru/image')
-      .set('content-type', 'image/png')
-      .send(png);
-    expect(picture.status).toBe(200);
-    expect(picture.body.tataru.image).not.toBe(before.image);
-    // The old picture is gone.
-    const old = await request(app).get(
-      before.image.slice(config.baseUrl.length),
-    );
-    expect(old.status).toBe(404);
-    const served = await request(app).get(
-      picture.body.tataru.image.slice(config.baseUrl.length),
-    );
-    expect(served.status).toBe(200);
-  });
-
-  test('a picture that breaks the limits is refused with its message', async () => {
-    const response = await as(await adminToken())
-      .put('/api/admin/tataru/image')
-      .set('content-type', 'text/plain')
-      .send(Buffer.from('not a picture'));
-
-    expect(response.status).toBe(422);
-    expect(response.body.errors.body).toEqual([
-      'Choose a PNG, JPEG, WebP or GIF picture.',
-    ]);
-  });
-});
-
 describe('only admins', () => {
   const endpoints: [string, string][] = [
     ['get', '/api/admin/users'],
     ['put', '/api/admin/users/someone/role'],
     ['post', '/api/admin/staging-access'],
-    ['get', '/api/admin/tataru'],
-    ['put', '/api/admin/tataru'],
-    ['put', '/api/admin/tataru/image'],
   ];
 
   test.each(endpoints)(

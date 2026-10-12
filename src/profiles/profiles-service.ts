@@ -1,6 +1,7 @@
 import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
 import {UsersService} from '../users';
+import {CharactersService, characterOfAuthor} from '../waking-sands';
 import {Profile} from './profile';
 
 interface FollowDoc extends Doc {
@@ -14,9 +15,24 @@ class ProfilesService {
   constructor(
     private readonly db: Db,
     private readonly usersService: UsersService,
+    private readonly charactersService: CharactersService,
   ) {}
 
+  // A member, or the Waking Sands character an author id names.
   async getProfile(userId: string, followerId?: string): Promise<Profile> {
+    const character = characterOfAuthor(userId);
+    if (character) {
+      const profile = await this.charactersService.get(character.id);
+      return new Profile(
+        userId,
+        profile.name,
+        false,
+        profile.title,
+        profile.image,
+        profile.id,
+      );
+    }
+
     const user = await this.usersService.getUserById(userId);
 
     if (!user) {

@@ -16,7 +16,7 @@ const PORT = 8080;
 const db = new DurableObjectDb(env.DB);
 const hubs = env.LIVE;
 
-// The files in public/, e.g. Tataru's first picture, stored as her upload.
+// The files in public/, e.g. the Waking Sands characters' pictures.
 const assets = env.ASSETS as {
   fetch(
     request: string,

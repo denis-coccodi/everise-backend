@@ -102,7 +102,7 @@ class EmailConfirmation {
   // find out who has an account.
   async resend(email: string) {
     const user = await this.usersService.getUserByEmail(email);
-    if (user && !user.emailConfirmed && !user.system) {
+    if (user && !user.emailConfirmed) {
       await this.send(user, user.email);
     }
   }

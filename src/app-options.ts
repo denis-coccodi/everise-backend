@@ -6,7 +6,7 @@ import {GifFetch} from './media';
 import {PartyFinderSource} from './party-finder';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
-import {LoadBundledPicture} from './users';
+import {LoadBundledPicture} from './waking-sands';
 import {CharacterModel} from './waking-sands';
 
 // What createApp (src/app.ts) can be given instead of its defaults: the

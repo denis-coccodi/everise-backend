@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import {requestSchema, responseSchema} from '../api';
 import {ASSIGNABLE_ROLES} from '../users';
-import {bio} from '../users/user-fields';
 
 // How long a character's personality may be: room for a detailed one, while
 // keeping each reply's prompt (and its Neurons) small.
@@ -83,22 +82,6 @@ const StagingAccessResponse = responseSchema(
   z.strictObject({stagingAccess: StagingAccessSync}),
 );
 
-const TataruResponse = responseSchema(
-  'TataruResponse',
-  z.strictObject({
-    tataru: z.strictObject({
-      username: z.string(),
-      bio: z.string().nullable(),
-      image: z.string(),
-    }),
-  }),
-);
-
-const TataruUpdate = requestSchema(
-  'TataruUpdate',
-  z.object({tataru: z.object({bio: bio().optional()})}),
-);
-
 // A Waking Sands character as admins edit it: the default with their
 // changes. `edited` says which fields differ from the default.
 const AdminCharacter = responseSchema(
@@ -110,9 +93,6 @@ const AdminCharacter = responseSchema(
     persona: z.string(),
     defaultPersona: z.string(),
     image: z.string().optional(),
-    // Only Tataru has a bio: she is also the account that posts guests'
-    // results.
-    bio: z.string().nullable().optional(),
     edited: z.strictObject({title: z.boolean(), persona: z.boolean()}),
   }),
 );
@@ -140,7 +120,6 @@ const CharacterUpdate = requestSchema(
     character: z.object({
       title: z.string().trim().max(MAX_TITLE_LENGTH).nullable().optional(),
       persona: z.string().max(MAX_PERSONA_LENGTH).nullable().optional(),
-      bio: bio().optional(),
     }),
   }),
 );
@@ -156,6 +135,4 @@ export {
   RoleChange,
   RoleChangeResponse,
   StagingAccessResponse,
-  TataruResponse,
-  TataruUpdate,
 };
