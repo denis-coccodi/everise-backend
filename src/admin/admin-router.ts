@@ -134,7 +134,7 @@ class AdminRouter {
     );
 
     // The Waking Sands characters as admins edit them: title, personality
-    // (with the default, to go back to) and picture.
+    // (with the default, to go back to), their profile's bio and picture.
     route(
       router,
       {

@@ -81,7 +81,7 @@ describe('POST /api/roulette-results', () => {
         id: 'character:tataru',
         username: 'Tataru Taru',
         following: false,
-        bio: 'Receptionist of the Scions of the Seventh Dawn',
+        bio: expect.stringContaining('roulette results'),
         image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
         character: 'tataru',
       });
@@ -113,20 +113,35 @@ describe('POST /api/roulette-results', () => {
       expect(characters.asked).toHaveLength(1);
     });
 
-    test('should be by the character, who is no member: her picture is the Waking Sands one, and she has no profile', async () => {
+    test('should be by the character: her picture is the Waking Sands one, and her profile lists her posts, but nobody follows her', async () => {
       const response = await postAsGuest({result: sastasha});
+      const {author} = response.body.article;
 
       const picture = await request(app).get(
-        response.body.article.author.image.slice(config.baseUrl.length),
+        author.image.slice(config.baseUrl.length),
       );
       expect(picture.status).toBe(200);
       expect(picture.headers['content-type']).toBe('image/jpeg');
+      const profile = await request(app).get('/api/profiles/character:tataru');
+      expect(profile.status).toBe(200);
+      expect(profile.body.profile).toStrictEqual(author);
+      const posts = await request(app).get(
+        '/api/articles?author=character:tataru',
+      );
+      expect(posts.body.articles.map((a: {id: string}) => a.id)).toEqual([
+        response.body.article.id,
+      ]);
+
+      // A member named Tataru there is not.
       expect((await request(app).get('/api/profiles/Tataru')).status).toBe(404);
       const {user} = await usersClient.registerRandomUser();
       const follow = await request(app)
         .post('/api/profiles/character:tataru/follow')
         .set('authorization', `Token ${user.token}`);
-      expect(follow.status).toBe(404);
+      expect(follow.status).toBe(422);
+      expect(follow.body.errors.body).toEqual([
+        'Tataru Taru is a Waking Sands character: only members can be followed.',
+      ]);
     });
 
     test('should not be able to add a comment', async () => {

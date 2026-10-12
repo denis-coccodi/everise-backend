@@ -52,9 +52,11 @@ describe('editing the Waking Sands characters', () => {
     expect(tataru).toMatchObject({
       name: 'Tataru Taru',
       image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
-      edited: {title: false, persona: false},
+      bio: expect.stringContaining('roulette results'),
+      edited: {title: false, persona: false, bio: false},
     });
     expect(tataru.persona).toContain('roulette results');
+    expect(response.body.limits).toEqual({title: 80, persona: 4000, bio: 600});
     expect(tataru.persona).toBe(tataru.defaultPersona);
     expect(barnaby).toMatchObject({
       name: 'Barnaby Rostnsthalsyn',
@@ -173,11 +175,11 @@ describe('editing the Waking Sands characters', () => {
     expect(listed.body.characters[3].image).toBe(second.body.character.image);
   });
 
-  test("Tataru's title and picture are her posts' author's, on guests' roulette results", async () => {
+  test("Tataru's bio and picture are her profile's and her posts' author's, on guests' roulette results", async () => {
     const admin = as(await adminToken());
     await admin
       .put('/api/admin/characters/tataru')
-      .send({character: {title: 'Keeper of the ledger'}});
+      .send({character: {bio: 'Every gil accounted for.'}});
     const saved = await admin
       .put('/api/admin/characters/tataru/image')
       .set('content-type', 'image/png')
@@ -203,15 +205,64 @@ describe('editing the Waking Sands characters', () => {
       id: 'character:tataru',
       username: 'Tataru Taru',
       following: false,
-      bio: 'Keeper of the ledger',
+      bio: 'Every gil accounted for.',
       image: saved.body.character.image,
       character: 'tataru',
     });
 
+    const profile = await request(app).get('/api/profiles/character:tataru');
+    expect(profile.body.profile).toStrictEqual(posted.body.article.author);
+
     // Back to her defaults, for the other tests.
-    await admin
+    const restored = await admin
       .put('/api/admin/characters/tataru')
-      .send({character: {title: ''}});
+      .send({character: {bio: ''}});
+    expect(restored.body.character).toMatchObject({
+      bio: expect.stringContaining('roulette results'),
+      edited: {bio: false},
+    });
+  });
+
+  test('every character has a profile anyone signed in or not can read, but nobody can change it there', async () => {
+    for (const id of [
+      'tataru',
+      'urianger',
+      'yshtola',
+      'barnaby',
+      'bernadette',
+    ]) {
+      const response = await request(app).get(`/api/profiles/character:${id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.profile).toMatchObject({
+        id: `character:${id}`,
+        following: false,
+        bio: expect.any(String),
+        character: id,
+      });
+    }
+    expect(
+      (await request(app).get('/api/profiles/character:thancred')).status,
+    ).toBe(404);
+
+    // A member's settings change only their own account.
+    const member = (await usersClient.registerRandomUser()).user;
+    await request(app)
+      .put('/api/user')
+      .set('authorization', `Token ${member.token}`)
+      .send({user: {bio: 'Mine now'}});
+    const tataru = await request(app).get('/api/profiles/character:tataru');
+    expect(tataru.body.profile.bio).toContain('roulette results');
+  });
+
+  test('a bio too long is refused with its message', async () => {
+    const response = await as(await adminToken())
+      .put('/api/admin/characters/urianger')
+      .send({character: {bio: 'x'.repeat(601)}});
+
+    expect(response.status).toBe(422);
+    expect(response.body.errors.body).toEqual([
+      'Keep the bio to 600 characters.',
+    ]);
   });
 
   test('only admins, and only known characters', async () => {

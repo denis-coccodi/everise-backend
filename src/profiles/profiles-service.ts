@@ -27,7 +27,7 @@ class ProfilesService {
         userId,
         profile.name,
         false,
-        profile.title,
+        profile.bio,
         profile.image,
         profile.id,
       );

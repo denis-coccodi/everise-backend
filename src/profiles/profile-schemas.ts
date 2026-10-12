@@ -14,9 +14,9 @@ const ProfileSchema = responseSchema(
     bio: z.string().nullable(),
     // Their picture's address; a default one when they have none.
     image: z.string(),
-    // Only on a Waking Sands character (Tataru, who posts guests' roulette
-    // results): the character's id. Not a member: no profile page, and
-    // nobody follows them. `username` is their name, `bio` their title.
+    // Only on a Waking Sands character's profile (id `character:<id>`): the
+    // character's id. Not a member: nobody signs in as them or follows them,
+    // and only admins change them. `username` is their name.
     character: z.string().optional(),
   }),
 );

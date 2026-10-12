@@ -1676,7 +1676,7 @@
         "tags": [
           "profiles"
         ],
-        "summary": "A member's profile",
+        "summary": "A member's profile, or a Waking Sands character's",
         "security": [
           {
             "token": []
@@ -2731,6 +2731,17 @@
                     "type": "null"
                   }
                 ]
+              },
+              "bio": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 600
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             }
           }
@@ -3459,6 +3470,9 @@
           "defaultPersona": {
             "type": "string"
           },
+          "bio": {
+            "type": "string"
+          },
           "image": {
             "type": "string"
           },
@@ -3470,11 +3484,15 @@
               },
               "persona": {
                 "type": "boolean"
+              },
+              "bio": {
+                "type": "boolean"
               }
             },
             "required": [
               "title",
-              "persona"
+              "persona",
+              "bio"
             ],
             "additionalProperties": false
           }
@@ -3485,6 +3503,7 @@
           "title",
           "persona",
           "defaultPersona",
+          "bio",
           "edited"
         ],
         "additionalProperties": false
@@ -3510,11 +3529,17 @@
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
+              },
+              "bio": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
               }
             },
             "required": [
               "title",
-              "persona"
+              "persona",
+              "bio"
             ],
             "additionalProperties": false
           }

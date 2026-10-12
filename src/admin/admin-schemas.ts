@@ -6,9 +6,14 @@ import {ASSIGNABLE_ROLES} from '../users';
 // keeping each reply's prompt (and its Neurons) small.
 const MAX_PERSONA_LENGTH = 4000;
 const MAX_TITLE_LENGTH = 80;
+const MAX_BIO_LENGTH = 600;
 
-// The longest title and personality, for the settings' forms.
-const CHARACTER_LIMITS = {title: MAX_TITLE_LENGTH, persona: MAX_PERSONA_LENGTH};
+// The longest title, personality and bio, for the settings' forms.
+const CHARACTER_LIMITS = {
+  title: MAX_TITLE_LENGTH,
+  persona: MAX_PERSONA_LENGTH,
+  bio: MAX_BIO_LENGTH,
+};
 
 // A member as the admin's list shows them.
 const Member = responseSchema(
@@ -92,8 +97,14 @@ const AdminCharacter = responseSchema(
     title: z.string(),
     persona: z.string(),
     defaultPersona: z.string(),
+    // Their profile's bio (GET /api/profiles/character:<id>).
+    bio: z.string(),
     image: z.string().optional(),
-    edited: z.strictObject({title: z.boolean(), persona: z.boolean()}),
+    edited: z.strictObject({
+      title: z.boolean(),
+      persona: z.boolean(),
+      bio: z.boolean(),
+    }),
   }),
 );
 
@@ -104,6 +115,7 @@ const AdminCharactersResponse = responseSchema(
     limits: z.strictObject({
       title: z.number().int(),
       persona: z.number().int(),
+      bio: z.number().int(),
     }),
   }),
 );
@@ -113,13 +125,20 @@ const AdminCharacterResponse = responseSchema(
   z.strictObject({character: AdminCharacter}),
 );
 
-// An empty title or personality goes back to the default.
+// An empty title, personality or bio goes back to the default.
 const CharacterUpdate = requestSchema(
   'CharacterUpdate',
   z.object({
     character: z.object({
       title: z.string().trim().max(MAX_TITLE_LENGTH).nullable().optional(),
       persona: z.string().max(MAX_PERSONA_LENGTH).nullable().optional(),
+      bio: z
+        .string()
+        .max(MAX_BIO_LENGTH, {
+          error: `Keep the bio to ${MAX_BIO_LENGTH} characters.`,
+        })
+        .nullable()
+        .optional(),
     }),
   }),
 );

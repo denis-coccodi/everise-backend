@@ -39,6 +39,7 @@ async function retireTataruAccount(db: Db) {
     await db.set('characters', TATARU.id, {
       title: character?.title ?? null,
       persona: character?.persona ?? null,
+      bio: character?.bio ?? null,
       image: profileImageUrl(shown),
     });
   }
