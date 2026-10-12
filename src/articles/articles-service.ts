@@ -37,10 +37,8 @@ class ArticlesService {
     authorId: string,
     params: CreateArticleParams,
   ): Promise<Article> {
-    const author = await this.usersService.getUserById(authorId);
-    if (!author) {
-      throw new NotFoundError(`user "${authorId}" not found`);
-    }
+    // A member, or a Waking Sands character (Tataru, for guests).
+    await this.profilesService.getProfile(authorId);
 
     let tags: string[] = [];
 
@@ -129,12 +127,8 @@ class ArticlesService {
     }
 
     if (params.authorId) {
-      const author = await this.usersService.getUserById(params.authorId);
-
-      if (!author) {
-        throw new NotFoundError(`author "${params.authorId}" not found`);
-      }
-
+      // A member or a Waking Sands character (Tataru, for guests).
+      const author = await this.profilesService.getProfile(params.authorId);
       where.push({field: 'authorId', op: '==' as const, value: author.id});
     }
 

@@ -45,11 +45,6 @@ class ProviderSignIns {
       doc => doc.email.toLowerCase() === email,
     );
     if (sameEmail) {
-      if (sameEmail.system) {
-        throw new AlreadyExistsError(
-          'That email belongs to an account nobody can sign in to.',
-        );
-      }
       // The provider has confirmed the email. An account whose email wasn't
       // confirmed may have been made by someone else with this address, so
       // its password goes: the owner can set a new one in the settings.

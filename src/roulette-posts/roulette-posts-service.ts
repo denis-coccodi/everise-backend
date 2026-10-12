@@ -1,12 +1,17 @@
 import {createHash} from 'crypto';
-import {Article, ArticlesService} from '../articles';
+import {Article, ArticlesService, RouletteCard} from '../articles';
 import {Db, Doc} from '../db';
 import {DutiesService} from '../duties';
 import {InvalidRouletteResultError, TooManyRequestsError} from '../errors';
-import {TataruAccount, User} from '../users';
+import {User} from '../users';
+import {CharacterRemarks, TATARU, characterAuthorId} from '../waking-sands';
 import {RouletteResultInput, buildRouletteCard} from './roulette-result';
 
-// Tataru's first line on a guest's result.
+// The Waking Sands character who posts guests' results.
+const GUEST_POSTER = TATARU;
+const POSTER_NAME = GUEST_POSTER.name.split(' ')[0];
+
+// Her line on a guest's result when the model can't write one.
 const GUEST_LINES = [
   "Caught someone sneaking a roulette spin without signing in! I've filed it under my name instead. That'll be 500 gil.",
   'A mysterious adventurer just spun the roulette and tried to slip away without signing in. Not on my watch!',
@@ -32,8 +37,9 @@ interface PostLimitDoc extends Doc {
 
 // Posts accepted roulette results to the feeds, as articles with a result card.
 // The card comes from the backend's duty data (buildRouletteCard); signed-in
-// people may add a comment, and guests' results are posted by Tataru. Article
-// creation itself (POST /api/articles) still needs a signed-in user.
+// people may add a comment, and guests' results are posted by Tataru, the
+// Waking Sands character, with a line of her own about it. Article creation
+// itself (POST /api/articles) still needs a signed-in user.
 class RoulettePostsService {
   private readonly limitsCollection = 'postLimits';
 
@@ -41,8 +47,8 @@ class RoulettePostsService {
     private readonly db: Db,
     private readonly dutiesService: DutiesService,
     private readonly articlesService: ArticlesService,
-    // The account that posts results for people who aren't signed in.
-    private readonly tataru: TataruAccount,
+    // Writes Tataru's line on a guest's result.
+    private readonly remarks: CharacterRemarks,
     private readonly now: () => Date = () => new Date(),
     private readonly random: () => number = Math.random,
   ) {}
@@ -72,11 +78,11 @@ class RoulettePostsService {
     const limitKey = user ? `user-${user.id}` : `guest-${hash(clientAddress)}`;
     await this.checkLimits(limitKey, guest);
 
-    const author = user ?? (await this.tataru.get());
-    const article = await this.articlesService.createArticle(author.id, {
+    const authorId = user?.id ?? characterAuthorId(GUEST_POSTER.id);
+    const article = await this.articlesService.createArticle(authorId, {
       title: `Duty Found: ${card.name}`,
       description: `${card.type} · ${card.mode}`,
-      body: guest ? this.guestLine() : text,
+      body: guest ? await this.guestLine(card) : text,
       tags: ['roulette'],
       roulette: card,
       // Tataru only posts on the site.
@@ -96,8 +102,17 @@ class RoulettePostsService {
     return {groups, roulettes, jobs};
   }
 
-  private guestLine() {
-    return GUEST_LINES[Math.floor(this.random() * GUEST_LINES.length)];
+  // Tataru's line on a guest's result, by the model in her voice; one of
+  // her usual ones when it can't. Guests' lines share one Neuron budget.
+  private async guestLine(card: RouletteCard) {
+    const remark = await this.remarks.remark(
+      GUEST_POSTER.id,
+      guestOccasion(card),
+      'guests',
+    );
+    return (
+      remark ?? GUEST_LINES[Math.floor(this.random() * GUEST_LINES.length)]
+    );
   }
 
   private async checkLimits(key: string, guest: boolean) {
@@ -111,7 +126,7 @@ class RoulettePostsService {
       const seconds = Math.ceil(wait / 1000);
       throw new TooManyRequestsError(
         guest
-          ? `Slow down! Tataru is still filing your last result. Try again in ${seconds} seconds.`
+          ? `Slow down! ${POSTER_NAME} is still filing your last result. Try again in ${seconds} seconds.`
           : `You can post another result in ${seconds} seconds.`,
         seconds,
       );
@@ -128,7 +143,7 @@ class RoulettePostsService {
           ((all.windowStart ?? 0) + HOUR_MS - now) / 1000,
         );
         throw new TooManyRequestsError(
-          'Tataru has posted enough guest results for now. Sign in to post yours, or try again later.',
+          `${POSTER_NAME} has posted enough guest results for now. Sign in to post yours, or try again later.`,
           seconds,
         );
       }
@@ -156,6 +171,15 @@ class RoulettePostsService {
       }
     }
   }
+}
+
+// What the model is told about a guest's result, for Tataru's line on it.
+function guestOccasion(card: RouletteCard) {
+  const job = card.job
+    ? `, and the job they must play is ${card.job.name}`
+    : '';
+  return `Someone just spun the Everise duty roulette on the site without signing in, so you are posting their result to the feed for them. They got: ${card.type}, ${card.name} (${card.detail}), played as "${card.mode}"${job}.
+Write the post's text that introduces their result, which is shown under it: react to what they got, and tease them a little for not signing in (a fee, your ledger, a guest sneaking a spin).`;
 }
 
 // Addresses aren't stored as they are.

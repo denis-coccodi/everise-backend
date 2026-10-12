@@ -2,6 +2,7 @@ import {DurableObject} from 'cloudflare:workers';
 import {Db, DocData, FindOptions, SetOptions, Write} from './db';
 import {copyKeyValueDocuments} from './key-value-copy';
 import {SqlDocumentStore} from './sql-document-store';
+import {retireTataruAccount} from '../waking-sands/retire-tataru-account';
 
 // The Durable Object instance that holds the whole database. The name selects
 // the storage: a different name is a different, empty database.
@@ -16,11 +17,15 @@ class EveriseDb extends DurableObject {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.store = new SqlDocumentStore(ctx.storage);
-    // Before the first request: the data from before the SQL table.
+    // Before the first request: the data from before the SQL table, and
+    // what Tataru's old account left.
     void ctx.blockConcurrencyWhile(async () => {
       const copied = await copyKeyValueDocuments(ctx.storage, this.store);
       if (copied > 0) {
         console.log(`Copied ${copied} documents from key-value storage.`);
+      }
+      if (await retireTataruAccount(this.store)) {
+        console.log("Moved Tataru's old account to the character.");
       }
     });
   }

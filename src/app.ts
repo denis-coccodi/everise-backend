@@ -44,12 +44,13 @@ import {
   EmailConfirmation,
   JWTService,
   ProfileImagesService,
-  TataruAccount,
   UsersRouter,
   UsersService,
 } from './users';
 import {
+  CharacterRemarks,
   CharactersService,
+  NeuronBudget,
   WakingSandsRouter,
   WakingSandsService,
 } from './waking-sands';
@@ -81,9 +82,35 @@ function createApp(
     secondsToExpiration: config.jwt.secondsToExpiration,
   });
 
-  const profilesService = new ProfilesService(db, usersService);
-
   const uploadStorage = new UploadStorage(db, uploadStorageBytes);
+
+  const profileImagesService = new ProfileImagesService(
+    db,
+    fileStore,
+    uploadStorage,
+  );
+
+  // The Waking Sands characters, as admins edited them; Tataru also posts
+  // guests' roulette results, so posts' authors can be characters too.
+  const charactersService = new CharactersService(
+    db,
+    profileImagesService,
+    config.baseUrl,
+  );
+
+  const profilesService = new ProfilesService(
+    db,
+    usersService,
+    charactersService,
+  );
+
+  // What the characters may spend on Workers AI a day, in the Waking Sands
+  // and on Tataru's lines for guests' roulette results.
+  const neuronBudget = new NeuronBudget(
+    db,
+    now,
+    wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
+  );
 
   const mediaService = new MediaService(db, fileStore, uploadStorage, now);
 
@@ -110,18 +137,6 @@ function createApp(
   );
 
   const auth = new Auth(jwtService);
-
-  const profileImagesService = new ProfileImagesService(
-    db,
-    fileStore,
-    uploadStorage,
-  );
-
-  const tataru = new TataruAccount(
-    usersService,
-    profileImagesService,
-    loadBundledPicture,
-  );
 
   const emailConfirmation = new EmailConfirmation(
     db,
@@ -164,20 +179,9 @@ function createApp(
     new GifSearch(gifSearch.apiKey, gifSearch.fetch),
   ).router;
 
-  // The Waking Sands characters, as admins edited them.
-  const charactersService = new CharactersService(
-    db,
-    usersService,
-    profileImagesService,
-    tataru,
-    config.baseUrl,
-  );
-
   const adminRouter = new AdminRouter(
     auth,
     usersService,
-    profileImagesService,
-    tataru,
     stagingAccess,
     new MemberDeletion(db, usersService, profileImagesService, mediaService),
     charactersService,
@@ -233,7 +237,13 @@ function createApp(
 
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
-    new RoulettePostsService(db, dutiesService, articlesService, tataru, now),
+    new RoulettePostsService(
+      db,
+      dutiesService,
+      articlesService,
+      new CharacterRemarks(wakingSands.model, charactersService, neuronBudget),
+      now,
+    ),
     profilesService,
   ).router;
 
@@ -245,7 +255,7 @@ function createApp(
       charactersService,
       liveFeed,
       now,
-      wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
+      neuronBudget,
     ),
     loadBundledPicture,
   ).router;

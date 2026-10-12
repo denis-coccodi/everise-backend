@@ -41,7 +41,7 @@ class MemberDeletion {
 
   async delete(key: string): Promise<DeletedMember> {
     const user = await this.usersService.findUser(key);
-    if (!user || user.system) {
+    if (!user) {
       throw new NotFoundError(`user "${key}" not found`);
     }
     if (user.role === 'admin') {

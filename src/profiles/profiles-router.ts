@@ -3,11 +3,13 @@ import {route} from '../api';
 import {NotFoundError} from '../errors';
 import {Auth} from '../middleware';
 import {User, UsersService} from '../users';
+import {characterOfAuthor} from '../waking-sands';
+import {Profile} from './profile';
 import {ProfileResponse} from './profile-schemas';
 import {ProfilesService} from './profiles-service';
 import {profileView} from './profile-view';
 
-function profileBody(member: User, following: boolean) {
+function profileBody(member: User | Profile, following: boolean) {
   return {profile: profileView(member, following)};
 }
 
@@ -18,7 +20,15 @@ class ProfilesRouter {
     private readonly profilesService: ProfilesService,
   ) {}
 
+  // A member to follow. The Waking Sands characters have profiles, but
+  // nobody follows them.
   private async requireMember(id: string) {
+    const character = characterOfAuthor(id);
+    if (character) {
+      throw new RangeError(
+        `${character.name} is a Waking Sands character: only members can be followed.`,
+      );
+    }
     const member = await this.usersService.findUser(id);
     if (!member) throw new NotFoundError(`user "${id}" not found`);
     return member;
@@ -51,11 +61,17 @@ class ProfilesRouter {
       {
         method: 'get',
         path: '/profiles/:id',
-        summary: "A member's profile",
+        summary: "A member's profile, or a Waking Sands character's",
         auth: this.auth.optional,
         responses,
       },
       async (req, res) => {
+        // A character: `character:<id>`, read-only.
+        if (characterOfAuthor(req.params.id)) {
+          const profile = await this.profilesService.getProfile(req.params.id);
+          res.json(profileBody(profile, false));
+          return;
+        }
         const member = await this.requireMember(req.params.id);
         const following = req.user
           ? await this.profilesService.isFollowing(req.user.id, member.id)

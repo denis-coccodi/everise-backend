@@ -5,6 +5,7 @@ import {NotFoundError, UnauthorizedError} from '../errors';
 import {Auth} from '../middleware';
 import {ProfilesService} from '../profiles';
 import {User, UsersService} from '../users';
+import {characterOfAuthor} from '../waking-sands';
 import {Article} from './article';
 import {ArticleDto} from './article-dto';
 import {
@@ -57,9 +58,12 @@ class ArticlesRouter {
     };
   }
 
-  // The member an `author` or `favorited` filter names, by id or username.
+  // The member an `author` or `favorited` filter names, by id or username,
+  // or the Waking Sands character an `author` filter names
+  // (`character:<id>`), who posts too.
   private async memberId(idOrName: string | undefined, what: string) {
     if (!idOrName) return undefined;
+    if (what === 'author' && characterOfAuthor(idOrName)) return idOrName;
     const member = await this.usersService.findUser(idOrName);
     if (!member) throw new NotFoundError(`${what} "${idOrName}" not found`);
     return member.id;

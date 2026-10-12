@@ -75,7 +75,7 @@ describe('the Waking Sands room', () => {
         id: 'tataru',
         name: 'Tataru Taru',
         title: 'Receptionist of the Scions of the Seventh Dawn',
-        image: expect.stringContaining('/api/profile-images/'),
+        image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
       },
       {
         id: 'urianger',

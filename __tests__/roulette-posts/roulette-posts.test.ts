@@ -2,7 +2,15 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {GUEST_LINES} from '../../src/roulette-posts/roulette-posts-service';
-import {app, clearDb, clock, discord, usersClient, xivApi} from '../utils';
+import {
+  app,
+  characters,
+  clearDb,
+  clock,
+  discord,
+  usersClient,
+  xivApi,
+} from '../utils';
 
 const postUrl = '/api/roulette-results';
 
@@ -31,6 +39,10 @@ describe('POST /api/roulette-results', () => {
     await clearDb();
     xivApi.reset();
     clock.now = undefined;
+    characters.asked = [];
+    characters.answers = [];
+    characters.neurons = 5;
+    characters.error = undefined;
     // The duty data the results are checked against.
     const refreshed = await request(app)
       .post('/api/duties/refresh')
@@ -40,7 +52,11 @@ describe('POST /api/roulette-results', () => {
   });
 
   describe("a guest's result", () => {
-    test('should be posted by Tataru with one of her lines, and the card built from the duty data', async () => {
+    test('should be posted by Tataru, the Waking Sands character, with her own line on it, and the card built from the duty data', async () => {
+      characters.answers = [
+        "Tataru Taru: Sastasha, without signing in? That'll be 500 gil.",
+      ];
+
       const response = await postAsGuest({result: sastasha});
 
       expect(response.status).toBe(201);
@@ -48,15 +64,8 @@ describe('POST /api/roulette-results', () => {
       expect(article).toMatchObject({
         title: 'Duty Found: Sastasha',
         description: 'Dungeons · Regular',
+        body: "Sastasha, without signing in? That'll be 500 gil.",
         tagList: ['roulette'],
-        author: {
-          id: expect.any(String),
-          username: 'Tataru',
-          // Her picture is stored like anyone's upload.
-          image: expect.stringMatching(
-            new RegExp(`^${config.baseUrl}/api/profile-images/[0-9a-f-]{36}$`),
-          ),
-        },
         roulette: {
           type: 'Dungeons',
           name: 'Sastasha',
@@ -68,30 +77,71 @@ describe('POST /api/roulette-results', () => {
           guest: true,
         },
       });
-      expect(GUEST_LINES).toContain(article.body);
+      expect(article.author).toStrictEqual({
+        id: 'character:tataru',
+        username: 'Tataru Taru',
+        following: false,
+        bio: expect.stringContaining('roulette results'),
+        image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
+        character: 'tataru',
+      });
+      // Written by the model as the character, about this result.
+      const [asked] = characters.asked;
+      expect(asked[0].content).toStartWith('You are Tataru Taru');
+      expect(asked[1].content).toContain('Dungeons, Sastasha');
       // Identified by its id, not its (repeating) title.
       expect(article.id).toMatch(/^[0-9a-f-]{36}$/);
     });
 
-    test('should always be posted by the same Tataru, a profile anyone can see', async () => {
+    test("should still be posted with one of her usual lines when the model can't write one", async () => {
+      characters.error = new Error('Workers AI is down');
+
+      const response = await postAsGuest({result: sastasha});
+
+      expect(response.status).toBe(201);
+      expect(GUEST_LINES).toContain(response.body.article.body);
+    });
+
+    test("should use her usual lines once the guests' share of the day's Neurons is spent", async () => {
+      // More than the guests' share (a quarter of 1,000) in one line.
+      characters.neurons = 300;
       const first = await postAsGuest({result: sastasha});
       const second = await postAsGuest({result: sastasha});
 
-      expect(second.body.article.author.username).toBe(
-        first.body.article.author.username,
-      );
-      const profile = await request(app).get('/api/profiles/Tataru');
-      expect(profile.status).toBe(200);
-      expect(profile.body.profile.bio).toContain('roulette results');
-      // The same stored picture each time, served like an upload.
-      expect(second.body.article.author.image).toBe(
-        first.body.article.author.image,
-      );
+      expect(first.body.article.body).toBe('Hello!');
+      expect(GUEST_LINES).toContain(second.body.article.body);
+      expect(characters.asked).toHaveLength(1);
+    });
+
+    test('should be by the character: her picture is the Waking Sands one, and her profile lists her posts, but nobody follows her', async () => {
+      const response = await postAsGuest({result: sastasha});
+      const {author} = response.body.article;
+
       const picture = await request(app).get(
-        first.body.article.author.image.slice(config.baseUrl.length),
+        author.image.slice(config.baseUrl.length),
       );
       expect(picture.status).toBe(200);
       expect(picture.headers['content-type']).toBe('image/jpeg');
+      const profile = await request(app).get('/api/profiles/character:tataru');
+      expect(profile.status).toBe(200);
+      expect(profile.body.profile).toStrictEqual(author);
+      const posts = await request(app).get(
+        '/api/articles?author=character:tataru',
+      );
+      expect(posts.body.articles.map((a: {id: string}) => a.id)).toEqual([
+        response.body.article.id,
+      ]);
+
+      // A member named Tataru there is not.
+      expect((await request(app).get('/api/profiles/Tataru')).status).toBe(404);
+      const {user} = await usersClient.registerRandomUser();
+      const follow = await request(app)
+        .post('/api/profiles/character:tataru/follow')
+        .set('authorization', `Token ${user.token}`);
+      expect(follow.status).toBe(422);
+      expect(follow.body.errors.body).toEqual([
+        'Tataru Taru is a Waking Sands character: only members can be followed.',
+      ]);
     });
 
     test('should not be able to add a comment', async () => {
@@ -409,7 +459,7 @@ describe('POST /api/roulette-results', () => {
 
     expect(feed.body.articles[0]).toMatchObject({
       title: 'Duty Found: Sastasha',
-      author: {username: 'Tataru'},
+      author: {username: 'Tataru Taru', character: 'tataru'},
       roulette: {name: 'Sastasha', guest: true},
     });
   });
