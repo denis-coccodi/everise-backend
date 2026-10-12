@@ -1,8 +1,8 @@
 import 'jest-extended';
 import request from 'supertest';
-import {config} from '../../src/config';
-import {GUEST_LINES} from '../../src/roulette-posts/roulette-posts-service';
-import {app, clearDb, clock, discord, usersClient, xivApi} from '../utils';
+import { config } from '../../src/config';
+import { GUEST_LINES } from '../../src/roulette-posts/roulette-posts-service';
+import { app, clearDb, clock, discord, usersClient, xivApi } from '../utils';
 
 const postUrl = '/api/roulette-results';
 
@@ -91,7 +91,7 @@ describe('POST /api/roulette-results', () => {
         first.body.article.author.image.slice(config.baseUrl.length),
       );
       expect(picture.status).toBe(200);
-      expect(picture.headers['content-type']).toBe('image/png');
+      expect(picture.headers['content-type']).toBe('image/jpeg');
     });
 
     test('should not be able to add a comment', async () => {

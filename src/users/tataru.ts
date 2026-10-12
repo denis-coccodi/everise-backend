@@ -3,8 +3,8 @@ import {
   profileImageUrl,
   uploadedImageId,
 } from './profile-images-service';
-import {User} from './user';
-import {UsersService} from './users-service';
+import { User } from './user';
+import { UsersService } from './users-service';
 
 // Reads a picture shipped with the backend (public/), e.g. Tataru's first one;
 // undefined when it can't be read.
@@ -17,7 +17,7 @@ const TATARU = {
 };
 // Her first picture: the "dress-up Tataru" minion portrait from the game's
 // data (via XIVAPI), used under Square Enix's fan site materials licence.
-const TATARU_PICTURE = '/assets/images/tataru.png';
+const TATARU_PICTURE = '/assets/images/characters/tataru.jpg';
 
 // Tataru: a real account that posts guests' roulette results. Nobody can
 // sign in as her (her password is random and never kept); admins edit her
@@ -46,4 +46,5 @@ class TataruAccount {
   }
 }
 
-export {LoadBundledPicture, TATARU, TataruAccount};
+export { LoadBundledPicture, TATARU, TataruAccount };
+

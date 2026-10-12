@@ -1,15 +1,15 @@
+import { readFile } from 'fs/promises';
 import 'jest-extended';
-import {SqlDocumentStore} from '../../src/db';
-import {MemoryFileStore, UploadStorage} from '../../src/files';
+import { join } from 'path';
+import { SqlDocumentStore } from '../../src/db';
+import { MemoryFileStore, UploadStorage } from '../../src/files';
 import {
   ProfileImagesService,
   TataruAccount,
   UsersService,
   uploadedImageId,
 } from '../../src/users';
-import {SqliteStorage} from '../utils/sqlite-storage';
-import {readFile} from 'fs/promises';
-import {join} from 'path';
+import { SqliteStorage } from '../utils/sqlite-storage';
 
 describe('TataruAccount', () => {
   async function setup() {
@@ -38,9 +38,9 @@ describe('TataruAccount', () => {
 
     expect(first.system).toBe(true);
     const id = uploadedImageId(first.image)!;
-    expect((await images.get(id))?.contentType).toBe('image/png');
+    expect((await images.get(id))?.contentType).toBe('image/jpeg');
     expect(second.image).toBe(first.image);
-    expect(loads).toEqual(['/assets/images/tataru.png']);
+    expect(loads).toEqual(['/assets/images/characters/tataru.jpg']);
   });
 
   test("moves an existing Tataru off the site's old picture address", async () => {
@@ -49,7 +49,7 @@ describe('TataruAccount', () => {
       username: 'Tataru',
       email: 'tataru@everise.invalid',
       bio: 'Old bio',
-      image: 'https://prod.example/assets/images/tataru.png',
+      image: 'https://prod.example/assets/images/characters/tataru.jpg',
     });
 
     const moved = await tataru.get();
