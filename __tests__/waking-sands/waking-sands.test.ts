@@ -1,14 +1,14 @@
 import 'jest-extended';
 import request from 'supertest';
-import { config } from '../../src/config';
-import { TooManyRequestsError, UpstreamError } from '../../src/errors';
+import {config} from '../../src/config';
+import {TooManyRequestsError, UpstreamError} from '../../src/errors';
 import {
   MAX_PRESENT,
   MEMBER_SHARE,
   TURNS_EACH,
   WorkersAiModel,
 } from '../../src/waking-sands';
-import { app, characters, clearDb, clock, db, live, usersClient } from '../utils';
+import {app, characters, clearDb, clock, db, live, usersClient} from '../utils';
 
 // The app may spend this many Neurons a day in the tests (utils/app.ts).
 const DAILY_NEURONS = 1000;

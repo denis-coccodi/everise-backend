@@ -1,15 +1,15 @@
-import { readFile } from 'fs/promises';
+import {readFile} from 'fs/promises';
 import 'jest-extended';
-import { join } from 'path';
-import { SqlDocumentStore } from '../../src/db';
-import { MemoryFileStore, UploadStorage } from '../../src/files';
+import {join} from 'path';
+import {SqlDocumentStore} from '../../src/db';
+import {MemoryFileStore, UploadStorage} from '../../src/files';
 import {
   ProfileImagesService,
   TataruAccount,
   UsersService,
   uploadedImageId,
 } from '../../src/users';
-import { SqliteStorage } from '../utils/sqlite-storage';
+import {SqliteStorage} from '../utils/sqlite-storage';
 
 describe('TataruAccount', () => {
   async function setup() {

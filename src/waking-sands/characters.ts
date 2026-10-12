@@ -94,5 +94,4 @@ function characterById(id: string) {
   return CHARACTERS.find(character => character.id === id);
 }
 
-export { Character, characterById, CHARACTERS };
-
+export {Character, characterById, CHARACTERS};

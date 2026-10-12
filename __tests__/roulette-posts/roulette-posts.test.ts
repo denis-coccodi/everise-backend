@@ -1,8 +1,8 @@
 import 'jest-extended';
 import request from 'supertest';
-import { config } from '../../src/config';
-import { GUEST_LINES } from '../../src/roulette-posts/roulette-posts-service';
-import { app, clearDb, clock, discord, usersClient, xivApi } from '../utils';
+import {config} from '../../src/config';
+import {GUEST_LINES} from '../../src/roulette-posts/roulette-posts-service';
+import {app, clearDb, clock, discord, usersClient, xivApi} from '../utils';
 
 const postUrl = '/api/roulette-results';
 

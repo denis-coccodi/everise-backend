@@ -1,9 +1,9 @@
-import { readFileSync } from 'fs';
+import {readFileSync} from 'fs';
 import 'jest-extended';
-import { join } from 'path';
+import {join} from 'path';
 import request from 'supertest';
-import { config } from '../../src/config';
-import { app, characters as model, usersClient } from '../utils';
+import {config} from '../../src/config';
+import {app, characters as model, usersClient} from '../utils';
 
 // ADMIN_EMAILS is admin@example.com in the tests (utils/env.ts).
 const ADMIN = {

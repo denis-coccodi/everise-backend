@@ -3,8 +3,8 @@ import {
   profileImageUrl,
   uploadedImageId,
 } from './profile-images-service';
-import { User } from './user';
-import { UsersService } from './users-service';
+import {User} from './user';
+import {UsersService} from './users-service';
 
 // Reads a picture shipped with the backend (public/), e.g. Tataru's first one;
 // undefined when it can't be read.
@@ -46,5 +46,4 @@ class TataruAccount {
   }
 }
 
-export { LoadBundledPicture, TATARU, TataruAccount };
-
+export {LoadBundledPicture, TATARU, TataruAccount};
