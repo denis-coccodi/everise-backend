@@ -17,7 +17,7 @@ const TATARU = {
 };
 // Her first picture: the "dress-up Tataru" minion portrait from the game's
 // data (via XIVAPI), used under Square Enix's fan site materials licence.
-const TATARU_PICTURE = '/assets/images/tataru.png';
+const TATARU_PICTURE = '/assets/images/characters/tataru.jpg';
 
 // Tataru: a real account that posts guests' roulette results. Nobody can
 // sign in as her (her password is random and never kept); admins edit her

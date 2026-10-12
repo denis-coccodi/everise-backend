@@ -1,5 +1,5 @@
-import 'jest-extended';
 import {readFileSync} from 'fs';
+import 'jest-extended';
 import {join} from 'path';
 import request from 'supertest';
 import {config} from '../../src/config';
@@ -50,14 +50,14 @@ describe('editing the Waking Sands characters', () => {
     ]);
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
-      name: 'Tataru',
+      name: 'Tataru Taru',
       bio: expect.stringContaining('roulette results'),
       image: expect.stringContaining('/api/profile-images/'),
       edited: {title: false, persona: false},
     });
     expect(tataru.persona).toBe(tataru.defaultPersona);
     expect(barnaby).toMatchObject({
-      name: 'Barnaby Bollocksworth',
+      name: 'Barnaby Rostnsthalsyn',
       image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
     });
     expect(barnaby).not.toHaveProperty('bio');

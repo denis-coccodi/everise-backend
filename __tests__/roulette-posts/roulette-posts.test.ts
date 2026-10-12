@@ -91,7 +91,7 @@ describe('POST /api/roulette-results', () => {
         first.body.article.author.image.slice(config.baseUrl.length),
       );
       expect(picture.status).toBe(200);
-      expect(picture.headers['content-type']).toBe('image/png');
+      expect(picture.headers['content-type']).toBe('image/jpeg');
     });
 
     test('should not be able to add a comment', async () => {
