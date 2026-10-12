@@ -4,5 +4,7 @@ export {ArticlesService} from './articles-service';
 export {CommentsService} from './comments-service';
 export {ArticleDto} from './article-dto';
 export {ArticlesRouter} from './articles-router';
+export {ArticleSharesRouter} from './article-shares-router';
+export {ArticleSharesService} from './article-shares-service';
 export {CommentsRouter} from './comments-router';
 export {ArticleResponse} from './article-schemas';

@@ -32,11 +32,13 @@ class DiscordAnnouncer {
     return !!this.webhookUrl;
   }
 
-  // A new post. Never fails the post: the announcement is lost at worst.
+  // A post, new or shared later. Never throws: false when Discord didn't
+  // take it (a new post is still posted, its announcement lost).
   async announceArticle(article: ArticleDto['article']) {
     for (const message of articleMessages(article, this.siteUrl)) {
-      if (!(await this.send(message))) return;
+      if (!(await this.send(message))) return false;
     }
+    return true;
   }
 
   // A listing shared on its own, linking to it on its data centre's Party

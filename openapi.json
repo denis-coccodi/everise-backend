@@ -776,6 +776,51 @@
         }
       }
     },
+    "/api/articles/{id}/discord": {
+      "post": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Share a post in the Everise Discord (its author or an admin)",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sent to the channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleDiscordShareResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/articles/{id}/favorite": {
       "post": {
         "tags": [
@@ -4500,6 +4545,19 @@
         },
         "required": [
           "article"
+        ],
+        "additionalProperties": false
+      },
+      "ArticleDiscordShareResponse": {
+        "type": "object",
+        "properties": {
+          "shared": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "shared"
         ],
         "additionalProperties": false
       },
