@@ -4,9 +4,11 @@ import {ArticleDoc, toArticle} from './article-docs';
 import {ArticleDto} from './article-dto';
 
 // Where a post goes when its author asks: the Everise Discord
-// (DiscordAnnouncer).
+// (DiscordAnnouncer). `available` when it's set up on this site;
+// announceArticle answers whether the post went through.
 interface ArticleAnnouncer {
-  announceArticle(article: ArticleDto['article']): Promise<void>;
+  readonly available: boolean;
+  announceArticle(article: ArticleDto['article']): Promise<boolean>;
 }
 
 // Pushes a new post to everyone on the site (GET /api/live), as anyone who

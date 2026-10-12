@@ -73,6 +73,12 @@ const ArticleResponse = responseSchema(
   z.strictObject({article: ArticleSchema}),
 );
 
+// A post shared in the Everise Discord after it was posted.
+const ArticleDiscordShareResponse = responseSchema(
+  'ArticleDiscordShareResponse',
+  z.strictObject({shared: z.literal(true)}),
+);
+
 const ArticlesResponse = responseSchema(
   'ArticlesResponse',
   z.strictObject({
@@ -170,6 +176,7 @@ const ArticlesQuery = z.object({
 });
 
 export {
+  ArticleDiscordShareResponse,
   ArticleResponse,
   ArticlesQuery,
   ArticlesResponse,

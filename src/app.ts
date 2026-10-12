@@ -4,6 +4,8 @@ import cors from 'cors';
 import express from 'express';
 import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
 import {
+  ArticleSharesRouter,
+  ArticleSharesService,
   ArticlesRouter,
   ArticlesService,
   CommentsRouter,
@@ -196,6 +198,17 @@ function createApp(
     usersService,
     profilesService,
   ).router;
+  // Sharing a post in the Everise Discord after it was posted.
+  const articleSharesRouter = new ArticleSharesRouter(
+    auth,
+    new ArticleSharesService(
+      db,
+      articlesService,
+      profilesService,
+      discordAnnouncer,
+      now,
+    ),
+  ).router;
   const commentsRouter = new CommentsRouter(
     auth,
     articlesService,
@@ -287,6 +300,7 @@ function createApp(
   app.use('/api', profilesRouter);
 
   app.use('/api', articlesRouter);
+  app.use('/api', articleSharesRouter);
 
   app.use('/api', commentsRouter);
 
