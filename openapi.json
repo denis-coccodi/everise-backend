@@ -6147,7 +6147,9 @@
                   "enum": [
                     "favorite",
                     "comment",
-                    "follow"
+                    "follow",
+                    "pf-ended",
+                    "role"
                   ]
                 },
                 "at": {
@@ -6234,6 +6236,39 @@
                       "type": "null"
                     }
                   ]
+                },
+                "partyFinder": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "listingId": {
+                          "type": "string"
+                        },
+                        "dataCentre": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "listingId",
+                        "dataCentre",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "role": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -6245,7 +6280,9 @@
                 "actors",
                 "actorCount",
                 "article",
-                "comment"
+                "comment",
+                "partyFinder",
+                "role"
               ],
               "additionalProperties": false
             }

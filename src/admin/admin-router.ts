@@ -1,6 +1,7 @@
 import * as express from 'express';
 import {route} from '../api';
 import {Auth} from '../middleware';
+import {NotificationsService} from '../notifications';
 import {UsersService, readImageBody} from '../users';
 import {CharacterParams, CharactersService} from '../waking-sands';
 import {memberDto, uploadedFile} from './admin-dtos';
@@ -30,6 +31,7 @@ class AdminRouter {
     private readonly stagingAccess: StagingAccess,
     private readonly memberDeletion: MemberDeletion,
     private readonly characters: CharactersService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   get router() {
@@ -76,10 +78,15 @@ class AdminRouter {
         },
       },
       async (req, res) => {
+        const before = await this.usersService.findUser(req.params.id);
         const user = await this.usersService.setRole(
           req.params.id,
           req.body.role,
         );
+        // The member hears of it, when it changed.
+        if ((before?.role ?? 'user') !== (user.role ?? 'user')) {
+          await this.notifications.roleChanged(user.id, user.role ?? 'user');
+        }
         const stagingAccess = await this.syncStagingAccess();
         res.json({user: memberDto(user), stagingAccess});
       },

@@ -67,6 +67,11 @@
 
   "observability": {"enabled": true},
 
+  // Every 2 minutes: shared Party Finder listings that ended are told to
+  // their sharers, and in the Discord (src/party-finder-shares). Inherited
+  // by staging.
+  "triggers": {"crons": ["*/2 * * * *"]},
+
   "dev": {"port": 8080},
 
   // The API's own address (browsers reach it through the site's /api). The

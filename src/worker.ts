@@ -1,6 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {httpServerHandler} from 'cloudflare:node';
 import {createApp} from './app';
+import {AppJobs} from './app-options';
 import {config} from './config';
 import {DurableObjectDb, EveriseDb} from './db/everise-db';
 import {R2Bucket, R2FileStore} from './files';
@@ -33,7 +34,11 @@ const ai = env.AI as AiBinding | undefined;
 // The uploaded images' bytes (the "IMAGES" R2 bucket).
 const fileStore = new R2FileStore(env.IMAGES as R2Bucket);
 
+// The app's scheduled jobs, which createApp fills in.
+const jobs: AppJobs = {};
+
 createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
+  jobs,
   fileStore,
   loadBundledPicture,
   wakingSands: {model: ai ? new WorkersAiModel(ai) : undefined},
@@ -89,6 +94,16 @@ export default {
       return cachedUpload(url, ctx, () => http.fetch(request, workerEnv, ctx));
     }
     return http.fetch(request, workerEnv, ctx);
+  },
+
+  // The cron trigger (wrangler.jsonc): shared Party Finder listings that
+  // ended are told to their sharers, and in the Discord.
+  async scheduled(_controller: unknown, _env: unknown, ctx: Context) {
+    ctx.waitUntil(
+      (jobs.checkSharedListings?.() ?? Promise.resolve()).catch(error =>
+        console.error('Party Finder: checking shared listings failed', error),
+      ),
+    );
   },
 };
 

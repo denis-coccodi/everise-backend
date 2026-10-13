@@ -2,6 +2,7 @@ import {readFile} from 'fs/promises';
 import {join} from 'path';
 import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
+import {AppJobs} from '../../src/app-options';
 import {SqlDocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
@@ -201,12 +202,17 @@ async function loadBundledPicture(path: string) {
   return new Uint8Array(await readFile(join(__dirname, '../../public', path)));
 }
 
+// The app's scheduled jobs (the Worker's cron trigger runs them); tests call
+// them.
+const jobs: AppJobs = {};
+
 const app = createApp(
   db,
   xivApi.httpGet,
   () => clock.now ?? new Date(),
   liveFeed,
   {
+    jobs,
     fileStore: files,
     loadBundledPicture,
     stagingAccess,
@@ -232,6 +238,7 @@ async function clearDb() {
 
 export {
   app,
+  jobs,
   characters,
   clearDb,
   clock,

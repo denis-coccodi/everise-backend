@@ -69,6 +69,8 @@ describe('notifications', () => {
         actorCount: 2,
         article: {id: article.id, title: article.title},
         comment: null,
+        partyFinder: null,
+        role: null,
       },
     ]);
     expect((await notificationsOf(alisaie)).notifications).toEqual([]);
