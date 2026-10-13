@@ -3,6 +3,7 @@ import {StatusCodes} from 'http-status-codes';
 import {route} from '../api';
 import {NotFoundError, UnauthorizedError} from '../errors';
 import {Auth} from '../middleware';
+import {NotificationsService} from '../notifications';
 import {ProfilesService, profileView} from '../profiles';
 import {CommentResponse, CommentsResponse, NewComment} from './article-schemas';
 import {ArticlesService} from './articles-service';
@@ -18,6 +19,7 @@ class CommentsRouter {
     private readonly articlesService: ArticlesService,
     private readonly commentsService: CommentsService,
     private readonly profilesService: ProfilesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   private async commentView(comment: Comment, followerId?: string) {
@@ -82,6 +84,11 @@ class CommentsRouter {
           body,
           media?.[0],
         );
+        // The post's author hears of it.
+        await this.notifications.commented(
+          await this.articlesService.requireArticle(comment.articleId),
+          comment,
+        );
         res
           .status(StatusCodes.CREATED)
           .json({comment: await this.commentView(comment)});
@@ -116,6 +123,7 @@ class CommentsRouter {
           );
         }
         await this.commentsService.deleteCommentById(comment.id);
+        await this.notifications.commentDeleted(comment.id);
         res.sendStatus(StatusCodes.NO_CONTENT);
       },
     );

@@ -2,6 +2,7 @@ import * as express from 'express';
 import {route} from '../api';
 import {NotFoundError} from '../errors';
 import {Auth} from '../middleware';
+import {NotificationsService} from '../notifications';
 import {User, UsersService} from '../users';
 import {characterOfAuthor} from '../waking-sands';
 import {Profile} from './profile';
@@ -18,6 +19,7 @@ class ProfilesRouter {
     private readonly auth: Auth,
     private readonly usersService: UsersService,
     private readonly profilesService: ProfilesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // A member to follow. The Waking Sands characters have profiles, but
@@ -52,6 +54,7 @@ class ProfilesRouter {
       async (req, res) => {
         const followee = await this.requireMember(req.params.id);
         await this.profilesService.followUser(req.user!.id, followee.id);
+        await this.notifications.followed(followee.id, req.user!.id);
         res.json(profileBody(followee, true));
       },
     );
@@ -92,6 +95,7 @@ class ProfilesRouter {
       async (req, res) => {
         const followee = await this.requireMember(req.params.id);
         await this.profilesService.unfollowUser(req.user!.id, followee.id);
+        await this.notifications.unfollowed(followee.id, req.user!.id);
         res.json(profileBody(followee, false));
       },
     );

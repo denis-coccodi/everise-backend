@@ -25,6 +25,7 @@ const INDEXED: Record<string, string[]> = {
   media: ['userId'],
   profileImages: ['userId'],
   emailConfirmations: ['userId'],
+  notifications: ['userId', 'actorId', 'articleId'],
 };
 
 const SCHEMA = [

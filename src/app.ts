@@ -42,6 +42,7 @@ import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {SocialLoginRouter} from './social-login';
 import {GifSearch, MediaRouter, MediaService} from './media';
 import {DiscordAnnouncer, DiscordRouter, DiscordWidgetReader} from './discord';
+import {NotificationsRouter, NotificationsService} from './notifications';
 import {
   EmailConfirmation,
   JWTService,
@@ -139,6 +140,8 @@ function createApp(
   );
 
   const auth = new Auth(jwtService);
+  // What happened to members' posts, and who followed them: the header's bell.
+  const notifications = new NotificationsService(db, profilesService, now);
 
   const emailConfirmation = new EmailConfirmation(
     db,
@@ -189,14 +192,19 @@ function createApp(
     charactersService,
   ).router;
 
-  const profilesRouter = new ProfilesRouter(auth, usersService, profilesService)
-    .router;
+  const profilesRouter = new ProfilesRouter(
+    auth,
+    usersService,
+    profilesService,
+    notifications,
+  ).router;
 
   const articlesRouter = new ArticlesRouter(
     auth,
     articlesService,
     usersService,
     profilesService,
+    notifications,
   ).router;
   // Sharing a post in the Everise Discord after it was posted.
   const articleSharesRouter = new ArticleSharesRouter(
@@ -214,6 +222,7 @@ function createApp(
     articlesService,
     commentsService,
     profilesService,
+    notifications,
   ).router;
 
   const xivApiClient = new XivApiClient(httpGet);
@@ -303,6 +312,7 @@ function createApp(
   app.use('/api', articleSharesRouter);
 
   app.use('/api', commentsRouter);
+  app.use('/api', new NotificationsRouter(auth, notifications).router);
 
   app.use('/api', dutiesRouter);
 
