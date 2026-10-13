@@ -31,9 +31,11 @@ class DiscordRouter {
       },
       async (_req, res) => {
         // Private: only a member's browser may keep it, not a shared cache.
+        // Nothing to show isn't kept: the page asks again.
+        const widget = await this.widget.read();
         res
-          .set('Cache-Control', 'private, max-age=60')
-          .json({widget: await this.widget.read()});
+          .set('Cache-Control', widget ? 'private, max-age=60' : 'no-store')
+          .json({widget});
       },
     );
 
