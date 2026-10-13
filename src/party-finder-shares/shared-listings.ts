@@ -17,8 +17,6 @@ interface SharedListingDoc extends Doc {
   articleId?: string;
   // Shared in the Everise Discord too (or only there).
   discord: boolean;
-  // When its time runs out (ms).
-  expiresAt: number;
 }
 
 type NewShare = Omit<SharedListingDoc, keyof Doc>;
@@ -26,18 +24,19 @@ type NewShare = Omit<SharedListingDoc, keyof Doc>;
 const SHARED_LISTINGS = 'sharedListings';
 
 // The listings members shared, as posts or in the Everise Discord, watched
-// until they're no longer up (filled up, their time ran out, taken down):
-// then the member gets a notification, and a listing shared in the Discord
-// gets a message there saying so. `check` runs every few minutes (the
-// Worker's cron trigger). A data centre whose listings can't be read
-// decides nothing, unless a listing's own time has run out.
+// until they're no longer on their board (filled up, taken down, or their
+// time ran out): then the member gets a notification, and a listing shared
+// in the Discord gets a message there saying so. `check` runs every few
+// minutes (the Worker's cron trigger). Only the board decides, never the
+// time a listing had when shared: a recruiter can reopen it (its timer
+// starts over) and close it hours later. A data centre whose listings
+// can't be read decides nothing.
 class SharedListings {
   constructor(
     private readonly db: Db,
     private readonly reader: PartyFinderReader,
     private readonly notifications: NotificationsService,
     private readonly discord: DiscordAnnouncer,
-    private readonly now: () => Date,
   ) {}
 
   // Never fails the share that asked: a listing not watched is logged.
@@ -52,7 +51,6 @@ class SharedListings {
   async check() {
     const shares = await this.db.find<SharedListingDoc>(SHARED_LISTINGS);
     if (shares.length === 0) return;
-    const now = this.now().getTime();
     const up = new Map<DataCentre, Set<string> | null>();
     for (const dataCentre of new Set(shares.map(share => share.dataCentre))) {
       const board = await this.reader.board(dataCentre).catch(() => null);
@@ -60,9 +58,7 @@ class SharedListings {
     }
     const ended = shares.filter(share => {
       const listings = up.get(share.dataCentre);
-      return (
-        share.expiresAt <= now || (!!listings && !listings.has(share.listingId))
-      );
+      return !!listings && !listings.has(share.listingId);
     });
     for (const share of ended) {
       const listing = {
