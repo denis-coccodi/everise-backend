@@ -47,6 +47,8 @@ const DutyGroupsResponse = responseSchema(
     dayEndsAt: isoDate,
     groups: z.array(
       z.strictObject({
+        // Fixed for the group's name (group-ids.ts): links name groups by it.
+        id: z.number(),
         name: z.string(),
         order: z.number(),
         icon: imageId,
