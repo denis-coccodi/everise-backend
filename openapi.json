@@ -1441,6 +1441,324 @@
         }
       }
     },
+    "/api/market/history": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Items' prices a day, in a data centre or on a world",
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "odin",
+              "type": "string",
+              "enum": [
+                "light",
+                "alpha",
+                "lich",
+                "odin",
+                "phoenix",
+                "raiden",
+                "shiva",
+                "twintania",
+                "zodiark",
+                "chaos",
+                "cerberus",
+                "louisoix",
+                "moogle",
+                "omega",
+                "phantom",
+                "ragnarok",
+                "sagittarius",
+                "spriggan",
+                "aether",
+                "adamantoise",
+                "cactuar",
+                "faerie",
+                "gilgamesh",
+                "jenova",
+                "midgardsormr",
+                "sargatanas",
+                "siren",
+                "crystal",
+                "balmung",
+                "brynhildr",
+                "coeurl",
+                "diabolos",
+                "goblin",
+                "malboro",
+                "mateus",
+                "zalera",
+                "dynamis",
+                "cuchulainn",
+                "golem",
+                "halicarnassus",
+                "kraken",
+                "maduin",
+                "marilith",
+                "rafflesia",
+                "seraph",
+                "primal",
+                "behemoth",
+                "excalibur",
+                "exodus",
+                "famfrit",
+                "hyperion",
+                "lamia",
+                "leviathan",
+                "ultros",
+                "elemental",
+                "aegis",
+                "atomos",
+                "carbuncle",
+                "garuda",
+                "gungnir",
+                "kujata",
+                "tonberry",
+                "typhon",
+                "gaia",
+                "alexander",
+                "bahamut",
+                "durandal",
+                "fenrir",
+                "ifrit",
+                "ridill",
+                "tiamat",
+                "ultima",
+                "mana",
+                "anima",
+                "asura",
+                "chocobo",
+                "hades",
+                "ixion",
+                "masamune",
+                "pandaemonium",
+                "titan",
+                "meteor",
+                "belias",
+                "mandragora",
+                "ramuh",
+                "shinryu",
+                "unicorn",
+                "valefor",
+                "yojimbo",
+                "zeromus",
+                "materia",
+                "bismarck",
+                "ravana",
+                "sephirot",
+                "sophia",
+                "zurvan"
+              ]
+            }
+          },
+          {
+            "name": "items",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,7}(,\\d{1,7}){0,2}$"
+            }
+          },
+          {
+            "name": "quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "nq",
+                "hq"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Each item's days.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketHistoryResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/icons/{id}": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "An item's icon",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,7}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The icon.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/items": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Items the market board sells, by name",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 60
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The items found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketItemsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/items/{ids}": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Items the market board sells, by id (1,2,3)",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,7}(,\\d{1,7}){0,2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketItemsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/scopes": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "The data centres and worlds whose prices can be read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The places.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketScopesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/media": {
       "post": {
         "tags": [
@@ -5864,6 +6182,244 @@
           "pending",
           "failed",
           "downloaded"
+        ],
+        "additionalProperties": false
+      },
+      "MarketItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "canBeHq": {
+            "type": "boolean"
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "canBeHq",
+          "category"
+        ],
+        "additionalProperties": false
+      },
+      "MarketItemsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "MarketScopesResponse": {
+        "type": "object",
+        "properties": {
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dataCentres": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "worlds": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "worlds"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "dataCentres"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "defaultScope": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "regions",
+          "defaultScope"
+        ],
+        "additionalProperties": false
+      },
+      "MarketHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "dataCentre",
+                  "world"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "all",
+              "nq",
+              "hq"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "days": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "day": {
+                        "type": "string"
+                      },
+                      "median": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "min": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "max": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "sales": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "day",
+                      "median",
+                      "min",
+                      "max",
+                      "sales",
+                      "quantity"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "complete": {
+                  "type": "boolean"
+                },
+                "refreshedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "days",
+                "complete",
+                "refreshedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "quality",
+          "items"
         ],
         "additionalProperties": false
       },

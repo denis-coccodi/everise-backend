@@ -7,6 +7,7 @@ import {DurableObjectDb, EveriseDb} from './db/everise-db';
 import {R2Bucket, R2FileStore} from './files';
 import {HubLiveFeed, LiveHub, connectToHub} from './live/live-hub';
 import {isAllowedOrigin, isLiveRequest} from './live/live-requests';
+import {HubMarket, MarketHistoryHub} from './market/market-hub';
 import {HubPartyFinder, PartyFinderHub} from './party-finder/party-finder-hub';
 import {AiBinding, WorkersAiModel} from './waking-sands';
 
@@ -44,6 +45,8 @@ createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   wakingSands: {model: ai ? new WorkersAiModel(ai) : undefined},
   // The Party Finder board, in its Durable Object (the "PARTY_FINDER" binding).
   partyFinder: new HubPartyFinder(env.PARTY_FINDER),
+  // The price histories, a Durable Object each (the "MARKET" binding).
+  market: new HubMarket(env.MARKET),
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {
@@ -54,8 +57,8 @@ interface Context {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-// An uploaded image's address: its content never changes.
-const UPLOAD_PATH = /^\/api\/(media|profile-images)\/[\w-]+$/;
+// An uploaded image's or an item icon's address: its content never changes.
+const UPLOAD_PATH = /^\/api\/(media|profile-images|market\/icons)\/[\w-]+$/;
 
 // Uploaded images are kept in the data centre's cache, so most views reach
 // neither the app nor the bucket (R2 counts every read). Keyed by the URL
@@ -107,4 +110,4 @@ export default {
   },
 };
 
-export {EveriseDb, LiveHub, PartyFinderHub};
+export {EveriseDb, LiveHub, MarketHistoryHub, PartyFinderHub};

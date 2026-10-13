@@ -53,6 +53,7 @@ Code is organised by feature: each folder has its router, service, schemas and a
 | `src/roulette-posts` | Posting roulette results, by members and guests                                                 |
 | `src/party-finder`   | The Party Finder listings, from xivpf.com through a Durable Object                              |
 | `src/party-finder-shares` | Members sharing a listing as a post or in the Discord channel                             |
+| `src/market`         | The market board's price history, from Universalis through a Durable Object per item and place |
 | `src/waking-sands`   | The AI chat room and its characters                                                             |
 | `src/live`           | Live updates: the WebSocket hub Durable Object                                                  |
 | `src/discord`        | What members share in the Discord channel, and the server widget                                |
@@ -91,6 +92,11 @@ Auth: **required** endpoints return 401 without a valid token, and **admin** one
 | GET    | `/api/party-finder`                     |          | A data centre's Party Finder listings (`?dataCentre=Light`, any data centre) ([Party Finder](#party-finder)) |
 | POST   | `/api/party-finder/posts`               | required | Share a listing as a post, optionally in Discord too ([Sharing listings](#sharing-listings))                |
 | POST   | `/api/party-finder/discord`             | required | Share a listing in the Everise Discord only ([Sharing listings](#sharing-listings))                         |
+| GET    | `/api/market/scopes`                   |          | The data centres and worlds by region, and where the page starts (`odin`) ([Market board](#market-board)) |
+| GET    | `/api/market/items?search=iron`        |          | Items the market board sells, by name: `{items: [{id, name, icon, canBeHq, category}]}`, at most 20 |
+| GET    | `/api/market/items/:ids`               |          | The same, by id (`5111,5057`, up to 3), in that order                                                   |
+| GET    | `/api/market/icons/:id`                |          | An item's icon (from XIVAPI, cached at the edge)                                                         |
+| GET    | `/api/market/history`                  |          | Up to 3 items' prices a day (`?scope=odin&items=5111,5057&quality=all`) ([Market board](#market-board)) |
 | GET    | `/api/sitemap`                          |          | What the site's `sitemap.xml` lists: `{articles: [{id, updatedAt}], dataCentres}`, the newest 5,000 posts first, cached for an hour |
 | GET    | `/api/user`                             | required | Current user                                                                                                |
 | PUT    | `/api/user`                             | required | Update the current user                                                                                     |
@@ -204,6 +210,16 @@ Every listing a member shares (as a post or in the Discord) is kept in `sharedLi
 - **Duty names, put right.** xivpf's API names every listing's duty from the game's duty list, even when the number means a treasure map, a deep dungeon or a roulette (its issues #14 and #22), so a map listing reads "The Stone Vigil (Hard)". Only `Normal` listings' names are kept; for the others the number is read back from the wrong name and looked up in the Party Finder's own lists (`xivpf-duties.ts`): treasure maps, deep dungeons, roulettes. A number the lists don't know (a newer map), a FATE or the Hunt gives `duty: null`, and the page shows the category.
 - **The game's order and duty type icons.** Each listing gets its duty's `level` and `sortKey` (within a category the in-game Party Finder lists the highest level first; the sort key, the game's own order where higher is newer, settles duties of the same level) and `dutyIcon` (its duty type's icon: an ultimate's, a raid's...), both from the duty data (`DutiesService.dutiesByName`, read again every 10 minutes). Listings whose duty isn't in the duty data (maps, FATEs, no duty) get their category's icon and no level or sort key; the duty data's refresh downloads those category icons too.
 - **When xivpf is down**, the last listings stay for 15 minutes; with none, 502.
+
+## Market board
+
+The market page compares up to three items' prices over time (`src/market`), in a data centre or on one world.
+
+- **Items** come from XIVAPI: `GET /api/market/items?search=<name>` searches the items with a market board category (the ones that can be sold), and `GET /api/market/items/:ids` reads chosen ones back, for a shared link. Icons are XIVAPI's high-resolution ones through `GET /api/market/icons/:id`, kept in the edge cache like uploads (`src/worker.ts`).
+- **Prices** come from [Universalis](https://universalis.app), which keeps the sales players' uploads report, back to late October 2022. `GET /api/market/history?scope=<data centre or world, lower case>&items=<ids>&quality=all|nq|hq` answers each item's days with sales, the oldest first: `{day, median, min, max, sales, quantity}`, where `median` is the middle price per unit (a few sales at silly prices, often gil moved between characters, don't sway it as they would an average). The first day is as far back as the history goes, so the page lets nobody pick an earlier start.
+- **A Durable Object per item and place.** A busy item has hundreds of thousands of sales, and Universalis answers at most 10,000 at a time (about 1.5 MB, more CPU to read than a Worker request may use). So each item in each place has its own `MarketHistoryHub` (the `MARKET` binding, named `<scope>:<item id>`) keeping one row a day per quality in its own SQLite storage (`ItemHistory`: tables `market_days`, `market_gaps`, `market_state`). The first request reads the newest sales and answers with them; alarms then read older ones, 4 reads per alarm a second apart, at most 180 days per read, until they reach October 2022. Only whole days are written: a read that can't hold every sale of its window leaves its oldest day to the next one. While an item isn't `complete` the answer is `no-store` and the page asks again every few seconds; then it's cached for 5 minutes.
+- **Staying current.** Once the newest days are 15 minutes old, the next request reads the sales since the newest kept day again.
+- **When Universalis fails** (it often answers 500 or 504 for the busiest items), an alarm tries again 15 seconds later; a first read that fails answers 502.
 
 ## The Waking Sands
 
@@ -322,6 +338,8 @@ The database is built on SQL tables: SQLite, in the storage of a single instance
 - **Queries.** `find` is one SQL query: `==` and `array-contains` filters (`json_extract`, `json_each`), sorting, `LIMIT`/`OFFSET`. Every field a service filters on has an index (`INDEXED` in `src/db/sql-document-store.ts`), as does the creation date; a new filter on another field should add one.
 - **Consistency.** Each call to the database runs on its own, and a `batch` is one transaction. A service's read and its write are two calls, though, and another request's calls can come between them, so changes that depend on what's there use the store's one-step operations: `addToSet`/`removeFromSet` (favorites, who's in the Waking Sands room, up to its limit), `takeLease` (one round of answers at a time), `increment` (the Waking Sands' Neurons, the guests' post count) and `createUnique` (sign-ups by email and username, follows).
 - **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `SqlDocumentStore` on an in-memory SQLite database (`node:sqlite`), so they run the real SQL.
+
+The market board's price histories are not in this database: each item and place has its own `MarketHistoryHub` Durable Object, holding nothing but those days ([Market board](#market-board)).
 
 Data is stored durably by Cloudflare. Locally it lives in `.wrangler/state`.
 

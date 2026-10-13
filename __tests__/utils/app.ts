@@ -9,6 +9,7 @@ import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
 import {MemoryFileStore} from '../../src/files';
 import {GifFetch} from '../../src/media';
+import {LocalMarket, UniversalisFetch} from '../../src/market';
 import {PartyFinderBoard, XivpfFetch} from '../../src/party-finder';
 import {OAuthFetch} from '../../src/social-login';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
@@ -148,6 +149,40 @@ const xivpfFetch: XivpfFetch = async () => {
   };
 };
 
+// Universalis' sales history: `sales` by "<place name>:<item id>" (in any
+// order), `status` its next answers' status, `requests` what the app asked.
+// The market reads 4 sales at a time, and `stepsPerRequest` windows of them
+// per request.
+interface UniversalisSale {
+  timestamp: number;
+  pricePerUnit: number;
+  quantity: number;
+  hq: boolean;
+}
+const universalis = {
+  sales: {} as Record<string, UniversalisSale[]>,
+  status: 200,
+  requests: [] as string[],
+};
+const marketOptions = {chunk: 4, stepsPerRequest: Infinity};
+const universalisFetch: UniversalisFetch = async url => {
+  universalis.requests.push(url);
+  const [, scope, itemId] = /\/history\/([^/]+)\/(\d+)\?/.exec(url) ?? [];
+  const params = new URL(url).searchParams;
+  const until = Number(params.get('entriesUntil'));
+  const within = Number(params.get('entriesWithin'));
+  const key = `${decodeURIComponent(scope)}:${itemId}`;
+  const entries = (universalis.sales[key] ?? [])
+    .filter(sale => sale.timestamp <= until && sale.timestamp >= until - within)
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, Number(params.get('entriesToReturn')));
+  return {
+    ok: universalis.status < 300,
+    status: universalis.status,
+    json: async () => ({itemID: Number(itemId), entries}),
+  };
+};
+
 // The emails the app sent; `failing` makes sending fail.
 const mail = {
   sent: [] as EmailMessage[],
@@ -229,6 +264,12 @@ const app = createApp(
       xivpfFetch,
       () => clock.now ?? new Date(),
     ),
+    market: new LocalMarket(
+      () => new SqliteStorage(),
+      universalisFetch,
+      () => clock.now ?? new Date(),
+      marketOptions,
+    ),
   },
 );
 
@@ -250,7 +291,9 @@ export {
   live,
   mail,
   providers,
+  marketOptions,
   staging,
+  universalis,
   xivApi,
   xivpf,
 };

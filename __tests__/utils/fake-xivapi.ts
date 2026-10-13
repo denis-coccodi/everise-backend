@@ -39,8 +39,31 @@ function duty(
   };
 }
 
+// An item, as XIVAPI answers it with the market page's fields. Category 0:
+// the market board doesn't sell it.
+function item(row_id: number, name: string, category: number, canBeHq = false) {
+  return {
+    row_id,
+    fields: {
+      Name: name,
+      Icon: {id: 20000 + row_id},
+      CanBeHq: canBeHq,
+      ItemSearchCategory: {
+        row_id: category,
+        fields: {Name: category ? 'Stone' : ''},
+      },
+    },
+  };
+}
+
 function defaultSheets(): Record<string, Row[]> {
   return {
+    Item: [
+      item(1, 'Gil', 0),
+      item(5111, 'Iron Ore', 47),
+      item(5057, 'Iron Ingot', 48, true),
+      item(19953, 'Doman Iron Ore', 47),
+    ],
     ContentType: [
       {row_id: 1, fields: {Name: 'Duty Roulette', 'Icon@as(raw)': 61807}},
       {row_id: 2, fields: {Name: 'Dungeons', 'Icon@as(raw)': 61801}},
@@ -261,6 +284,29 @@ class FakeXivApi {
       };
     }
 
+    // Item searches: +Name~"<text>" +ItemSearchCategory>=1, like XIVAPI's.
+    const search = /\/search\?sheets=Item&query=([^&]+)/.exec(url);
+    if (search) {
+      const name = /Name~"([^"]*)"/.exec(decodeURIComponent(search[1]))?.[1];
+      const results = this.sheets.Item.filter(
+        row =>
+          (row.fields.ItemSearchCategory as {row_id: number}).row_id >= 1 &&
+          String(row.fields.Name)
+            .toLowerCase()
+            .includes((name ?? '').toLowerCase()),
+      );
+      return this.answer({results});
+    }
+    // Rows by id: /sheet/Item?rows=1,2.
+    const rowIds = /\/sheet\/(\w+)\?rows=([\d,]+)/.exec(url);
+    if (rowIds) {
+      const ids = rowIds[2].split(',').map(Number);
+      const rows = (this.sheets[rowIds[1]] ?? []).filter(row =>
+        ids.includes(row.row_id),
+      );
+      return this.answer({rows});
+    }
+
     const sheet = /\/sheet\/(\w+)/.exec(url)?.[1] ?? '';
     const after = Number(/[?&]after=(\d+)/.exec(url)?.[1] ?? -1);
     const rows = this.sheets[sheet];
@@ -286,6 +332,16 @@ class FakeXivApi {
       arrayBuffer: async () => new ArrayBuffer(0),
     };
   };
+
+  private answer(body: unknown) {
+    const status = this.failing ? 503 : 200;
+    return {
+      ok: status === 200,
+      status,
+      json: async () => body,
+      arrayBuffer: async () => new ArrayBuffer(0),
+    };
+  }
 }
 
 export {FakeXivApi, duty, imageBytes};

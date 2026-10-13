@@ -19,6 +19,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 - References are plain ids; nothing enforces them. Services check existence.
 - Tests use the same `SqlDocumentStore` on in-memory SQLite (`__tests__/utils/sqlite-storage.ts`, `node:sqlite`).
 - No backup job exists. Durable Objects have 30-day point-in-time recovery, unused by the app.
+- Not in this database: the market board's price histories. Each item and place has its own `MarketHistoryHub` Durable Object (`src/market/market-hub.ts`, binding `MARKET`, named `<scope>:<item id>`) whose SQLite storage holds `market_days` (quality, day, median, min, max, sales, quantity), `market_gaps` (windows of sales still to read from Universalis) and `market_state` (`refreshedAt`). It can be rebuilt from Universalis at any time.
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |

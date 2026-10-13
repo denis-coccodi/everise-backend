@@ -11,8 +11,10 @@ export {
   lastConfirmationToken,
   live,
   mail,
+  marketOptions,
   providers,
   staging,
+  universalis,
   xivApi,
   xivpf,
 } from './app';
