@@ -44,7 +44,6 @@ function partyFinderRoutes(parts: PartyFinderParts) {
     reader,
     parts.notifications,
     parts.discord,
-    parts.now,
   );
   const shares = new PartyFinderSharesService(
     parts.db,

@@ -60,7 +60,7 @@ async function check(seconds: number) {
 }
 
 describe('shared Party Finder listings that end', () => {
-  test('one shared in the Discord: its sharer is told, and the channel, once it has been gone half an hour', async () => {
+  test('one shared in the Discord: its sharer is told, and the channel, once it is no longer up', async () => {
     expect((await share('discord')).status).toBe(202);
     const before = (await notifications()).length;
 
@@ -69,15 +69,10 @@ describe('shared Party Finder listings that end', () => {
     expect(discordTexts()).toHaveLength(1);
     expect(await notifications()).toHaveLength(before);
 
-    // Gone from the Party Finder, but not for long yet.
+    // Gone from the Party Finder.
     xivpf.listings = [];
     await check(140);
-    await check(29 * 60);
-    expect(discordTexts()).toHaveLength(1);
-    expect(await notifications()).toHaveLength(before);
 
-    // Half an hour since it was last seen.
-    await check(70 + 30 * 60);
     const [ended] = await notifications();
     expect(ended).toMatchObject({
       type: 'pf-ended',
@@ -94,7 +89,7 @@ describe('shared Party Finder listings that end', () => {
     expect(texts[1]).toContain('is no longer up');
 
     // Told once.
-    await check(40 * 60);
+    await check(210);
     expect(discordTexts()).toHaveLength(2);
     expect(await notifications()).toHaveLength(before + 1);
   });
@@ -102,7 +97,7 @@ describe('shared Party Finder listings that end', () => {
   test('one shared as a post: its sharer is told, linked to the post; the Discord only if it went there too', async () => {
     const quiet = await share('posts');
     xivpf.listings = [];
-    await check(30 * 60);
+    await check(70);
 
     const [ended] = await notifications();
     expect(ended).toMatchObject({
@@ -117,27 +112,17 @@ describe('shared Party Finder listings that end', () => {
     await share('posts', {shareToDiscord: true});
     const announced = discordTexts().length;
     xivpf.listings = [];
-    await check(30 * 60);
+    await check(70);
     expect(discordTexts()).toHaveLength(announced + 1);
     expect(discordTexts().at(-1)).toContain('is no longer up');
   });
 
-  test('one reopened, or off the board a while, is watched until it closes, hours later', async () => {
+  test('one reopened is watched past the time it had when shared, until it closes hours later', async () => {
     await share('discord');
     const before = (await notifications()).length;
 
-    // Missing for 20 minutes, then back.
-    xivpf.listings = [];
-    await check(70);
-    await check(20 * 60);
-    at(25 * 60);
-    xivpf.listings = [xivpfEntry()];
-    await check(25 * 60);
-
-    // Reopened again and again, well past the hour it first had.
-    for (const minutes of [60, 110, 160]) {
-      xivpf.listings = [];
-      await check((minutes - 30) * 60);
+    // Reopened again and again (its timer starts over), still up hours on.
+    for (const minutes of [30, 70, 130, 190]) {
       at(minutes * 60);
       xivpf.listings = [xivpfEntry()];
       await check(minutes * 60);
@@ -145,31 +130,28 @@ describe('shared Party Finder listings that end', () => {
     expect(await notifications()).toHaveLength(before);
     expect(discordTexts()).toHaveLength(1);
 
-    // Closed for good, hours after it was shared.
+    // Closed.
     xivpf.listings = [];
-    await check(175 * 60);
-    expect(await notifications()).toHaveLength(before);
-    await check(190 * 60);
+    await check(192 * 60);
     expect(await notifications()).toHaveLength(before + 1);
     expect(discordTexts()).toHaveLength(2);
   });
 
-  test("decides nothing while the listings can't be read", async () => {
+  test("decides nothing while the listings can't be read, even past the listing's time", async () => {
     const shared = await share('discord');
     expect(shared.body).toEqual({shared: true});
     xivpf.status = 503;
     const before = (await notifications()).length;
 
-    // The last read is kept for 15 minutes; then nothing can be read, even
-    // long after the listing's own time ran out.
+    // The last read is kept for 15 minutes; then nothing can be read.
     await check(16 * 60);
-    await check(3 * 60 * 60);
+    await check(2 * 60 * 60);
     expect(await notifications()).toHaveLength(before);
 
-    // Readable again, and the listing is gone: half an hour later, ended.
+    // Readable again, and the listing is gone: ended.
     xivpf.status = 200;
     xivpf.listings = [];
-    await check(3 * 60 * 60 + 60);
+    await check(2 * 60 * 60 + 70);
     expect(await notifications()).toHaveLength(before + 1);
   });
 });
