@@ -331,7 +331,7 @@
     <text x="88" y="1565" class="field">sharerName</text><text x="324" y="1565" class="type" text-anchor="end">string</text>
     <rect x="52" y="1579" width="26" height="16" rx="3" class="fk"/><text x="65" y="1591" class="badge" text-anchor="middle">FK</text><text x="88" y="1591" class="field">articleId</text><text x="324" y="1591" class="type" text-anchor="end">articles.id?</text>
     <text x="88" y="1617" class="field">discord</text><text x="324" y="1617" class="type" text-anchor="end">boolean</text>
-    <text x="88" y="1643" class="field">expiresAt</text><text x="324" y="1643" class="type" text-anchor="end">ms</text>
+    <text x="88" y="1643" class="field">lastSeenAt</text><text x="324" y="1643" class="type" text-anchor="end">ms</text>
     <text x="88" y="1669" class="field">createdAt, updatedAt</text><text x="324" y="1669" class="type" text-anchor="end">Date</text>
   </g>
 

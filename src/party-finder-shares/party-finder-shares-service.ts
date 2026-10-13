@@ -166,7 +166,6 @@ function watched(
     title: listingName(shared.listing),
     sharerId: user.id,
     sharerName: user.username,
-    expiresAt: Date.parse(shared.listing.expiresAt),
   };
 }
 
