@@ -1,13 +1,7 @@
 // gts's shared rules (ESLint flat config), plus this repo's own.
 module.exports = [
   {
-    ignores: [
-      'build/',
-      '.wrangler/',
-      'firestore-data/',
-      'public/',
-      'worker-configuration.d.ts',
-    ],
+    ignores: ['build/', '.wrangler/', 'public/', 'worker-configuration.d.ts'],
   },
   ...require('gts'),
   {
