@@ -61,14 +61,4 @@ function youTubeLink(video: YouTubeVideo): string {
   }`;
 }
 
-// The first YouTube video in a text, as the site shows them: a link alone on
-// its line (optionally in <angle brackets>), as a plain watch link.
-function firstYouTubeLink(body: string): string | undefined {
-  for (const line of body.split(/\r?\n/)) {
-    const video = youTubeVideo(line.trim().replace(/^<(.*)>$/, '$1'));
-    if (video) return `https://www.youtube.com/watch?v=${video.id}`;
-  }
-  return undefined;
-}
-
-export {YouTubeVideo, firstYouTubeLink, youTubeLink, youTubeVideo};
+export {YouTubeVideo, youTubeLink, youTubeVideo};

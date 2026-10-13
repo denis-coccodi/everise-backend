@@ -281,9 +281,6 @@ build
 # Wrangler local state (local Durable Object data lives here)
 .wrangler/
 
-# Legacy Firestore emulator data (no longer used)
-firestore-data/
-
 # Local settings (see README)
 .env
 .dev.vars
