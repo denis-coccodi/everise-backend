@@ -42,10 +42,20 @@ class PartyFinderReader {
     };
   }
 
-  // One listing, while it's still up; undefined once it's gone.
-  async listing(dataCentre: DataCentre, id: string) {
-    return (await this.board(dataCentre))?.listings.find(
-      listing => listing.id === id,
+  // One listing by its id (which names its data centre), with what the page
+  // needs to show it, while it's up; undefined once it's gone, null while
+  // xivpf can't be reached.
+  async listingById(dataCentre: DataCentre, id: string) {
+    const board = await this.board(dataCentre);
+    if (!board) return null;
+    const listing = board.listings.find(shown => shown.id === id);
+    return (
+      listing && {
+        dataCentre,
+        fetchedAt: board.fetchedAt,
+        icons: board.icons,
+        listing,
+      }
     );
   }
 

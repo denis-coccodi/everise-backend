@@ -116,8 +116,8 @@ function byDataCentre(all: unknown[]) {
       const xivpf = entry as XivpfListing;
       const dataCentre = dataCentreOf(xivpf.listing.created_world.id);
       const listings = dataCentre && latest.get(dataCentre);
-      if (!listings) continue;
-      const listing = toListing(xivpf);
+      if (!dataCentre || !listings) continue;
+      const listing = withDataCentre(toListing(xivpf), dataCentre);
       const seen = listings.get(listing.id);
       if (!seen || listing.updatedAt > seen.updatedAt) {
         listings.set(listing.id, listing);
@@ -136,6 +136,22 @@ function byDataCentre(all: unknown[]) {
   ) as Record<DataCentre, PartyFinderListing[]>;
 }
 
+// A listing's id names its data centre too ("light-1789630212-1"): the
+// game's listing numbers are only unique on one data centre, and a link to
+// the listing says where to find it. Lower case letters, digits and dashes.
+function withDataCentre(
+  listing: PartyFinderListing,
+  dataCentre: DataCentre,
+): PartyFinderListing {
+  return {...listing, id: `${dataCentre.toLowerCase()}-${listing.id}`};
+}
+
+// The data centre a listing's id names; undefined for an id that isn't one.
+function dataCentreOfListing(id: string): DataCentre | undefined {
+  const prefix = /^([a-z]+)-\d+-\d+$/.exec(id)?.[1];
+  return DATA_CENTRE_NAMES.find(name => name.toLowerCase() === prefix);
+}
+
 export {
   Board,
   PartyFinderBoard,
@@ -143,4 +159,5 @@ export {
   REFRESH_MS,
   XIVPF_LISTINGS,
   XivpfFetch,
+  dataCentreOfListing,
 };
