@@ -29,7 +29,8 @@ interface DeletedMember {
 
 // Deletes a member and everything they leave behind: their posts (with the
 // comments on them), their comments elsewhere, their favourites, follows in
-// both directions, uploaded pictures and images, and roulette posting limit. The privacy
+// both directions, uploaded pictures and images, roulette posting limit,
+// and notifications: theirs, and those they caused others. The privacy
 // policy promises this. The collections are those the services define.
 class MemberDeletion {
   constructor(
@@ -60,6 +61,15 @@ class MemberDeletion {
       }),
       this.db.find<FollowDoc>('follows'),
     ]);
+    const notifications = (
+      await Promise.all(
+        ['userId', 'actorId'].map(field =>
+          this.db.find<Doc>('notifications', {
+            where: [{field, op: '==', value: user.id}],
+          }),
+        ),
+      )
+    ).flat();
 
     const [pictures, uploads] = await Promise.all([
       this.profileImagesService.filesOf(user.id),
@@ -87,6 +97,7 @@ class MemberDeletion {
         .map(f => remove('follows', f.id)),
       ...pictures.map(file => remove('profileImages', file.id)),
       ...uploads.map(file => remove('media', file.id)),
+      ...notifications.map(n => remove('notifications', n.id)),
       remove('postLimits', `user-${user.id}`),
       remove('postLimits', `pf-post-${user.id}`),
       remove('postLimits', `pf-discord-${user.id}`),

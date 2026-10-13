@@ -1529,6 +1529,196 @@
         }
       }
     },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "The member's notifications, newest first",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notifications.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark one notification read",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The notifications.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark all notifications read",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notifications.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/seen": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "The member opened their notifications: none are new",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The notifications.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/unseen": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "How many of the member's notifications are new",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "How many.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnseenNotificationsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/party-finder": {
       "get": {
         "tags": [
@@ -5938,6 +6128,151 @@
         },
         "required": [
           "available"
+        ],
+        "additionalProperties": false
+      },
+      "NotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "favorite",
+                    "comment",
+                    "follow"
+                  ]
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "seen": {
+                  "type": "boolean"
+                },
+                "read": {
+                  "type": "boolean"
+                },
+                "actors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "image": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "username",
+                      "image"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "actorCount": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "article": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "comment": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "excerpt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "excerpt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "at",
+                "seen",
+                "read",
+                "actors",
+                "actorCount",
+                "article",
+                "comment"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "unseenCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "notifications",
+          "unseenCount"
+        ],
+        "additionalProperties": false
+      },
+      "UnseenNotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "unseenCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "unseenCount"
         ],
         "additionalProperties": false
       }

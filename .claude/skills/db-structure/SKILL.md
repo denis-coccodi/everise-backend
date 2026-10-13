@@ -34,6 +34,7 @@ The whole database is one Durable Object instance, named `everise`, of the class
 | `sandsLines` | at (ms, strictly increasing), from (`member`, `note` or a character id), name, image?, userId? → users (a member's line), text (the room's last day, at most 200; older ones deleted on write) | `src/waking-sands/sands-docs.ts` (`LineDoc`) |
 | `sandsRoom` | present[] (character ids), busyUntil (ms; a round of answers is running) (one document, id `room`) | `src/waking-sands/sands-docs.ts` (`RoomDoc`) |
 | `siteStorage` | bytes (id: `uploads`; everyone's uploads in R2, against `UPLOAD_STORAGE_MB`) | `src/files/upload-storage.ts` |
+| `notifications` | userId → users (who it is for), type (`favorite`, `comment` or `follow`), actorId → users and actor {id, username, image} (who did it, as they were then), articleId? → articles and articleTitle?, commentId? → comments and commentExcerpt?, at (ms), seen, read (id: `favorite:<article>:<member>`, `follow:<followee>:<follower>` or `comment:<comment>`: one per thing that happened; undoing it deletes it) | `src/notifications/notification-docs.ts` (`NotificationDoc`) |
 | `chatUsage` | neurons, members ({users.id or `guests`: Neurons}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/sands-docs.ts` (`UsageDoc`) |
 
 Tags and favorites have no collection of their own; they are arrays on articles.
@@ -42,12 +43,12 @@ Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls 
 
 ## Updating the diagram
 
-`docs/db-structure.svg` is hand-written SVG (1200×1546) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
+`docs/db-structure.svg` is hand-written SVG (1200×1840) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
 1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
    $repo = (Get-Location).Path
-   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1546 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
+   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1840 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.

@@ -3,6 +3,7 @@ import {StatusCodes} from 'http-status-codes';
 import {route} from '../api';
 import {NotFoundError, UnauthorizedError} from '../errors';
 import {Auth} from '../middleware';
+import {NotificationsService} from '../notifications';
 import {ProfilesService} from '../profiles';
 import {User, UsersService} from '../users';
 import {characterOfAuthor} from '../waking-sands';
@@ -27,6 +28,7 @@ class ArticlesRouter {
     private readonly articlesService: ArticlesService,
     private readonly usersService: UsersService,
     private readonly profilesService: ProfilesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // A post as `viewer` sees it: whether they favorited it, and whether they
@@ -215,6 +217,7 @@ class ArticlesRouter {
           'delete',
         );
         await this.articlesService.deleteArticle(article.id);
+        await this.notifications.articleDeleted(article.id);
         res.sendStatus(StatusCodes.NO_CONTENT);
       },
     );
@@ -237,6 +240,12 @@ class ArticlesRouter {
             await this.articlesService.unfavoriteArticle(id, req.user!.id);
           }
           const article = await this.articlesService.requireArticle(id);
+          // Its author hears of a like; an unlike takes it back.
+          if (favorite) {
+            await this.notifications.favorited(article, req.user!.id);
+          } else {
+            await this.notifications.unfavorited(article.id, req.user!.id);
+          }
           res.json(await this.articleDto(article, favorite));
         },
       );
