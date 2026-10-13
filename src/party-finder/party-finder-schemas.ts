@@ -92,9 +92,25 @@ const PartyFinderQuery = z.object({
     .default('Light'),
 });
 
+// One listing, by the id the listings give it ("light-1789630212-1").
+const PartyFinderListingParams = z.object({id: z.string().max(100)});
+
+const PartyFinderListingResponse = responseSchema(
+  'PartyFinderListingResponse',
+  z.strictObject({
+    dataCentre: z.enum(DATA_CENTRE_NAMES),
+    // When the site last read the listings from xivpf.
+    fetchedAt: isoDate,
+    icons: PartyFinderIcons,
+    listing: PartyFinderListing,
+  }),
+);
+
 export {
   PartyFinderIcons,
   PartyFinderListing,
+  PartyFinderListingParams,
+  PartyFinderListingResponse,
   PartyFinderQuery,
   PartyFinderResponse,
 };

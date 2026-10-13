@@ -1629,6 +1629,47 @@
         }
       }
     },
+    "/api/party-finder/listings/{id}": {
+      "get": {
+        "tags": [
+          "party-finder"
+        ],
+        "summary": "One Party Finder listing, while it is up",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartyFinderListingResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/party-finder/posts": {
       "post": {
         "tags": [
@@ -4091,6 +4132,320 @@
           "fetchedAt",
           "icons",
           "listings"
+        ],
+        "additionalProperties": false
+      },
+      "PartyFinderListingResponse": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string",
+            "enum": [
+              "Light",
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Elemental",
+              "Gaia",
+              "Mana",
+              "Meteor",
+              "Materia"
+            ]
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "icons": {
+            "type": "object",
+            "properties": {
+              "tank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "healer": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dps": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "beginner": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "tank",
+              "healer",
+              "dps",
+              "beginner"
+            ],
+            "additionalProperties": false
+          },
+          "listing": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "recruiter": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "world": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "homeWorld": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "category": {
+                "type": "string"
+              },
+              "duty": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dutyIcon": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "level": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sortKey": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "highEnd": {
+                "type": "boolean"
+              },
+              "worldOnly": {
+                "type": "boolean"
+              },
+              "onePlayerPerJob": {
+                "type": "boolean"
+              },
+              "beginnersWelcome": {
+                "type": "boolean"
+              },
+              "minItemLevel": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "objective": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "completion",
+                      "practice",
+                      "loot"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dutyComplete": {
+                "type": "boolean"
+              },
+              "loot": {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "greed-only",
+                  "lootmaster"
+                ]
+              },
+              "parties": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "job": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "icon": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "tank",
+                          "healer",
+                          "dps"
+                        ]
+                      }
+                    },
+                    "accepts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "tank",
+                              "healer",
+                              "dps"
+                            ]
+                          },
+                          "jobs": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "jobs"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "job",
+                    "icon",
+                    "roles",
+                    "accepts"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "recruiter",
+              "description",
+              "world",
+              "homeWorld",
+              "category",
+              "duty",
+              "dutyIcon",
+              "level",
+              "sortKey",
+              "highEnd",
+              "worldOnly",
+              "onePlayerPerJob",
+              "beginnersWelcome",
+              "minItemLevel",
+              "objective",
+              "dutyComplete",
+              "loot",
+              "parties",
+              "slots",
+              "updatedAt",
+              "expiresAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "dataCentre",
+          "fetchedAt",
+          "icons",
+          "listing"
         ],
         "additionalProperties": false
       },

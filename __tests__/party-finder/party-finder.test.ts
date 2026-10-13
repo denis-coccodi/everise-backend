@@ -53,7 +53,7 @@ describe('GET /api/party-finder', () => {
     ]);
     expect(response.body.listings).toStrictEqual([
       {
-        id: '1789630212-1',
+        id: 'light-1789630212-1',
         recruiter: 'Tataru Taru',
         description: 'Prog from P3, know the mechanics',
         world: {id: 66, name: 'Odin'},
@@ -106,7 +106,7 @@ describe('GET /api/party-finder', () => {
 
     expect(chaos.body.dataCentre).toBe('Chaos');
     expect(chaos.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '1789630212-2',
+      'chaos-1789630212-2',
     ]);
     expect(xivpf.reads).toBe(1);
   });
@@ -122,7 +122,7 @@ describe('GET /api/party-finder', () => {
     expect(response.body.dataCentre).toBe('Crystal');
     expect(response.body.worlds).toContainEqual({id: 91, name: 'Balmung'});
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '1789630212-3',
+      'crystal-1789630212-3',
     ]);
   });
 
@@ -198,9 +198,9 @@ describe('GET /api/party-finder', () => {
     const response = await board();
 
     expect(response.body.listings).toMatchObject([
-      {id: '1789630212-2', category: 'None', duty: null, highEnd: false},
+      {id: 'light-1789630212-2', category: 'None', duty: null, highEnd: false},
       {
-        id: '1789630212-1',
+        id: 'light-1789630212-1',
         category: 'TheHunt',
         worldOnly: true,
         onePlayerPerJob: false,
@@ -216,7 +216,7 @@ describe('GET /api/party-finder', () => {
 
     const response = await board();
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '1789630212-1',
+      'light-1789630212-1',
     ]);
 
     // A minute on, the first one's 5 minutes are up too.
@@ -252,12 +252,12 @@ describe('GET /api/party-finder', () => {
       ),
     );
     expect(duties).toStrictEqual({
-      '1789630212-1': ['Kumbhiraskin Treasure Map', false],
-      '1789630212-2': ["Pilgrim's Traverse", false],
-      '1789630212-3': ['Duty Roulette: Expert', false],
-      '1789630212-4': [null, false],
-      '1789630212-5': [null, false],
-      '1789630212-6': ['Copperbell Mines (Hard)', true],
+      'light-1789630212-1': ['Kumbhiraskin Treasure Map', false],
+      'light-1789630212-2': ["Pilgrim's Traverse", false],
+      'light-1789630212-3': ['Duty Roulette: Expert', false],
+      'light-1789630212-4': [null, false],
+      'light-1789630212-5': [null, false],
+      'light-1789630212-6': ['Copperbell Mines (Hard)', true],
     });
   });
 
@@ -290,7 +290,7 @@ describe('GET /api/party-finder', () => {
     const response = await board();
 
     expect(response.body.listings).toMatchObject([
-      {id: '1789630212-7', world: {id: 67, name: 'Shiva'}},
+      {id: 'light-1789630212-7', world: {id: 67, name: 'Shiva'}},
     ]);
     expect(response.body.listings).toHaveLength(1);
   });
@@ -305,7 +305,7 @@ describe('GET /api/party-finder', () => {
     const response = await board();
 
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      '1789630212-1',
+      'light-1789630212-1',
     ]);
   });
 

@@ -8,7 +8,7 @@ import {app, clock, discord, usersClient, xivpf, xivpfEntry} from '../utils';
 import {SqliteStorage} from '../utils/sqlite-storage';
 
 // The first entry's id, as the board names it: <server restart>-<id>.
-const LISTING = '1789630212-1';
+const LISTING = 'light-1789630212-1';
 
 // Each test starts an hour after the last, so the board reads xivpf again.
 let start = Date.parse('2026-10-09T18:00:00Z');
@@ -219,10 +219,10 @@ describe('POST /api/party-finder/discord', () => {
     expect(discord.sent).toHaveLength(1);
     const [{body}] = discord.sent;
     expect(body.content).toMatch(/\n> Anyone\?$/);
-    // The listing on its data centre's page; opening it asks for sign-in.
+    // The listing's own page; opening it asks for sign-in.
     expect(
       (body.embeds as {url: string}[])[0].url.endsWith(
-        `/party-finder?dc=light&listing=${LISTING}&from=discord`,
+        `/party-finder/listings/${LISTING}?from=discord`,
       ),
     ).toBe(true);
     // No post was made.

@@ -41,11 +41,11 @@ class DiscordAnnouncer {
     return true;
   }
 
-  // A listing shared on its own, linking to it on its data centre's Party
-  // Finder page; false when Discord didn't take it.
+  // A listing shared on its own, linking to its own page on the site (its
+  // id names its data centre); false when Discord didn't take it.
   async shareListing(sharer: Sharer, shared: SharedListing, comment: string) {
     const page = fromDiscord(
-      `${this.siteUrl}/party-finder?dc=${shared.dataCentre.toLowerCase()}&listing=${encodeURIComponent(shared.listing.id)}`,
+      `${this.siteUrl}/party-finder/listings/${encodeURIComponent(shared.listing.id)}`,
     );
     return this.send(
       listingMessage(sharer, shared, comment, page, this.siteUrl),
