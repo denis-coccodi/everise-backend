@@ -26,15 +26,8 @@ import {errorHandler} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {Auth} from './middleware';
-import {
-  PartyFinderBoard,
-  PartyFinderReader,
-  PartyFinderRouter,
-} from './party-finder';
-import {
-  PartyFinderSharesRouter,
-  PartyFinderSharesService,
-} from './party-finder-shares';
+import {PartyFinderBoard} from './party-finder';
+import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {SitemapRouter} from './sitemap';
 import {TurnstileVerifier} from './turnstile';
@@ -76,6 +69,7 @@ function createApp(
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
+    jobs,
   }: AppOptions = {},
 ) {
   const usersService = new UsersService(db);
@@ -190,6 +184,7 @@ function createApp(
     stagingAccess,
     new MemberDeletion(db, usersService, profileImagesService, mediaService),
     charactersService,
+    notifications,
   ).router;
 
   const profilesRouter = new ProfilesRouter(
@@ -237,25 +232,22 @@ function createApp(
     config.dutiesRefreshKey,
   ).router;
 
-  const partyFinderReader = new PartyFinderReader(
-    partyFinder,
-    () => dutiesService.dutiesByName(),
-    now,
-  );
-
-  const partyFinderSharesRouter = new PartyFinderSharesRouter(
+  const partyFinderParts = partyFinderRoutes({
     auth,
-    new PartyFinderSharesService(
-      db,
-      partyFinderReader,
-      articlesService,
-      profilesService,
-      discordAnnouncer,
-      mediaService,
-      now,
-    ),
+    db,
+    source: partyFinder,
+    dutiesByName: () => dutiesService.dutiesByName(),
+    articlesService,
     profilesService,
-  ).router;
+    discord: discordAnnouncer,
+    mediaService,
+    notifications,
+    now,
+  });
+  // What the Worker's cron trigger runs.
+  if (jobs) {
+    jobs.checkSharedListings = () => partyFinderParts.sharedListings.check();
+  }
 
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
@@ -302,8 +294,7 @@ function createApp(
   app.use('/api', socialLoginRouter);
 
   app.use('/api', discordRouter);
-  app.use('/api', new PartyFinderRouter(partyFinderReader).router);
-  app.use('/api', partyFinderSharesRouter);
+  app.use('/api', ...partyFinderParts.routers);
   app.use('/api', mediaRouter);
 
   app.use('/api', profilesRouter);

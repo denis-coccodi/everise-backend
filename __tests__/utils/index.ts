@@ -7,6 +7,7 @@ export {
   discord,
   files,
   giphy,
+  jobs,
   lastConfirmationToken,
   live,
   mail,

@@ -7,13 +7,16 @@ import {
   NOTIFICATIONS,
   NotificationDoc,
   NotificationType,
+  SharedListingRef,
   excerpt,
   groupKey,
   grouped,
 } from './notification-docs';
 
 // Tells members what happened to their things, as Facebook does: a like
-// (favorite) or a comment on one of their posts, a new follower. Nobody hears
+// (favorite) or a comment on one of their posts, a new follower; and the
+// site's own news: a Party Finder listing they shared is no longer up, an
+// admin changed their role. Nobody hears
 // about what they did themselves, and the Waking Sands characters hear
 // nothing. Undoing it (an unfavorite, an unfollow, a deleted comment or
 // post) takes the notification back. A notification that can't be saved
@@ -81,6 +84,31 @@ class NotificationsService {
           commentExcerpt: excerpt(comment.body),
         },
       ),
+    );
+  }
+
+  // A Party Finder listing the member shared (as a post, or in the
+  // Discord) is no longer up. `shareId` names the share: one each.
+  listingEnded(
+    userId: string,
+    shareId: string,
+    listing: SharedListingRef,
+    articleId?: string,
+  ) {
+    return this.quietly(() =>
+      this.tell(`pf-ended:${shareId}`, userId, 'pf-ended', {
+        partyFinder: listing,
+        ...(articleId ? {articleId, articleTitle: listing.title} : {}),
+      }),
+    );
+  }
+
+  // An admin changed the member's role: 'staging-tester', or 'user'.
+  roleChanged(userId: string, role: string) {
+    return this.quietly(() =>
+      this.tell(`role:${userId}:${this.now().getTime()}`, userId, 'role', {
+        role,
+      }),
     );
   }
 
@@ -171,11 +199,23 @@ class NotificationsService {
       await this.profilesService.getProfile(actorId),
       false,
     );
+    await this.tell(id, userId, type, {
+      actorId,
+      actor: {id: actorId, username, image},
+      ...about,
+    });
+  }
+
+  // Saves a notification, new and unseen; the site's own have no actor.
+  private async tell(
+    id: string,
+    userId: string,
+    type: NotificationType,
+    about: Partial<NotificationDoc>,
+  ) {
     await this.db.set(NOTIFICATIONS, id, {
       userId,
       type,
-      actorId,
-      actor: {id: actorId, username, image},
       ...about,
       at: this.now().getTime(),
       seen: false,

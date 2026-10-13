@@ -12,11 +12,13 @@ import {MediaService} from '../media';
 import {
   DataCentre,
   PartyFinderReader,
+  ShownListing,
   listingName,
   unreachable,
 } from '../party-finder';
 import {ProfilesService, profileView} from '../profiles';
 import {User} from '../users';
+import {SharedListings} from './shared-listings';
 
 // What a member may write with a shared listing.
 const MAX_SHARE_COMMENT = 280;
@@ -50,6 +52,8 @@ class PartyFinderSharesService {
     private readonly profilesService: ProfilesService,
     private readonly discord: DiscordAnnouncer,
     private readonly mediaService: MediaService,
+    // Watches what was shared, until it's no longer up.
+    private readonly sharedListings: SharedListings,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -65,7 +69,7 @@ class PartyFinderSharesService {
     const {listing} = shared;
     const dataCentre = ref.dataCentre;
     const remaining = listing.slots.filter(slot => !slot.job).length;
-    return this.articlesService.createArticle(user.id, {
+    const article = await this.articlesService.createArticle(user.id, {
       title: `Party Finder: ${listingName(listing)}`,
       description: `${listing.world.name} (${dataCentre}) · ${remaining} ${remaining === 1 ? 'player' : 'players'} needed`,
       body: (comment ?? '').trim(),
@@ -73,6 +77,12 @@ class PartyFinderSharesService {
       partyFinder: {...shared, ...(picture ? {picture} : {})},
       shareToDiscord,
     });
+    await this.sharedListings.watch({
+      ...watched(shared, user),
+      articleId: article.id,
+      discord: shareToDiscord && this.discord.available,
+    });
+    return article;
   }
 
   async toDiscord(user: User, ref: ListingRef, comment: string | undefined) {
@@ -98,6 +108,7 @@ class PartyFinderSharesService {
         "Discord didn't take the message. Try again in a minute.",
       );
     }
+    await this.sharedListings.watch({...watched(shared, user), discord: true});
   }
 
   // The picture of the card, when the member uploaded one: theirs only.
@@ -142,6 +153,21 @@ class PartyFinderSharesService {
       wait,
     );
   }
+}
+
+// What the watch keeps of a share: the listing, and who shared it.
+function watched(
+  shared: {dataCentre: DataCentre; listing: ShownListing},
+  user: User,
+) {
+  return {
+    listingId: shared.listing.id,
+    dataCentre: shared.dataCentre,
+    title: listingName(shared.listing),
+    sharerId: user.id,
+    sharerName: user.username,
+    expiresAt: Date.parse(shared.listing.expiresAt),
+  };
 }
 
 export {MAX_SHARE_COMMENT, PartyFinderSharesService};

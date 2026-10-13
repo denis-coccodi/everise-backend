@@ -77,6 +77,34 @@ describe('roles', () => {
     );
   });
 
+  test('the member is told when an admin changes their role, not when it stays the same', async () => {
+    const admin = as(await adminToken());
+    const {user} = await usersClient.registerRandomUser();
+    const role = (to: string) =>
+      admin
+        .put(`/api/admin/users/${encodeURIComponent(user.username)}/role`)
+        .send({role: to});
+    const told = async () =>
+      (await as(user.token).get('/api/notifications')).body.notifications;
+
+    await role('user');
+    expect(await told()).toEqual([]);
+
+    await role('staging-tester');
+    await role('user');
+    const notifications = await told();
+    expect(notifications.map((n: {role: string}) => n.role).sort()).toEqual([
+      'staging-tester',
+      'user',
+    ]);
+    expect(notifications[0]).toMatchObject({
+      type: 'role',
+      actors: [],
+      actorCount: 0,
+      article: null,
+    });
+  });
+
   test('the role is saved even when staging access fails, and the answer says so', async () => {
     const admin = as(await adminToken());
     const {user} = await usersClient.registerRandomUser();

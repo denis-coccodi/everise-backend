@@ -44,6 +44,14 @@ interface AppOptions {
   };
   // The bytes everyone's uploads may keep together.
   uploadStorageBytes?: number;
+  // Filled in by createApp: the jobs the Worker's cron trigger runs (and
+  // tests call).
+  jobs?: AppJobs;
 }
 
-export {AppOptions};
+interface AppJobs {
+  // The shared Party Finder listings no longer up: their sharers told.
+  checkSharedListings?: () => Promise<void>;
+}
+
+export {AppJobs, AppOptions};

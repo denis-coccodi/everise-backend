@@ -1,7 +1,7 @@
 import {URL} from 'url';
 import type {ArticleDto} from '../articles/article-dto';
 import {LiveEvent, LiveFeed} from '../live/live-feed';
-import {Sharer, fromDiscord} from './discord-format';
+import {Sharer, escape, fromDiscord, message} from './discord-format';
 import {articleMessages} from './discord-messages';
 import {SharedListing, listingMessage} from './listing-message';
 
@@ -49,6 +49,20 @@ class DiscordAnnouncer {
     );
     return this.send(
       listingMessage(sharer, shared, comment, page, this.siteUrl),
+    );
+  }
+
+  // A listing shared in the channel is no longer up: said there, so nobody
+  // tries to join it. False when Discord didn't take it.
+  async listingEnded(
+    listing: {dataCentre: string; title: string},
+    sharerName: string,
+  ) {
+    return this.send(
+      message(
+        this.siteUrl,
+        `⌛ **${escape(listing.title)}** on ${listing.dataCentre}, shared by ${escape(sharerName)}, is no longer up: the party filled up, its time ran out or the recruiter took it down.`,
+      ),
     );
   }
 
