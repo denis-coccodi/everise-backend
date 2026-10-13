@@ -8,7 +8,7 @@ const SitemapResponse = responseSchema(
   z.strictObject({
     // The newest posts first, each with when it last changed.
     articles: z.array(z.strictObject({id: z.string(), updatedAt: isoDate})),
-    // A Party Finder page each (/party-finder/<name in lower case>).
+    // A Party Finder page each (/party-finder?dc=<name in lower case>).
     dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
   }),
 );

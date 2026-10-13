@@ -222,7 +222,7 @@ describe('POST /api/party-finder/discord', () => {
     // The listing on its data centre's page; opening it asks for sign-in.
     expect(
       (body.embeds as {url: string}[])[0].url.endsWith(
-        `/party-finder/light?listing=${LISTING}&from=discord`,
+        `/party-finder?dc=light&listing=${LISTING}&from=discord`,
       ),
     ).toBe(true);
     // No post was made.

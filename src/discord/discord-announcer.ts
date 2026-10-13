@@ -45,7 +45,7 @@ class DiscordAnnouncer {
   // Finder page; false when Discord didn't take it.
   async shareListing(sharer: Sharer, shared: SharedListing, comment: string) {
     const page = fromDiscord(
-      `${this.siteUrl}/party-finder/${shared.dataCentre.toLowerCase()}?listing=${encodeURIComponent(shared.listing.id)}`,
+      `${this.siteUrl}/party-finder?dc=${shared.dataCentre.toLowerCase()}&listing=${encodeURIComponent(shared.listing.id)}`,
     );
     return this.send(
       listingMessage(sharer, shared, comment, page, this.siteUrl),
