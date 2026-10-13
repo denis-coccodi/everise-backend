@@ -196,7 +196,22 @@ describe('FFXIV duties', () => {
         'PvP',
       ]);
 
+      expect(
+        response.body.groups.map((g: {id: number; name: string}) => [
+          g.name,
+          g.id,
+        ]),
+      ).toStrictEqual([
+        ['Dungeons', 1],
+        ['Trials — Extreme', 4],
+        ['Raids — Ultimate', 8],
+        ['Alliance Raids', 9],
+        ['Treasure Hunt', 14],
+        ['PvP', 15],
+      ]);
+
       expect(response.body.groups[0]).toStrictEqual({
+        id: 1,
         name: 'Dungeons',
         order: 0,
         icon: 61801,
