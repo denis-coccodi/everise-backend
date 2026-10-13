@@ -276,6 +276,38 @@ describe('GET /api/discord/widget', () => {
     const response = await getWidget();
 
     expect(response.body).toStrictEqual({widget: null});
+    // Not kept by the browser either: the page asks again.
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
+
+  test('keeps the last widget while Discord fails, asks again after 15 seconds, and gives up after 30 minutes', async () => {
+    const at = (time: string) => (clock.now = new Date(`2026-10-06T${time}Z`));
+    at('16:00:00');
+    discord.widget = {name: 'EVERISE', presence_count: 3, members: []};
+    expect((await getWidget()).body.widget.presenceCount).toBe(3);
+
+    // A minute on, Discord limits Cloudflare's addresses: the last widget.
+    discord.widgetStatus = 429;
+    discord.widgetReads = 0;
+    at('16:01:01');
+    const limited = await getWidget();
+    expect(limited.body.widget.presenceCount).toBe(3);
+    expect(discord.widgetReads).toBe(1);
+    at('16:01:10');
+    await getWidget();
+    expect(discord.widgetReads).toBe(1);
+    at('16:01:17');
+    await getWidget();
+    expect(discord.widgetReads).toBe(2);
+
+    // Half an hour without a read: nothing to show.
+    at('16:30:01');
+    expect((await getWidget()).body).toStrictEqual({widget: null});
+
+    // Back again.
+    discord.widgetStatus = 200;
+    at('16:30:20');
+    expect((await getWidget()).body.widget.presenceCount).toBe(3);
   });
 
   test("doesn't show guests who's online, nor ask Discord for them", async () => {
