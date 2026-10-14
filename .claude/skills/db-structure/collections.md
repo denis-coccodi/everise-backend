@@ -36,5 +36,5 @@ The FFXIV data from XIVAPI (`src/duties`). Every refresh (`POST /api/duties/refr
 | `dutyRoulettes` | roulettes[], icon (one document) | `src/duties/duties-service.ts` (`RoulettesDoc`) |
 | `jobs` | jobs[] (one document) | `src/duties/duties-service.ts` (`JobsDoc`) |
 | `dutyRefreshes` | dataVersion, fetchedAt, dutyCount, rouletteCount, jobCount (one per refresh) | `src/duties/duties-service.ts` (`RefreshDoc`) |
-| `gameImages` | contentType, data (the image's bytes, in the document) (id: the game's icon id) | `src/duties/images-service.ts` (`ImageDoc`) |
+| `gameImages` | contentType (id: the game's icon id; the bytes are in R2 at `game-images/<id>`; images stored before have `data` instead, until first read) | `src/duties/images-service.ts` (`ImageDoc`) |
 | `gameImageDownloads` | images[], pending[], failed[] (the current refresh's downloads); and the document `index`: ids[] of every stored image | `src/duties/images-service.ts` (`DownloadsDoc`, `IndexDoc`) |

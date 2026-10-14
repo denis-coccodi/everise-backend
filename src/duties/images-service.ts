@@ -1,4 +1,5 @@
 import {Db, Doc} from '../db';
+import {FileStore} from '../files';
 import {ImageRef} from './duty';
 import {XivApiClient} from './xivapi-client';
 
@@ -13,9 +14,16 @@ const CONTENT_TYPES: Record<ImageRef['format'], string> = {
   jpg: 'image/jpeg',
 };
 
+// A stored image: its bytes are in the FileStore (R2) at fileKey(id).
+// Images stored before have `data` instead, until first read.
 interface ImageDoc extends Doc {
   contentType: string;
-  data: Uint8Array;
+  data?: Uint8Array;
+}
+
+// Where an image's bytes are kept.
+function fileKey(id: string | number) {
+  return `game-images/${id}`;
 }
 
 // What the current refresh still has to download.
@@ -38,7 +46,8 @@ interface DownloadProgress {
 }
 
 // Keeps copies of the game images the duty data refers to (job icons, duty
-// type icons, duty and roulette banners), served by GET /api/images/:id.
+// type icons, duty and roulette banners), served by GET /api/images/:id:
+// the bytes in the FileStore (R2), a document per image with its type.
 //
 // A refresh re-downloads them all, a batch per call, since one call can't
 // make enough outbound requests for all of them. Until a batch replaces an
@@ -53,6 +62,7 @@ class ImagesService {
   constructor(
     private readonly db: Db,
     private readonly xivApi: XivApiClient,
+    private readonly files: FileStore,
   ) {}
 
   // Starts downloading `images` from scratch.
@@ -90,9 +100,11 @@ class ImagesService {
           failed.push(image.id);
           return;
         }
+        // The file first, so a document never names a missing file.
+        const contentType = CONTENT_TYPES[image.format];
+        await this.files.put(fileKey(image.id), data, contentType);
         await this.db.set(this.imagesCollection, String(image.id), {
-          contentType: CONTENT_TYPES[image.format],
-          data,
+          contentType,
         });
         stored.push(image.id);
       } catch (err) {
@@ -132,12 +144,23 @@ class ImagesService {
 
   async getImage(id: string) {
     const doc = await this.db.get<ImageDoc>(this.imagesCollection, id);
-    return doc ? {contentType: doc.contentType, data: doc.data} : undefined;
+    if (!doc) return undefined;
+    // Stored before the bytes moved to R2: moved now.
+    if (doc.data) {
+      await this.files.put(fileKey(id), doc.data, doc.contentType);
+      await this.db.update(this.imagesCollection, id, {data: undefined});
+      return {contentType: doc.contentType, data: doc.data};
+    }
+    const data = await this.files.get(fileKey(id));
+    return data && {contentType: doc.contentType, data};
   }
 
   private async removeUnused(wanted: Set<number>) {
     const index = await this.getIndex();
-    for (const id of index.filter(id => !wanted.has(id))) {
+    const unused = index.filter(id => !wanted.has(id));
+    // The files first, so a failed deletion can be retried.
+    await this.files.delete(unused.map(fileKey));
+    for (const id of unused) {
       await this.db.delete(this.imagesCollection, String(id));
     }
     await this.setIndex(index.filter(id => wanted.has(id)));
