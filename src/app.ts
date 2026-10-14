@@ -30,6 +30,7 @@ import {Auth} from './middleware';
 import {PartyFinderBoard} from './party-finder';
 import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
+import {relayRoutes} from './relays';
 import {SitemapRouter} from './sitemap';
 import {TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
@@ -64,6 +65,7 @@ function createApp(
     stagingAccess = new CloudflareStagingAccess(config.stagingAccess),
     socialLogin = {settings: config.socialLogin},
     discord = config.discord,
+    relays = config.relays,
     gifSearch = {apiKey: config.giphyApiKey},
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
     wakingSands = {},
@@ -247,9 +249,13 @@ function createApp(
     notifications,
     now,
   });
+  // The relayed Discord channels: the weekly posts and the hunt trains.
+  const relayParts = relayRoutes({db, fileStore, settings: relays, now});
+
   // What the Worker's cron trigger runs.
   if (jobs) {
     jobs.checkSharedListings = () => partyFinderParts.sharedListings.check();
+    jobs.readRelays = () => relayParts.sync.sync();
   }
 
   const roulettePostsRouter = new RoulettePostsRouter(
@@ -309,6 +315,7 @@ function createApp(
   app.use('/api', new NotificationsRouter(auth, notifications).router);
 
   app.use('/api', dutiesRouter);
+  app.use('/api', relayParts.router);
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),

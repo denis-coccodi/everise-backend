@@ -11,6 +11,7 @@ import {MemoryFileStore} from '../../src/files';
 import {GifFetch} from '../../src/media';
 import {LocalMarket, UniversalisFetch} from '../../src/market';
 import {PartyFinderBoard, XivpfFetch} from '../../src/party-finder';
+import {RelayFetch} from '../../src/relays';
 import {OAuthFetch} from '../../src/social-login';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
@@ -113,6 +114,43 @@ const discordFetch: DiscordFetch = async (url, init) => {
     ok: discord.webhookStatus < 300,
     status: discord.webhookStatus,
     json: async () => ({}),
+  };
+};
+
+// The Discord channels the site relays, as the bot reads them: each
+// channel's messages (Discord's message objects, oldest first; Discord sends
+// the newest first), `status` its next answers' status, and the pictures
+// at each address (`pictures`, without the ?ex=… signature). `downloads`
+// are the pictures the app fetched.
+const relays = {
+  channels: {weekly: [], hunts: []} as Record<string, unknown[]>,
+  status: 200,
+  pictures: {} as Record<string, {type: string; bytes: Uint8Array}>,
+  downloads: [] as string[],
+  headers: [] as Record<string, string>[],
+};
+const relayFetch: RelayFetch = async (url, init) => {
+  const channel = /\/channels\/(\w+)\/messages/.exec(url)?.[1];
+  if (channel) {
+    relays.headers.push(init?.headers ?? {});
+    const messages = [...(relays.channels[channel] ?? [])].reverse();
+    return {
+      ok: relays.status < 300,
+      status: relays.status,
+      headers: new Headers(),
+      json: async () => messages.slice(0, 50),
+      arrayBuffer: async () => new ArrayBuffer(0),
+    };
+  }
+  relays.downloads.push(url);
+  const picture = relays.pictures[url.split('?')[0]];
+  return {
+    ok: !!picture,
+    status: picture ? 200 : 404,
+    headers: new Headers(picture ? {'content-type': picture.type} : {}),
+    json: async () => ({}),
+    arrayBuffer: async () =>
+      (picture?.bytes ?? new Uint8Array()).slice().buffer,
   };
 };
 
@@ -278,6 +316,16 @@ const app = createApp(
       guildId: 'guild-1',
       fetch: discordFetch,
     },
+    relays: {
+      botToken: 'bot-token',
+      weeklyChannelId: 'weekly',
+      huntsChannelId: 'hunts',
+      // Centurio Hunts' channels for Light and Chaos; another group's
+      // server for Chaos; a data centre that isn't.
+      huntSources:
+        '620488846919860234:Light, 620489103741288468:Chaos, 1111:Chaos, 2222:Nowhere',
+      fetch: relayFetch,
+    },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},
     emailSender,
     wakingSands: {model: characterModel, dailyNeurons: 1000},
@@ -314,6 +362,7 @@ export {
   mail,
   providers,
   marketOptions,
+  relays,
   staging,
   universalis,
   xivApi,

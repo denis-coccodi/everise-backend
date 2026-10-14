@@ -57,8 +57,10 @@ interface Context {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-// An uploaded image's or an item icon's address: its content never changes.
-const UPLOAD_PATH = /^\/api\/(media|profile-images|market\/icons)\/[\w-]+$/;
+// An uploaded image's, an item icon's or a relayed picture's address: its
+// content never changes.
+const UPLOAD_PATH =
+  /^\/api\/(media|profile-images|market\/icons|relays\/images)\/[\w.-]+$/;
 
 // Uploaded images are kept in the data centre's cache, so most views reach
 // neither the app nor the bucket (R2 counts every read). Keyed by the URL
@@ -100,13 +102,15 @@ export default {
   },
 
   // The cron trigger (wrangler.jsonc): shared Party Finder listings that
-  // ended are told to their sharers, and in the Discord.
+  // ended are told to their sharers, and in the Discord; the relayed
+  // Discord channels are read again.
   async scheduled(_controller: unknown, _env: unknown, ctx: Context) {
     ctx.waitUntil(
       (jobs.checkSharedListings?.() ?? Promise.resolve()).catch(error =>
         console.error('Party Finder: checking shared listings failed', error),
       ),
     );
+    ctx.waitUntil(jobs.readRelays?.() ?? Promise.resolve());
   },
 };
 

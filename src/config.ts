@@ -40,6 +40,15 @@ const envVarsSchema = z.object({
   DISCORD_WEBHOOK_URL: z.union([z.url(), z.literal('')]).optional(),
   // The Discord server whose widget the home page shows.
   DISCORD_GUILD_ID: z.string().optional(),
+  // The Everise app's bot (a secret), which reads the channels the site
+  // relays; without it nothing is read. The channels: the weekly one
+  // (Fashion Report, Island Sanctuary) and the hunt trains, whose hunt
+  // groups' servers are listed with their data centres
+  // ("<server id>:<data centre>,…").
+  DISCORD_BOT_TOKEN: z.string().optional(),
+  DISCORD_WEEKLY_CHANNEL_ID: z.string().optional(),
+  DISCORD_HUNTS_CHANNEL_ID: z.string().optional(),
+  DISCORD_HUNT_SOURCES: z.string().default(''),
   // The GIF search in posts and comments (GIPHY's API key); without it the
   // search isn't offered.
   GIPHY_API_KEY: z.string().optional(),
@@ -108,6 +117,12 @@ const config = {
   discord: {
     webhookUrl: envVars.DISCORD_WEBHOOK_URL,
     guildId: envVars.DISCORD_GUILD_ID,
+  },
+  relays: {
+    botToken: envVars.DISCORD_BOT_TOKEN,
+    weeklyChannelId: envVars.DISCORD_WEEKLY_CHANNEL_ID,
+    huntsChannelId: envVars.DISCORD_HUNTS_CHANNEL_ID,
+    huntSources: envVars.DISCORD_HUNT_SOURCES,
   },
   giphyApiKey: envVars.GIPHY_API_KEY,
   email: {

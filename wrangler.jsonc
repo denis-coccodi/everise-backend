@@ -59,6 +59,14 @@
     "JWT_SECONDS_TO_EXPIRATION": "86400",
     // The EVERISE Discord server, whose widget the home page shows.
     "DISCORD_GUILD_ID": "1019343461960384623",
+    // The channels of that server the site relays (src/relays), read by the
+    // Everise app's bot (DISCORD_BOT_TOKEN, a secret): the weekly one
+    // (Fashion Report, Island Sanctuary) and the hunt trains, with the hunt
+    // groups' followed channels and their data centres (Centurio Hunts'
+    // #light-train-relay and #chaos-train-relay).
+    "DISCORD_WEEKLY_CHANNEL_ID": "1522733743922610290",
+    "DISCORD_HUNTS_CHANNEL_ID": "1522727923881214245",
+    "DISCORD_HUNT_SOURCES": "620488846919860234:Light,620489103741288468:Chaos",
     // The Workers AI Neurons the Waking Sands may spend a day (a reply costs
     // a few). With staging's 1,500 this stays under the account's free 10,000.
     "WAKING_SANDS_DAILY_NEURONS": "8000",
@@ -72,8 +80,9 @@
   "observability": {"enabled": true},
 
   // Every 2 minutes: shared Party Finder listings that ended are told to
-  // their sharers, and in the Discord (src/party-finder-shares). Inherited
-  // by staging.
+  // their sharers, and in the Discord (src/party-finder-shares); the
+  // relayed Discord channels are read again (src/relays). Inherited by
+  // staging.
   "triggers": {"crons": ["*/2 * * * *"]},
 
   "dev": {"port": 8080},
@@ -118,6 +127,9 @@
         "JWT_SECONDS_TO_EXPIRATION": "86400",
         // The EVERISE Discord server, whose widget the home page shows.
         "DISCORD_GUILD_ID": "1019343461960384623",
+        "DISCORD_WEEKLY_CHANNEL_ID": "1522733743922610290",
+        "DISCORD_HUNTS_CHANNEL_ID": "1522727923881214245",
+        "DISCORD_HUNT_SOURCES": "620488846919860234:Light,620489103741288468:Chaos",
         // Staging's share of the account's free Workers AI Neurons (see above).
         "WAKING_SANDS_DAILY_NEURONS": "1500",
         // Staging's share of the account's free 10 GB of R2 (see above).
