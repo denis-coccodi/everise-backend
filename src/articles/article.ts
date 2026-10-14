@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {Attachment} from '../media/attachments';
+import {Attachment} from '../media';
 import type {PartyFinderPostSchema} from './article-schemas';
 
 // A Party Finder listing shared as a post, as it was then.

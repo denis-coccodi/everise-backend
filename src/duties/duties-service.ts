@@ -81,7 +81,7 @@ class DutiesService {
 
     const refresh = {
       dataVersion: data.dataVersion,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: this.now().toISOString(),
       dutyCount: data.groups.reduce((n, g) => n + g.duties.length, 0),
       rouletteCount: data.roulettes.length,
       jobCount: data.jobs.length,

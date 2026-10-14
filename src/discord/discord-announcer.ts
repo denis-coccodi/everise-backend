@@ -1,6 +1,6 @@
 import {URL} from 'url';
-import type {ArticleDto} from '../articles/article-dto';
-import {LiveEvent, LiveFeed} from '../live/live-feed';
+import type {ArticleDto} from '../articles';
+import {LiveEvent, LiveFeed} from '../live';
 import {Sharer, escape, fromDiscord, message} from './discord-format';
 import {articleMessages} from './discord-messages';
 import {SharedListing, listingMessage} from './listing-message';

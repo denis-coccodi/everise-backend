@@ -1,7 +1,7 @@
 import {Db} from '../db';
 import {NotFoundError} from '../errors';
-import {cleanAttachment} from '../media/attachments';
-import {MediaService} from '../media/media-service';
+import {cleanAttachment} from '../media';
+import {MediaService} from '../media';
 import {UsersService} from '../users';
 import {
   AttachmentInput,

@@ -1,6 +1,6 @@
 import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
-import {LiveFeed} from '../live/live-feed';
+import {LiveFeed} from '../live';
 import {User} from '../users';
 import {CharacterModel} from './character-model';
 import {CharacterProfile, CharactersService} from './characters-service';

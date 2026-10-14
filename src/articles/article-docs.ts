@@ -6,7 +6,7 @@ import {
   cleanAttachment,
   currentAttachment,
   uploadIdOf,
-} from '../media/attachments';
+} from '../media';
 import {Article, PartyFinderPost, RouletteCard} from './article';
 import {Comment} from './comment';
 // Posts and comments as the database stores them, and the parameters the services take.

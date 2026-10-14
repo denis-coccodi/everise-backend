@@ -2,7 +2,7 @@ import {DurableObject} from 'cloudflare:workers';
 import {Db, DocData, FindOptions, SetOptions, Write} from './db';
 import {copyKeyValueDocuments} from './key-value-copy';
 import {SqlDocumentStore} from './sql-document-store';
-import {retireTataruAccount} from '../waking-sands/retire-tataru-account';
+import {retireTataruAccount} from '../waking-sands';
 
 // The Durable Object instance that holds the whole database. The name selects
 // the storage: a different name is a different, empty database.
