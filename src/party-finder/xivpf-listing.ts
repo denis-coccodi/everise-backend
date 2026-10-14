@@ -92,9 +92,14 @@ function acceptsOf(jobs: string[]) {
     .filter(group => group.jobs.length > 0);
 }
 
+// xivpf decodes a slot's jobs from a list older than Beastmaster: an open
+// slot only a Beastmaster may join comes with no jobs at all (in the game,
+// a DPS slot). Seen on low-level dungeons and raids, where BST can go.
+const UNDECODED_SLOT = ['BST'];
+
 function slotOf(job: string | null, accepts: string[]): Slot {
   if (job) return {job, icon: jobIcon(job), roles: [], accepts: []};
-  const groups = acceptsOf(accepts);
+  const groups = acceptsOf(accepts.length ? accepts : UNDECODED_SLOT);
   return {
     job: null,
     icon: null,

@@ -281,6 +281,37 @@ describe('GET /api/party-finder', () => {
     ).toEqual(['PLD', 'healer', 'dps', 'dps']);
   });
 
+  test('an open slot xivpf sends without jobs is a Beastmaster slot: its jobs list predates BST', async () => {
+    // Halatali (Hard), as the game showed it: DPS, DPS, healer, DPS.
+    xivpf.listings = [
+      entry({
+        slotCount: 4,
+        slots: [
+          [],
+          [],
+          ['CNJ', 'WHM', 'SCH', 'AST', 'SGE'],
+          [],
+          [],
+          [],
+          [],
+          [],
+        ],
+        filled: [null, null, null, null, null, null, null, null],
+      }),
+    ];
+
+    const response = await board();
+
+    const [first, , healer] = response.body.listings[0].slots;
+    expect(first).toEqual({
+      job: null,
+      icon: null,
+      roles: ['dps'],
+      accepts: [{role: 'dps', jobs: ['BST']}],
+    });
+    expect(healer.roles).toEqual(['healer']);
+  });
+
   test('shows a listing once when xivpf holds it under two worlds, as last reported', async () => {
     xivpf.listings = [
       entry({id: 7, world: {id: 402, name: 'Alpha'}, updatedSecondsAgo: 190}),
