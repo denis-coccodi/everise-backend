@@ -1,6 +1,6 @@
 ---
 name: smoke-test
-description: Check that the Everise API responds and that data persists in the EveriseDb Durable Object, locally (wrangler dev), on staging, or on production. Use when asked whether the API is up, whether data is stored, or to verify a change in the running app rather than in Jest.
+description: Checks that the Everise API responds and that data persists in the EveriseDb Durable Object, locally (wrangler dev), on staging or on production, runs the cron trigger's jobs locally, and reads a deployed Worker's logs. Use when asked whether the API is up or data is stored, to verify a change in the running app rather than in Jest, or to see what a scheduled job did.
 ---
 
 # Smoke-test the Everise API
@@ -30,6 +30,18 @@ sh scripts/smoke.sh verify <base-url> <scratchpad>/jar.txt
    - On Windows, killing the background Bash task does not always free the port. Stop it from PowerShell:
      `Get-NetTCPConnection -LocalPort 8080 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`
 3. Local data lives in `.wrangler/state`. Deleting the folder empties the database.
+
+## Scheduled jobs (the cron trigger)
+
+`scheduled` in `src/worker.ts` runs every 2 minutes (`triggers.crons` in `wrangler.jsonc`): the shared Party Finder listings check and the Discord relays' read (`AppJobs` in `src/app-options.ts`). Tests call the same jobs through `jobs` from `__tests__/utils`.
+
+- **Locally:** `npx wrangler dev --test-scheduled --port 8787`, then trigger a run with `curl "http://localhost:8787/__scheduled?cron=*/2+*+*+*+*"`. Each request is one run. Add `--persist-to <scratchpad>/state` to start from an empty database without touching `.wrangler/state`.
+- **Deployed:** watch what runs with `npx wrangler tail [--env staging] --format json`. Its events are multi-line JSON; pipe them through [scripts/tail-events.mjs](scripts/tail-events.mjs) for one line per event with its logs and exceptions:
+  ```
+  timeout 260 npx wrangler tail --env staging --format json | node .claude/skills/smoke-test/scripts/tail-events.mjs --cron
+  ```
+  `--cron` keeps only the cron runs. A run's `console.log` lines (e.g. "Relays: … isn't shown") appear under it.
+- Which version a Worker runs, and its settings: `npx wrangler deployments list [--env staging]`, then `npx wrangler versions view <version-id> [--env staging]` (handlers, variables, secret names).
 
 ## Notes
 

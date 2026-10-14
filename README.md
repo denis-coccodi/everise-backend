@@ -355,7 +355,7 @@ The database is built on SQL tables: SQLite, in the storage of a single instance
 - **Common fields.** The store gives every new document an `id` (a UUID, or the id passed to `set`, which creates or replaces a document under a chosen id), `createdAt` and `updatedAt`. An update that changes nothing keeps the old `updatedAt`.
 - **References.** Documents point to each other by id (`authorId`, `articleId`, `followerId`, `followeeId`). The database does not enforce these links; the services check them.
 - **Arrays instead of collections.** An article's tags live in its `tags` array and the users who favorited it in its `favoritedBy` array, so there is no tags or favorites collection.
-- **Queries.** `find` is one SQL query: `==` and `array-contains` filters (`json_extract`, `json_each`), sorting, `LIMIT`/`OFFSET`. Every field a service filters on has an index (`INDEXED` in `src/db/sql-document-store.ts`), as does the creation date; a new filter on another field should add one.
+- **Queries.** `find` is one SQL query: `==` and `array-contains` filters (`json_extract`, `json_each`), sorting, `LIMIT`/`OFFSET`. Every field a service filters on has an index (`INDEXED` in `src/db/sql-schema.ts`), as does the creation date; a new filter on another field should add one.
 - **Consistency.** Each call to the database runs on its own, and a `batch` is one transaction. A service's read and its write are two calls, though, and another request's calls can come between them, so changes that depend on what's there use the store's one-step operations: `addToSet`/`removeFromSet` (favorites, who's in the Waking Sands room, up to its limit), `takeLease` (one round of answers at a time), `increment` (the Waking Sands' Neurons, the guests' post count) and `createUnique` (sign-ups by email and username, follows).
 - **Access.** The Worker reaches the Durable Object over RPC through `DurableObjectDb`, which implements the same `Db` interface as the store. Tests use the same `SqlDocumentStore` on an in-memory SQLite database (`node:sqlite`), so they run the real SQL.
 
@@ -479,6 +479,19 @@ curl http://localhost:8080/api/tags
 1. Run `npm test`.
 
 The tests run the Express app in Node against an in-memory SQLite database (`node:sqlite`, the same store code as the Durable Object), so they need nothing else running. Every answer is checked against its declared schema, and `__tests__/concurrency` fires requests together to prove the one-step database operations hold. After the tests, `npm test` also type-checks, lints, checks formatting (Prettier) and checks file sizes; it must exit 0 before pushing.
+
+## Skills
+
+How work is done in this repo is written down as skills in [`.claude/skills/`](.claude/skills), for people and AI assistants alike. Each `SKILL.md` says what it covers and when to use it, and longer reference material sits next to it:
+
+| Skill | For |
+| --- | --- |
+| `feature-branch` | Every change: a `feature/<name>` branch, a pull request, merging once `test` passes |
+| `backend-best-practices` | Writing code under `src/` and `__tests__/`: routers, services, errors, types, data, tests, file sizes |
+| `db-structure` | The data model (collections in `collections.md`) and the database diagram |
+| `deploy` | Staging and production, secrets, failing pipelines (`troubleshooting.md`) |
+| `smoke-test` | Checking the running API, running the cron jobs locally, reading a Worker's logs (`scripts/tail-events.mjs`) |
+| `discord-relays` | The Weekly and Hunts tabs' Discord channels and bot (`scripts/peek-channel.mjs`) |
 
 ## Code conventions
 
