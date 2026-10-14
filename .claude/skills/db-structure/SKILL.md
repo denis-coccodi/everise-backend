@@ -1,6 +1,6 @@
 ---
 name: db-structure
-description: How the EveriseDb document store is laid out (collections, fields, references, query model) and how to update the database diagram in docs/. Use when answering questions about the data model, adding or changing a collection or field, or when the diagram or the README's Database section needs to change.
+description: Describes how the EveriseDb document store is laid out (the docs table, collections, fields, references, indexes, one-step operations) and how to update the database diagram in docs/. Use when answering questions about the data model, adding or changing a collection or field, or when the diagram or the README's Database section needs to change.
 ---
 
 # Everise database structure
@@ -8,42 +8,21 @@ description: How the EveriseDb document store is laid out (collections, fields, 
 The whole database is one Durable Object instance, named `everise`, of the class `EveriseDb` (SQLite-backed, `src/db/everise-db.ts`), wrapping `SqlDocumentStore` (`src/db/sql-document-store.ts`).
 
 - The instance name selects the storage: a different name is a different, empty database. Never change `DB_NAME` without a data copy.
-- Both environments' databases were recreated empty in October 2026 (namespaces `be-prod_EveriseDb`, `be-staging_EveriseDb`); `wrangler.jsonc` has one migration, `v1`. Applied migrations must never be edited or removed: add new ones.
+- Durable Object migrations in `wrangler.jsonc` are applied once: never edit or remove one, add a new one.
 
 - Table `docs`: `collection`, `id` (primary key together), `data` (the fields as JSON; dates as `{"$date": ms}`, bytes as `{"$bytes": base64}`, see `src/db/json-values.ts`), `created_at`, `updated_at` (ms). Table `meta`: one-time steps done (the key-value copy).
-- Before the SQL table (until October 2026) documents were key-value entries `<collection>/<id>`; `src/db/key-value-copy.ts` copies them once on the Durable Object's first start and leaves them as a backup.
 - On every start the Durable Object also runs `retireTataruAccount` (`src/waking-sands/retire-tataru-account.ts`): the old Tataru member account (`tataru@everise.invalid`), if still there, has its posts and pictures moved to `character:tataru` and is deleted.
 - The store adds `id` (UUID), `createdAt`, `updatedAt` to every document. An update that changes no field keeps `updatedAt`.
-- `find` is one SQL query (`==` via `json_extract`, `array-contains` via `json_each`, ORDER BY, LIMIT/OFFSET, ties by id). Field names are written into the SQL (checked as plain words) so SQLite can use the expression indexes; every filtered field must be in `INDEXED`.
+- `find` is one SQL query (`==` via `json_extract`, `array-contains` via `json_each`, ORDER BY, LIMIT/OFFSET, ties by id). Field names are written into the SQL (checked as plain words) so SQLite can use the expression indexes; every filtered field must be in `INDEXED` (`src/db/sql-schema.ts`).
 - Each call is atomic and `batch` is a transaction, but a read and a later write are two RPC calls: another request's calls can come between them. Use the one-step operations for anything that depends on what's stored: `addToSet`/`removeFromSet` (optionally capped at `max`, or creating the document), `takeLease` (a number field as a lease: one holder until it runs out), `increment` (dotted paths reach into objects), `createUnique` (groups of fields that must not repeat).
 - References are plain ids; nothing enforces them. Services check existence.
 - Tests use the same `SqlDocumentStore` on in-memory SQLite (`__tests__/utils/sqlite-storage.ts`, `node:sqlite`).
 - No backup job exists. Durable Objects have 30-day point-in-time recovery, unused by the app.
 - Not in this database: the market's price histories. Each item and region has its own `MarketHistoryHub` Durable Object (`src/market/market-hub.ts`, binding `MARKET`, named `<region>:<item id>`) whose SQLite storage holds `history_months` (one row per world and month: `days`, JSON keyed by each day's start, each day's all/nq/hq [median, min, max, sales, quantity] or null; rows, not bytes, count against the Free plan), `history_gaps` (windows of a world's sales still to read from Universalis, with the adaptive `span` of the next read) and `history_state` (`refreshedAt`, `readFrom`). Migration v4's first version kept `market_*` tables under other object names; those are left as they are. It can be rebuilt from Universalis at any time.
 
-| Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
-| --- | --- | --- |
-| `users` | email, username, passwordHash? (unset: signs in only through a provider), googleId?, facebookId?, microsoftId?, discordId? (the provider accounts tied to it), bio?, image?, darkMode? (unset: dark), role? (`staging-tester`; unset: user; admins come from `ADMIN_EMAILS`, never stored), emailConfirmed? (false until a password sign-up opens its link; unset: confirmed), pendingEmail? (a new address waiting for its link) | `src/users/user-doc.ts` (`UserDoc`) |
-| `follows` | followerId → users, followeeId → users | `src/profiles/profiles-service.ts` |
-| `articles` | authorId → users (or `character:<id>` for a Waking Sands character's post: Tataru's, of guests' roulette results), slug? (only on posts from before ids were in links, so their old links still work), title, description, body, tags[], favoritedBy[] → users, media? (up to 4 attachments: image, gif or YouTube video; unset on posts from before, whose media is in the body), roulette? (a roulette result card), partyFinder? (a shared Party Finder listing as it was: dataCentre, icons, listing) | `src/articles/article-docs.ts` (`ArticleDoc`) |
-| `comments` | articleId → articles, authorId → users, body, media? (one attachment) | `src/articles/article-docs.ts` (`CommentDoc`) |
-| `media` | userId → users, contentType, width, height, size (bytes; the file is in R2 at `media/<id>`, ≤ 1 MB; older uploads have `data` instead until first read), uploadedAt (ms, the daily limit), attached? (false until a post or comment uses it; swept a day later) | `src/media/media-service.ts` (`MediaDoc`) |
-| `emailConfirmations` | userId → users, email (the address the link went to), tokenHash (SHA-256), expiresAt, lastSentAt, sendsToday, dayStartedAt (one per account; deleted when opened) | `src/users/email-confirmation.ts` (`ConfirmationDoc`) |
-| `postLimits` | lastPostAt?, or windowStart? and count? (id: `user-<id>`, `guest-<hashed address>`, `guests`); until (id: `pf-post-<id>`, `pf-discord-<id>`: when a member may share a listing again) | `src/roulette-posts/roulette-posts-service.ts`, `src/party-finder-shares/party-finder-shares-service.ts` |
-| `profileImages` | userId → users (or `character:<id>` for a Waking Sands character's picture), contentType, size (bytes; the file is in R2 at `profile-images/<id>`, ≤ 300 KB; older pictures have `data` instead until first read); `users.image` holds its URL | `src/users/profile-images-service.ts` (`ProfileImageDoc`) |
-| `characters` | title?, persona?, bio? (their profile's), image? (an uploaded picture's URL; the file is a `profileImages` document owned by `character:<id>`) (id: the character's id, e.g. `barnaby`; unset fields keep the default from `characters.ts`) | `src/waking-sands/characters-service.ts` (`CharacterDoc`) |
-| `sandsLines` | at (ms, strictly increasing), from (`member`, `note` or a character id), name, image?, userId? → users (a member's line), text (the room's last day, at most 200; older ones deleted on write) | `src/waking-sands/sands-docs.ts` (`LineDoc`) |
-| `sandsRoom` | present[] (character ids), busyUntil (ms; a round of answers is running) (one document, id `room`) | `src/waking-sands/sands-docs.ts` (`RoomDoc`) |
-| `siteStorage` | bytes (id: `uploads`; everyone's uploads in R2, against `UPLOAD_STORAGE_MB`) | `src/files/upload-storage.ts` |
-| `notifications` | userId → users (who it is for), type (`favorite`, `comment` or `follow`), actorId → users and actor {id, username, image} (who did it, as they were then), articleId? → articles and articleTitle?, commentId? → comments and commentExcerpt?, at (ms), seen, read (id: `favorite:<article>:<member>`, `follow:<followee>:<follower>` or `comment:<comment>`: one per thing that happened; undoing it deletes it; the site's own, without actor: `pf-ended:<share>` with partyFinder {listingId, dataCentre, title}, `role:<member>:<ms>` with role) | `src/notifications/notification-docs.ts` (`NotificationDoc`) |
-| `sharedListings` | listingId, dataCentre, title, sharerId → users, sharerName, articleId? → articles (shared as a post), discord (shared in the Discord too, or only) (watched by the cron trigger until the listing is off its board, then deleted; older shares may still hold an unused expiresAt) | `src/party-finder-shares/shared-listings.ts` (`SharedListingDoc`) |
-| `relayedPosts` | channel (`weekly` or `hunts`), kind (`fashion-report`, `island-sanctuary`, `hunt`), dataCentre? (a hunt train's, from its source server), postedAt, startsAt? (a hunt train's start: the time in its text, or postedAt), message (the Discord message as it was sent: content, embeds, attachments; pictures from Discord's file server copied to R2 at `relays/<file>`) (id: Discord's message id; no history: only the latest Fashion Report and Island Sanctuary season, and per data centre the hunt trains to come, running (2 hours) and the last started; deleted when deleted in Discord) | `src/relays/relay-docs.ts` (`RelayedPostDoc`) |
-| `relayCursors` | lastId (the newest Discord message looked at in the channel) (id: `weekly` or `hunts`) | `src/relays/relay-docs.ts` (`RelayCursorDoc`) |
-| `chatUsage` | neurons, members ({users.id or `guests`: Neurons}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/sands-docs.ts` (`UsageDoc`) |
+## Collections
 
-Tags and favorites have no collection of their own; they are arrays on articles.
-
-Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls before relying on it.
+The app's collections, their fields and the files that define them are in [collections.md](collections.md). Read it before answering a data-model question or changing a document's shape, and update it (with the diagram and the README's Database section) when a collection or field changes.
 
 ## Updating the diagram
 
@@ -57,3 +36,8 @@ Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls 
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.
 3. Keep the README "Database" bullets in sync with the diagram.
+
+## History
+
+- October 2026: both environments' databases were recreated empty (namespaces `be-prod_EveriseDb`, `be-staging_EveriseDb`, migration `v1`).
+- Until October 2026 documents were key-value entries `<collection>/<id>`. `src/db/key-value-copy.ts` copies them into the `docs` table once, on the Durable Object's first start, and leaves them as a backup.

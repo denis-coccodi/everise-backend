@@ -1,6 +1,6 @@
 ---
 name: backend-best-practices
-description: How backend code in this repo is written - routers, services, errors, validation, the database, tests, and the file size limits enforced by scripts/check-sizes.mjs. Use before writing or changing any code under src/ or __tests__/, and when reviewing backend changes.
+description: Describes how backend code in this repo is written - routers and the API description, services, HttpError errors, types and settings, data and concurrency, tests, and the file size limits enforced by scripts/check-sizes.mjs. Use before writing or changing any code under src/ or __tests__/, when adding an endpoint or a setting, and when reviewing backend changes.
 ---
 
 # Backend best practices
@@ -17,6 +17,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - Schemas live next to the feature, in `<feature>-schemas.ts`. Response bodies use `responseSchema('Name', z.strictObject({...}))`; request bodies use `requestSchema('Name', z.object({...}))`. The name becomes the frontend's type name, so make it a noun (`Profile`, `ArticleResponse`, `NewComment`). Dates in responses are `isoDate`. Query values arrive as strings, so numbers use `z.coerce.number()`.
 - Give limits a message the user can read (`.max(MAX, {error: 'Keep the comment to 280 characters.'})`), and take the numbers from constants the service exports. Don't copy them.
 - `openapi.json` at the repo root is the committed copy of the document. `npm test` rewrites it when routes change and fails once; commit the new file. CI fails while it's out of date.
+- The frontend (`../everise-frontend`) generates its API types from the `openapi.json` on `main` (`npm run api-types` there). So an API change merges here first; then the frontend regenerates and commits its types (its CI's `api-types` job fails until it does).
 - A router only reads the request, calls services, and writes the response (status from `StatusCodes`). Rules and data access belong in the service.
 - Express 5 forwards a rejected async handler to the error middleware by itself: handlers just `throw` or `await`, with no `try { ... } catch (err) { next(err) }`.
 - Don't add plain `router.get(...)` routes: a route outside `route()` is missing from the document and from the response check.
