@@ -5,6 +5,7 @@ import {FileStore} from './files';
 import {GifFetch} from './media';
 import {MarketSource, UniversalisFetch} from './market';
 import {PartyFinderSource} from './party-finder';
+import {RelayFetch} from './relays';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
 import {LoadBundledPicture} from './waking-sands';
@@ -24,6 +25,16 @@ interface AppOptions {
   socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
   // The Discord channel members share in, and the server's widget.
   discord?: {webhookUrl?: string; guildId?: string; fetch?: DiscordFetch};
+  // The Discord channels the site relays (weekly posts, hunt trains): the
+  // bot's token, the channels, the hunt groups' servers ("<id>:<DC>,…"),
+  // and how the app reaches Discord.
+  relays?: {
+    botToken?: string;
+    weeklyChannelId?: string;
+    huntsChannelId?: string;
+    huntSources?: string;
+    fetch?: RelayFetch;
+  };
   // The GIF search: GIPHY's key, and how the app reaches it.
   gifSearch?: {apiKey?: string; fetch?: GifFetch};
   // Sends the email confirmation links; without one, emails aren't
@@ -58,6 +69,8 @@ interface AppOptions {
 interface AppJobs {
   // The shared Party Finder listings no longer up: their sharers told.
   checkSharedListings?: () => Promise<void>;
+  // The relayed Discord channels read again.
+  readRelays?: () => Promise<void>;
 }
 
 export {AppJobs, AppOptions};

@@ -13,6 +13,7 @@ export {
   mail,
   marketOptions,
   providers,
+  relays,
   staging,
   universalis,
   xivApi,

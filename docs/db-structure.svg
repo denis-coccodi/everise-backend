@@ -25,7 +25,7 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite) holding documents in one SQL table: the app's 15 collections, no fixed schema (the cached FFXIV data is in the README).</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite) holding documents in one SQL table: the app's 17 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -334,6 +334,31 @@
     <text x="88" y="1643" class="field">createdAt, updatedAt</text><text x="324" y="1643" class="type" text-anchor="end">Date</text>
   </g>
 
+  <!-- relayedPosts: the Discord messages the Weekly and Hunts tabs show -->
+  <g>
+    <rect x="860" y="1500" width="300" height="210" rx="10" class="box"/>
+    <path d="M870,1500 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#6d28d9"/>
+    <text x="876" y="1526" class="title">relayedPosts</text>
+    <text x="1144" y="1526" class="key" text-anchor="end">docs: relayedPosts</text>
+    <rect x="872" y="1549" width="26" height="16" rx="3" class="pk"/><text x="885" y="1561" class="badge" text-anchor="middle">PK</text><text x="908" y="1561" class="field">id</text><text x="1144" y="1561" class="type" text-anchor="end">Discord message id</text>
+    <text x="908" y="1587" class="field">channel, kind</text><text x="1144" y="1587" class="type" text-anchor="end">weekly / hunts</text>
+    <text x="908" y="1613" class="field">dataCentre</text><text x="1144" y="1613" class="type" text-anchor="end">string? (hunt)</text>
+    <text x="908" y="1639" class="field">postedAt</text><text x="1144" y="1639" class="type" text-anchor="end">Date</text>
+    <text x="908" y="1665" class="field">message</text><text x="1144" y="1665" class="type" text-anchor="end">as Discord sent it</text>
+    <text x="908" y="1691" class="field">createdAt, updatedAt</text><text x="1144" y="1691" class="type" text-anchor="end">Date</text>
+  </g>
+
+  <!-- relayCursors: the newest message looked at in each relayed channel -->
+  <g>
+    <rect x="40" y="1688" width="300" height="128" rx="10" class="box"/>
+    <path d="M50,1688 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#6d28d9"/>
+    <text x="56" y="1714" class="title">relayCursors</text>
+    <text x="324" y="1714" class="key" text-anchor="end">docs: relayCursors</text>
+    <rect x="52" y="1737" width="26" height="16" rx="3" class="pk"/><text x="65" y="1749" class="badge" text-anchor="middle">PK</text><text x="88" y="1749" class="field">id</text><text x="324" y="1749" class="type" text-anchor="end">weekly / hunts</text>
+    <text x="88" y="1775" class="field">lastId</text><text x="324" y="1775" class="type" text-anchor="end">Discord message id</text>
+    <text x="88" y="1801" class="field">createdAt, updatedAt</text><text x="324" y="1801" class="type" text-anchor="end">Date</text>
+  </g>
+
   <!-- Legend -->
   <g transform="translate(0 26)">
     <rect x="40" y="710" width="300" height="160" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
@@ -352,5 +377,5 @@
   <!-- Footer -->
   <text x="40" y="1834" font-size="12" fill="#64748b">Source: src/db/sql-document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
   <text x="40" y="1852" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts, src/waking-sands/waking-sands-service.ts, src/waking-sands/characters-service.ts,</text>
-  <text x="40" y="1870" font-size="12" fill="#64748b">src/files/upload-storage.ts, src/notifications/notification-docs.ts, src/party-finder-shares/shared-listings.ts</text>
+  <text x="40" y="1870" font-size="12" fill="#64748b">src/files/upload-storage.ts, src/notifications/notification-docs.ts, src/party-finder-shares/shared-listings.ts, src/relays/relay-docs.ts</text>
 </svg>
