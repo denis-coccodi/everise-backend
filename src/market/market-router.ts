@@ -226,7 +226,7 @@ function dayString(day: number) {
   return new Date(day * 1000).toISOString().slice(0, 10);
 }
 
-function byWorld({days, complete, refreshedAt}: ItemSeries) {
+function byWorld({days, complete, readBackTo, refreshedAt}: ItemSeries) {
   const worlds = new Map<number, ReturnType<typeof marketDay>[]>();
   for (const {world, day, figures} of days) {
     const list = worlds.get(world);
@@ -237,6 +237,7 @@ function byWorld({days, complete, refreshedAt}: ItemSeries) {
   return {
     worlds: [...worlds].map(([id, worldDays]) => ({id, days: worldDays})),
     complete,
+    readBackTo: readBackTo === null ? null : dayString(readBackTo),
     refreshedAt: refreshedAt?.toISOString() ?? null,
   };
 }

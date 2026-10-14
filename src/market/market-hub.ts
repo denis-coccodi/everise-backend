@@ -6,14 +6,16 @@ import {MarketRegion, regionWorlds} from './market-regions';
 import {MarketSource} from './market-source';
 import {universalisSales} from './universalis';
 
-// Steps an alarm reads before handing over to the next one: each is one
-// outbound request, and an invocation may make 50 on the Free plan.
+// Steps an alarm reads before handing over to the next one: each reads up
+// to 8 worlds (8 outbound requests), and an invocation may make 50 on the
+// Free plan.
 const STEPS_PER_ALARM = 4;
-// The pause between alarms, to go easy on Universalis.
-const ALARM_PAUSE_MS = 1000;
-// Steps the first request waits for: at 4 worlds a step, every world of
-// a region (Europe has 16) gets its newest days.
-const FIRST_STEPS = 5;
+// The pause between alarms: none, so a long history fills in quickly
+// (Universalis allows 8 connections and 25 requests a second).
+const ALARM_PAUSE_MS = 0;
+// Steps the first request waits for: at 8 worlds a step, every world of a
+// region (Europe has 16, North America 32) gets its newest days.
+const FIRST_STEPS = 4;
 // After a failed read, the wait before trying again.
 const RETRY_MS = 15 * 1000;
 

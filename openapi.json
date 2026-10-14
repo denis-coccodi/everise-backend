@@ -6523,6 +6523,12 @@
           "complete": {
             "type": "boolean"
           },
+          "readBackTo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "refreshedAt": {
             "anyOf": [
               {
@@ -6543,6 +6549,7 @@
           "from",
           "worlds",
           "complete",
+          "readBackTo",
           "refreshedAt"
         ],
         "additionalProperties": false

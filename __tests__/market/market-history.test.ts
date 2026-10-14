@@ -284,12 +284,15 @@ describe('the market page: price history', () => {
       date(0),
     ]);
     expect(first.headers['cache-control']).toBe('no-store');
+    // How far back every world has been read so far: today only.
+    expect(first.body.readBackTo).toBe(date(0));
 
     let res = first;
     for (let i = 0; i < 20 && !res.body.complete; i++) {
       res = await history(`item=${item}`);
     }
     expect(res.body.complete).toBe(true);
+    expect(res.body.readBackTo).toBeNull();
     expect(res.body.worlds[0].days).toHaveLength(6);
   });
 

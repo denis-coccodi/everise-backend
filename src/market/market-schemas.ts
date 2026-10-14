@@ -143,6 +143,9 @@ const MarketHistoryResponse = responseSchema(
     // Every day from `from` has been read. Until then the older days are
     // still coming in: ask again in a few seconds.
     complete: z.boolean(),
+    // While not complete: the oldest day read on every world so far
+    // (YYYY-MM-DD), for the page to say how far back it has got.
+    readBackTo: z.string().nullable(),
     refreshedAt: isoDate.nullable(),
   }),
 );

@@ -1,19 +1,12 @@
 import {SqlStorage} from '../db';
-import {
-  DAY,
-  Figures,
-  QUALITIES,
-  Quality,
-  WorldDay,
-  dayOf,
-  worldDays,
-} from './daily-stats';
+import {DAY, Figures, Quality, dayOf, worldDays} from './daily-stats';
+import {MonthRows} from './month-rows';
 import {ReadSales, Sale} from './universalis';
 
 // Sales read per call to Universalis.
 const CHUNK = 10_000;
 // Worlds read at once (Universalis allows 8 connections at a time).
-const CONCURRENCY = 4;
+const CONCURRENCY = 8;
 // How long the newest days are taken as up to date.
 const STALE_MS = 15 * 60 * 1000;
 // Universalis' history starts in late October 2022: nothing older is asked.
@@ -39,6 +32,8 @@ interface ItemSeries {
   // Every day asked for has been read (until then, older days are still
   // coming in).
   complete: boolean;
+  // While not complete: the oldest day read on every world so far.
+  readBackTo: number | null;
   // When the newest sales were last read.
   refreshedAt: Date | null;
 }
@@ -53,20 +48,21 @@ interface Gap {
 }
 
 // One item's price history on each world of a region, kept as each
-// world's days (one row per world and day, the qualities side by side).
+// world's days (MonthRows: a row per world and month, every day inside).
 // Only the days asked for are read: the first time, from `from` (a day) to
 // now; later, older days when an earlier `from` is asked, and the days
 // since the newest kept one once what's kept is STALE_MS old. What's still
-// to read are gaps, one per world, read newest first, a few worlds at once.
-// Universalis answers a limited number of sales at a time, the newest
+// to read are gaps, one per world, read newest first, CONCURRENCY worlds at
+// once. Universalis answers a limited number of sales at a time, the newest
 // first: a read covers the gap's window (adapting to how busy the world is),
-// starting on a day, and
-// writes whole days only (when a read can't hold every sale of its window,
-// its oldest day is read again, whole, by the next one). Kept days are
-// never deleted.
+// starting on a day, and writes whole days only (when a read can't hold
+// every sale of its window, its oldest day is read again, whole, by the next
+// one). Kept days are never deleted.
 class ItemHistory {
   // The step being read, if any.
   private running?: Promise<boolean>;
+  // The days, a row per world and month.
+  private readonly rows: MonthRows;
 
   constructor(
     private readonly storage: SqlStorage,
@@ -75,6 +71,7 @@ class ItemHistory {
     private readonly now: () => Date,
     private readonly chunk = CHUNK,
   ) {
+    this.rows = new MonthRows(storage);
     for (const statement of TABLES) this.storage.sql.exec(statement);
   }
 
@@ -97,18 +94,15 @@ class ItemHistory {
     }
     if (now - refreshedAt < STALE_MS) return;
     // From the newest day kept (read again, whole), or from the last read.
-    const since = this.newestDay() ?? dayOf(refreshedAt / 1000);
+    const since = this.rows.newestDay() ?? dayOf(refreshedAt / 1000);
     if (this.gaps().some(gap => gap.until >= since)) return;
     this.addGaps(since, nowSeconds);
     this.setState('refreshedAt', now);
   }
 
-  // Some day is kept (one row read, not the history).
+  // Some day is kept.
   get hasDays() {
-    return (
-      this.storage.sql.exec('SELECT 1 FROM history_days LIMIT 1').toArray()
-        .length > 0
-    );
+    return this.rows.hasDays;
   }
 
   // Something is left to read (to show the days from `from`, if given).
@@ -126,29 +120,14 @@ class ItemHistory {
 
   // `quality`'s days from `from` (s), on each world that sold some.
   series(quality: Quality, from: number): ItemSeries {
-    const days = this.storage.sql
-      .exec(
-        `SELECT world, day, ${quality}_median AS median, ${quality}_min AS min, ` +
-          `${quality}_max AS max, ${quality}_sales AS sales, ${quality}_quantity AS quantity ` +
-          `FROM history_days WHERE day >= ? AND ${quality}_sales IS NOT NULL ORDER BY day, world`,
-        dayOf(from),
-      )
-      .toArray()
-      .map(row => ({
-        world: Number(row.world),
-        day: Number(row.day),
-        figures: {
-          median: Number(row.median),
-          min: Number(row.min),
-          max: Number(row.max),
-          sales: Number(row.sales),
-          quantity: Number(row.quantity),
-        },
-      }));
     const refreshedAt = this.state('refreshedAt');
+    const pending = this.gaps().filter(gap => gap.until >= dayOf(from));
     return {
-      days,
-      complete: !this.pending(from),
+      days: this.rows.days(quality, from),
+      complete: !pending.length,
+      readBackTo: pending.length
+        ? dayOf(Math.max(...pending.map(gap => gap.until)) + 1)
+        : null,
       refreshedAt: refreshedAt === null ? null : new Date(refreshedAt),
     };
   }
@@ -198,13 +177,12 @@ class ItemHistory {
       }
     }
     this.storage.transactionSync(() => {
-      this.storage.sql.exec(
-        'DELETE FROM history_days WHERE world = ? AND day >= ? AND day <= ?',
+      this.rows.replace(
         gap.world,
         firstDay,
         lastDay,
+        worldDays(gap.world, kept),
       );
-      for (const day of worldDays(gap.world, kept)) this.writeDay(day);
       if (nextUntil === null || nextUntil < gap.since) {
         this.storage.sql.exec('DELETE FROM history_gaps WHERE id = ?', gap.id);
       } else {
@@ -246,28 +224,6 @@ class ItemHistory {
     }
   }
 
-  private newestDay(): number | null {
-    const [row] = this.storage.sql
-      .exec('SELECT MAX(day) AS day FROM history_days')
-      .toArray();
-    return row?.day === null || row?.day === undefined ? null : Number(row.day);
-  }
-
-  private writeDay({world, day, ...qualities}: WorldDay) {
-    const values = QUALITIES.flatMap(quality => {
-      const f = qualities[quality];
-      return f
-        ? [f.median, f.min, f.max, f.sales, f.quantity]
-        : [null, null, null, null, null];
-    });
-    this.storage.sql.exec(
-      `INSERT INTO history_days VALUES (?, ?${', ?'.repeat(values.length)})`,
-      world,
-      day,
-      ...values,
-    );
-  }
-
   private state(key: string): number | null {
     const [row] = this.storage.sql
       .exec('SELECT value FROM history_state WHERE key = ?', key)
@@ -292,24 +248,8 @@ function nextWindow(window: number, count: number, chunk: number) {
   return window;
 }
 
-// The qualities' columns: median, min, max, sales, quantity each (null
-// when none of that quality sold that day).
-const QUALITY_COLUMNS = QUALITIES.flatMap(quality =>
-  ['median', 'min', 'max', 'sales', 'quantity'].map(
-    column => `${quality}_${column} INTEGER`,
-  ),
-).join(',\n    ');
-
-// The first version of this object kept market_* tables (per item and
-// world or data centre); these are new names, so the two never meet.
+// What's left to read, and when (the days are MonthRows').
 const TABLES = [
-  // Days first in the key: the page asks for days from a date.
-  `CREATE TABLE IF NOT EXISTS history_days (
-    world INTEGER NOT NULL,
-    day INTEGER NOT NULL,
-    ${QUALITY_COLUMNS},
-    PRIMARY KEY (day, world)
-  )`,
   // Windows of a world's sales still to read: those made in [since, until] (s).
   `CREATE TABLE IF NOT EXISTS history_gaps (
     id INTEGER PRIMARY KEY,
