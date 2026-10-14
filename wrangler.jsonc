@@ -17,14 +17,18 @@
       // The live updates' WebSockets (src/live/live-hub.ts).
       {"name": "LIVE", "class_name": "LiveHub"},
       // The Party Finder listings read from xivpf.com (src/party-finder).
-      {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"}
+      {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"},
+      // The market board's price histories, one per item and place
+      // (src/market).
+      {"name": "MARKET", "class_name": "MarketHistoryHub"}
     ]
   },
   // Never edit or remove applied migrations; add new ones.
   "migrations": [
     {"tag": "v1", "new_sqlite_classes": ["EveriseDb"]},
     {"tag": "v2", "new_sqlite_classes": ["LiveHub"]},
-    {"tag": "v3", "new_sqlite_classes": ["PartyFinderHub"]}
+    {"tag": "v3", "new_sqlite_classes": ["PartyFinderHub"]},
+    {"tag": "v4", "new_sqlite_classes": ["MarketHistoryHub"]}
   ],
 
   // Workers AI, for the Waking Sands characters (src/waking-sands). On the
@@ -96,7 +100,8 @@
         "bindings": [
           {"name": "DB", "class_name": "EveriseDb"},
           {"name": "LIVE", "class_name": "LiveHub"},
-          {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"}
+          {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"},
+          {"name": "MARKET", "class_name": "MarketHistoryHub"}
         ]
       },
       "ai": {"binding": "AI"},

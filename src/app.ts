@@ -25,6 +25,7 @@ import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
+import {marketRouter, noMarket} from './market';
 import {Auth} from './middleware';
 import {PartyFinderBoard} from './party-finder';
 import {partyFinderRoutes} from './party-finder-shares';
@@ -67,6 +68,8 @@ function createApp(
     emailSender = emailSenderFor(config.email.resendApiKey, config.email.from),
     wakingSands = {},
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
+    market = noMarket,
+    universalis = (url, init) => fetch(url, init),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
@@ -306,6 +309,10 @@ function createApp(
   app.use('/api', new NotificationsRouter(auth, notifications).router);
 
   app.use('/api', dutiesRouter);
+  app.use(
+    '/api',
+    marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
+  );
 
   app.use('/api', roulettePostsRouter);
 
