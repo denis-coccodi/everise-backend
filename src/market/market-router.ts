@@ -6,6 +6,7 @@ import {Auth} from '../middleware';
 import {DAY, dayOf} from './daily-stats';
 import {HISTORY_START, ItemSeries} from './item-history';
 import {MarketItems} from './market-items';
+import {MarketListings} from './market-listings';
 import {
   DEFAULT_REGION,
   HOME_WORLD,
@@ -20,6 +21,8 @@ import {
   MarketItemResponse,
   MarketItemsQuery,
   MarketItemsResponse,
+  MarketListingsQuery,
+  MarketListingsResponse,
   MarketRegionsResponse,
 } from './market-schemas';
 import {MarketSource} from './market-source';
@@ -39,6 +42,7 @@ class MarketRouter {
     private readonly auth: Auth,
     private readonly items: MarketItems,
     private readonly market: MarketSource,
+    private readonly listings: MarketListings,
     private readonly xivApi: XivApiClient,
     private readonly now: () => Date,
   ) {}
@@ -164,6 +168,43 @@ class MarketRouter {
           quality,
           from: dayString(from),
           ...byWorld(series),
+        });
+      },
+    );
+
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/market/listings',
+        summary: "An item's cheapest listings now on the worlds of a region",
+        auth: this.auth.required,
+        query: MarketListingsQuery,
+        responses: {
+          200: {description: 'The listings.', schema: MarketListingsResponse},
+        },
+      },
+      async (req, res) => {
+        const {quality} = req.query;
+        const region = marketRegion(req.query.region);
+        // The query's enum only lets known regions through.
+        if (!region) throw new NotFoundError("There's no such region.");
+        const item = Number(req.query.item);
+        const {listings, updatedAt} = await this.listings.cheapest(
+          region.universalis,
+          item,
+          quality,
+        );
+        // They change by the minute: a short while in the browser only.
+        res.set('Cache-Control', 'private, max-age=60').json({
+          region: {id: region.id, name: region.name},
+          item,
+          quality,
+          listings: listings.map(listing => ({
+            ...listing,
+            reviewedAt: listing.reviewedAt.toISOString(),
+          })),
+          updatedAt: updatedAt?.toISOString() ?? null,
         });
       },
     );

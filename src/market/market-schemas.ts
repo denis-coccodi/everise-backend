@@ -88,6 +88,33 @@ const MarketHistoryQuery = z.object({
     .optional(),
 });
 
+// The cheapest listings now: the history's query without the days.
+const MarketListingsQuery = MarketHistoryQuery.omit({from: true});
+
+const MarketListingsResponse = responseSchema(
+  'MarketListingsResponse',
+  z.strictObject({
+    region: z.strictObject({id: z.string(), name: z.string()}),
+    item: z.number().int(),
+    quality: z.enum(QUALITIES),
+    // The cheapest first (at most 5), on any world of the region.
+    listings: z.array(
+      z.strictObject({
+        // The game's world id.
+        world: z.number().int(),
+        // Gil per unit, before tax.
+        price: z.number().int(),
+        quantity: z.number().int(),
+        hq: z.boolean(),
+        // When a player's upload last saw it.
+        reviewedAt: isoDate,
+      }),
+    ),
+    // When any of the region's market boards was last uploaded.
+    updatedAt: isoDate.nullable(),
+  }),
+);
+
 const MarketDay = z.strictObject({
   // The day (UTC), as YYYY-MM-DD.
   day: z.string(),
@@ -128,5 +155,7 @@ export {
   MarketItemResponse,
   MarketItemsQuery,
   MarketItemsResponse,
+  MarketListingsQuery,
+  MarketListingsResponse,
   MarketRegionsResponse,
 };

@@ -3,7 +3,7 @@ import {DiscordFetch} from './discord';
 import {EmailSender} from './email';
 import {FileStore} from './files';
 import {GifFetch} from './media';
-import {MarketSource} from './market';
+import {MarketSource, UniversalisFetch} from './market';
 import {PartyFinderSource} from './party-finder';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
@@ -39,6 +39,8 @@ interface AppOptions {
   // The market board's price histories (Universalis). In the Worker, a
   // Durable Object per item and place; without one, the page says so.
   market?: MarketSource;
+  // How the app reaches Universalis for the market's current listings.
+  universalis?: UniversalisFetch;
   // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
   // and how the app reaches siteverify. Without a secret, nothing is checked.
   turnstile?: {

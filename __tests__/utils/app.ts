@@ -161,12 +161,28 @@ interface UniversalisSale {
 }
 const universalis = {
   sales: {} as Record<string, UniversalisSale[]>,
+  // The current listings, by "<region name>:<item id>", as Universalis
+  // answers them (cheapest first).
+  listings: {} as Record<string, Record<string, unknown>[]>,
   status: 200,
   requests: [] as string[],
 };
 const marketOptions = {chunk: 4, stepsPerRequest: Infinity};
 const universalisFetch: UniversalisFetch = async url => {
   universalis.requests.push(url);
+  const listed = /\/api\/v2\/([^/]+)\/(\d+)\?listings=/.exec(url);
+  if (listed) {
+    const hq = new URL(url).searchParams.get('hq');
+    const key = `${decodeURIComponent(listed[1])}:${listed[2]}`;
+    const listings = (universalis.listings[key] ?? []).filter(
+      listing => hq === null || listing.hq === (hq === 'true'),
+    );
+    return {
+      ok: universalis.status < 300,
+      status: universalis.status,
+      json: async () => ({listings, lastUploadTime: 1791950000000}),
+    };
+  }
   const [, scope, itemId] = /\/history\/([^/]+)\/(\d+)\?/.exec(url) ?? [];
   const params = new URL(url).searchParams;
   const until = Number(params.get('entriesUntil'));
@@ -270,6 +286,7 @@ const app = createApp(
       () => clock.now ?? new Date(),
       marketOptions,
     ),
+    universalis: universalisFetch,
   },
 );
 

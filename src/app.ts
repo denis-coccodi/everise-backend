@@ -25,7 +25,7 @@ import {docsRouter} from './api';
 import {errorHandler} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
-import {MarketItems, MarketRouter, noMarket} from './market';
+import {marketRouter, noMarket} from './market';
 import {Auth} from './middleware';
 import {PartyFinderBoard} from './party-finder';
 import {partyFinderRoutes} from './party-finder-shares';
@@ -69,6 +69,7 @@ function createApp(
     wakingSands = {},
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
     market = noMarket,
+    universalis = (url, init) => fetch(url, init),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
@@ -310,8 +311,7 @@ function createApp(
   app.use('/api', dutiesRouter);
   app.use(
     '/api',
-    new MarketRouter(auth, new MarketItems(httpGet), market, xivApiClient, now)
-      .router,
+    marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
   );
 
   app.use('/api', roulettePostsRouter);
