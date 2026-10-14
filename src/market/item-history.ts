@@ -18,8 +18,13 @@ const CONCURRENCY = 4;
 const STALE_MS = 15 * 60 * 1000;
 // Universalis' history starts in late October 2022: nothing older is asked.
 const HISTORY_START = Date.UTC(2022, 9, 1) / 1000;
-// The longest window one read covers, so a slow world's answer stays small.
-const MAX_WINDOW = 180 * DAY;
+// A world's read window adapts to how much it sells: it starts at
+// FIRST_WINDOW, doubles while reads come back under a quarter full (a quiet
+// world's whole history in a few reads), and halves when a read fills up (a
+// busy world's answers stay small and quick).
+const FIRST_WINDOW = 90 * DAY;
+const MIN_WINDOW = 7 * DAY;
+const MAX_WINDOW = 4 * 365 * DAY;
 
 // A world of the region: its game id (as kept) and name (as Universalis
 // takes it).
@@ -43,6 +48,8 @@ interface Gap {
   world: number;
   since: number;
   until: number;
+  // The next read's window (s).
+  window: number;
 }
 
 // One item's price history on each world of a region, kept as each
@@ -52,7 +59,8 @@ interface Gap {
 // since the newest kept one once what's kept is STALE_MS old. What's still
 // to read are gaps, one per world, read newest first, a few worlds at once.
 // Universalis answers a limited number of sales at a time, the newest
-// first: a read covers at most MAX_WINDOW of a gap, starting on a day, and
+// first: a read covers the gap's window (adapting to how busy the world is),
+// starting on a day, and
 // writes whole days only (when a read can't hold every sale of its window,
 // its oldest day is read again, whole, by the next one). Kept days are
 // never deleted.
@@ -149,7 +157,7 @@ class ItemHistory {
     const gaps = this.gaps().slice(0, CONCURRENCY);
     const reads = await Promise.allSettled(
       gaps.map(async gap => {
-        const since = Math.max(gap.since, dayOf(gap.until - MAX_WINDOW));
+        const since = Math.max(gap.since, dayOf(gap.until - gap.window));
         const name = this.worlds.find(world => world.id === gap.world)?.name;
         const sales = name
           ? await this.readSales(name, {
@@ -201,8 +209,9 @@ class ItemHistory {
         this.storage.sql.exec('DELETE FROM history_gaps WHERE id = ?', gap.id);
       } else {
         this.storage.sql.exec(
-          'UPDATE history_gaps SET until = ? WHERE id = ?',
+          'UPDATE history_gaps SET until = ?, span = ? WHERE id = ?',
           nextUntil,
+          nextWindow(gap.window, sales.length, this.chunk),
           gap.id,
         );
       }
@@ -212,7 +221,7 @@ class ItemHistory {
   private gaps(): Gap[] {
     return this.storage.sql
       .exec(
-        'SELECT id, world, since, until FROM history_gaps ORDER BY until DESC, id',
+        'SELECT id, world, since, until, span FROM history_gaps ORDER BY until DESC, id',
       )
       .toArray()
       .map(row => ({
@@ -220,6 +229,7 @@ class ItemHistory {
         world: Number(row.world),
         since: Number(row.since),
         until: Number(row.until),
+        window: Number(row.span),
       }));
   }
 
@@ -227,10 +237,11 @@ class ItemHistory {
   private addGaps(since: number, until: number) {
     for (const world of this.worlds) {
       this.storage.sql.exec(
-        'INSERT INTO history_gaps (world, since, until) VALUES (?, ?, ?)',
+        'INSERT INTO history_gaps (world, since, until, span) VALUES (?, ?, ?, ?)',
         world.id,
         since,
         until,
+        FIRST_WINDOW,
       );
     }
   }
@@ -273,6 +284,14 @@ class ItemHistory {
   }
 }
 
+// The next window after a read of `count` sales: wider when it came back
+// light, narrower when it filled up.
+function nextWindow(window: number, count: number, chunk: number) {
+  if (count >= chunk) return Math.max(MIN_WINDOW, window / 2);
+  if (count < chunk / 4) return Math.min(MAX_WINDOW, window * 2);
+  return window;
+}
+
 // The qualities' columns: median, min, max, sales, quantity each (null
 // when none of that quality sold that day).
 const QUALITY_COLUMNS = QUALITIES.flatMap(quality =>
@@ -296,7 +315,8 @@ const TABLES = [
     id INTEGER PRIMARY KEY,
     world INTEGER NOT NULL,
     since INTEGER NOT NULL,
-    until INTEGER NOT NULL
+    until INTEGER NOT NULL,
+    span INTEGER NOT NULL
   )`,
   // refreshedAt (ms): the newest sales' last read; readFrom (s): the oldest
   // day asked for so far.

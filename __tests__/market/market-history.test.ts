@@ -81,6 +81,11 @@ const windows = () => [
     }),
   ).values(),
 ];
+// The windows (s) the app read Odin in, in order.
+const odinWindows = () =>
+  universalis.requests
+    .filter(url => url.includes('/history/Odin/'))
+    .map(url => Number(new URL(url).searchParams.get('entriesWithin')));
 const worldsAsked = () =>
   new Set(
     universalis.requests.map(url => /\/history\/([^/]+)\//.exec(url)?.[1]),
@@ -204,7 +209,7 @@ describe('the market page: price history', () => {
     expect(res.body.complete).toBe(true);
   });
 
-  test('reads at most 180 days at a time, back to October 2022', async () => {
+  test('reads back to October 2022 in widening windows', async () => {
     sell([
       sale(at(0, 1), 100),
       sale(at(400, 1), 50),
@@ -221,12 +226,31 @@ describe('the market page: price history', () => {
       date(400),
       date(0),
     ]);
-    expect(
-      Math.max(...windows().map(w => w.until - w.since)),
-    ).toBeLessThanOrEqual(181 * DAY);
     expect(Math.min(...windows().map(w => w.since))).toBe(
       Date.UTC(2022, 9, 1) / 1000,
     );
+    // A quiet world's windows widen (90 days, 180, 360...): its four years
+    // in a handful of reads.
+    const odin = odinWindows();
+    expect(odin.length).toBeLessThanOrEqual(6);
+    expect(odin[0]).toBeLessThanOrEqual(91 * DAY);
+    expect(odin[1]).toBeGreaterThan(odin[0]);
+  });
+
+  test("narrows a busy world's windows, so each answer stays small", async () => {
+    // Odin sells 3 a day: a 90-day window holds more than a read (4 here).
+    sell(
+      Array.from({length: 60}, (_, d) => [
+        sale(at(d, 1), 10),
+        sale(at(d, 2), 10),
+        sale(at(d, 3), 10),
+      ]).flat(),
+    );
+
+    await history(`item=${item}&from=${date(59)}`);
+
+    const odin = odinWindows();
+    expect(odin.at(-1)).toBeLessThan(odin[0]);
   });
 
   test('keeps a day with more sales than one read holds as it was read', async () => {
