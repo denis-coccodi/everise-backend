@@ -86,10 +86,16 @@ const MarketHistoryQuery = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, {error: 'Write the first day as YYYY-MM-DD.'})
     .optional(),
+  // The last day wanted (YYYY-MM-DD); by default, today. A page asking again
+  // while older days come in asks only for those it doesn't have yet.
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {error: 'Write the last day as YYYY-MM-DD.'})
+    .optional(),
 });
 
 // The cheapest listings now: the history's query without the days.
-const MarketListingsQuery = MarketHistoryQuery.omit({from: true});
+const MarketListingsQuery = MarketHistoryQuery.omit({from: true, to: true});
 
 const MarketListingsResponse = responseSchema(
   'MarketListingsResponse',

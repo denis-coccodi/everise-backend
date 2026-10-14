@@ -157,7 +157,17 @@ class MarketRouter {
         if (!region) throw new NotFoundError("There's no such region.");
         const item = Number(req.query.item);
         const from = this.firstDay(req.query.from);
-        const series = await this.market.history(region, item, quality, from);
+        // Only the days up to `to`: those a page asking again doesn't have.
+        const to = req.query.to
+          ? Date.parse(`${req.query.to}T00:00:00Z`) / 1000
+          : NaN;
+        const series = await this.market.history(
+          region,
+          item,
+          quality,
+          from,
+          Number.isNaN(to) ? null : to,
+        );
         res.set(
           'Cache-Control',
           series.complete ? 'private, max-age=300' : 'no-store',

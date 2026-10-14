@@ -118,12 +118,13 @@ class ItemHistory {
     return this.running;
   }
 
-  // `quality`'s days from `from` (s), on each world that sold some.
-  series(quality: Quality, from: number): ItemSeries {
+  // `quality`'s days from `from` to `to` (s; null: to today), on each world
+  // that sold some.
+  series(quality: Quality, from: number, to: number | null = null): ItemSeries {
     const refreshedAt = this.state('refreshedAt');
     const pending = this.gaps().filter(gap => gap.until >= dayOf(from));
     return {
-      days: this.rows.days(quality, from),
+      days: this.rows.days(quality, from, to),
       complete: !pending.length,
       readBackTo: pending.length
         ? dayOf(Math.max(...pending.map(gap => gap.until)) + 1)

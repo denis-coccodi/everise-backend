@@ -338,6 +338,27 @@ describe('the market page: price history', () => {
     expect(worldsAsked()).toContain('Adamantoise');
   });
 
+  test('answers only the days up to `to`, for a page asking for what it lacks', async () => {
+    sell([sale(at(0, 1), 100), sale(at(5, 1), 50), sale(at(9, 1), 70)]);
+    await history(`item=${item}`);
+    universalis.requests = [];
+
+    const older = await history(`item=${item}&to=${date(5)}`);
+
+    expect(older.body.worlds[0].days.map((d: {day: string}) => d.day)).toEqual([
+      date(9),
+      date(5),
+    ]);
+    expect(older.body.complete).toBe(true);
+    // Nothing read again for it.
+    expect(universalis.requests).toEqual([]);
+
+    const wrong = await history(`item=${item}&to=soon`);
+    expect(wrong.body.errors.body).toEqual([
+      'Write the last day as YYYY-MM-DD.',
+    ]);
+  });
+
   test('has no worlds for an item never sold there', async () => {
     const res = await history(`item=${item}`);
     expect(res.body).toMatchObject({worlds: [], complete: true});

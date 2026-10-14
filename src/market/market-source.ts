@@ -9,12 +9,14 @@ import {UniversalisFetch, universalisSales} from './universalis';
 // Object per item and region (market-hub.ts), which keeps reading older
 // sales between requests; elsewhere (tests), LocalMarket.
 interface MarketSource {
-  // `quality`'s days from `from` (s) on each of the region's worlds.
+  // `quality`'s days from `from` to `to` (s; null: to today) on each of the
+  // region's worlds. Only `from` decides what's read.
   history(
     region: MarketRegion,
     itemId: number,
     quality: Quality,
     from: number,
+    to: number | null,
   ): Promise<ItemSeries>;
 }
 
@@ -36,6 +38,7 @@ class LocalMarket implements MarketSource {
     itemId: number,
     quality: Quality,
     from: number,
+    to: number | null,
   ) {
     const key = `${region.id}:${itemId}`;
     let item = this.items.get(key);
@@ -52,7 +55,7 @@ class LocalMarket implements MarketSource {
     item.plan(from);
     const steps = this.options.stepsPerRequest ?? Infinity;
     for (let step = 0; step < steps && (await item.step()); step++);
-    return item.series(quality, from);
+    return item.series(quality, from, to);
   }
 }
 

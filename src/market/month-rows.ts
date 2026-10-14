@@ -72,19 +72,22 @@ class MonthRows {
     }
   }
 
-  // `quality`'s days from `from` (s) on each world, the oldest first.
-  days(quality: Quality, from: number) {
+  // `quality`'s days from `from` to `to` (s; null: to today) on each world,
+  // the oldest first.
+  days(quality: Quality, from: number, to: number | null = null) {
+    const last = to === null ? Infinity : dayOf(to);
     const index = QUALITIES.indexOf(quality);
     return this.storage.sql
       .exec(
-        'SELECT world, days FROM history_months WHERE month >= ? ORDER BY month, world',
+        'SELECT world, days FROM history_months WHERE month >= ? AND month <= ? ORDER BY month, world',
         monthOf(dayOf(from)),
+        to === null ? Number.MAX_SAFE_INTEGER : monthOf(last),
       )
       .toArray()
       .flatMap(row =>
         Object.entries(parse(row.days)).flatMap(([day, packed]) => {
           const figures = unpack(packed[index]);
-          return Number(day) >= dayOf(from) && figures
+          return Number(day) >= dayOf(from) && Number(day) <= last && figures
             ? [{world: Number(row.world), day: Number(day), figures}]
             : [];
         }),

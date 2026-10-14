@@ -45,6 +45,7 @@ class MarketHistoryHub extends DurableObject {
     itemId: number,
     quality: Quality,
     from: number,
+    to: number | null,
   ): Promise<{series: ItemSeries} | {error: string}> {
     const key: ItemKey = {itemId, worlds};
     // Kept for the alarms, once: every write counts against the Free plan.
@@ -62,7 +63,7 @@ class MarketHistoryHub extends DurableObject {
       return {error: error instanceof Error ? error.message : String(error)};
     }
     if (item.pending()) await this.wake(0);
-    return {series: item.series(quality, from)};
+    return {series: item.series(quality, from, to)};
   }
 
   async alarm() {
@@ -107,11 +108,12 @@ class HubMarket implements MarketSource {
     itemId: number,
     quality: Quality,
     from: number,
+    to: number | null,
   ) {
     // RPC stubs drop the method's types: typed once here.
     const answer = (await this.hubs
       .getByName(`${region.id}:${itemId}`)
-      .history(regionWorlds(region), itemId, quality, from)) as
+      .history(regionWorlds(region), itemId, quality, from, to)) as
       {series: ItemSeries} | {error: string};
     if ('error' in answer) throw new UpstreamError(answer.error);
     return answer.series;
