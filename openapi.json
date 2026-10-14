@@ -6840,6 +6840,9 @@
           "sourceGuildId": {
             "type": "string"
           },
+          "sourceChannelId": {
+            "type": "string"
+          },
           "sourceName": {
             "type": "string"
           },

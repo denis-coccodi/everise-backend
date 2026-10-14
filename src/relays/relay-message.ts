@@ -41,14 +41,19 @@ interface RelayMessage {
   id: string;
   postedAt: string;
   editedAt?: string;
-  // The server it was copied from (a followed announcement channel), and
-  // the name Discord shows for it ("Centurio Hunts (FFXIV) #light-train").
+  // The server and channel it was copied from (a followed announcement
+  // channel), and the name Discord shows for it ("Centurio Hunts (FFXIV)
+  // #light-train-relay").
   sourceGuildId?: string;
+  sourceChannelId?: string;
   sourceName: string;
   content: string;
   embeds: RelayEmbed[];
   attachments: RelayAttachment[];
 }
+
+// Messages people (and bots) wrote: plain ones and replies.
+const MESSAGE_TYPES = [0, 19];
 
 // Discord's message object, only the parts kept. Anything it adds or
 // leaves out doesn't fail the read.
@@ -60,11 +65,16 @@ const DiscordImage = z
   .catch(undefined);
 const DiscordMessage = z.object({
   id: z.string(),
+  // 0: a message, 19: a reply; the others are Discord's own notices (12:
+  // "… followed this channel", pins, joins).
+  type: z.number().default(0),
   timestamp: z.string(),
   edited_timestamp: optionalString,
   content: z.string().default(''),
   author: z.object({username: z.string()}).nullish(),
-  message_reference: z.object({guild_id: optionalString}).nullish(),
+  message_reference: z
+    .object({guild_id: optionalString, channel_id: optionalString})
+    .nullish(),
   embeds: z
     .array(
       z.object({
@@ -134,12 +144,13 @@ function relayMessage(raw: unknown): RelayMessage | undefined {
   if (!parsed.success) return undefined;
   const message = parsed.data;
   const postedAt = isoOf(message.timestamp);
-  if (!postedAt) return undefined;
+  if (!postedAt || !MESSAGE_TYPES.includes(message.type)) return undefined;
   return {
     id: message.id,
     postedAt,
     editedAt: isoOf(message.edited_timestamp),
     sourceGuildId: message.message_reference?.guild_id ?? undefined,
+    sourceChannelId: message.message_reference?.channel_id ?? undefined,
     sourceName: message.author?.username ?? '',
     content: message.content,
     embeds: message.embeds.map(embed => ({

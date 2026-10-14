@@ -6,9 +6,32 @@ const SOURCES = {
   fashionReport: '620710123601526794',
   islandSanctuary: '1034534280757522442',
   centurioHunts: '477720463292891137',
-  chaosHunts: '1111',
+  // Another hunt group, with one channel.
+  otherHunts: '1111',
   unknown: '3333',
 };
+// Where hunt trains come from: Centurio Hunts' channel per data centre,
+// another group's server (set up for Chaos as a whole), and a channel
+// nobody set up.
+const HUNTS = {
+  light: {
+    source: SOURCES.centurioHunts,
+    sourceChannel: '620488846919860234',
+    sourceName: 'Centurio Hunts (FFXIV) #🚆│light-train-relay',
+  },
+  chaos: {
+    source: SOURCES.centurioHunts,
+    sourceChannel: '620489103741288468',
+    sourceName: 'Centurio Hunts (FFXIV) #🚆│chaos-train-relay',
+  },
+  otherGroup: {source: SOURCES.otherHunts, sourceName: 'Other Hunts #trains'},
+  unknown: {
+    source: SOURCES.centurioHunts,
+    sourceChannel: '5555',
+    sourceName: 'Centurio Hunts (FFXIV) #notices',
+  },
+};
+type HuntSource = (typeof HUNTS)[keyof typeof HUNTS];
 
 // Discord's ids grow with time: milliseconds since 2015, shifted left 22
 // bits, plus a count for messages of the same millisecond.
@@ -20,8 +43,12 @@ function snowflake(at: Date) {
 
 interface MessageOptions {
   at: string;
-  // The server it was copied from; undefined: posted in our own channel.
+  // The server and channel it was copied from; undefined: posted in our
+  // own channel.
   source?: string;
+  sourceChannel?: string;
+  // Discord's message type (0: a message; 12: "… followed this channel").
+  type?: number;
   sourceName?: string;
   content?: string;
   embeds?: unknown[];
@@ -33,13 +60,18 @@ function discordMessage(options: MessageOptions) {
   const at = new Date(options.at);
   return {
     id: snowflake(at),
-    type: 0,
+    type: options.type ?? 0,
     timestamp: at.toISOString().replace('Z', '+00:00'),
     edited_timestamp: options.editedAt ?? null,
     content: options.content ?? '',
     author: {username: options.sourceName ?? 'Someone', bot: true},
     message_reference: options.source
-      ? {type: 0, channel_id: '1', message_id: '2', guild_id: options.source}
+      ? {
+          type: 0,
+          channel_id: options.sourceChannel ?? '1',
+          message_id: '2',
+          guild_id: options.source,
+        }
       : undefined,
     embeds: options.embeds ?? [],
     attachments: options.attachments ?? [],
@@ -104,18 +136,18 @@ function islandSeason(at: string, season: number) {
 
 // A hunt train announced by a hunt group, starting 10 minutes after it's
 // posted (a Discord time in its text).
-function huntTrain(at: string, source: string, world: string, extra = {}) {
+function huntTrain(at: string, from: HuntSource, world: string, extra = {}) {
   const starts = Math.floor(Date.parse(at) / 1000) + 600;
   return discordMessage({
     at,
-    source,
-    sourceName: 'Centurio Hunts (FFXIV) #🚆│light-train-relay',
+    ...from,
     content: `@EWTrain **[${world}]** Hunt train starting <t:${starts}:R> at <:aetheryte:866773648450519082> ***Anagnorisis – Elpis***`,
     ...extra,
   });
 }
 
 export {
+  HUNTS,
   SOURCES,
   discordFile,
   discordMessage,

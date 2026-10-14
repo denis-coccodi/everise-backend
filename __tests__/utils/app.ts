@@ -320,8 +320,10 @@ const app = createApp(
       botToken: 'bot-token',
       weeklyChannelId: 'weekly',
       huntsChannelId: 'hunts',
-      // Centurio Hunts for Light; a Chaos group; a data centre that isn't.
-      huntSources: '477720463292891137:Light, 1111:Chaos, 2222:Nowhere',
+      // Centurio Hunts' channels for Light and Chaos; another group's
+      // server for Chaos; a data centre that isn't.
+      huntSources:
+        '620488846919860234:Light, 620489103741288468:Chaos, 1111:Chaos, 2222:Nowhere',
       fetch: relayFetch,
     },
     gifSearch: {apiKey: 'giphy-key', fetch: gifFetch},

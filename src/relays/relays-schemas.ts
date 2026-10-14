@@ -55,8 +55,10 @@ const RelayMessage = responseSchema(
     id: z.string(),
     postedAt: isoDate,
     editedAt: isoDate.optional(),
-    // The server it was copied from, and the name Discord shows for it.
+    // The server and channel it was copied from, and the name Discord
+    // shows for it.
     sourceGuildId: z.string().optional(),
+    sourceChannelId: z.string().optional(),
     sourceName: z.string(),
     content: z.string(),
     embeds: z.array(RelayEmbed),
@@ -108,7 +110,8 @@ const HuntsResponse = responseSchema(
   'HuntsResponse',
   z.strictObject({
     available: z.boolean(),
-    // The data centres whose hunt groups are relayed.
+    // The data centres whose hunt groups are relayed, or that a train's
+    // world is on, in the game's order (Light first).
     dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
     // The latest start first.
     posts: z.array(

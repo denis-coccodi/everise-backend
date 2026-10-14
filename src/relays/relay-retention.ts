@@ -1,17 +1,9 @@
 import {RelayedPostDoc} from './relay-docs';
-import {RelayMessage} from './relay-message';
 
 // How long a hunt train counts as running after it starts: a single
 // expansion's train takes well under an hour, a triple train with breaks
 // longer.
 const RUNNING_MS = 2 * 60 * 60 * 1000;
-
-// When a hunt train starts: the first Discord time in its text
-// (<t:1791982446:R>), or when it was posted.
-function trainStartsAt(message: RelayMessage) {
-  const seconds = /<t:(\d+)(?::[tTdDfFR])?>/.exec(message.content)?.[1];
-  return new Date(seconds ? Number(seconds) * 1000 : message.postedAt);
-}
 
 // The relayed messages no longer worth showing. Weekly posts: all but the
 // latest Fashion Report and Island Sanctuary season. Hunt trains, per data
@@ -44,4 +36,4 @@ function outdated(docs: RelayedPostDoc[], now: Date) {
   return old;
 }
 
-export {outdated, trainStartsAt};
+export {outdated};

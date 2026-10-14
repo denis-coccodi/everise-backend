@@ -42,15 +42,18 @@ class RelaysService {
   async hunts(dataCentre?: DataCentre) {
     const startOf = (post: RelayedPostDoc) =>
       (post.startsAt ?? post.postedAt).getTime();
-    const posts = (await this.posts('hunts'))
+    const all = await this.posts('hunts');
+    const posts = all
       .filter(post => !dataCentre || post.dataCentre === dataCentre)
       .sort((a, b) => startOf(b) - startOf(a));
+    // Those set up, and any a train's world is on, in the game's order.
+    const relayed = new Set([
+      ...Object.values(this.huntSources),
+      ...all.map(post => post.dataCentre),
+    ]);
     return {
       available: this.available,
-      // The data centres whose hunt groups are relayed, in the game's order.
-      dataCentres: DATA_CENTRE_NAMES.filter(name =>
-        Object.values(this.huntSources).includes(name),
-      ),
+      dataCentres: DATA_CENTRE_NAMES.filter(name => relayed.has(name)),
       posts: posts.map(post => ({
         dataCentre: post.dataCentre!,
         startsAt: post.startsAt ?? post.postedAt,

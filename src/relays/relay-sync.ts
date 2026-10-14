@@ -11,7 +11,8 @@ import {
 } from './relay-docs';
 import {RelayImages} from './relay-images';
 import {RelayMessage, isNewer} from './relay-message';
-import {outdated, trainStartsAt} from './relay-retention';
+import {trainDataCentre, trainStartsAt} from './hunt-trains';
+import {outdated} from './relay-retention';
 
 // The servers whose channels the weekly channel follows: the Fashion
 // Report's infographics (Kaiyoko's "Fashion Reporter") and the Island
@@ -34,11 +35,13 @@ const MAX_PER_READ = 10;
 interface RelaySettings {
   weeklyChannelId?: string;
   huntsChannelId?: string;
-  // Which data centre each hunt group's server is for, by server id.
+  // Which data centre each hunt group's channel is for, by channel id (or
+  // by server id, for a group with one channel).
   huntSources: Record<string, DataCentre>;
 }
 
-// The hunt groups' servers, from the setting "<server id>:<data centre>,…".
+// The hunt groups' channels, from the setting "<id>:<data centre>,…" (the
+// id of the followed channel, or of its server).
 // A data centre the game doesn't have is left out (and logged).
 function huntSources(setting: string): Record<string, DataCentre> {
   const sources: Record<string, DataCentre> = {};
@@ -161,7 +164,14 @@ class RelaySync {
   ): {kind: RelayKind; dataCentre?: DataCentre} | undefined {
     const source = message.sourceGuildId ?? '';
     if (channel === 'hunts') {
-      const dataCentre = this.settings.huntSources[source];
+      // Only messages from followed channels, not members' own.
+      const sources = this.settings.huntSources;
+      const dataCentre =
+        source &&
+        trainDataCentre(
+          message,
+          sources[message.sourceChannelId ?? ''] ?? sources[source],
+        );
       if (dataCentre) return {kind: 'hunt', dataCentre};
     } else if (source === FASHION_REPORT_SOURCE && hasPicture(message)) {
       return {kind: 'fashion-report'};
@@ -172,7 +182,7 @@ class RelaySync {
       return {kind: 'island-sanctuary'};
     }
     console.log(
-      `Relays: ${message.id} from ${message.sourceName} (${source || 'this server'}) isn't shown`,
+      `Relays: ${message.id} from ${message.sourceName} (channel ${message.sourceChannelId ?? '-'}, server ${source || 'this one'}) isn't shown`,
     );
     return undefined;
   }

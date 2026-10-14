@@ -1,6 +1,12 @@
 import request from 'supertest';
 import {app, clearDb, clock, files, jobs, relays} from '../utils';
-import {SOURCES, discordFile, huntTrain} from '../utils/discord-messages';
+import {
+  HUNTS,
+  SOURCES,
+  discordFile,
+  discordMessage,
+  huntTrain,
+} from '../utils/discord-messages';
 
 const WEBP = {type: 'image/webp', bytes: new Uint8Array([82, 73, 70, 70])};
 const NOW = '2026-10-14T13:00:00Z';
@@ -36,10 +42,10 @@ const read = () => jobs.readRelays!();
 describe('GET /api/hunts', () => {
   test("the hunt trains, the latest start first, with their data centre; other servers' aren't shown", async () => {
     relays.channels.hunts = [
-      huntTrain('2026-10-14T11:30:41Z', SOURCES.centurioHunts, 'Phoenix'),
-      huntTrain('2026-10-14T11:13:13Z', SOURCES.chaosHunts, 'Omega'),
-      huntTrain('2026-10-14T12:05:46Z', SOURCES.unknown, 'Nowhere'),
-      huntTrain('2026-10-14T12:44:43Z', SOURCES.centurioHunts, 'Shiva', {
+      huntTrain('2026-10-14T11:30:41Z', HUNTS.light, 'Phoenix'),
+      huntTrain('2026-10-14T11:13:13Z', HUNTS.chaos, 'Omega'),
+      huntTrain('2026-10-14T12:05:46Z', HUNTS.unknown, 'Nowhere'),
+      huntTrain('2026-10-14T12:44:43Z', HUNTS.light, 'Shiva', {
         embeds: [
           {
             type: 'gifv',
@@ -74,6 +80,7 @@ describe('GET /api/hunts', () => {
         id: expect.any(String),
         postedAt: '2026-10-14T12:44:43.000Z',
         sourceGuildId: SOURCES.centurioHunts,
+        sourceChannelId: HUNTS.light.sourceChannel,
         sourceName: 'Centurio Hunts (FFXIV) #🚆│light-train-relay',
         // As Discord has it: the site shows the emoji and times.
         content: `@EWTrain **[Shiva]** Hunt train starting <t:${Date.parse(startsAt) / 1000}:R> at <:aetheryte:866773648450519082> ***Anagnorisis – Elpis***`,
@@ -99,6 +106,55 @@ describe('GET /api/hunts', () => {
     expect(worlds(await hunts('?dataCentre=Chaos'))).toEqual(['Omega']);
   });
 
+  test("one hunt group's channels go to their own data centres; Discord's notices aren't trains", async () => {
+    relays.channels.hunts = [
+      // Discord's "Centurio Hunts #chaos-train-relay" (now followed).
+      discordMessage({
+        at: '2026-10-14T12:41:13Z',
+        type: 12,
+        ...HUNTS.chaos,
+        sourceName: 'avar.kriss',
+        content: 'Centurio Hunts (FFXIV) #🚆│chaos-train-relay',
+      }),
+      huntTrain('2026-10-14T12:42:00Z', HUNTS.chaos, 'Cerberus'),
+      huntTrain('2026-10-14T12:43:00Z', HUNTS.light, 'Odin'),
+    ];
+
+    await read();
+
+    expect(worlds(await hunts('?dataCentre=Light'))).toEqual(['Odin']);
+    expect(worlds(await hunts('?dataCentre=Chaos'))).toEqual(['Cerberus']);
+  });
+
+  test("the world a train names decides its data centre; members' own messages aren't trains", async () => {
+    relays.channels.hunts = [
+      // A Chaos world, though in the Light channel: Chaos.
+      huntTrain('2026-10-14T12:40:00Z', HUNTS.light, 'Moogle'),
+      // A channel nobody set up, but a Light world: Light.
+      huntTrain('2026-10-14T12:41:00Z', HUNTS.unknown, 'Lich'),
+      // Its world named without brackets, from a channel nobody set up.
+      huntTrain('2026-10-14T12:42:00Z', HUNTS.unknown, 'x', {
+        content: 'Train on Ragnarok starting <t:1791990000:R>',
+      }),
+      // Posted in our own channel by a member.
+      discordMessage({
+        at: '2026-10-14T12:43:00Z',
+        content: '**[Odin]** anyone up for a train?',
+      }),
+    ];
+
+    await read();
+
+    expect(worlds(await hunts('?dataCentre=Light'))).toEqual(['Lich']);
+    const chaos = (await hunts('?dataCentre=Chaos')).posts.map(
+      (post: {message: {content: string}}) => post.message.content,
+    );
+    expect(chaos).toEqual([
+      expect.stringContaining('Ragnarok'),
+      expect.stringContaining('[Moogle]'),
+    ]);
+  });
+
   test('a data centre the game does not have: 422', async () => {
     const response = await request(app).get('/api/hunts?dataCentre=Nowhere');
 
@@ -112,7 +168,7 @@ describe('GET /api/hunts', () => {
     const map = discordFile('2001', 'Lakeland.webp');
     relays.pictures[map.split('?')[0]] = WEBP;
     const withMap = (at: string, world: string) =>
-      huntTrain(at, SOURCES.centurioHunts, world, {
+      huntTrain(at, HUNTS.light, world, {
         embeds: [{type: 'image', thumbnail: {url: map}}],
       });
     // Both long over: only the last one that started is kept, with the
@@ -130,7 +186,7 @@ describe('GET /api/hunts', () => {
 
     // A newer train has started: Zodiark's is past, and its picture goes.
     relays.channels.hunts.push(
-      huntTrain('2026-10-14T12:30:00Z', SOURCES.centurioHunts, 'Shiva'),
+      huntTrain('2026-10-14T12:30:00Z', HUNTS.light, 'Shiva'),
     );
     await read();
 
@@ -142,7 +198,7 @@ describe('GET /api/hunts', () => {
     relays.channels.hunts = Array.from({length: 13}, (_, i) =>
       huntTrain(
         `2026-10-14T12:${String(i).padStart(2, '0')}:00Z`,
-        SOURCES.centurioHunts,
+        HUNTS.light,
         `World${i}`,
       ),
     );
@@ -158,19 +214,19 @@ describe('GET /api/hunts', () => {
   test('no history: per data centre, the trains to come, those running, and the last that started', async () => {
     relays.channels.hunts = [
       // Starts 09:10: long over.
-      huntTrain('2026-10-14T09:00:00Z', SOURCES.centurioHunts, 'Over'),
+      huntTrain('2026-10-14T09:00:00Z', HUNTS.light, 'Over'),
       // No time in its text: it starts when posted, 10:00.
-      huntTrain('2026-10-14T10:00:00Z', SOURCES.centurioHunts, 'Untimed', {
+      huntTrain('2026-10-14T10:00:00Z', HUNTS.light, 'Untimed', {
         content: '@EWTrain **[Untimed]** train starting right after ShB',
       }),
       // Starts 11:40: still running at 13:00.
-      huntTrain('2026-10-14T11:30:00Z', SOURCES.centurioHunts, 'Running'),
+      huntTrain('2026-10-14T11:30:00Z', HUNTS.light, 'Running'),
       // Starts 13:05.
-      huntTrain('2026-10-14T12:55:00Z', SOURCES.centurioHunts, 'Coming'),
+      huntTrain('2026-10-14T12:55:00Z', HUNTS.light, 'Coming'),
       // Chaos's only train, over: the last that started there.
-      huntTrain('2026-10-14T08:00:00Z', SOURCES.chaosHunts, 'ChaosLast'),
+      huntTrain('2026-10-14T08:00:00Z', HUNTS.otherGroup, 'ChaosLast'),
       // More than a day old: not even kept on a first read.
-      huntTrain('2026-10-13T11:00:00Z', SOURCES.chaosHunts, 'Yesterday'),
+      huntTrain('2026-10-13T11:00:00Z', HUNTS.chaos, 'Yesterday'),
     ];
 
     await read();
