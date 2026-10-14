@@ -126,6 +126,9 @@ describe('GET /api/weekly', () => {
       validUntil: '2026-10-20T08:00:00.000Z',
     });
 
+    // No history: last week's Fashion Report and its picture are gone.
+    expect(files.files.has('relays/1001.png')).toBe(false);
+
     const picture = await request(app).get('/api/relays/images/1002.png');
     expect(picture.status).toBe(200);
     expect(picture.headers['content-type']).toBe('image/png');

@@ -102,13 +102,15 @@ function islandSeason(at: string, season: number) {
   });
 }
 
-// A hunt train announced by a hunt group.
+// A hunt train announced by a hunt group, starting 10 minutes after it's
+// posted (a Discord time in its text).
 function huntTrain(at: string, source: string, world: string, extra = {}) {
+  const starts = Math.floor(Date.parse(at) / 1000) + 600;
   return discordMessage({
     at,
     source,
     sourceName: 'Centurio Hunts (FFXIV) #🚆│light-train-relay',
-    content: `@EWTrain **[${world}]** Hunt train starting <t:1791982446:R> at <:aetheryte:866773648450519082> ***Anagnorisis – Elpis***`,
+    content: `@EWTrain **[${world}]** Hunt train starting <t:${starts}:R> at <:aetheryte:866773648450519082> ***Anagnorisis – Elpis***`,
     ...extra,
   });
 }

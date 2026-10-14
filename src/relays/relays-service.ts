@@ -38,11 +38,13 @@ class RelaysService {
     };
   }
 
-  // The hunt trains, of one data centre or all.
+  // The hunt trains, of one data centre or all, the latest start first.
   async hunts(dataCentre?: DataCentre) {
-    const posts = (await this.posts('hunts')).filter(
-      post => !dataCentre || post.dataCentre === dataCentre,
-    );
+    const startOf = (post: RelayedPostDoc) =>
+      (post.startsAt ?? post.postedAt).getTime();
+    const posts = (await this.posts('hunts'))
+      .filter(post => !dataCentre || post.dataCentre === dataCentre)
+      .sort((a, b) => startOf(b) - startOf(a));
     return {
       available: this.available,
       // The data centres whose hunt groups are relayed, in the game's order.
@@ -51,6 +53,7 @@ class RelaysService {
       ),
       posts: posts.map(post => ({
         dataCentre: post.dataCentre!,
+        startsAt: post.startsAt ?? post.postedAt,
         message: post.message,
       })),
     };

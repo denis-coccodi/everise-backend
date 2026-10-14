@@ -15,6 +15,8 @@ interface RelayedPostDoc extends Doc {
   // A hunt train's data centre, from the server it came from.
   dataCentre?: DataCentre;
   postedAt: Date;
+  // When a hunt train starts (the time in its text, or when it was posted).
+  startsAt?: Date;
   message: RelayMessage;
 }
 

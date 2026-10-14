@@ -343,7 +343,7 @@
     <rect x="872" y="1549" width="26" height="16" rx="3" class="pk"/><text x="885" y="1561" class="badge" text-anchor="middle">PK</text><text x="908" y="1561" class="field">id</text><text x="1144" y="1561" class="type" text-anchor="end">Discord message id</text>
     <text x="908" y="1587" class="field">channel, kind</text><text x="1144" y="1587" class="type" text-anchor="end">weekly / hunts</text>
     <text x="908" y="1613" class="field">dataCentre</text><text x="1144" y="1613" class="type" text-anchor="end">string? (hunt)</text>
-    <text x="908" y="1639" class="field">postedAt</text><text x="1144" y="1639" class="type" text-anchor="end">Date</text>
+    <text x="908" y="1639" class="field">postedAt, startsAt</text><text x="1144" y="1639" class="type" text-anchor="end">Date</text>
     <text x="908" y="1665" class="field">message</text><text x="1144" y="1665" class="type" text-anchor="end">as Discord sent it</text>
     <text x="908" y="1691" class="field">createdAt, updatedAt</text><text x="1144" y="1691" class="type" text-anchor="end">Date</text>
   </g>

@@ -110,10 +110,12 @@ const HuntsResponse = responseSchema(
     available: z.boolean(),
     // The data centres whose hunt groups are relayed.
     dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
-    // The newest first.
+    // The latest start first.
     posts: z.array(
       z.strictObject({
         dataCentre: z.enum(DATA_CENTRE_NAMES),
+        // When it starts: the time in its text, or when it was posted.
+        startsAt: isoDate,
         message: RelayMessage,
       }),
     ),

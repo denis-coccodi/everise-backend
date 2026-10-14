@@ -11,6 +11,7 @@ import {
 } from './relay-docs';
 import {RelayImages} from './relay-images';
 import {RelayMessage, isNewer} from './relay-message';
+import {outdated, trainStartsAt} from './relay-retention';
 
 // The servers whose channels the weekly channel follows: the Fashion
 // Report's infographics (Kaiyoko's "Fashion Reporter") and the Island
@@ -19,11 +20,11 @@ const FASHION_REPORT_SOURCE = '620710123601526794';
 const ISLAND_SANCTUARY_SOURCE = '1034534280757522442';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// How long a relayed message is kept: past weeks are never shown, and a
-// hunt train is over within hours.
+// Messages older than this aren't kept even on a first read: a week's
+// posts are past by then, and a hunt train over.
 const KEPT_MS: Record<RelayChannel, number> = {
-  weekly: 21 * DAY_MS,
-  hunts: 2 * DAY_MS,
+  weekly: 8 * DAY_MS,
+  hunts: DAY_MS,
 };
 // New or edited messages handled per read of a channel: each can copy a
 // picture, and a Worker run may only make so many requests. The rest wait
@@ -130,12 +131,22 @@ class RelaySync {
     // than the oldest of them.
     const read = new Set(messages.map(message => message.id));
     const oldestRead = messages[0]?.id;
-    const gone = stored.filter(
+    const deleted = stored.filter(
       doc =>
         dropped.has(doc.id) ||
-        doc.postedAt.getTime() < keptFrom ||
         (!!oldestRead && !isNewer(oldestRead, doc.id) && !read.has(doc.id)),
     );
+    // No history: only what the site shows now is kept.
+    const current = await this.db.find<RelayedPostDoc>(RELAYED_POSTS, {
+      where: [{field: 'channel', op: '==', value: channel}],
+    });
+    const gone = [
+      ...deleted,
+      ...outdated(
+        current.filter(doc => !deleted.some(d => d.id === doc.id)),
+        this.now(),
+      ),
+    ];
     for (const doc of gone) kept.delete(doc.id);
     await this.delete(gone, [...kept.values()]);
     if (lastId && lastId !== cursor?.lastId) {
@@ -177,6 +188,7 @@ class RelaySync {
       channel,
       ...place,
       postedAt: new Date(message.postedAt),
+      ...(place.kind === 'hunt' && {startsAt: trainStartsAt(message)}),
       message,
     });
   }
