@@ -2,6 +2,5 @@
 // only: it needs the Workers runtime.
 export {MarketItems} from './market-items';
 export {MarketRouter} from './market-router';
-export {MAX_ITEMS} from './market-schemas';
 export {LocalMarket, MarketSource, noMarket} from './market-source';
 export {UniversalisFetch} from './universalis';

@@ -1446,122 +1446,35 @@
         "tags": [
           "market"
         ],
-        "summary": "Items' prices a day, in a data centre or on a world",
+        "summary": "An item's prices a day on each world of a region",
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "parameters": [
           {
-            "name": "scope",
+            "name": "region",
             "in": "query",
             "required": false,
             "schema": {
-              "default": "odin",
+              "default": "europe",
               "type": "string",
               "enum": [
-                "light",
-                "alpha",
-                "lich",
-                "odin",
-                "phoenix",
-                "raiden",
-                "shiva",
-                "twintania",
-                "zodiark",
-                "chaos",
-                "cerberus",
-                "louisoix",
-                "moogle",
-                "omega",
-                "phantom",
-                "ragnarok",
-                "sagittarius",
-                "spriggan",
-                "aether",
-                "adamantoise",
-                "cactuar",
-                "faerie",
-                "gilgamesh",
-                "jenova",
-                "midgardsormr",
-                "sargatanas",
-                "siren",
-                "crystal",
-                "balmung",
-                "brynhildr",
-                "coeurl",
-                "diabolos",
-                "goblin",
-                "malboro",
-                "mateus",
-                "zalera",
-                "dynamis",
-                "cuchulainn",
-                "golem",
-                "halicarnassus",
-                "kraken",
-                "maduin",
-                "marilith",
-                "rafflesia",
-                "seraph",
-                "primal",
-                "behemoth",
-                "excalibur",
-                "exodus",
-                "famfrit",
-                "hyperion",
-                "lamia",
-                "leviathan",
-                "ultros",
-                "elemental",
-                "aegis",
-                "atomos",
-                "carbuncle",
-                "garuda",
-                "gungnir",
-                "kujata",
-                "tonberry",
-                "typhon",
-                "gaia",
-                "alexander",
-                "bahamut",
-                "durandal",
-                "fenrir",
-                "ifrit",
-                "ridill",
-                "tiamat",
-                "ultima",
-                "mana",
-                "anima",
-                "asura",
-                "chocobo",
-                "hades",
-                "ixion",
-                "masamune",
-                "pandaemonium",
-                "titan",
-                "meteor",
-                "belias",
-                "mandragora",
-                "ramuh",
-                "shinryu",
-                "unicorn",
-                "valefor",
-                "yojimbo",
-                "zeromus",
-                "materia",
-                "bismarck",
-                "ravana",
-                "sephirot",
-                "sophia",
-                "zurvan"
+                "europe",
+                "north-america",
+                "japan",
+                "oceania"
               ]
             }
           },
           {
-            "name": "items",
+            "name": "item",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{1,7}(,\\d{1,7}){0,2}$"
+              "pattern": "^\\d{1,7}$"
             }
           },
           {
@@ -1577,11 +1490,20 @@
                 "hq"
               ]
             }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Each item's days.",
+            "description": "Each world's days.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1651,6 +1573,11 @@
           "market"
         ],
         "summary": "Items the market board sells, by name",
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "parameters": [
           {
             "name": "search",
@@ -1687,30 +1614,35 @@
         }
       }
     },
-    "/api/market/items/{ids}": {
+    "/api/market/items/{id}": {
       "get": {
         "tags": [
           "market"
         ],
-        "summary": "Items the market board sells, by id (1,2,3)",
+        "summary": "An item the market board sells, by id",
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "parameters": [
           {
-            "name": "ids",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{1,7}(,\\d{1,7}){0,2}$"
+              "pattern": "^\\d{1,7}$"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "The items.",
+            "description": "The item.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MarketItemsResponse"
+                  "$ref": "#/components/schemas/MarketItemResponse"
                 }
               }
             }
@@ -1728,20 +1660,20 @@
         }
       }
     },
-    "/api/market/scopes": {
+    "/api/market/regions": {
       "get": {
         "tags": [
           "market"
         ],
-        "summary": "The data centres and worlds whose prices can be read",
+        "summary": "The regions, data centres and worlds whose prices are read",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The places.",
+            "description": "The regions.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MarketScopesResponse"
+                  "$ref": "#/components/schemas/MarketRegionsResponse"
                 }
               }
             }
@@ -6232,7 +6164,19 @@
         ],
         "additionalProperties": false
       },
-      "MarketScopesResponse": {
+      "MarketItemResponse": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/MarketItem"
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "additionalProperties": false
+      },
+      "MarketRegionsResponse": {
         "type": "object",
         "properties": {
           "regions": {
@@ -6240,6 +6184,9 @@
             "items": {
               "type": "object",
               "properties": {
+                "id": {
+                  "type": "string"
+                },
                 "name": {
                   "type": "string"
                 },
@@ -6248,9 +6195,6 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                      "id": {
-                        "type": "string"
-                      },
                       "name": {
                         "type": "string"
                       },
@@ -6260,7 +6204,9 @@
                           "type": "object",
                           "properties": {
                             "id": {
-                              "type": "string"
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
                             },
                             "name": {
                               "type": "string"
@@ -6275,7 +6221,6 @@
                       }
                     },
                     "required": [
-                      "id",
                       "name",
                       "worlds"
                     ],
@@ -6284,26 +6229,35 @@
                 }
               },
               "required": [
+                "id",
                 "name",
                 "dataCentres"
               ],
               "additionalProperties": false
             }
           },
-          "defaultScope": {
+          "defaultRegion": {
+            "type": "string"
+          },
+          "homeWorld": {
+            "type": "string"
+          },
+          "historyStart": {
             "type": "string"
           }
         },
         "required": [
           "regions",
-          "defaultScope"
+          "defaultRegion",
+          "homeWorld",
+          "historyStart"
         ],
         "additionalProperties": false
       },
       "MarketHistoryResponse": {
         "type": "object",
         "properties": {
-          "scope": {
+          "region": {
             "type": "object",
             "properties": {
               "id": {
@@ -6311,21 +6265,18 @@
               },
               "name": {
                 "type": "string"
-              },
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "dataCentre",
-                  "world"
-                ]
               }
             },
             "required": [
               "id",
-              "name",
-              "kind"
+              "name"
             ],
             "additionalProperties": false
+          },
+          "item": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "quality": {
             "type": "string",
@@ -6335,7 +6286,10 @@
               "hq"
             ]
           },
-          "items": {
+          "from": {
+            "type": "string"
+          },
+          "worlds": {
             "type": "array",
             "items": {
               "type": "object",
@@ -6389,37 +6343,39 @@
                     ],
                     "additionalProperties": false
                   }
-                },
-                "complete": {
-                  "type": "boolean"
-                },
-                "refreshedAt": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
                 }
               },
               "required": [
                 "id",
-                "days",
-                "complete",
-                "refreshedAt"
+                "days"
               ],
               "additionalProperties": false
             }
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "refreshedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "scope",
+          "region",
+          "item",
           "quality",
-          "items"
+          "from",
+          "worlds",
+          "complete",
+          "refreshedAt"
         ],
         "additionalProperties": false
       },

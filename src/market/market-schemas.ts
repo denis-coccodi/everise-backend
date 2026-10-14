@@ -1,13 +1,10 @@
 import {z} from 'zod';
 import {isoDate, responseSchema} from '../api';
 import {QUALITIES} from './daily-stats';
-import {DEFAULT_SCOPE, SCOPE_IDS} from './market-scopes';
+import {DEFAULT_REGION, REGION_IDS} from './market-regions';
 
-// Items one chart compares.
-const MAX_ITEMS = 3;
-
-const ITEM_IDS = new RegExp(`^\\d{1,7}(,\\d{1,7}){0,${MAX_ITEMS - 1}}$`);
-const ITEM_IDS_ERROR = `Pick 1 to ${MAX_ITEMS} items: their ids, separated by commas.`;
+const ITEM_ID = /^\d{1,7}$/;
+const ITEM_ID_ERROR = "That isn't an item's id.";
 
 const MarketItem = responseSchema(
   'MarketItem',
@@ -27,6 +24,11 @@ const MarketItemsResponse = responseSchema(
   z.strictObject({items: z.array(MarketItem)}),
 );
 
+const MarketItemResponse = responseSchema(
+  'MarketItemResponse',
+  z.strictObject({item: MarketItem}),
+);
+
 const MarketItemsQuery = z.object({
   search: z
     .string()
@@ -35,39 +37,55 @@ const MarketItemsQuery = z.object({
     .max(60, {error: 'Keep the search to 60 letters.'}),
 });
 
-const MarketItemsParams = z.object({
-  ids: z.string().regex(ITEM_IDS, {error: ITEM_IDS_ERROR}),
+const MarketItemParams = z.object({
+  id: z.string().regex(ITEM_ID, {error: ITEM_ID_ERROR}),
 });
 
 const MarketIconParams = z.object({
   id: z.string().regex(/^\d{1,7}$/, {error: "That isn't an icon's id."}),
 });
 
-const Place = z.strictObject({id: z.string(), name: z.string()});
-
-const MarketScopesResponse = responseSchema(
-  'MarketScopesResponse',
+const MarketRegionsResponse = responseSchema(
+  'MarketRegionsResponse',
   z.strictObject({
-    // The data centres and their worlds, by region (ids: names in lower case).
+    // The regions (ids: names in lower case, words joined by dashes), their
+    // data centres and worlds (game world ids). Oceania can be visited from
+    // any region.
     regions: z.array(
       z.strictObject({
+        id: z.string(),
         name: z.string(),
-        dataCentres: z.array(Place.extend({worlds: z.array(Place)})),
+        dataCentres: z.array(
+          z.strictObject({
+            name: z.string(),
+            worlds: z.array(
+              z.strictObject({id: z.number().int(), name: z.string()}),
+            ),
+          }),
+        ),
       }),
     ),
-    // Where the page starts.
-    defaultScope: z.string(),
+    // Where the page starts: Everise's region and home world.
+    defaultRegion: z.string(),
+    homeWorld: z.string(),
+    // The first day of Universalis' history: no range starts earlier.
+    historyStart: z.string(),
   }),
 );
 
 const MarketHistoryQuery = z.object({
-  scope: z
-    .enum(SCOPE_IDS, {
-      error: "Pick one of the game's data centres or worlds, in lower case.",
+  region: z
+    .enum(REGION_IDS, {
+      error: `Pick one of the game's regions: ${REGION_IDS.join(', ')}.`,
     })
-    .default(DEFAULT_SCOPE),
-  items: z.string().regex(ITEM_IDS, {error: ITEM_IDS_ERROR}),
+    .default(DEFAULT_REGION),
+  item: z.string().regex(ITEM_ID, {error: ITEM_ID_ERROR}),
   quality: z.enum(QUALITIES, {error: 'Pick all, nq or hq.'}).default('all'),
+  // The first day wanted (YYYY-MM-DD); by default, 30 days ago.
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {error: 'Write the first day as YYYY-MM-DD.'})
+    .optional(),
 });
 
 const MarketDay = z.strictObject({
@@ -85,34 +103,30 @@ const MarketDay = z.strictObject({
 const MarketHistoryResponse = responseSchema(
   'MarketHistoryResponse',
   z.strictObject({
-    scope: z.strictObject({
-      id: z.string(),
-      name: z.string(),
-      kind: z.enum(['dataCentre', 'world']),
-    }),
+    region: z.strictObject({id: z.string(), name: z.string()}),
+    item: z.number().int(),
     quality: z.enum(QUALITIES),
-    items: z.array(
-      z.strictObject({
-        id: z.number().int(),
-        // The days with sales, the oldest first: the first is as far back as
-        // the history goes (once complete).
-        days: z.array(MarketDay),
-        // Every sale Universalis keeps has been read. Until then the oldest
-        // days are still coming in: ask again in a few seconds.
-        complete: z.boolean(),
-        refreshedAt: isoDate.nullable(),
-      }),
+    // The first day answered (YYYY-MM-DD).
+    from: z.string(),
+    // Each world that sold some, its days from `from` with sales, the
+    // oldest first (a day without sales is missing).
+    worlds: z.array(
+      z.strictObject({id: z.number().int(), days: z.array(MarketDay)}),
     ),
+    // Every day from `from` has been read. Until then the older days are
+    // still coming in: ask again in a few seconds.
+    complete: z.boolean(),
+    refreshedAt: isoDate.nullable(),
   }),
 );
 
 export {
-  MAX_ITEMS,
   MarketHistoryQuery,
   MarketHistoryResponse,
   MarketIconParams,
-  MarketItemsParams,
+  MarketItemParams,
+  MarketItemResponse,
   MarketItemsQuery,
   MarketItemsResponse,
-  MarketScopesResponse,
+  MarketRegionsResponse,
 };

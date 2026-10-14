@@ -149,7 +149,7 @@ const xivpfFetch: XivpfFetch = async () => {
   };
 };
 
-// Universalis' sales history: `sales` by "<place name>:<item id>" (in any
+// Universalis' sales history: `sales` by "<world name>:<item id>" (in any
 // order), `status` its next answers' status, `requests` what the app asked.
 // The market reads 4 sales at a time, and `stepsPerRequest` windows of them
 // per request.

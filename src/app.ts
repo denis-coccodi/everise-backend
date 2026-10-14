@@ -310,7 +310,8 @@ function createApp(
   app.use('/api', dutiesRouter);
   app.use(
     '/api',
-    new MarketRouter(new MarketItems(httpGet), market, xivApiClient).router,
+    new MarketRouter(auth, new MarketItems(httpGet), market, xivApiClient, now)
+      .router,
   );
 
   app.use('/api', roulettePostsRouter);

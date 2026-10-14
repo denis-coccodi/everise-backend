@@ -6,11 +6,8 @@ const DAY = 86400;
 const QUALITIES = ['all', 'nq', 'hq'] as const;
 type Quality = (typeof QUALITIES)[number];
 
-// One day's sales of an item, for one quality.
-interface DayStats {
-  quality: Quality;
-  // The day's start (UTC midnight, s since the epoch).
-  day: number;
+// One quality's sales on a world in a day.
+interface Figures {
   // The middle price per unit: a few sales at silly prices (gil moved
   // between characters) don't sway it, as they would an average.
   median: number;
@@ -20,38 +17,50 @@ interface DayStats {
   quantity: number;
 }
 
+// A world's day: each quality's figures, null when none of it sold.
+interface WorldDay {
+  world: number;
+  // The day's start (UTC midnight, s since the epoch).
+  day: number;
+  all: Figures;
+  nq: Figures | null;
+  hq: Figures | null;
+}
+
 // The start of the UTC day `at` (s) falls on.
 function dayOf(at: number) {
   return Math.floor(at / DAY) * DAY;
 }
 
-// Each day's figures, per quality, from the sales made on it.
-function dailyStats(sales: Sale[]): DayStats[] {
-  const groups = new Map<
-    string,
-    {quality: Quality; day: number; sales: Sale[]}
-  >();
+// A world's days, from the sales made on it.
+function worldDays(world: number, sales: Sale[]): WorldDay[] {
+  const days = new Map<number, Sale[]>();
   for (const sale of sales) {
     const day = dayOf(sale.at);
-    for (const quality of ['all', sale.hq ? 'hq' : 'nq'] as const) {
-      const key = `${quality}:${day}`;
-      const group = groups.get(key) ?? {quality, day, sales: []};
-      group.sales.push(sale);
-      groups.set(key, group);
-    }
+    const group = days.get(day);
+    if (group) group.push(sale);
+    else days.set(day, [sale]);
   }
-  return [...groups.values()].map(({quality, day, sales: daySales}) => {
-    const prices = daySales.map(sale => sale.price).sort((a, b) => a - b);
-    return {
-      quality,
-      day,
-      median: median(prices),
-      min: prices[0],
-      max: prices[prices.length - 1],
-      sales: daySales.length,
-      quantity: daySales.reduce((sum, sale) => sum + sale.quantity, 0),
-    };
-  });
+  return [...days].map(([day, daySales]) => ({
+    world,
+    day,
+    // A day's group always has a sale.
+    all: figures(daySales) as Figures,
+    nq: figures(daySales.filter(sale => !sale.hq)),
+    hq: figures(daySales.filter(sale => sale.hq)),
+  }));
+}
+
+function figures(sales: Sale[]): Figures | null {
+  if (!sales.length) return null;
+  const prices = sales.map(sale => sale.price).sort((a, b) => a - b);
+  return {
+    median: median(prices),
+    min: prices[0],
+    max: prices[prices.length - 1],
+    sales: sales.length,
+    quantity: sales.reduce((sum, sale) => sum + sale.quantity, 0),
+  };
 }
 
 // The middle of sorted numbers, in whole gil.
@@ -62,4 +71,4 @@ function median(sorted: number[]) {
     : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 }
 
-export {DAY, DayStats, QUALITIES, Quality, dailyStats, dayOf};
+export {DAY, Figures, QUALITIES, Quality, WorldDay, dayOf, worldDays};

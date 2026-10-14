@@ -24,7 +24,8 @@ type UniversalisFetch = (
   init?: {headers?: Record<string, string>},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
-type ReadSales = (window: SalesWindow) => Promise<Sale[]>;
+// A world's sales (by its name) in a window.
+type ReadSales = (world: string, window: SalesWindow) => Promise<Sale[]>;
 
 const UNIVERSALIS_URL = 'https://universalis.app/api/v2/history';
 
@@ -32,16 +33,17 @@ const UNIVERSALIS_URL = 'https://universalis.app/api/v2/history';
 const HEADERS = {'User-Agent': 'Everise (https://everise.dev)'};
 
 // Reads an item's sales from Universalis (universalis.app), which players'
-// uploads keep: its history goes back to late October 2022. `scope` is a
-// data centre's or a world's name.
+// uploads keep: its history goes back to late October 2022. One world at a
+// time: Universalis answers a region or a data centre by merging all their
+// worlds, which for a busy item often takes longer than the 5 seconds it
+// allows (504), while a world answers in well under a second.
 function universalisSales(
   fetchHistory: UniversalisFetch,
-  scope: string,
   itemId: number,
 ): ReadSales {
-  return async ({until, within, limit}) => {
+  return async (world, {until, within, limit}) => {
     const url =
-      `${UNIVERSALIS_URL}/${encodeURIComponent(scope)}/${itemId}` +
+      `${UNIVERSALIS_URL}/${encodeURIComponent(world)}/${itemId}` +
       `?entriesToReturn=${limit}&entriesUntil=${until}&entriesWithin=${within}`;
     const response = await fetchHistory(url, {headers: HEADERS}).catch(
       () => null,
