@@ -57,10 +57,10 @@ interface Context {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-// An uploaded image's, an item icon's or a relayed picture's address: its
-// content never changes.
+// An uploaded image's, a game image's, an item icon's or a relayed
+// picture's address: its content never changes.
 const UPLOAD_PATH =
-  /^\/api\/(media|profile-images|market\/icons|relays\/images)\/[\w.-]+$/;
+  /^\/api\/(media|profile-images|images|market\/icons|relays\/images)\/[\w.-]+$/;
 
 // Uploaded images are kept in the data centre's cache, so most views reach
 // neither the app nor the bucket (R2 counts every read). Keyed by the URL

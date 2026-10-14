@@ -227,7 +227,7 @@ function createApp(
 
   const xivApiClient = new XivApiClient(httpGet);
 
-  const imagesService = new ImagesService(db, xivApiClient);
+  const imagesService = new ImagesService(db, xivApiClient, fileStore);
 
   const dutiesService = new DutiesService(db, xivApiClient, imagesService, now);
 

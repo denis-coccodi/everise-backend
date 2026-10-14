@@ -1,9 +1,13 @@
 import 'jest-extended';
 import request from 'supertest';
 import {app} from '../utils/app';
-import {clearDb, clock, xivApi} from '../utils';
+import {clearDb, clock, db, files, xivApi} from '../utils';
 import {duty, imageBytes} from '../utils/fake-xivapi';
 import {frontlineMapAt} from '../../src/duties/frontline-rotation';
+import {Doc} from '../../src/db';
+
+// A stored game image, as the tests read it.
+type ImageDoc = Doc & {contentType: string; data?: unknown};
 
 const REFRESH_KEY = process.env.DUTIES_REFRESH_KEY!;
 
@@ -450,6 +454,34 @@ describe('FFXIV duties', () => {
       );
     });
 
+    test('image bytes are kept in the file store (R2), not in their documents', async () => {
+      await downloadAllImages();
+
+      expect(files.files.has('game-images/62119')).toBe(true);
+      const doc = await db.get<ImageDoc>('gameImages', '62119');
+      expect(doc).toMatchObject({contentType: 'image/png'});
+      expect(doc!.data).toBeUndefined();
+    });
+
+    test('an image stored with its bytes in the document moves to the file store when first read', async () => {
+      const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+      await db.set('gameImages', '99999', {
+        contentType: 'image/png',
+        data: bytes,
+      });
+
+      const first = await getImage(99999);
+      expect(first.status).toBe(200);
+      expect(first.body).toStrictEqual(Buffer.from(bytes));
+      expect(files.files.get('game-images/99999')).toStrictEqual(bytes);
+      expect(
+        (await db.get<ImageDoc>('gameImages', '99999'))!.data,
+      ).toBeUndefined();
+
+      // Read again from the file store.
+      expect((await getImage(99999)).body).toStrictEqual(Buffer.from(bytes));
+    });
+
     test('images XIVAPI does not have should be reported, not retried', async () => {
       xivApi.missingImages.add(112003);
 
@@ -495,6 +527,7 @@ describe('FFXIV duties', () => {
         xivApi.requests.filter(url => url.includes('/asset?')),
       ).toHaveLength(IMAGE_COUNT - 1);
       expect((await getImage(112001)).status).toBe(404);
+      expect(files.files.has('game-images/112001')).toBe(false);
       expect((await getImage(112002)).status).toBe(200);
     });
   });
