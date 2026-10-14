@@ -152,8 +152,15 @@ class ItemHistory {
     for (const read of reads) {
       if (read.status === 'fulfilled') this.keep(read.value);
     }
-    const failed = reads.find(read => read.status === 'rejected');
-    if (failed) throw failed.reason;
+    // A world Universalis failed (it often answers 500 or 504) keeps its
+    // gap for the next step; only a step where every world failed fails.
+    const failed = reads.flatMap(read =>
+      read.status === 'rejected' ? [read.reason] : [],
+    );
+    if (failed.length && failed.length === reads.length) throw failed[0];
+    for (const reason of failed) {
+      console.error('Market: a world could not be read', reason);
+    }
     return this.pending();
   }
 

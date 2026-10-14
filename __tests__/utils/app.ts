@@ -165,6 +165,8 @@ const universalis = {
   // answers them (cheapest first).
   listings: {} as Record<string, Record<string, unknown>[]>,
   status: 200,
+  // Worlds whose history Universalis answers 504 for.
+  failingWorlds: new Set<string>(),
   requests: [] as string[],
 };
 const marketOptions = {chunk: 4, stepsPerRequest: Infinity};
@@ -187,6 +189,9 @@ const universalisFetch: UniversalisFetch = async url => {
   const params = new URL(url).searchParams;
   const until = Number(params.get('entriesUntil'));
   const within = Number(params.get('entriesWithin'));
+  if (universalis.failingWorlds.has(decodeURIComponent(scope))) {
+    return {ok: false, status: 504, json: async () => ({})};
+  }
   const key = `${decodeURIComponent(scope)}:${itemId}`;
   const entries = (universalis.sales[key] ?? [])
     .filter(sale => sale.timestamp <= until && sale.timestamp >= until - within)

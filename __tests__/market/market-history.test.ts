@@ -386,6 +386,26 @@ describe('the market page: price history', () => {
     ]);
   });
 
+  test('answers the worlds that were read when Universalis fails one, and reads it later', async () => {
+    marketOptions.stepsPerRequest = 3;
+    universalis.failingWorlds.add('Odin');
+    sell([sale(at(0, 1), 100), sale(at(0, 2), 80, {world: PHOENIX})]);
+
+    const first = await history(`item=${item}`);
+
+    expect(first.status).toBe(200);
+    expect(first.body.complete).toBe(false);
+    expect(first.body.worlds.map((w: {id: number}) => w.id)).toEqual([PHOENIX]);
+
+    universalis.failingWorlds.clear();
+    const later = await history(`item=${item}`);
+    expect(later.body.complete).toBe(true);
+    expect(later.body.worlds.map((w: {id: number}) => w.id)).toEqual([
+      PHOENIX,
+      ODIN,
+    ]);
+  });
+
   test("says when Universalis can't be reached", async () => {
     universalis.status = 503;
     const res = await history(`item=${item}`);
