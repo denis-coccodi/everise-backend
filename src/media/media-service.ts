@@ -4,7 +4,7 @@ import {config} from '../config';
 import {Db, Doc} from '../db';
 import {InvalidImageError, TooManyRequestsError} from '../errors';
 import {FileStore, StoredFile, UploadStorage} from '../files';
-import {ImageType, readImageInfo} from '../users/image-info';
+import {ImageType, readImageInfo} from '../users';
 
 // Images and GIFs people upload for their posts and comments: the bytes in
 // the file store (R2), a document each with the rest. The site shrinks large

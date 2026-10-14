@@ -1,4 +1,4 @@
-import {Attachment} from '../media/attachments';
+import {Attachment} from '../media';
 
 class Comment {
   private _id: string;

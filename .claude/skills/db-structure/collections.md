@@ -25,3 +25,16 @@ Every collection of the `docs` table, its fields (besides `id`, `createdAt`, `up
 Tags and favorites have no collection of their own; they are arrays on articles.
 
 Verify this table against the `*Doc` interfaces and `this.db.create(...)` calls before relying on it.
+
+## Cached game data
+
+The FFXIV data from XIVAPI (`src/duties`). Every refresh (`POST /api/duties/refresh`) replaces it, so it can be rebuilt at any time.
+
+| Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
+| --- | --- | --- |
+| `dutyGroups` | a duty group (`DutyGroup`: its duties, their levels, types and images), one document each | `src/duties/duties-service.ts` (`DutyGroupDoc`) |
+| `dutyRoulettes` | roulettes[], icon (one document) | `src/duties/duties-service.ts` (`RoulettesDoc`) |
+| `jobs` | jobs[] (one document) | `src/duties/duties-service.ts` (`JobsDoc`) |
+| `dutyRefreshes` | dataVersion, fetchedAt, dutyCount, rouletteCount, jobCount (one per refresh) | `src/duties/duties-service.ts` (`RefreshDoc`) |
+| `gameImages` | contentType, data (the image's bytes, in the document) (id: the game's icon id) | `src/duties/images-service.ts` (`ImageDoc`) |
+| `gameImageDownloads` | images[], pending[], failed[] (the current refresh's downloads); and the document `index`: ids[] of every stored image | `src/duties/images-service.ts` (`DownloadsDoc`, `IndexDoc`) |

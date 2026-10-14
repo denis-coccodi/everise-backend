@@ -1,10 +1,7 @@
 import {z} from 'zod';
 import {isoDate, requestSchema, responseSchema} from '../api';
-import {
-  MAX_COMMENT_ATTACHMENTS,
-  MAX_POST_ATTACHMENTS,
-} from '../media/attachments';
-import {AttachmentSchema, newAttachments} from '../media/attachment-schemas';
+import {MAX_COMMENT_ATTACHMENTS, MAX_POST_ATTACHMENTS} from '../media';
+import {AttachmentSchema, newAttachments} from '../media';
 import {PartyFinderIcons, PartyFinderListingSchema} from '../party-finder';
 import {ProfileSchema} from '../profiles';
 

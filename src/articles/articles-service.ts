@@ -4,9 +4,9 @@ import {UsersService} from '../users';
 import {Article} from './article';
 import {ArticleAnnouncer, announceArticle} from './announce-article';
 import {ProfilesService} from '../profiles';
-import {LiveFeed, noLiveFeed} from '../live/live-feed';
-import {attachmentsFromText, cleanAttachment} from '../media/attachments';
-import {MediaService} from '../media/media-service';
+import {LiveFeed, noLiveFeed} from '../live';
+import {attachmentsFromText, cleanAttachment} from '../media';
+import {MediaService} from '../media';
 import {
   ArticleDoc,
   CommentDoc,

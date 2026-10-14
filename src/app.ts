@@ -31,7 +31,7 @@ import {PartyFinderBoard} from './party-finder';
 import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
-import {SitemapRouter} from './sitemap';
+import {SitemapRouter, SitemapService} from './sitemap';
 import {TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {SocialLoginRouter} from './social-login';
@@ -77,7 +77,7 @@ function createApp(
     jobs,
   }: AppOptions = {},
 ) {
-  const usersService = new UsersService(db);
+  const usersService = new UsersService(db, now);
 
   const jwtService = new JWTService(usersService, config.jwt.secretKey, {
     issuer: config.jwt.issuer,
@@ -327,7 +327,7 @@ function createApp(
 
   app.use('/api', adminRouter);
 
-  app.use('/api', new SitemapRouter(db).router);
+  app.use('/api', new SitemapRouter(new SitemapService(db)).router);
 
   // The API's description, built from the routes above.
   app.use('/api', docsRouter());

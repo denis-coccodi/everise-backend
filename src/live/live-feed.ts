@@ -1,5 +1,5 @@
-import {ArticleDto} from '../articles/article-dto';
-import type {RoomLine} from '../waking-sands/waking-sands-service';
+import {ArticleDto} from '../articles';
+import type {RoomLine} from '../waking-sands';
 
 // Events pushed to everyone connected to GET /api/live.
 type LiveEvent =

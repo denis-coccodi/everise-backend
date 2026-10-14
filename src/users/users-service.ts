@@ -19,7 +19,10 @@ const UNCONFIRMED_DAYS = 7;
 class UsersService {
   private readonly usersCollection = 'users';
 
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   // A new account. With `confirmed` false it can't be signed in to until its
   // email is confirmed; until then a new sign-up with the same email
@@ -278,7 +281,8 @@ class UsersService {
   // UNCONFIRMED_DAYS: nobody could sign in to them, and they would keep the
   // email or username from someone else.
   private async removeUnconfirmed(email: string) {
-    const cutoff = Date.now() - UNCONFIRMED_DAYS * 24 * 60 * 60 * 1000;
+    const cutoff =
+      this.now().getTime() - UNCONFIRMED_DAYS * 24 * 60 * 60 * 1000;
     const stale = (
       await this.db.find<UserDoc>(this.usersCollection, {
         where: [{field: 'emailConfirmed', op: '==', value: false}],

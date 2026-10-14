@@ -35,7 +35,10 @@ const MAX_REPLY_TOKENS = 300;
 const OUT_OF_NEURONS = /\b(3036|4006)\b/;
 
 class WorkersAiModel implements CharacterModel {
-  constructor(private readonly ai: AiBinding) {}
+  constructor(
+    private readonly ai: AiBinding,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   async reply(messages: ModelMessage[]) {
     let output: unknown;
@@ -53,7 +56,7 @@ class WorkersAiModel implements CharacterModel {
       if (OUT_OF_NEURONS.test(message)) {
         throw new TooManyRequestsError(
           'The Waking Sands is closed for the rest of the day. Come back after midnight UTC!',
-          secondsToMidnightUtc(new Date()),
+          secondsToMidnightUtc(this.now()),
         );
       }
       throw new UpstreamError(

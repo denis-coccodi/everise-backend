@@ -4298,49 +4298,113 @@
         ],
         "additionalProperties": false
       },
-      "Profile": {
+      "MediaResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "following": {
-            "type": "boolean"
-          },
-          "bio": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "image": {
-            "type": "string"
-          },
-          "character": {
-            "type": "string"
+          "media": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "width": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "height": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "contentType",
+              "width",
+              "height"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
-          "id",
-          "username",
-          "following",
-          "bio",
-          "image"
+          "media"
         ],
         "additionalProperties": false
       },
-      "ProfileResponse": {
+      "GifsAvailableResponse": {
         "type": "object",
         "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/Profile"
+          "available": {
+            "type": "boolean"
           }
         },
         "required": [
-          "profile"
+          "available"
+        ],
+        "additionalProperties": false
+      },
+      "GifsResponse": {
+        "type": "object",
+        "properties": {
+          "gifs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "previewUrl": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                },
+                "height": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "previewUrl",
+                "url",
+                "width",
+                "height"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gifs",
+          "next"
         ],
         "additionalProperties": false
       },
@@ -4409,6 +4473,52 @@
             "additionalProperties": false
           }
         ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "following": {
+            "type": "boolean"
+          },
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image": {
+            "type": "string"
+          },
+          "character": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "following",
+          "bio",
+          "image"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "additionalProperties": false
       },
       "PartyFinderResponse": {
         "type": "object",
@@ -7145,116 +7255,6 @@
         },
         "required": [
           "providers"
-        ],
-        "additionalProperties": false
-      },
-      "MediaResponse": {
-        "type": "object",
-        "properties": {
-          "media": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "url": {
-                "type": "string"
-              },
-              "contentType": {
-                "type": "string"
-              },
-              "width": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "height": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": [
-              "id",
-              "url",
-              "contentType",
-              "width",
-              "height"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "media"
-        ],
-        "additionalProperties": false
-      },
-      "GifsAvailableResponse": {
-        "type": "object",
-        "properties": {
-          "available": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "available"
-        ],
-        "additionalProperties": false
-      },
-      "GifsResponse": {
-        "type": "object",
-        "properties": {
-          "gifs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                },
-                "previewUrl": {
-                  "type": "string"
-                },
-                "url": {
-                  "type": "string"
-                },
-                "width": {
-                  "type": "number"
-                },
-                "height": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "id",
-                "title",
-                "previewUrl",
-                "url",
-                "width",
-                "height"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "next": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "gifs",
-          "next"
         ],
         "additionalProperties": false
       },

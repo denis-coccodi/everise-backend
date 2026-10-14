@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {route, responseSchema} from '../api';
 import {MissingEmailError} from '../errors';
 import {JWTService, UsersService} from '../users';
-import {setSessionCookie} from '../users/users-router';
+import {setSessionCookie} from '../users';
 import {
   OAuthFetch,
   PROVIDERS,

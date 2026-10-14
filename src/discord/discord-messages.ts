@@ -1,4 +1,4 @@
-import type {ArticleDto} from '../articles/article-dto';
+import type {ArticleDto} from '../articles';
 import {
   CREST_ORANGE,
   authorOf,

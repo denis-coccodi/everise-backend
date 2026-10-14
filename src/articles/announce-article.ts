@@ -1,4 +1,4 @@
-import {LiveFeed} from '../live/live-feed';
+import {LiveFeed} from '../live';
 import {ProfilesService} from '../profiles';
 import {ArticleDoc, toArticle} from './article-docs';
 import {ArticleDto} from './article-dto';
