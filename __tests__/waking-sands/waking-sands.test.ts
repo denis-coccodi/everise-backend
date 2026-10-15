@@ -3,6 +3,7 @@ import request from 'supertest';
 import {config} from '../../src/config';
 import {TooManyRequestsError, UpstreamError} from '../../src/errors';
 import {
+  CHARACTERS,
   MAX_PRESENT,
   MEMBER_SHARE,
   TURNS_EACH,
@@ -102,25 +103,15 @@ describe('the Waking Sands room', () => {
         image: `${config.baseUrl}/api/waking-sands/characters/bernadette/picture`,
       },
     ]);
-    // Characters shipped without a picture wait for an admin's upload.
     expect(body.characters).toContainEqual({
       id: 'emet-selch',
       name: 'Emet-Selch',
       title: 'Ascian, and deeply unimpressed',
+      image: `${config.baseUrl}/api/waking-sands/characters/emet-selch/picture`,
     });
-    expect(body.characters.map((c: {id: string}) => c.id)).toIncludeAllMembers([
-      'thancred',
-      'alphinaud',
-      'alisaie',
-      'krile',
-      'graha',
-      'gaius',
-      'hythlodaeus',
-      'venat',
-    ]);
   });
 
-  test.each(['urianger', 'yshtola', 'barnaby', 'bernadette'])(
+  test.each(CHARACTERS.map(character => character.id))(
     "serves %s's picture",
     async id => {
       const response = await request(app).get(

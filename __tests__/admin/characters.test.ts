@@ -48,7 +48,7 @@ describe('editing the Waking Sands characters', () => {
       'barnaby',
       'bernadette',
     ]);
-    expect(characters).toHaveLength(19);
+    expect(characters).toHaveLength(22);
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
       name: 'Tataru Taru',
