@@ -231,6 +231,23 @@ describe('GET /api/venues', () => {
     expect((await venues()).status).toBe(502);
   });
 
+  test('after FFXIV Venues turns a read away, asks again within a minute', async () => {
+    ffxivVenues.status = 429;
+    expect((await venues()).status).toBe(502);
+
+    ffxivVenues.status = 200;
+    ffxivVenues.venues.Light = [venue()];
+    at(10);
+    expect((await venues()).status).toBe(502);
+    expect(ffxivVenues.requests).toHaveLength(1);
+
+    at(30);
+    const read = await venues();
+    expect(read.status).toBe(200);
+    expect(read.body.venues).toHaveLength(1);
+    expect(ffxivVenues.requests).toHaveLength(2);
+  });
+
   test('502 when FFXIV Venues sends something other than a list', async () => {
     ffxivVenues.venues.Light = {error: 'nope'} as unknown as unknown[];
 

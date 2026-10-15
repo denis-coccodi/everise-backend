@@ -13,6 +13,9 @@ const FFXIV_VENUES = 'https://api.ffxivvenues.com/v1/venue';
 const REFRESH_MS = 5 * 60 * 1000;
 // When FFXIV Venues can't be reached, the last venues stay this long.
 const STALE_MS = 60 * 60 * 1000;
+// After a failed read (FFXIV Venues turns bursts away), it's asked again
+// this soon rather than after a whole refresh.
+const RETRY_MS = 30 * 1000;
 
 interface VenueList {
   dataCentre: VenueDataCentre;
@@ -96,6 +99,7 @@ class VenuesBoard {
       });
     } catch (error) {
       console.error(`Venues: reading ${dataCentre} failed`, error);
+      this.attemptedAt.set(dataCentre, at - REFRESH_MS + RETRY_MS);
       const last = this.read.get(dataCentre);
       if (last && at - last.at > STALE_MS) this.read.delete(dataCentre);
     }
@@ -105,6 +109,7 @@ class VenuesBoard {
 export {
   FFXIV_VENUES,
   REFRESH_MS,
+  RETRY_MS,
   STALE_MS,
   VenueList,
   VenuesBoard,
