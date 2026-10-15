@@ -216,17 +216,12 @@ class WakingSandsService {
       direction(present, free, lines, mustAnswer),
     );
     await this.budget.spend(payer, neurons);
-    const answer = text.toLowerCase();
-    const named = free.find(
-      c =>
-        answer.includes(c.name.toLowerCase()) ||
-        answer.includes(c.name.split(' ')[0].toLowerCase()),
-    );
+    const named = free.find(c => mentions(text, c));
     if (named || !mustAnswer) return named;
     // The director said nothing usable: whoever the member named, or anyone.
-    const last = lines[lines.length - 1]?.text.toLowerCase() ?? '';
+    const last = lines[lines.length - 1]?.text ?? '';
     return (
-      free.find(c => last.includes(c.name.split(' ')[0].toLowerCase())) ??
+      free.find(c => mentions(last, c)) ??
       free[Math.floor(Math.random() * free.length)]
     );
   }
@@ -286,6 +281,18 @@ class WakingSandsService {
       console.error('Live update failed', err);
     }
   }
+}
+
+// Whether `text` names the character, by full or first name as a whole
+// word: "Cid" isn't in "decided".
+function mentions(text: string, character: CharacterProfile) {
+  const first = character.name.split(' ')[0];
+  return [character.name, first].some(name =>
+    new RegExp(
+      `(^|[^\\p{L}])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`,
+      'iu',
+    ).test(text),
+  );
 }
 
 export {MAX_PRESENT, MEMBER_SHARE, RoomLine, TURNS_EACH, WakingSandsService};

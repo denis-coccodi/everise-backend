@@ -3,6 +3,7 @@ import request from 'supertest';
 import {config} from '../../src/config';
 import {TooManyRequestsError, UpstreamError} from '../../src/errors';
 import {
+  CHARACTERS,
   MAX_PRESENT,
   MEMBER_SHARE,
   TURNS_EACH,
@@ -64,13 +65,13 @@ afterEach(() => {
 });
 
 describe('the Waking Sands room', () => {
-  test('shows every character with a picture, nobody in, nothing said, and that it is open', async () => {
+  test('shows every character, nobody in, nothing said, and that it is open', async () => {
     const body = await room();
 
     expect(body.available).toBeTrue();
     expect(body.present).toEqual([]);
     expect(body.lines).toEqual([]);
-    expect(body.characters).toStrictEqual([
+    expect(body.characters.slice(0, 5)).toStrictEqual([
       {
         id: 'tataru',
         name: 'Tataru Taru',
@@ -102,9 +103,15 @@ describe('the Waking Sands room', () => {
         image: `${config.baseUrl}/api/waking-sands/characters/bernadette/picture`,
       },
     ]);
+    expect(body.characters).toContainEqual({
+      id: 'emet-selch',
+      name: 'Emet-Selch',
+      title: 'Ascian, and deeply unimpressed',
+      image: `${config.baseUrl}/api/waking-sands/characters/emet-selch/picture`,
+    });
   });
 
-  test.each(['urianger', 'yshtola', 'barnaby', 'bernadette'])(
+  test.each(CHARACTERS.map(character => character.id))(
     "serves %s's picture",
     async id => {
       const response = await request(app).get(
@@ -174,7 +181,7 @@ describe('the Waking Sands room', () => {
   test('refuses an unknown character, or sending out one who is not in', async () => {
     const member = await signedIn();
 
-    expect((await as(member).invite('thancred')).status).toBe(422);
+    expect((await as(member).invite('moogle')).status).toBe(422);
     expect((await as(member).dismiss('tataru')).status).toBe(404);
   });
 
@@ -269,6 +276,17 @@ describe('the Waking Sands room', () => {
     await as(member).say('Urianger, what do the stars say?');
 
     expect((await script()).slice(-1)[0]).toBe('Urianger Augurelt: Hello!');
+  });
+
+  test('without the director, picks whoever the member named as a whole word', async () => {
+    const member = await signedIn();
+    await as(member).invite('cid');
+    await as(member).invite('tataru');
+    characters.directions = ['NONE'];
+
+    await as(member).say('I decided to ask Tataru.');
+
+    expect((await script()).slice(-1)[0]).toBe('Tataru Taru: Hello!');
   });
 
   test('tells each character who is there and what was said', async () => {
