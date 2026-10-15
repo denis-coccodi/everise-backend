@@ -41,13 +41,14 @@ describe('editing the Waking Sands characters', () => {
 
     expect(response.status).toBe(200);
     const characters = response.body.characters;
-    expect(characters.map((c: {id: string}) => c.id)).toEqual([
+    expect(characters.map((c: {id: string}) => c.id).slice(0, 5)).toEqual([
       'tataru',
       'urianger',
       'yshtola',
       'barnaby',
       'bernadette',
     ]);
+    expect(characters).toHaveLength(19);
     const [tataru, , , barnaby] = characters;
     expect(tataru).toMatchObject({
       name: 'Tataru Taru',
@@ -241,7 +242,7 @@ describe('editing the Waking Sands characters', () => {
       });
     }
     expect(
-      (await request(app).get('/api/profiles/character:thancred')).status,
+      (await request(app).get('/api/profiles/character:moogle')).status,
     ).toBe(404);
 
     // A member's settings change only their own account.
@@ -279,11 +280,11 @@ describe('editing the Waking Sands characters', () => {
 
     const admin = as(await adminToken());
     const unknown = await admin
-      .put('/api/admin/characters/thancred')
+      .put('/api/admin/characters/moogle')
       .send({character: {title: 'Rogue'}});
     expect(unknown.status).toBe(422);
     const unknownPicture = await admin
-      .put('/api/admin/characters/thancred/image')
+      .put('/api/admin/characters/moogle/image')
       .set('content-type', 'image/png')
       .send(png);
     expect(unknownPicture.status).toBe(404);

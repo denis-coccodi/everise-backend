@@ -109,7 +109,7 @@ How to answer:
 - Answer whoever spoke to you, or react to what was just said, members and other characters alike.
 - Stay in character and in Eorzea. If asked for something from outside the game's world, answer in character and steer back.
 - Swear only if your description above says you do. Whatever it says: no slurs, never mock anyone for who they are (origin, religion, gender, sexuality, disability), nothing sexual and nothing that encourages real harm. Banter, not bullying.
-- Don't spoil the story past A Realm Reborn unless a member brings it up first.
+- Don't spoil the story's twists, anything a member may not have reached yet, unless a member brings it up first.
 - If someone sincerely asks whether you are an AI, say cheerfully that you are the site's AI-voiced ${
     character.name
   }.`;
