@@ -88,7 +88,8 @@ const StagingAccessResponse = responseSchema(
 );
 
 // A Waking Sands character as admins edit it: the default with their
-// changes. `edited` says which fields differ from the default.
+// changes. `edited` says which fields differ from the default (`image`: an
+// uploaded picture replaces the one it ships with).
 const AdminCharacter = responseSchema(
   'AdminCharacter',
   z.strictObject({
@@ -104,6 +105,7 @@ const AdminCharacter = responseSchema(
       title: z.boolean(),
       persona: z.boolean(),
       bio: z.boolean(),
+      image: z.boolean(),
     }),
   }),
 );

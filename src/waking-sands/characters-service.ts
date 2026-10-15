@@ -18,7 +18,8 @@ interface CharacterDoc extends Doc {
 }
 
 // A character as the chat and the settings see it: the default with the
-// admin's changes. `edited` says which fields differ from the default.
+// admin's changes. `edited` says which fields differ from the default
+// (`image`: an uploaded picture replaces the shipped one).
 interface CharacterProfile {
   id: string;
   name: string;
@@ -28,7 +29,7 @@ interface CharacterProfile {
   // Their profile's bio.
   bio: string;
   image?: string;
-  edited: {title: boolean; persona: boolean; bio: boolean};
+  edited: {title: boolean; persona: boolean; bio: boolean; image: boolean};
 }
 
 interface CharacterChanges {
@@ -108,6 +109,22 @@ class CharactersService {
     return this.get(id);
   }
 
+  // Back to the picture the character ships with; the upload is deleted.
+  async resetPicture(id: string) {
+    this.character(id);
+    const doc = await this.db.get<CharacterDoc>(this.collection, id);
+    if (doc?.image) {
+      await this.db.set(this.collection, id, {
+        title: doc.title ?? null,
+        persona: doc.persona ?? null,
+        bio: doc.bio ?? null,
+        image: null,
+      });
+      await this.deleteUpload(ownerOf(id), doc.image);
+    }
+    return this.get(id);
+  }
+
   private profile(
     character: Character,
     doc: CharacterDoc | undefined,
@@ -123,7 +140,12 @@ class CharactersService {
       defaultPersona: character.persona,
       bio: doc?.bio || character.bio,
       image: doc?.image || shipped,
-      edited: {title: !!doc?.title, persona: !!doc?.persona, bio: !!doc?.bio},
+      edited: {
+        title: !!doc?.title,
+        persona: !!doc?.persona,
+        bio: !!doc?.bio,
+        image: !!doc?.image,
+      },
     };
   }
 
