@@ -3074,6 +3074,56 @@
         }
       }
     },
+    "/api/venues": {
+      "get": {
+        "tags": [
+          "venues"
+        ],
+        "summary": "A data centre's venues opening this week",
+        "parameters": [
+          {
+            "name": "dataCentre",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": "Light",
+              "type": "string",
+              "enum": [
+                "Light",
+                "Chaos",
+                "Aether",
+                "Crystal",
+                "Dynamis",
+                "Primal",
+                "Materia"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The venues.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenuesResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/waking-sands/characters/{id}/picture": {
       "get": {
         "tags": [
@@ -7282,6 +7332,161 @@
         "required": [
           "articles",
           "dataCentres"
+        ],
+        "additionalProperties": false
+      },
+      "VenuesResponse": {
+        "type": "object",
+        "properties": {
+          "dataCentre": {
+            "type": "string",
+            "enum": [
+              "Light",
+              "Chaos",
+              "Aether",
+              "Crystal",
+              "Dynamis",
+              "Primal",
+              "Materia"
+            ]
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dataCentres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Light",
+                      "Chaos",
+                      "Aether",
+                      "Crystal",
+                      "Dynamis",
+                      "Primal",
+                      "Materia"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "dataCentres"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "venues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "banner": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "world": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "address": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "website": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "discord": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "url": {
+                  "type": "string"
+                },
+                "notices": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "opensAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "closesAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "openNow": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "description",
+                "banner",
+                "world",
+                "address",
+                "tags",
+                "website",
+                "discord",
+                "url",
+                "notices",
+                "opensAt",
+                "closesAt",
+                "openNow"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "dataCentre",
+          "regions",
+          "fetchedAt",
+          "venues"
         ],
         "additionalProperties": false
       },

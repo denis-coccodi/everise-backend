@@ -5,6 +5,7 @@ export {
   clock,
   db,
   discord,
+  ffxivVenues,
   files,
   giphy,
   jobs,

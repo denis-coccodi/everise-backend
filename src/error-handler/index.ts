@@ -1,1 +1,1 @@
-export {errorHandler} from './error-handler';
+export {errorHandler, errorMiddleware} from './error-handler';

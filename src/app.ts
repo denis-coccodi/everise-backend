@@ -22,7 +22,7 @@ import {
 } from './duties';
 import {emailSenderFor} from './email';
 import {docsRouter} from './api';
-import {errorHandler} from './error-handler';
+import {errorMiddleware} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {marketRouter, noMarket} from './market';
@@ -32,6 +32,7 @@ import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
 import {SitemapRouter, SitemapService} from './sitemap';
+import {VenuesBoard, VenuesRouter} from './venues';
 import {TurnstileVerifier} from './turnstile';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {SocialLoginRouter} from './social-login';
@@ -72,6 +73,7 @@ function createApp(
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
     market = noMarket,
     universalis = (url, init) => fetch(url, init),
+    venues = url => fetch(url),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
@@ -316,6 +318,7 @@ function createApp(
 
   app.use('/api', dutiesRouter);
   app.use('/api', relayParts.router);
+  app.use('/api', new VenuesRouter(new VenuesBoard(venues, now)).router);
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
@@ -332,17 +335,7 @@ function createApp(
   // The API's description, built from the routes above.
   app.use('/api', docsRouter());
 
-  app.use(
-    async (
-      err: Error,
-      _req: express.Request,
-      res: express.Response,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _next: express.NextFunction,
-    ) => {
-      await errorHandler.handleError(err, res);
-    },
-  );
+  app.use(errorMiddleware);
 
   return app;
 }
