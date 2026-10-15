@@ -13,6 +13,7 @@ import {LocalMarket, UniversalisFetch} from '../../src/market';
 import {PartyFinderBoard, XivpfFetch} from '../../src/party-finder';
 import {RelayFetch} from '../../src/relays';
 import {OAuthFetch} from '../../src/social-login';
+import {VenuesFetch} from '../../src/venues';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
 import {SqliteStorage} from './sqlite-storage';
@@ -187,6 +188,33 @@ const xivpfFetch: XivpfFetch = async () => {
   };
 };
 
+// FFXIV Venues: `venues` by data centre and `status` are its next answers
+// (one venue, /venue/<id>, is found among them, or 404s); `requests` what
+// the app asked.
+const ffxivVenues = {
+  venues: {} as Record<string, unknown[]>,
+  status: 200,
+  requests: [] as string[],
+};
+const venuesFetch: VenuesFetch = async url => {
+  ffxivVenues.requests.push(url);
+  const one = /\/venue\/([^/?]+)$/.exec(url)?.[1];
+  if (one) {
+    const venue = Object.values(ffxivVenues.venues)
+      .flat()
+      .find(entry => (entry as {id?: string})?.id === decodeURIComponent(one));
+    const status =
+      ffxivVenues.status < 300 && !venue ? 404 : ffxivVenues.status;
+    return {ok: status < 300, status, json: async () => venue ?? {}};
+  }
+  const dataCentre = new URL(url).searchParams.get('dataCenter') ?? '';
+  return {
+    ok: ffxivVenues.status < 300,
+    status: ffxivVenues.status,
+    json: async () => ffxivVenues.venues[dataCentre] ?? [],
+  };
+};
+
 // Universalis' sales history: `sales` by "<world name>:<item id>" (in any
 // order), `status` its next answers' status, `requests` what the app asked.
 // The market reads 4 sales at a time, and `stepsPerRequest` windows of them
@@ -340,6 +368,7 @@ const app = createApp(
       marketOptions,
     ),
     universalis: universalisFetch,
+    venues: venuesFetch,
   },
 );
 
@@ -355,6 +384,7 @@ export {
   clock,
   db,
   discord,
+  ffxivVenues,
   files,
   giphy,
   lastConfirmationToken,

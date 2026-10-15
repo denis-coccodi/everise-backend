@@ -22,7 +22,7 @@ import {
 } from './duties';
 import {emailSenderFor} from './email';
 import {docsRouter} from './api';
-import {errorHandler} from './error-handler';
+import {errorMiddleware} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
 import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {marketRouter, noMarket} from './market';
@@ -32,18 +32,17 @@ import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
 import {SitemapRouter, SitemapService} from './sitemap';
-import {TurnstileVerifier} from './turnstile';
+import {venueRoutes} from './venues';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {SocialLoginRouter} from './social-login';
 import {GifSearch, MediaRouter, MediaService} from './media';
 import {DiscordAnnouncer, DiscordRouter, DiscordWidgetReader} from './discord';
 import {NotificationsRouter, NotificationsService} from './notifications';
 import {
-  EmailConfirmation,
   JWTService,
   ProfileImagesService,
-  UsersRouter,
   UsersService,
+  usersRoutes,
 } from './users';
 import {
   CharacterRemarks,
@@ -72,6 +71,7 @@ function createApp(
     partyFinder = new PartyFinderBoard(url => fetch(url), now),
     market = noMarket,
     universalis = (url, init) => fetch(url, init),
+    venues = url => fetch(url),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
@@ -142,26 +142,20 @@ function createApp(
   // What happened to members' posts, and who followed them: the header's bell.
   const notifications = new NotificationsService(db, profilesService, now);
 
-  const emailConfirmation = new EmailConfirmation(
-    db,
-    usersService,
-    emailSender,
-    config.baseUrl,
-    now,
-  );
-
-  const usersRouter = new UsersRouter(
+  const usersRouter = usersRoutes({
     auth,
+    db,
     usersService,
     jwtService,
     profileImagesService,
-    emailConfirmation,
-    new TurnstileVerifier(
-      turnstile.secretKey,
-      turnstile.hostnames ?? config.turnstile.hostnames,
-      turnstile.fetch,
-    ),
-  ).router;
+    emailSender,
+    turnstile: {
+      ...turnstile,
+      hostnames: turnstile.hostnames ?? config.turnstile.hostnames,
+    },
+    baseUrl: config.baseUrl,
+    now,
+  });
 
   const socialLoginRouter = new SocialLoginRouter(
     usersService,
@@ -318,6 +312,17 @@ function createApp(
   app.use('/api', relayParts.router);
   app.use(
     '/api',
+    ...venueRoutes({
+      auth,
+      db,
+      fetch: venues,
+      profilesService,
+      discord: discordAnnouncer,
+      now,
+    }),
+  );
+  app.use(
+    '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
   );
 
@@ -332,17 +337,7 @@ function createApp(
   // The API's description, built from the routes above.
   app.use('/api', docsRouter());
 
-  app.use(
-    async (
-      err: Error,
-      _req: express.Request,
-      res: express.Response,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _next: express.NextFunction,
-    ) => {
-      await errorHandler.handleError(err, res);
-    },
-  );
+  app.use(errorMiddleware);
 
   return app;
 }

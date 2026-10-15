@@ -38,6 +38,35 @@ const fileStore = new R2FileStore(env.IMAGES as R2Bucket);
 // The app's scheduled jobs, which createApp fills in.
 const jobs: AppJobs = {};
 
+// FFXIV Venues' answers, kept in the data centre's cache for five minutes
+// (as long as the app keeps them). Each Worker instance keeps its own copy
+// too, and FFXIV Venues turns bursts away (429): instances starting cold
+// read the cache instead of asking again. Its load balancer's cookie is
+// dropped, or the cache wouldn't keep the answer. A burst it turns away
+// clears within seconds: it's asked again after 1, then 3 seconds (waiting
+// costs the Worker no CPU time).
+const VENUES_CACHE_CONTROL = 'public, max-age=300';
+const VENUES_RETRY_DELAYS_MS = [1000, 3000];
+async function cachedVenuesFetch(url: string) {
+  const cache = caches.default;
+  const key = new Request(url);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  let response = await fetch(url);
+  for (const delay of VENUES_RETRY_DELAYS_MS) {
+    if (response.status !== 429) break;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    response = await fetch(url);
+  }
+  if (response.ok) {
+    const copy = new Response(response.clone().body, response);
+    copy.headers.delete('Set-Cookie');
+    copy.headers.set('Cache-Control', VENUES_CACHE_CONTROL);
+    await cache.put(key, copy);
+  }
+  return response;
+}
+
 createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   jobs,
   fileStore,
@@ -47,6 +76,7 @@ createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   partyFinder: new HubPartyFinder(env.PARTY_FINDER),
   // The price histories, a Durable Object each (the "MARKET" binding).
   market: new HubMarket(env.MARKET),
+  venues: cachedVenuesFetch,
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {

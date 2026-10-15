@@ -1,5 +1,5 @@
 import * as util from 'util';
-import {Response} from 'express';
+import {NextFunction, Request, Response} from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {JsonWebTokenError} from 'jsonwebtoken';
 import {HttpError} from '../errors';
@@ -44,3 +44,15 @@ class ErrorHandler {
 }
 
 export const errorHandler = new ErrorHandler();
+
+// The app's last middleware: every error a route throws ends up here.
+// Express tells error middleware apart by its four parameters.
+export async function errorMiddleware(
+  err: Error,
+  _req: Request,
+  res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _next: NextFunction,
+) {
+  await errorHandler.handleError(err, res);
+}

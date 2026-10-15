@@ -8,6 +8,7 @@ import {PartyFinderSource} from './party-finder';
 import {RelayFetch} from './relays';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
+import {VenuesFetch} from './venues';
 import {LoadBundledPicture} from './waking-sands';
 import {CharacterModel} from './waking-sands';
 
@@ -52,6 +53,8 @@ interface AppOptions {
   market?: MarketSource;
   // How the app reaches Universalis for the market's current listings.
   universalis?: UniversalisFetch;
+  // How the app reaches FFXIV Venues for the player-run venues.
+  venues?: VenuesFetch;
   // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
   // and how the app reaches siteverify. Without a secret, nothing is checked.
   turnstile?: {
