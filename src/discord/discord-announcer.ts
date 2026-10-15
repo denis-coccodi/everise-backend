@@ -3,7 +3,9 @@ import type {ArticleDto} from '../articles';
 import {LiveEvent, LiveFeed} from '../live';
 import {Sharer, escape, fromDiscord, message} from './discord-format';
 import {articleMessages} from './discord-messages';
+import type {VenueDetail} from '../venues';
 import {SharedListing, listingMessage} from './listing-message';
+import {venueMessage} from './venue-message';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (
@@ -16,8 +18,8 @@ const TIMEOUT_MS = 3000;
 
 // Shares in the Everise Discord channel, through the channel's webhook
 // (Channel settings → Integrations → Webhooks), only what members choose
-// to: a post they ticked "Also share in the Everise Discord" on, or a Party
-// Finder listing. Without a webhook address (staging, local) nothing is
+// to: a post they ticked "Also share in the Everise Discord" on, a Party
+// Finder listing or a venue. Without a webhook address (staging, local) nothing is
 // shared and the site doesn't offer it.
 class DiscordAnnouncer {
   constructor(
@@ -50,6 +52,15 @@ class DiscordAnnouncer {
     return this.send(
       listingMessage(sharer, shared, comment, page, this.siteUrl),
     );
+  }
+
+  // A venue shared by a member, linking to its page on the site; false
+  // when Discord didn't take it.
+  async shareVenue(sharer: Sharer, venue: VenueDetail, comment: string) {
+    const page = fromDiscord(
+      `${this.siteUrl}/venues/${encodeURIComponent(venue.id)}`,
+    );
+    return this.send(venueMessage(sharer, venue, comment, page, this.siteUrl));
   }
 
   // A listing shared in the channel is no longer up: said there, so nobody

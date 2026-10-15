@@ -1,11 +1,12 @@
 import {z} from 'zod';
 import {isoDate, responseSchema} from '../api';
 import {REGION_LIST} from '../party-finder';
-import {VENUE_DATA_CENTRES} from './venues-board';
+import {VENUE_DATA_CENTRES} from './venue-data-centres';
 
 const VenueDataCentreName = z.enum(VENUE_DATA_CENTRES);
 
-const Venue = z.strictObject({
+// What every view of a venue shows, but its openings.
+const shownVenue = {
   id: z.string(),
   name: z.string(),
   // Its paragraphs, as the owners wrote them.
@@ -25,6 +26,10 @@ const Venue = z.strictObject({
   url: z.string(),
   // What the owners say right now ("Closed this week").
   notices: z.array(z.string()),
+};
+
+const Venue = z.strictObject({
+  ...shownVenue,
   // Its next opening, or the one going on (openNow).
   opensAt: isoDate,
   closesAt: isoDate,
@@ -66,4 +71,10 @@ const VENUE_REGIONS = REGION_LIST.map(region => ({
   ),
 })).filter(region => region.dataCentres.length > 0);
 
-export {VENUE_REGIONS, VenuesQuery, VenuesResponse};
+export {
+  VENUE_REGIONS,
+  VenueDataCentreName,
+  VenuesQuery,
+  VenuesResponse,
+  shownVenue,
+};

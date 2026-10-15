@@ -3124,6 +3124,94 @@
         }
       }
     },
+    "/api/venues/{id}": {
+      "get": {
+        "tags": [
+          "venues"
+        ],
+        "summary": "One venue, with its regular openings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The venue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenuePageResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/venues/discord": {
+      "post": {
+        "tags": [
+          "venues"
+        ],
+        "summary": "Share a venue in the Everise Discord",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewVenueDiscordShare"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sent to the channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueDiscordShareResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/waking-sands/characters/{id}/picture": {
       "get": {
         "tags": [
@@ -3805,6 +3893,23 @@
         "required": [
           "dataCentre",
           "listingId"
+        ]
+      },
+      "NewVenueDiscordShare": {
+        "type": "object",
+        "properties": {
+          "venueId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "venueId"
         ]
       },
       "NewRouletteResult": {
@@ -7487,6 +7592,223 @@
           "regions",
           "fetchedAt",
           "venues"
+        ],
+        "additionalProperties": false
+      },
+      "VenuePageResponse": {
+        "type": "object",
+        "properties": {
+          "venue": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "banner": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "world": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "website": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "discord": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "url": {
+                "type": "string"
+              },
+              "notices": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dataCentre": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "Light",
+                      "Chaos",
+                      "Aether",
+                      "Crystal",
+                      "Dynamis",
+                      "Primal",
+                      "Materia"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "nextOpening": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "opensAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      "closesAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      "openNow": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "opensAt",
+                      "closesAt",
+                      "openNow"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "schedule": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "opensAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "closesAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "repeat": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "every": {
+                              "type": "string",
+                              "const": "weeks"
+                            },
+                            "weeks": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "every",
+                            "weeks"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "every": {
+                              "type": "string",
+                              "const": "month"
+                            },
+                            "week": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "every",
+                            "week"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "opensAt",
+                    "closesAt",
+                    "repeat"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "description",
+              "banner",
+              "world",
+              "address",
+              "tags",
+              "website",
+              "discord",
+              "url",
+              "notices",
+              "dataCentre",
+              "nextOpening",
+              "schedule"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "venue"
+        ],
+        "additionalProperties": false
+      },
+      "VenueDiscordShareResponse": {
+        "type": "object",
+        "properties": {
+          "shared": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "shared"
         ],
         "additionalProperties": false
       },

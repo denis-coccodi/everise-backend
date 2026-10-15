@@ -32,19 +32,17 @@ import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
 import {SitemapRouter, SitemapService} from './sitemap';
-import {VenuesBoard, VenuesRouter} from './venues';
-import {TurnstileVerifier} from './turnstile';
+import {venueRoutes} from './venues';
 import {RoulettePostsRouter, RoulettePostsService} from './roulette-posts';
 import {SocialLoginRouter} from './social-login';
 import {GifSearch, MediaRouter, MediaService} from './media';
 import {DiscordAnnouncer, DiscordRouter, DiscordWidgetReader} from './discord';
 import {NotificationsRouter, NotificationsService} from './notifications';
 import {
-  EmailConfirmation,
   JWTService,
   ProfileImagesService,
-  UsersRouter,
   UsersService,
+  usersRoutes,
 } from './users';
 import {
   CharacterRemarks,
@@ -144,26 +142,20 @@ function createApp(
   // What happened to members' posts, and who followed them: the header's bell.
   const notifications = new NotificationsService(db, profilesService, now);
 
-  const emailConfirmation = new EmailConfirmation(
-    db,
-    usersService,
-    emailSender,
-    config.baseUrl,
-    now,
-  );
-
-  const usersRouter = new UsersRouter(
+  const usersRouter = usersRoutes({
     auth,
+    db,
     usersService,
     jwtService,
     profileImagesService,
-    emailConfirmation,
-    new TurnstileVerifier(
-      turnstile.secretKey,
-      turnstile.hostnames ?? config.turnstile.hostnames,
-      turnstile.fetch,
-    ),
-  ).router;
+    emailSender,
+    turnstile: {
+      ...turnstile,
+      hostnames: turnstile.hostnames ?? config.turnstile.hostnames,
+    },
+    baseUrl: config.baseUrl,
+    now,
+  });
 
   const socialLoginRouter = new SocialLoginRouter(
     usersService,
@@ -318,7 +310,17 @@ function createApp(
 
   app.use('/api', dutiesRouter);
   app.use('/api', relayParts.router);
-  app.use('/api', new VenuesRouter(new VenuesBoard(venues, now)).router);
+  app.use(
+    '/api',
+    ...venueRoutes({
+      auth,
+      db,
+      fetch: venues,
+      profilesService,
+      discord: discordAnnouncer,
+      now,
+    }),
+  );
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),

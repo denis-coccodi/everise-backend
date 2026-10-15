@@ -1,22 +1,10 @@
-import {DataCentre} from '../party-finder';
 import {FfxivVenue, Venue, toVenue} from './venue';
+import {VenueDataCentre} from './venue-data-centres';
 
 // How the board reaches FFXIV Venues; tests pass a fake.
 type VenuesFetch = (
   url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-// The data centres FFXIV Venues lists venues on (it has none in Japan).
-const VENUE_DATA_CENTRES = [
-  'Light',
-  'Chaos',
-  'Aether',
-  'Crystal',
-  'Dynamis',
-  'Primal',
-  'Materia',
-] as const satisfies readonly DataCentre[];
-type VenueDataCentre = (typeof VENUE_DATA_CENTRES)[number];
 
 // One data centre's venues opening within a week (about 200 KB).
 const FFXIV_VENUES = 'https://api.ffxivvenues.com/v1/venue';
@@ -118,8 +106,6 @@ export {
   FFXIV_VENUES,
   REFRESH_MS,
   STALE_MS,
-  VENUE_DATA_CENTRES,
-  VenueDataCentre,
   VenueList,
   VenuesBoard,
   VenuesFetch,

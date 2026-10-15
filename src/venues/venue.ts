@@ -31,6 +31,7 @@ interface FfxivVenue {
   description?: (string | null)[] | null;
   bannerUri?: string | null;
   location?: {
+    dataCenter?: string | null;
     world?: string | null;
     district?: string | null;
     ward?: number;
@@ -47,22 +48,39 @@ interface FfxivVenue {
   tags?: (string | null)[] | null;
   notices?: {start?: string; end?: string; message?: string}[] | null;
   resolution?: {start?: string; end?: string} | null;
+  // Its weekly or monthly openings, each with its next one.
+  schedule?:
+    | {
+        interval?: {intervalType?: number; intervalArgument?: number} | null;
+        resolution?: {start?: string; end?: string} | null;
+      }[]
+    | null;
 }
 
 const VENUE_PAGE = 'https://ffxivvenues.com/venue/';
 
-// The venue as the page shows it; undefined for one it doesn't: not safe
-// for work, not approved by FFXIV Venues' team, or with no opening to come.
+// Whether the page shows the venue at all: safe for work and approved by
+// FFXIV Venues' team.
+function isShown(
+  entry: FfxivVenue,
+): entry is FfxivVenue & {id: string; name: string} {
+  return !!entry.id && !!entry.name && entry.sfw === true && !!entry.approved;
+}
+
+// The venue as the page shows it; undefined for one it doesn't: not shown
+// at all (isShown), or with no opening to come.
 function toVenue(entry: FfxivVenue, now: Date): Venue | undefined {
-  const opensAt = Date.parse(entry.resolution?.start ?? '');
-  const closesAt = Date.parse(entry.resolution?.end ?? '');
+  const opening = nextOpening(entry.resolution, now);
+  if (!isShown(entry) || !opening) return undefined;
+  return {...shownFields(entry, now), ...opening};
+}
+
+// What every view of a venue shows, but its openings.
+function shownFields(
+  entry: FfxivVenue & {id: string; name: string},
+  now: Date,
+) {
   const at = now.getTime();
-  if (!entry.id || !entry.name || entry.sfw !== true || !entry.approved) {
-    return undefined;
-  }
-  if (Number.isNaN(opensAt) || Number.isNaN(closesAt) || closesAt <= at) {
-    return undefined;
-  }
   return {
     id: entry.id,
     name: entry.name,
@@ -82,6 +100,22 @@ function toVenue(entry: FfxivVenue, now: Date): Venue | undefined {
           at < Date.parse(notice.end ?? ''),
       )
       .map(notice => notice.message as string),
+  };
+}
+
+// An opening FFXIV Venues worked out (with the venue's offset), in UTC;
+// undefined when there's none, or it has ended.
+function nextOpening(
+  resolution: {start?: string; end?: string} | null | undefined,
+  now: Date,
+) {
+  const opensAt = Date.parse(resolution?.start ?? '');
+  const closesAt = Date.parse(resolution?.end ?? '');
+  const at = now.getTime();
+  if (Number.isNaN(opensAt) || Number.isNaN(closesAt) || closesAt <= at) {
+    return undefined;
+  }
+  return {
     opensAt: new Date(opensAt).toISOString(),
     closesAt: new Date(closesAt).toISOString(),
     openNow: opensAt <= at,
@@ -112,4 +146,4 @@ function addressOf(location: FfxivVenue['location']) {
   return parts.filter(Boolean).join(', ');
 }
 
-export {FfxivVenue, Venue, toVenue};
+export {FfxivVenue, Venue, isShown, nextOpening, shownFields, toVenue};
