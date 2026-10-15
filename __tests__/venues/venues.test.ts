@@ -254,3 +254,25 @@ describe('GET /api/venues', () => {
     expect((await venues()).status).toBe(502);
   });
 });
+
+describe('GET /api/venues/regions', () => {
+  test('lists the data centres with venues without asking FFXIV Venues, even while it is down', async () => {
+    ffxivVenues.status = 503;
+
+    const response = await request(app).get('/api/venues/regions');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['cache-control']).toBe('public, max-age=3600');
+    expect(response.body).toStrictEqual({
+      regions: [
+        {name: 'Europe', dataCentres: ['Light', 'Chaos']},
+        {
+          name: 'North America',
+          dataCentres: ['Aether', 'Crystal', 'Dynamis', 'Primal'],
+        },
+        {name: 'Oceania', dataCentres: ['Materia']},
+      ],
+    });
+    expect(ffxivVenues.requests).toEqual([]);
+  });
+});

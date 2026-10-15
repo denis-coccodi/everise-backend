@@ -3212,6 +3212,37 @@
         }
       }
     },
+    "/api/venues/regions": {
+      "get": {
+        "tags": [
+          "venues"
+        ],
+        "summary": "The data centres with venues, by region",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The regions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueRegionsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/waking-sands/characters/{id}/picture": {
       "get": {
         "tags": [
@@ -7437,6 +7468,46 @@
         "required": [
           "articles",
           "dataCentres"
+        ],
+        "additionalProperties": false
+      },
+      "VenueRegionsResponse": {
+        "type": "object",
+        "properties": {
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dataCentres": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Light",
+                      "Chaos",
+                      "Aether",
+                      "Crystal",
+                      "Dynamis",
+                      "Primal",
+                      "Materia"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "dataCentres"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "regions"
         ],
         "additionalProperties": false
       },

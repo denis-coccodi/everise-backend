@@ -28,6 +28,20 @@ const shownVenue = {
   notices: z.array(z.string()),
 };
 
+// The data centres with venues, by region (Europe first), for the page's
+// list.
+const VenueRegions = z.array(
+  z.strictObject({
+    name: z.string(),
+    dataCentres: z.array(VenueDataCentreName),
+  }),
+);
+
+const VenueRegionsResponse = responseSchema(
+  'VenueRegionsResponse',
+  z.strictObject({regions: VenueRegions}),
+);
+
 const Venue = z.strictObject({
   ...shownVenue,
   // Its next opening, or the one going on (openNow).
@@ -40,14 +54,7 @@ const VenuesResponse = responseSchema(
   'VenuesResponse',
   z.strictObject({
     dataCentre: VenueDataCentreName,
-    // The data centres with venues, by region (Europe first), for the
-    // page's list.
-    regions: z.array(
-      z.strictObject({
-        name: z.string(),
-        dataCentres: z.array(VenueDataCentreName),
-      }),
-    ),
+    regions: VenueRegions,
     // When the site last read FFXIV Venues.
     fetchedAt: isoDate,
     // The ones open now first, then by their next opening.
@@ -74,6 +81,7 @@ const VENUE_REGIONS = REGION_LIST.map(region => ({
 export {
   VENUE_REGIONS,
   VenueDataCentreName,
+  VenueRegionsResponse,
   VenuesQuery,
   VenuesResponse,
   shownVenue,
