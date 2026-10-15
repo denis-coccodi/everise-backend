@@ -30,6 +30,8 @@ const as = (token: string) => ({
     request(app).get(url).set('authorization', `Token ${token}`),
   put: (url: string) =>
     request(app).put(url).set('authorization', `Token ${token}`),
+  delete: (url: string) =>
+    request(app).delete(url).set('authorization', `Token ${token}`),
 });
 
 const png = readFileSync(join(__dirname, '../fixtures/images/small.png'));
@@ -176,6 +178,32 @@ describe('editing the Waking Sands characters', () => {
     expect(listed.body.characters[3].image).toBe(second.body.character.image);
   });
 
+  test('an admin goes back to the default picture; the upload is deleted', async () => {
+    const admin = as(await adminToken());
+    const uploaded = await admin
+      .put('/api/admin/characters/urianger/image')
+      .set('content-type', 'image/png')
+      .send(png);
+    const upload = uploaded.body.character.image as string;
+    expect(uploaded.body.character.edited.image).toBeTrue();
+
+    const reset = await admin.delete('/api/admin/characters/urianger/image');
+
+    expect(reset.status).toBe(200);
+    expect(reset.body.character).toMatchObject({
+      image: `${config.baseUrl}/api/waking-sands/characters/urianger/picture`,
+      edited: {image: false},
+    });
+    expect((await request(app).get(path(upload))).status).toBe(404);
+    const listed = await request(app).get('/api/waking-sands/room');
+    expect(listed.body.characters[1].image).toBe(reset.body.character.image);
+    // Already the default: nothing to do.
+    expect(
+      (await admin.delete('/api/admin/characters/urianger/image')).body
+        .character.edited.image,
+    ).toBeFalse();
+  });
+
   test("Tataru's bio and picture are her profile's and her posts' author's, on guests' roulette results", async () => {
     const admin = as(await adminToken());
     await admin
@@ -277,6 +305,9 @@ describe('editing the Waking Sands characters', () => {
           .send({character: {title: 'Mine now'}})
       ).status,
     ).toBe(403);
+    expect(
+      (await asMember.delete('/api/admin/characters/tataru/image')).status,
+    ).toBe(403);
 
     const admin = as(await adminToken());
     const unknown = await admin
@@ -288,5 +319,8 @@ describe('editing the Waking Sands characters', () => {
       .set('content-type', 'image/png')
       .send(png);
     expect(unknownPicture.status).toBe(404);
+    expect(
+      (await admin.delete('/api/admin/characters/moogle/image')).status,
+    ).toBe(422);
   });
 });

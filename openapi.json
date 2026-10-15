@@ -154,6 +154,50 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Go back to a character's default picture",
+        "description": "Admins only.",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The character.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCharacterResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/admin/staging-access": {
@@ -4223,12 +4267,16 @@
               },
               "bio": {
                 "type": "boolean"
+              },
+              "image": {
+                "type": "boolean"
               }
             },
             "required": [
               "title",
               "persona",
-              "bio"
+              "bio",
+              "image"
             ],
             "additionalProperties": false
           }

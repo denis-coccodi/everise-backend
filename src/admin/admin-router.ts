@@ -209,6 +209,23 @@ class AdminRouter {
       },
     );
 
+    // Back to the picture the character ships with; the upload is deleted.
+    route(
+      router,
+      {
+        method: 'delete',
+        path: '/admin/characters/:id/image',
+        summary: "Go back to a character's default picture",
+        auth,
+        params: CharacterParams,
+        responses: characterResponses,
+      },
+      async (req, res) => {
+        const character = await this.characters.resetPicture(req.params.id);
+        res.json({character});
+      },
+    );
+
     return router;
   }
 
