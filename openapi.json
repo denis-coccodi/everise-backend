@@ -3248,7 +3248,7 @@
         "tags": [
           "venues"
         ],
-        "summary": "One venue, with its regular openings",
+        "summary": "One venue, with its regular openings and this week's events",
         "parameters": [
           {
             "name": "id",
@@ -8317,10 +8317,151 @@
               "schedule"
             ],
             "additionalProperties": false
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "startsAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "endsAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "live": {
+                  "type": "boolean"
+                },
+                "ageRating": {
+                  "type": "string",
+                  "enum": [
+                    "EVERYONE",
+                    "TEEN",
+                    "MATURE"
+                  ]
+                },
+                "dataCentre": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "world": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "location": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "banner": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "recurring": {
+                  "type": "boolean"
+                },
+                "attendees": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "team": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "icon": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "discord": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "website": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "icon",
+                        "discord",
+                        "website"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "summary",
+                "startsAt",
+                "endsAt",
+                "live",
+                "ageRating",
+                "dataCentre",
+                "world",
+                "location",
+                "tags",
+                "banner",
+                "recurring",
+                "attendees",
+                "team",
+                "url"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
-          "venue"
+          "venue",
+          "events"
         ],
         "additionalProperties": false
       },

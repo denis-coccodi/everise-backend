@@ -1,6 +1,7 @@
 import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {route} from '../api';
+import {EventsAtVenues} from '../events';
 import {Auth} from '../middleware';
 import {
   NewVenueDiscordShare,
@@ -15,13 +16,15 @@ import {
   unreachable,
 } from './venue-shares-service';
 
-// A venue's own page on the site (open to everyone), and sharing it in the
-// Everise Discord (for members), which links back to that page.
+// A venue's own page on the site (open to everyone), with the week's events
+// surely held there, and sharing it in the Everise Discord (for members),
+// which links back to that page.
 class VenuePagesRouter {
   constructor(
     private readonly auth: Auth,
     private readonly pages: VenuePages,
     private readonly shares: VenueSharesService,
+    private readonly events: EventsAtVenues,
   ) {}
 
   get router() {
@@ -32,7 +35,7 @@ class VenuePagesRouter {
       {
         method: 'get',
         path: '/venues/:id',
-        summary: 'One venue, with its regular openings',
+        summary: "One venue, with its regular openings and this week's events",
         params: VenueParams,
         responses: {
           200: {description: 'The venue.', schema: VenuePageResponse},
@@ -42,7 +45,9 @@ class VenuePagesRouter {
         const venue = await this.pages.venue(req.params.id);
         if (venue === null) throw unreachable();
         if (!venue) throw notListed();
-        res.set('Cache-Control', 'public, max-age=60').json({venue});
+        const place = this.pages.place(req.params.id);
+        const events = place ? await this.events.at(place) : [];
+        res.set('Cache-Control', 'public, max-age=60').json({venue, events});
       },
     );
 

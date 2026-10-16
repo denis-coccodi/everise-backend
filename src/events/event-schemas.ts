@@ -42,13 +42,16 @@ const communityEvent = {
   url: z.string(),
 };
 
+// An event as the lists show it (the Events page, a venue's page).
+const EventCard = z.strictObject(communityEvent);
+
 const EventsResponse = responseSchema(
   'EventsResponse',
   z.strictObject({
     // When the site last read Partake.
     fetchedAt: isoDate,
     // The coming week's: the ones going on first, then by their start.
-    events: z.array(z.strictObject(communityEvent)),
+    events: z.array(EventCard),
   }),
 );
 
@@ -96,6 +99,7 @@ const EventDiscordShareResponse = responseSchema(
 );
 
 export {
+  EventCard,
   EventDiscordShareResponse,
   EventPageResponse,
   EventParams,
