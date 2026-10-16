@@ -488,7 +488,7 @@ How work is done in this repo is written down as skills in [`.claude/skills/`](.
 
 | Skill | For |
 | --- | --- |
-| `feature-branch` | Every change: a `feature/<name>` branch, a pull request, merging once `test` passes |
+| `feature-branch` | Every change: a `bugfix/`, `hotfix/` or `feature/` branch, Conventional Commits, a pull request, merging once `test` passes |
 | `backend-best-practices` | Writing code under `src/` and `__tests__/`: routers, services, errors, types, data, tests, file sizes |
 | `db-structure` | The data model (collections in `collections.md`) and the database diagram |
 | `deploy` | Staging and production, secrets, failing pipelines (`troubleshooting.md`) |
@@ -545,8 +545,8 @@ To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pi
 
 `main` is protected: changes can't be pushed to it directly, admins included. Every change goes through a pull request:
 
-1. Create a branch from `main` named `feature/<feature-name>`, e.g. `feature/staging-environment`.
-1. Push to it as often as you like; pushing a feature branch deploys nothing.
+1. Create a branch from `main` named `feature/<feature-name>` (e.g. `feature/staging-environment`), or `bugfix/<bug-description>` for a bug fix (e.g. `bugfix/flaky-tags-test`; `hotfix/` when production is broken). Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `fix(events): add .webp to bare banner names`.
+1. Push to it as often as you like; pushing one deploys nothing.
 1. Open a pull request to `main`. CI/CD runs **test** on it, and again on every push.
 1. Merge once **test** passes (the branch must be up to date with `main`). The merge deploys to staging.
 
