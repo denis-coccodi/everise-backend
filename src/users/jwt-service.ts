@@ -18,8 +18,10 @@ class JWTService {
     this.secondsToExpiration = jwtOptions.secondsToExpiration;
   }
 
+  // `sv` is the account's session version: a token from before a password
+  // change, or a "sign out everywhere", stops working.
   getToken(user: User) {
-    const token = jwt.sign({}, this.jwtSecretKey, {
+    const token = jwt.sign({sv: user.sessionVersion}, this.jwtSecretKey, {
       subject: user.id,
       issuer: this.jwtOptions.issuer,
       expiresIn: `${this.jwtOptions.secondsToExpiration}s`,
@@ -38,7 +40,12 @@ class JWTService {
       return undefined;
     }
 
-    return this.usersService.getUserById(decodedToken.sub);
+    const user = await this.usersService.getUserById(decodedToken.sub);
+    // Tokens from before session versions have none: version 0.
+    if (user && user.sessionVersion !== (decodedToken.sv ?? 0)) {
+      throw new jwt.JsonWebTokenError('session ended');
+    }
+    return user;
   }
 }
 

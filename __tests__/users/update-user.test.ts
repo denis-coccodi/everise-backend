@@ -16,6 +16,7 @@ describe('PUT /api/user', () => {
           email: faker.internet.email(),
           username: faker.internet.userName(),
           password: faker.internet.password(),
+          currentPassword: user.password,
           bio: faker.lorem.paragraphs(),
           image: faker.internet.url(),
         },
@@ -69,6 +70,7 @@ describe('PUT /api/user', () => {
       const requestBody = {
         user: {
           email: faker.internet.email(),
+          currentPassword: user.password,
         },
       };
 
@@ -267,6 +269,7 @@ describe('PUT /api/user', () => {
     const requestBody = {
       user: {
         password: faker.internet.password(),
+        currentPassword: user.password,
       },
     };
 
@@ -444,6 +447,7 @@ describe('PUT /api/user', () => {
       const requestBody = {
         user: {
           email: anotheruser.user.email,
+          currentPassword: user.password,
         },
       };
 

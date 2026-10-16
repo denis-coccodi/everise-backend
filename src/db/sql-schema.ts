@@ -25,6 +25,7 @@ const INDEXED: Record<string, string[]> = {
   media: ['userId'],
   profileImages: ['userId'],
   emailConfirmations: ['userId'],
+  passwordResets: ['userId', 'codeHash'],
   notifications: ['userId', 'actorId', 'articleId'],
   sharedListings: ['sharerId'],
   relayedPosts: ['channel'],

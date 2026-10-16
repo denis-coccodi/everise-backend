@@ -28,6 +28,9 @@ class User {
     readonly emailConfirmed = true,
     // A new address from the settings, waiting for its link to be opened.
     readonly pendingEmail?: string,
+    // Goes up when the password changes or the member signs out everywhere:
+    // tokens made before then no longer sign in.
+    readonly sessionVersion = 0,
   ) {}
 }
 

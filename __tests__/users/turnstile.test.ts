@@ -136,6 +136,29 @@ describe('the bot check (Turnstile)', () => {
     expect(response.status).toBe(202);
   });
 
+  test('the password reset forms take their own tokens', async () => {
+    const forgot = (turnstileToken?: string) =>
+      request(app)
+        .post('/api/users/password-reset')
+        .send({user: {email: 'nobody@example.com'}, turnstileToken});
+    const reset = (turnstileToken?: string) =>
+      request(app)
+        .post('/api/users/password-reset/confirm')
+        .send({code: 'AAAA-AAAA', password: 'long-enough', turnstileToken});
+
+    for (const response of [
+      await forgot(),
+      await forgot(tokenFor('login')),
+      await reset(),
+      await reset(tokenFor('forgot-password')),
+    ]) {
+      expect(response.status).toBe(403);
+    }
+    // Past the check: this app sends no email, and the code is made up.
+    expect((await forgot(tokenFor('forgot-password'))).status).toBe(503);
+    expect((await reset(tokenFor('reset-password'))).status).toBe(422);
+  });
+
   test('when siteverify is down, forms are refused (closed), with a message to retry', async () => {
     siteverify.status = 500;
 

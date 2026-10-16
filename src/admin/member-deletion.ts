@@ -31,8 +31,9 @@ interface DeletedMember {
 // comments on them), their comments elsewhere, their favourites, follows in
 // both directions, uploaded pictures and images, roulette posting limit,
 // notifications (theirs, and those they caused others) and the Party Finder
-// listings they shared, still watched. The privacy
-// policy promises this. The collections are those the services define.
+// listings they shared, still watched, and the confirmation link or reset
+// code waiting in their inbox. The privacy policy promises this. The
+// collections are those the services define.
 class MemberDeletion {
   constructor(
     private readonly db: Db,
@@ -74,6 +75,18 @@ class MemberDeletion {
     const shares = await this.db.find<Doc>('sharedListings', {
       where: [{field: 'sharerId', op: '==', value: user.id}],
     });
+    // The link or code waiting in their inbox.
+    const emailed = (
+      await Promise.all(
+        ['emailConfirmations', 'passwordResets'].map(async collection =>
+          (
+            await this.db.find<Doc>(collection, {
+              where: [{field: 'userId', op: '==', value: user.id}],
+            })
+          ).map(doc => remove(collection, doc.id)),
+        ),
+      )
+    ).flat();
 
     const [pictures, uploads] = await Promise.all([
       this.profileImagesService.filesOf(user.id),
@@ -103,6 +116,7 @@ class MemberDeletion {
       ...uploads.map(file => remove('media', file.id)),
       ...notifications.map(n => remove('notifications', n.id)),
       ...shares.map(share => remove('sharedListings', share.id)),
+      ...emailed,
       remove('postLimits', `user-${user.id}`),
       remove('postLimits', `pf-post-${user.id}`),
       remove('postLimits', `pf-discord-${user.id}`),

@@ -35,4 +35,4 @@ const image = () =>
     error: 'The picture must be a web address.',
   });
 
-export {bio, email, image, newPassword, signInPassword, username};
+export {bio, email, image, newPassword, requiredText, signInPassword, username};

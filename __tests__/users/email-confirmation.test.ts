@@ -244,7 +244,7 @@ describe('email confirmation', () => {
       return request(app)
         .put('/api/user')
         .set('Authorization', `Token ${token}`)
-        .send({user: {email}});
+        .send({user: {email, currentPassword: ALISAIE.password}});
     }
 
     test('waits for its link, then replaces the old one', async () => {

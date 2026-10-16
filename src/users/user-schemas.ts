@@ -5,6 +5,7 @@ import {
   email,
   image,
   newPassword,
+  requiredText,
   signInPassword,
   username,
 } from './user-fields';
@@ -87,7 +88,36 @@ const ResendConfirmation = requestSchema(
   }),
 );
 
-// The settings: only the fields being changed.
+// "Forgot password?": where to send the code.
+const PasswordResetRequest = requestSchema(
+  'PasswordResetRequest',
+  z.object({
+    user: z.object({email: email()}),
+    turnstileToken: turnstileToken(),
+  }),
+);
+
+// A code may be sent to `email`, if it has an account.
+const PasswordResetResponse = responseSchema(
+  'PasswordResetResponse',
+  z.strictObject({passwordReset: z.strictObject({email: z.string()})}),
+);
+
+// The code from the email, which finds the account, and the new password.
+const NewPasswordWithCode = requestSchema(
+  'NewPasswordWithCode',
+  z.object({
+    code: requiredText('Enter the code from the email.').max(32, {
+      error:
+        'That code is wrong or has expired. Check it, or ask for a new one.',
+    }),
+    password: newPassword(),
+    turnstileToken: turnstileToken(),
+  }),
+);
+
+// The settings: only the fields being changed. A new password or email
+// address also needs currentPassword (unless the account has none).
 const UserUpdate = requestSchema(
   'UserUpdate',
   z.object({
@@ -95,6 +125,7 @@ const UserUpdate = requestSchema(
       email: email().optional(),
       username: username().optional(),
       password: newPassword().optional(),
+      currentPassword: z.string().max(1024).optional(),
       bio: bio().optional(),
       image: image().optional(),
       darkMode: z.boolean().optional(),
@@ -106,7 +137,10 @@ export {
   ConfirmationResponse,
   EmailConfirmationToken,
   LoginUser,
+  NewPasswordWithCode,
   NewUser,
+  PasswordResetRequest,
+  PasswordResetResponse,
   RegistrationResponse,
   ResendConfirmation,
   UserResponse,

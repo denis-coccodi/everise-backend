@@ -16,6 +16,10 @@ import {ProviderSignIns} from './provider-sign-ins';
 // How long an unconfirmed sign-up keeps its username.
 const UNCONFIRMED_DAYS = 7;
 
+function sameEmail(a: string, b: string) {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
 class UsersService {
   private readonly usersCollection = 'users';
 
@@ -109,14 +113,14 @@ class UsersService {
       throw new NotFoundError(`user "${userId}" not found`);
     }
 
-    if (params.email && params.email !== userData.email) {
+    if (params.email && !sameEmail(params.email, userData.email)) {
       await this.validateEmailOrThrow(params.email);
       if (confirmNewEmail) {
         userData.pendingEmail = params.email;
       } else {
         userData.email = params.email;
       }
-    } else if (params.email === userData.email) {
+    } else if (params.email) {
       // Back to the current address: nothing waits any more.
       userData.pendingEmail = undefined;
     }
@@ -124,12 +128,6 @@ class UsersService {
     if (params.username && params.username !== userData.username) {
       await this.validateUsernameOrThrow(params.username);
       userData.username = params.username;
-    }
-
-    if (params.password) {
-      checkNewPassword(params.password);
-      const passwordHash = await hashPassword(params.password);
-      userData.passwordHash = passwordHash;
     }
 
     if (params.bio !== undefined && params.bio !== userData.bio) {
@@ -151,7 +149,6 @@ class UsersService {
         email: userData.email,
         pendingEmail: userData.pendingEmail,
         username: userData.username,
-        passwordHash: userData.passwordHash,
         bio: userData.bio,
         image: userData.image,
         darkMode: userData.darkMode,
@@ -297,13 +294,17 @@ class UsersService {
     }
   }
 
+  // An email address is found in any case (Name@… is name@…): exactly as
+  // typed first, then by looking through everyone.
   private async findUserDoc(field: 'email' | 'username', value: string) {
     const [userDoc] = await this.db.find<UserDoc>(this.usersCollection, {
       where: [{field, op: '==', value}],
       limit: 1,
     });
+    if (userDoc || field !== 'email') return userDoc as UserDoc | undefined;
 
-    return userDoc as UserDoc | undefined;
+    const everyone = await this.db.find<UserDoc>(this.usersCollection);
+    return everyone.find(doc => sameEmail(doc.email, value));
   }
 
   private async validateEmailOrThrow(email: string) {
