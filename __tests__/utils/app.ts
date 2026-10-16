@@ -7,6 +7,7 @@ import {SqlDocumentStore} from '../../src/db';
 import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
+import {EventsFetch} from '../../src/events';
 import {MemoryFileStore} from '../../src/files';
 import {GifFetch} from '../../src/media';
 import {LocalMarket, UniversalisFetch} from '../../src/market';
@@ -215,6 +216,43 @@ const venuesFetch: VenuesFetch = async url => {
   };
 };
 
+// Partake: `events` and `status` are its next answers (one event,
+// `event(id: n)`, is found among them, or isn't found); `queries` the
+// GraphQL queries the app sent. Like Partake, it answers the week's events
+// rated at most MATURE: the ADULT ones a test adds are sent anyway, so the
+// app's own check is tested.
+const partake = {
+  events: [] as Record<string, unknown>[],
+  status: 200,
+  queries: [] as string[],
+};
+const eventsFetch: EventsFetch = async url => {
+  const query = new URL(url).searchParams.get('query') ?? '';
+  partake.queries.push(query);
+  const ok = partake.status < 300;
+  const one = /event\(id: (\d+)\)/.exec(query)?.[1];
+  if (one) {
+    const event = partake.events.find(entry => entry.id === Number(one));
+    const body = event
+      ? {data: {event}}
+      : {
+          errors: [
+            {
+              message: 'The requested entity was not found',
+              extensions: {code: 'NotFound'},
+            },
+          ],
+          data: {event: null},
+        };
+    return {ok, status: partake.status, json: async () => body};
+  }
+  return {
+    ok,
+    status: partake.status,
+    json: async () => ({data: {events: partake.events}}),
+  };
+};
+
 // Universalis' sales history: `sales` by "<world name>:<item id>" (in any
 // order), `status` its next answers' status, `requests` what the app asked.
 // The market reads 4 sales at a time, and `stepsPerRequest` windows of them
@@ -369,6 +407,7 @@ const app = createApp(
     ),
     universalis: universalisFetch,
     venues: venuesFetch,
+    events: eventsFetch,
   },
 );
 
@@ -392,6 +431,7 @@ export {
   mail,
   providers,
   marketOptions,
+  partake,
   relays,
   staging,
   universalis,
