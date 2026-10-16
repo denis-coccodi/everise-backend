@@ -154,9 +154,11 @@ function toEventDetail(
 }
 
 // An attachment is the file's name on Partake's CDN (or, at times, its
-// whole address).
+// whole address). Some names come without an extension, which the CDN
+// answers with an error; it serves them as WebP.
 function assetUrl(name: string | null | undefined) {
   if (!name) return null;
+  if (/^[\w-]+$/.test(name)) return `${PARTAKE_ASSETS}${name}.webp`;
   if (/^[\w.-]+$/.test(name)) return PARTAKE_ASSETS + name;
   return httpsUrl(name);
 }
