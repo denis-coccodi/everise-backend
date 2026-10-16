@@ -159,6 +159,18 @@ describe('GET /api/events', () => {
     expect(second).toMatchObject({banner: null, team: null});
   });
 
+  test('gives a banner named without an extension one the CDN serves', async () => {
+    partake.events = [
+      event({attachments: ['e3fad8f1bb1c4254976e30a143016b61']}),
+    ];
+
+    const [shown] = (await events()).body.events;
+
+    expect(shown.banner).toBe(
+      'https://cdn.partake.gg/assets/e3fad8f1bb1c4254976e30a143016b61.webp',
+    );
+  });
+
   test('keeps a long description to a short summary', async () => {
     partake.events = [event({description: `${'word '.repeat(100)}`})];
 
