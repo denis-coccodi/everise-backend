@@ -12,7 +12,9 @@ import {TurnstileAction, TurnstileVerifier} from '../turnstile';
 import {JWTService} from './jwt-service';
 import {ProfileImagesService} from './profile-images-service';
 import {EmailConfirmation} from './email-confirmation';
+import {PasswordReset} from './password-reset';
 import {User} from './user';
+import {UserPasswords} from './user-passwords';
 import {
   ConfirmationResponse,
   EmailConfirmationToken,
@@ -70,6 +72,11 @@ function setSessionCookie(
   });
 }
 
+// Signs the browser out.
+function clearSessionCookie(res: express.Response) {
+  res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
+}
+
 class UsersRouter {
   constructor(
     private readonly auth: Auth,
@@ -78,6 +85,8 @@ class UsersRouter {
     private readonly profileImagesService: ProfileImagesService,
     private readonly emailConfirmation: EmailConfirmation,
     private readonly turnstile: TurnstileVerifier,
+    private readonly passwords: UserPasswords,
+    private readonly passwordReset: PasswordReset,
   ) {}
 
   // Signs the browser in as this user, and answers with them.
@@ -206,20 +215,6 @@ class UsersRouter {
     route(
       router,
       {
-        method: 'post',
-        path: '/users/logout',
-        summary: 'Sign out (clears the session cookie)',
-        responses: {204: {description: 'Signed out.'}},
-      },
-      (_req, res) => {
-        res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
-        res.status(StatusCodes.NO_CONTENT).send();
-      },
-    );
-
-    route(
-      router,
-      {
         method: 'get',
         path: '/user',
         summary: 'The signed-in user',
@@ -243,19 +238,31 @@ class UsersRouter {
       },
       async (req, res) => {
         const user = req.user!;
+        const {password, currentPassword, ...settings} = req.body.user;
+        const newEmail =
+          settings.email !== undefined &&
+          settings.email.toLowerCase() !== user.email.toLowerCase();
+        if (password !== undefined || newEmail) {
+          await this.passwords.checkCurrent(user.id, currentPassword, password);
+        }
         // A new email address is used once its link is opened.
-        const updated = await this.usersService.updateUser(
-          user.id,
-          req.body.user,
-          {confirmNewEmail: this.emailConfirmation.enabled},
-        );
+        let updated = await this.usersService.updateUser(user.id, settings, {
+          confirmNewEmail: this.emailConfirmation.enabled,
+        });
         if (
           updated.pendingEmail &&
           updated.pendingEmail !== user.pendingEmail
         ) {
           await this.emailConfirmation.send(updated, updated.pendingEmail);
         }
-        res.json(this.toDto(updated));
+        if (password === undefined) {
+          res.json(this.toDto(updated));
+          return;
+        }
+        // Every other device is signed out; this one gets a new session.
+        updated = await this.passwords.set(user.id, password);
+        await this.passwordReset.notifyChanged(updated);
+        res.json(this.signIn(res, updated));
       },
     );
 
@@ -274,4 +281,10 @@ class UsersRouter {
   }
 }
 
-export {UsersRouter, UserDto, readImageBody, setSessionCookie};
+export {
+  UsersRouter,
+  UserDto,
+  clearSessionCookie,
+  readImageBody,
+  setSessionCookie,
+};

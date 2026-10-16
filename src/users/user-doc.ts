@@ -5,10 +5,10 @@ import {AssignableRole, Role, SignInMethod, User} from './user';
 
 // A user as the database stores them, and how it becomes a User.
 
+// The settings; the password changes through UserPasswords.
 interface UpdateUserParams {
   email?: string;
   username?: string;
-  password?: string;
   bio?: string | null;
   image?: string;
   darkMode?: boolean;
@@ -36,6 +36,8 @@ interface UserDoc extends Doc {
   pendingEmail?: string;
   // Given by an admin; admins themselves come from ADMIN_EMAILS.
   role?: AssignableRole;
+  // In every token; raised to sign out everywhere (missing counts as 0).
+  sessionVersion?: number;
 }
 
 // Someone signing in with a provider, as the provider vouches for them;
@@ -95,6 +97,7 @@ function toUser(doc: UserDoc): User {
     signInMethodsOf(doc),
     doc.emailConfirmed !== false,
     doc.pendingEmail,
+    doc.sessionVersion ?? 0,
   );
 }
 

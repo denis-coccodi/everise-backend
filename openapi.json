@@ -3193,6 +3193,110 @@
         }
       }
     },
+    "/api/users/logout-everywhere": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Sign out on every device",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Signed out everywhere."
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/password-reset": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Email a code to choose a new password with",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sent, if the address has an account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/password-reset/confirm": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set a new password with the email's code",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPasswordWithCode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Changed; every device was signed out."
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/venues": {
       "get": {
         "tags": [
@@ -3705,6 +3809,53 @@
           "user"
         ]
       },
+      "PasswordResetRequest": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string",
+                "format": "email",
+                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              }
+            },
+            "required": [
+              "email"
+            ]
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "NewPasswordWithCode": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "code",
+          "password"
+        ]
+      },
       "UserUpdate": {
         "type": "object",
         "properties": {
@@ -3723,6 +3874,10 @@
               "password": {
                 "type": "string",
                 "minLength": 1
+              },
+              "currentPassword": {
+                "type": "string",
+                "maxLength": 1024
               },
               "bio": {
                 "type": [
@@ -4278,6 +4433,27 @@
             "$ref": "#/components/schemas/ConfirmationResponse"
           }
         ]
+      },
+      "PasswordResetResponse": {
+        "type": "object",
+        "properties": {
+          "passwordReset": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "email"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "passwordReset"
+        ],
+        "additionalProperties": false
       },
       "SandsLine": {
         "type": "object",

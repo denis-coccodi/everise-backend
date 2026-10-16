@@ -1,28 +1,22 @@
 import {createHash, randomBytes} from 'crypto';
 import {Db, Doc} from '../db';
 import {EmailSender} from '../email';
-import {TooManyRequestsError} from '../errors';
+import {SendCount, escapeHtml, nextSend} from './send-limits';
 import {User} from './user';
 import {UsersService} from './users-service';
 
 // One link waiting to be opened, per account. Only the token's hash is
 // stored, so the database alone can't confirm anything.
-interface ConfirmationDoc extends Doc {
+interface ConfirmationDoc extends Doc, SendCount {
   userId: string;
   // The address the link was sent to: the account's, or the one it's
   // changing to.
   email: string;
   tokenHash: string;
   expiresAt: string;
-  lastSentAt: string;
-  // Links sent since dayStartedAt, against DAILY_SENDS.
-  sendsToday: number;
-  dayStartedAt: string;
 }
 
 const LINK_HOURS = 24;
-const RESEND_SECONDS = 60;
-const DAILY_SENDS = 5;
 const HOUR_MS = 60 * 60 * 1000;
 
 function hashOf(token: string) {
@@ -54,29 +48,7 @@ class EmailConfirmation {
     if (!this.sender) return;
     const now = this.now();
     const [existing] = await this.findBy('userId', user.id);
-
-    let sendsToday = 0;
-    let dayStartedAt = now.toISOString();
-    if (existing) {
-      const sinceLast = now.getTime() - Date.parse(existing.lastSentAt);
-      if (sinceLast < RESEND_SECONDS * 1000) {
-        const wait = Math.ceil(RESEND_SECONDS - sinceLast / 1000);
-        throw new TooManyRequestsError(
-          `We've just sent a link. Try again in ${wait} seconds.`,
-          wait,
-        );
-      }
-      if (now.getTime() - Date.parse(existing.dayStartedAt) < 24 * HOUR_MS) {
-        sendsToday = existing.sendsToday;
-        dayStartedAt = existing.dayStartedAt;
-      }
-      if (sendsToday >= DAILY_SENDS) {
-        throw new TooManyRequestsError(
-          "That's enough links for today. Try again tomorrow.",
-          24 * 60 * 60,
-        );
-      }
-    }
+    const count = nextSend(existing, now, 'link');
 
     const token = randomBytes(32).toString('base64url');
     const data = {
@@ -84,9 +56,7 @@ class EmailConfirmation {
       email,
       tokenHash: hashOf(token),
       expiresAt: new Date(now.getTime() + LINK_HOURS * HOUR_MS).toISOString(),
-      lastSentAt: now.toISOString(),
-      sendsToday: sendsToday + 1,
-      dayStartedAt,
+      ...count,
     };
     if (existing) {
       await this.db.update(this.collection, existing.id, data);
@@ -145,23 +115,15 @@ class EmailConfirmation {
       : `Welcome to Everise, ${user.username}! Open this link to confirm your email address and sign in:`;
     const outro = `The link works once, for ${LINK_HOURS} hours. If you didn't ask for it, ignore this email.`;
     const text = `${intro}\n\n${link}\n\n${outro}\n`;
-    const href = escape(link);
+    const href = escapeHtml(link);
     const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#1b2a4a;line-height:1.5">
-<p>${escape(intro)}</p>
+<p>${escapeHtml(intro)}</p>
 <p><a href="${href}" style="display:inline-block;padding:10px 18px;border-radius:6px;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:bold">Confirm my email</a></p>
 <p style="font-size:13px">Or copy this address into your browser:<br><span style="word-break:break-all">${href}</span></p>
-<p style="font-size:13px;color:#4b5563">${escape(outro)}</p>
+<p style="font-size:13px;color:#4b5563">${escapeHtml(outro)}</p>
 </body></html>`;
     return {to: email, subject, text, html};
   }
-}
-
-function escape(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 export {EmailConfirmation};

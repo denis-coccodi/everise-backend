@@ -137,7 +137,7 @@ function createApp(
   // What happened to members' posts, and who followed them: the header's bell.
   const notifications = new NotificationsService(db, profilesService, now);
 
-  const usersRouter = usersRoutes({
+  const usersRouters = usersRoutes({
     auth,
     db,
     usersService,
@@ -293,7 +293,7 @@ function createApp(
   // Files under public/ (e.g. /assets/images/*) are served by Cloudflare's
   // static assets before a request ever reaches this app.
 
-  app.use('/api', usersRouter);
+  app.use('/api', ...usersRouters);
 
   app.use('/api', socialLoginRouter);
 

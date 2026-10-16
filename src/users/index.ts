@@ -7,6 +7,8 @@ export {
 } from './user';
 export {UsersService} from './users-service';
 export {EmailConfirmation} from './email-confirmation';
+export {PasswordReset} from './password-reset';
+export {UserPasswords} from './user-passwords';
 export {JWTService} from './jwt-service';
 export {UsersRouter} from './users-router';
 export {usersRoutes} from './users-routes';
