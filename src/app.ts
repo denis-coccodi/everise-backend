@@ -299,7 +299,6 @@ function createApp(
       now,
     }),
   );
-  app.use('/api', eventRoutes({fetch: events, now}));
   app.use(
     '/api',
     eventRoutes({
