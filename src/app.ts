@@ -21,6 +21,7 @@ import {
   XivApiClient,
 } from './duties';
 import {emailSenderFor} from './email';
+import {eventRoutes} from './events';
 import {docsRouter} from './api';
 import {errorMiddleware} from './error-handler';
 import {MemoryFileStore, UploadStorage} from './files';
@@ -72,6 +73,7 @@ function createApp(
     market = noMarket,
     universalis = (url, init) => fetch(url, init),
     venues = url => fetch(url),
+    events = url => fetch(url),
     turnstile = config.turnstile,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
@@ -321,6 +323,7 @@ function createApp(
       now,
     }),
   );
+  app.use('/api', eventRoutes({fetch: events, now}));
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),

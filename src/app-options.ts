@@ -1,6 +1,7 @@
 import {StagingAccess} from './admin';
 import {DiscordFetch} from './discord';
 import {EmailSender} from './email';
+import {EventsFetch} from './events';
 import {FileStore} from './files';
 import {GifFetch} from './media';
 import {MarketSource, UniversalisFetch} from './market';
@@ -55,6 +56,8 @@ interface AppOptions {
   universalis?: UniversalisFetch;
   // How the app reaches FFXIV Venues for the player-run venues.
   venues?: VenuesFetch;
+  // How the app reaches Partake for the community events.
+  events?: EventsFetch;
   // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
   // and how the app reaches siteverify. Without a secret, nothing is checked.
   turnstile?: {

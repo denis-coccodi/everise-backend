@@ -13,6 +13,7 @@ export {
   live,
   mail,
   marketOptions,
+  partake,
   providers,
   relays,
   staging,
@@ -27,3 +28,4 @@ export * as jwt from './jwt';
 export {atOrAfter} from './dates';
 export {xivpfEntry} from './xivpf-entries';
 export {ffxivVenue} from './ffxiv-venues';
+export {partakeEvent} from './partake-events';
