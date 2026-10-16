@@ -226,13 +226,24 @@ function createApp(
   });
   // The relayed Discord channels: the weekly posts and the hunt trains.
   const relayParts = relayRoutes({db, fileStore, settings: relays, now});
-  // The community events (Partake), also shown on the venues' pages.
+  // The community events (Partake) and the venues (FFXIV Venues), each
+  // shown on the other's pages: an event's venue is looked up when asked.
   const eventParts = eventRoutes({
     auth,
     db,
     fetch: events,
     profilesService,
     discord: discordAnnouncer,
+    venueAt: event => venueParts.venueAt(event),
+    now,
+  });
+  const venueParts = venueRoutes({
+    auth,
+    db,
+    fetch: venues,
+    profilesService,
+    discord: discordAnnouncer,
+    events: eventParts.atVenues,
     now,
   });
 
@@ -297,18 +308,7 @@ function createApp(
 
   app.use('/api', dutiesRouter);
   app.use('/api', relayParts.router);
-  app.use(
-    '/api',
-    ...venueRoutes({
-      auth,
-      db,
-      fetch: venues,
-      profilesService,
-      discord: discordAnnouncer,
-      events: eventParts.atVenues,
-      now,
-    }),
-  );
+  app.use('/api', ...venueParts.routers);
   app.use('/api', eventParts.router);
   app.use(
     '/api',

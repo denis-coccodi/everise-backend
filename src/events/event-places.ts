@@ -90,6 +90,12 @@ function isAt(event: CommunityEvent, place: VenuePlace) {
   return !!invite && invite === inviteCode(event.team?.discord);
 }
 
+// Which venue on the site an event is surely held at, or null: answered by
+// the Venues (src/venues), so the events needn't know about them.
+type VenueLookup = (
+  event: CommunityEvent,
+) => Promise<{id: string; name: string} | null>;
+
 // The week's events at a venue, for its page ("Upcoming events here").
 class EventsAtVenues {
   constructor(private readonly board: EventsBoard) {}
@@ -101,4 +107,12 @@ class EventsAtVenues {
   }
 }
 
-export {EventsAtVenues, VenuePlace, districtOf, houseIn, inviteCode};
+export {
+  EventsAtVenues,
+  VenueLookup,
+  VenuePlace,
+  districtOf,
+  houseIn,
+  inviteCode,
+  isAt,
+};

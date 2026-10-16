@@ -1329,7 +1329,7 @@
         "tags": [
           "events"
         ],
-        "summary": "One community event",
+        "summary": "One community event, and the venue it is held at",
         "parameters": [
           {
             "name": "id",
@@ -7105,10 +7105,34 @@
               "description"
             ],
             "additionalProperties": false
+          },
+          "venue": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "event"
+          "event",
+          "venue"
         ],
         "additionalProperties": false
       },

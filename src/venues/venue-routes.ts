@@ -8,9 +8,11 @@ import {VenuePagesRouter} from './venue-pages-router';
 import {VenueSharesService} from './venue-shares-service';
 import {VenuesBoard, VenuesFetch} from './venues-board';
 import {VenuesRouter} from './venues-router';
+import {venueLookup} from './venue-lookup';
 
 // Everything the Venues need, put together for the app (src/app.ts): the
-// data centres' lists, each venue's page, and sharing a venue in Discord.
+// data centres' lists, each venue's page, and sharing a venue in Discord;
+// and finding the venue an event is held at, for the Events.
 interface VenueParts {
   auth: Auth;
   db: Db;
@@ -31,10 +33,15 @@ function venueRoutes(parts: VenueParts) {
     parts.discord,
     parts.now,
   );
-  return [
-    new VenuesRouter(new VenuesBoard(parts.fetch, parts.now)).router,
-    new VenuePagesRouter(parts.auth, pages, shares, parts.events).router,
-  ];
+  const board = new VenuesBoard(parts.fetch, parts.now);
+  return {
+    routers: [
+      new VenuesRouter(board).router,
+      new VenuePagesRouter(parts.auth, pages, shares, parts.events).router,
+    ],
+    // The venue an event is held at, for the event's page.
+    venueAt: venueLookup(board),
+  };
 }
 
 export {venueRoutes};

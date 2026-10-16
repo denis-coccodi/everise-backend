@@ -4,7 +4,7 @@ import {Auth} from '../middleware';
 import {ProfilesService} from '../profiles';
 import {EventsFetch} from './event';
 import {EventPages} from './event-pages';
-import {EventsAtVenues} from './event-places';
+import {EventsAtVenues, VenueLookup} from './event-places';
 import {EventSharesService} from './event-shares-service';
 import {EventsBoard} from './events-board';
 import {EventsRouter} from './events-router';
@@ -19,6 +19,8 @@ interface EventParts {
   fetch: EventsFetch;
   profilesService: ProfilesService;
   discord: DiscordAnnouncer;
+  // The venue an event is held at, for its page.
+  venueAt?: VenueLookup;
   now: () => Date;
 }
 
@@ -33,7 +35,13 @@ function eventRoutes(parts: EventParts) {
   );
   const board = new EventsBoard(parts.fetch, parts.now);
   return {
-    router: new EventsRouter(parts.auth, board, pages, shares).router,
+    router: new EventsRouter(
+      parts.auth,
+      board,
+      pages,
+      shares,
+      parts.venueAt ?? (async () => null),
+    ).router,
     atVenues: new EventsAtVenues(board),
   };
 }

@@ -63,6 +63,10 @@ const EventPageResponse = responseSchema(
       // As the organisers wrote it, in Markdown.
       description: z.string(),
     }),
+    // The venue on the site it is surely held at (on its world, at its
+    // house or run by the team whose Discord the venue gives), the only one
+    // that week; null for none or more than one.
+    venue: z.strictObject({id: z.string(), name: z.string()}).nullable(),
   }),
 );
 
