@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {isoDate, requestSchema, responseSchema} from '../api';
+import {EventCard} from '../events';
 import {VenueDataCentreName, shownVenue} from './venue-schemas';
 import {MAX_VENUE_SHARE_COMMENT} from './venue-shares-service';
 
@@ -32,7 +33,13 @@ const VenueDetail = z.strictObject({
 
 const VenuePageResponse = responseSchema(
   'VenuePageResponse',
-  z.strictObject({venue: VenueDetail}),
+  z.strictObject({
+    venue: VenueDetail,
+    // The week's events on Partake surely held there: on its world, and at
+    // its house or run by the team whose Discord it gives. Empty while
+    // Partake can't be reached.
+    events: z.array(EventCard),
+  }),
 );
 
 // One venue, by FFXIV Venues' id for it.

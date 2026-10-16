@@ -4,12 +4,15 @@ import {Auth} from '../middleware';
 import {ProfilesService} from '../profiles';
 import {EventsFetch} from './event';
 import {EventPages} from './event-pages';
+import {EventsAtVenues} from './event-places';
 import {EventSharesService} from './event-shares-service';
 import {EventsBoard} from './events-board';
 import {EventsRouter} from './events-router';
 
 // Everything the Events need, put together for the app (src/app.ts): the
-// week's events, each event's page, and sharing an event in Discord.
+// week's events, each event's page, and sharing an event in Discord; and
+// the week's events at a venue, for the venues' pages (from the same
+// board, so both share one read of Partake).
 interface EventParts {
   auth: Auth;
   db: Db;
@@ -28,12 +31,11 @@ function eventRoutes(parts: EventParts) {
     parts.discord,
     parts.now,
   );
-  return new EventsRouter(
-    parts.auth,
-    new EventsBoard(parts.fetch, parts.now),
-    pages,
-    shares,
-  ).router;
+  const board = new EventsBoard(parts.fetch, parts.now);
+  return {
+    router: new EventsRouter(parts.auth, board, pages, shares).router,
+    atVenues: new EventsAtVenues(board),
+  };
 }
 
 export {eventRoutes};

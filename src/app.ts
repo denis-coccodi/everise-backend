@@ -226,6 +226,15 @@ function createApp(
   });
   // The relayed Discord channels: the weekly posts and the hunt trains.
   const relayParts = relayRoutes({db, fileStore, settings: relays, now});
+  // The community events (Partake), also shown on the venues' pages.
+  const eventParts = eventRoutes({
+    auth,
+    db,
+    fetch: events,
+    profilesService,
+    discord: discordAnnouncer,
+    now,
+  });
 
   // What the Worker's cron trigger runs.
   if (jobs) {
@@ -296,20 +305,11 @@ function createApp(
       fetch: venues,
       profilesService,
       discord: discordAnnouncer,
+      events: eventParts.atVenues,
       now,
     }),
   );
-  app.use(
-    '/api',
-    eventRoutes({
-      auth,
-      db,
-      fetch: events,
-      profilesService,
-      discord: discordAnnouncer,
-      now,
-    }),
-  );
+  app.use('/api', eventParts.router);
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),

@@ -1,4 +1,6 @@
+import {VenuePlace} from '../events';
 import {VenueDetail, toVenueDetail} from './venue-detail';
+import {placeOf} from './venue-place';
 import {FfxivVenue} from './venue';
 import {FFXIV_VENUES, REFRESH_MS, STALE_MS, VenuesFetch} from './venues-board';
 
@@ -31,6 +33,12 @@ class VenuePages {
     }
     if (!kept || at - kept.at > STALE_MS) return null;
     return kept.entry ? toVenueDetail(kept.entry, this.now()) : undefined;
+  }
+
+  // Where a venue read by venue() is, for matching events to it.
+  place(id: string): VenuePlace | undefined {
+    const entry = this.read.get(id)?.entry;
+    return entry ? placeOf(entry) : undefined;
   }
 
   // What FFXIV Venues says now; undefined when it can't be reached.
