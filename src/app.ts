@@ -3,14 +3,7 @@ import {AppOptions} from './app-options';
 import cors from 'cors';
 import express from 'express';
 import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
-import {
-  ArticleSharesRouter,
-  ArticleSharesService,
-  ArticlesRouter,
-  ArticlesService,
-  CommentsRouter,
-  CommentsService,
-} from './articles';
+import {ArticlesService, CommentsService, articleRoutes} from './articles';
 import {config} from './config';
 import {Db} from './db';
 import {
@@ -195,31 +188,17 @@ function createApp(
     notifications,
   ).router;
 
-  const articlesRouter = new ArticlesRouter(
+  const articleRouters = articleRoutes({
     auth,
+    db,
     articlesService,
+    commentsService,
     usersService,
     profilesService,
     notifications,
-  ).router;
-  // Sharing a post in the Everise Discord after it was posted.
-  const articleSharesRouter = new ArticleSharesRouter(
-    auth,
-    new ArticleSharesService(
-      db,
-      articlesService,
-      profilesService,
-      discordAnnouncer,
-      now,
-    ),
-  ).router;
-  const commentsRouter = new CommentsRouter(
-    auth,
-    articlesService,
-    commentsService,
-    profilesService,
-    notifications,
-  ).router;
+    discord: discordAnnouncer,
+    now,
+  });
 
   const xivApiClient = new XivApiClient(httpGet);
 
@@ -304,10 +283,7 @@ function createApp(
 
   app.use('/api', profilesRouter);
 
-  app.use('/api', articlesRouter);
-  app.use('/api', articleSharesRouter);
-
-  app.use('/api', commentsRouter);
+  app.use('/api', ...articleRouters);
   app.use('/api', new NotificationsRouter(auth, notifications).router);
 
   app.use('/api', dutiesRouter);
@@ -323,7 +299,17 @@ function createApp(
       now,
     }),
   );
-  app.use('/api', eventRoutes({fetch: events, now}));
+  app.use(
+    '/api',
+    eventRoutes({
+      auth,
+      db,
+      fetch: events,
+      profilesService,
+      discord: discordAnnouncer,
+      now,
+    }),
+  );
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
