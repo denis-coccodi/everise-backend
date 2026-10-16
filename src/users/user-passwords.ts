@@ -1,5 +1,6 @@
 import {Db} from '../db';
 import {NotFoundError} from '../errors';
+import {LeakedPasswords} from './leaked-passwords';
 import {checkNewPassword, hashPassword, passwordMatches} from './passwords';
 import {User} from './user';
 import {UserDoc, toUser} from './user-doc';
@@ -10,7 +11,17 @@ import {UserDoc, toUser} from './user-doc';
 class UserPasswords {
   private readonly collection = 'users';
 
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    // Without it (local runs, most tests), leaks aren't checked.
+    private readonly leaked?: LeakedPasswords,
+  ) {}
+
+  // A new password's rules, and that it hasn't leaked. Before set.
+  async checkNew(password: string) {
+    checkNewPassword(password);
+    await this.leaked?.check(password);
+  }
 
   // Before the settings change the password (`newPassword`) or the email
   // address, so nothing is saved when they can't: the current password,
@@ -31,17 +42,19 @@ class UserPasswords {
       }
       checkNewPassword(newPassword);
     }
-    if (!doc.passwordHash) return;
-    if (!currentPassword) {
-      throw new RangeError('Enter your current password.');
+    if (doc.passwordHash) {
+      if (!currentPassword) {
+        throw new RangeError('Enter your current password.');
+      }
+      if (!(await passwordMatches(currentPassword, doc.passwordHash))) {
+        throw new RangeError('Your current password is wrong.');
+      }
     }
-    if (!(await passwordMatches(currentPassword, doc.passwordHash))) {
-      throw new RangeError('Your current password is wrong.');
-    }
+    if (newPassword !== undefined) await this.checkNew(newPassword);
   }
 
   // A new password: from the settings once checkCurrent has passed, or
-  // with a reset code. Signs out everywhere.
+  // with a reset code once checkNew has. Signs out everywhere.
   async set(userId: string, password: string): Promise<User> {
     checkNewPassword(password);
     const passwordHash = await hashPassword(password);

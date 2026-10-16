@@ -78,6 +78,8 @@ createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   market: new HubMarket(env.MARKET),
   venues: cachedSourceFetch,
   events: cachedSourceFetch,
+  // New passwords are checked against Have I Been Pwned's leaks.
+  leakedPasswords: (url, init) => fetch(url, init),
 }).listen(PORT);
 
 const http = httpServerHandler({port: PORT}) as {

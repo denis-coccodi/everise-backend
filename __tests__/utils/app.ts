@@ -1,3 +1,4 @@
+import {createHash} from 'crypto';
 import {readFile} from 'fs/promises';
 import {join} from 'path';
 import {StagingAccess, SyncResult} from '../../src/admin';
@@ -14,6 +15,7 @@ import {LocalMarket, UniversalisFetch} from '../../src/market';
 import {PartyFinderBoard, XivpfFetch} from '../../src/party-finder';
 import {RelayFetch} from '../../src/relays';
 import {OAuthFetch} from '../../src/social-login';
+import {PwnedFetch} from '../../src/users';
 import {VenuesFetch} from '../../src/venues';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeXivApi} from './fake-xivapi';
@@ -351,6 +353,29 @@ const characterModel: CharacterModel = {
   },
 };
 
+// Have I Been Pwned's password ranges: `passwords` are the leaked ones,
+// `status` its next answers' status, `requests` what the app asked.
+const pwned = {
+  passwords: new Set(['qwerty123456']),
+  status: 200,
+  requests: [] as {url: string; headers: Record<string, string>}[],
+};
+const pwnedFetch: PwnedFetch = async (url, init) => {
+  pwned.requests.push({url, headers: init.headers});
+  const prefix = url.slice(-5);
+  const lines = [...pwned.passwords]
+    .map(p => createHash('sha1').update(p).digest('hex').toUpperCase())
+    .filter(hash => hash.startsWith(prefix))
+    .map(hash => `${hash.slice(5)}:42`);
+  // Padding, as Have I Been Pwned adds: suffixes seen 0 times.
+  lines.push('0000000000000000000000000000000000A:0');
+  return {
+    ok: pwned.status < 300,
+    status: pwned.status,
+    text: async () => lines.join('\r\n'),
+  };
+};
+
 // The token in the last confirmation link sent to `email`.
 function lastConfirmationToken(email: string) {
   const message = [...mail.sent].reverse().find(m => m.to === email);
@@ -408,6 +433,7 @@ const app = createApp(
     universalis: universalisFetch,
     venues: venuesFetch,
     events: eventsFetch,
+    leakedPasswords: pwnedFetch,
   },
 );
 
@@ -432,6 +458,7 @@ export {
   providers,
   marketOptions,
   partake,
+  pwned,
   relays,
   staging,
   universalis,

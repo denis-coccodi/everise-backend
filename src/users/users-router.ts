@@ -2,17 +2,14 @@ import * as express from 'express';
 import {StatusCodes} from 'http-status-codes';
 import {route} from '../api';
 import {config} from '../config';
-import {
-  EmailNotConfirmedError,
-  InvalidCredentialsError,
-  NotFoundError,
-} from '../errors';
+import {EmailNotConfirmedError, InvalidCredentialsError} from '../errors';
 import {Auth} from '../middleware';
 import {TurnstileAction, TurnstileVerifier} from '../turnstile';
 import {JWTService} from './jwt-service';
 import {ProfileImagesService} from './profile-images-service';
 import {EmailConfirmation} from './email-confirmation';
 import {PasswordReset} from './password-reset';
+import {SignInLimit} from './sign-in-limit';
 import {User} from './user';
 import {UserPasswords} from './user-passwords';
 import {
@@ -87,6 +84,7 @@ class UsersRouter {
     private readonly turnstile: TurnstileVerifier,
     private readonly passwords: UserPasswords,
     private readonly passwordReset: PasswordReset,
+    private readonly signInLimit: SignInLimit,
   ) {}
 
   // Signs the browser in as this user, and answers with them.
@@ -159,13 +157,8 @@ class UsersRouter {
       async (req, res) => {
         await this.botCheck(req, req.body.turnstileToken, 'login');
         const {email, password} = req.body.user;
-        try {
-          if (!(await this.usersService.verifyPassword(email, password))) {
-            throw new InvalidCredentialsError();
-          }
-        } catch (err) {
-          if (err instanceof NotFoundError) throw new InvalidCredentialsError();
-          throw err;
+        if (!(await this.signInLimit.verify(email, password))) {
+          throw new InvalidCredentialsError();
         }
 
         const user = (await this.usersService.getUserByEmail(email))!;

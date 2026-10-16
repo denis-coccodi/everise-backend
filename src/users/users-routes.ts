@@ -4,9 +4,11 @@ import {Auth} from '../middleware';
 import {TurnstileFetch, TurnstileVerifier} from '../turnstile';
 import {EmailConfirmation} from './email-confirmation';
 import {JWTService} from './jwt-service';
+import {LeakedPasswords} from './leaked-passwords';
 import {PasswordReset} from './password-reset';
 import {PasswordRouter} from './password-router';
 import {ProfileImagesService} from './profile-images-service';
+import {SignInLimit} from './sign-in-limit';
 import {UserPasswords} from './user-passwords';
 import {UsersRouter} from './users-router';
 import {UsersService} from './users-service';
@@ -24,6 +26,7 @@ interface UsersParts {
   turnstile: {secretKey?: string; hostnames: string[]; fetch?: TurnstileFetch};
   baseUrl: string;
   now: () => Date;
+  leaked?: LeakedPasswords;
 }
 
 function usersRoutes(parts: UsersParts) {
@@ -34,7 +37,7 @@ function usersRoutes(parts: UsersParts) {
     parts.baseUrl,
     parts.now,
   );
-  const passwords = new UserPasswords(parts.db);
+  const passwords = new UserPasswords(parts.db, parts.leaked);
   const passwordReset = new PasswordReset(
     parts.db,
     parts.usersService,
@@ -58,6 +61,7 @@ function usersRoutes(parts: UsersParts) {
       turnstile,
       passwords,
       passwordReset,
+      new SignInLimit(parts.db, parts.usersService, parts.now),
     ).router,
     new PasswordRouter(parts.auth, passwords, passwordReset, turnstile).router,
   ];
