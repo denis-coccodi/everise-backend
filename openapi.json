@@ -1366,6 +1366,52 @@
         }
       }
     },
+    "/api/events/discord": {
+      "post": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Share an event in the Everise Discord",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewEventDiscordShare"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sent to the channel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDiscordShareResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/frontline": {
       "get": {
         "tags": [
@@ -3916,6 +3962,23 @@
         },
         "required": [
           "comment"
+        ]
+      },
+      "NewEventDiscordShare": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "eventId"
         ]
       },
       "NewPartyFinderPost": {
@@ -7046,6 +7109,19 @@
         },
         "required": [
           "event"
+        ],
+        "additionalProperties": false
+      },
+      "EventDiscordShareResponse": {
+        "type": "object",
+        "properties": {
+          "shared": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "shared"
         ],
         "additionalProperties": false
       },

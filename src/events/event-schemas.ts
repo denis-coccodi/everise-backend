@@ -1,6 +1,7 @@
 import {z} from 'zod';
-import {isoDate, responseSchema} from '../api';
+import {isoDate, requestSchema, responseSchema} from '../api';
 import {SHOWN_RATINGS} from './event';
+import {MAX_EVENT_SHARE_COMMENT} from './event-shares-service';
 
 // The largest id Partake's API takes (a GraphQL Int).
 const MAX_EVENT_ID = 2_147_483_647;
@@ -62,13 +63,42 @@ const EventPageResponse = responseSchema(
   }),
 );
 
+const NOT_AN_ID = "That isn't an event's number.";
+const eventId = (number: z.ZodNumber) =>
+  number
+    .int({error: NOT_AN_ID})
+    .min(1, {error: NOT_AN_ID})
+    .max(MAX_EVENT_ID, {error: NOT_AN_ID});
+
 // One event, by Partake's number for it.
 const EventParams = z.object({
-  id: z.coerce
-    .number({error: "That isn't an event's number."})
-    .int({error: "That isn't an event's number."})
-    .min(1, {error: "That isn't an event's number."})
-    .max(MAX_EVENT_ID, {error: "That isn't an event's number."}),
+  id: eventId(z.coerce.number({error: NOT_AN_ID})),
 });
 
-export {EventPageResponse, EventParams, EventsResponse};
+// Sharing an event in the Everise Discord: the backend reads the event
+// itself, so only the events the site shows can be shared.
+const NewEventDiscordShare = requestSchema(
+  'NewEventDiscordShare',
+  z.object({
+    eventId: eventId(z.number({error: NOT_AN_ID})),
+    comment: z
+      .string()
+      .max(MAX_EVENT_SHARE_COMMENT, {
+        error: `Keep the message to ${MAX_EVENT_SHARE_COMMENT} characters.`,
+      })
+      .optional(),
+  }),
+);
+
+const EventDiscordShareResponse = responseSchema(
+  'EventDiscordShareResponse',
+  z.strictObject({shared: z.literal(true)}),
+);
+
+export {
+  EventDiscordShareResponse,
+  EventPageResponse,
+  EventParams,
+  EventsResponse,
+  NewEventDiscordShare,
+};
