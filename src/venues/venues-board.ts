@@ -1,4 +1,4 @@
-import {FfxivVenue, Venue, toVenue} from './venue';
+import {FfxivVenue, Venue, isShown, toVenue} from './venue';
 import {VenueDataCentre} from './venue-data-centres';
 
 // How the board reaches FFXIV Venues; tests pass a fake.
@@ -43,13 +43,7 @@ class VenuesBoard {
 
   // Null while FFXIV Venues can't be reached.
   async venues(dataCentre: VenueDataCentre): Promise<VenueList | null> {
-    const attempted = this.attemptedAt.get(dataCentre) ?? -Infinity;
-    if (this.now().getTime() - attempted >= REFRESH_MS) {
-      await this.refresh(dataCentre);
-    } else {
-      await this.reading.get(dataCentre);
-    }
-    const snapshot = this.read.get(dataCentre);
+    const snapshot = await this.snapshotOf(dataCentre);
     if (!snapshot) return null;
     const now = this.now();
     return {
@@ -65,6 +59,24 @@ class VenuesBoard {
             a.name.localeCompare(b.name),
         ),
     };
+  }
+
+  // The venues the site shows on a data centre this week, as FFXIV Venues
+  // sent them, for matching events to them; null while it can't be reached.
+  async shownEntries(dataCentre: VenueDataCentre) {
+    const snapshot = await this.snapshotOf(dataCentre);
+    return snapshot ? snapshot.entries.filter(isShown) : null;
+  }
+
+  // The data centre's venues as last read, read again when it's time.
+  private async snapshotOf(dataCentre: VenueDataCentre) {
+    const attempted = this.attemptedAt.get(dataCentre) ?? -Infinity;
+    if (this.now().getTime() - attempted >= REFRESH_MS) {
+      await this.refresh(dataCentre);
+    } else {
+      await this.reading.get(dataCentre);
+    }
+    return this.read.get(dataCentre);
   }
 
   // One read per data centre at a time: requests arriving meanwhile wait.

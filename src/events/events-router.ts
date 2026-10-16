@@ -15,6 +15,7 @@ import {
   notListed,
   unreachable,
 } from './event-shares-service';
+import {VenueLookup} from './event-places';
 import {EventsBoard} from './events-board';
 
 // The Events page: the community's events in the coming week, as Partake
@@ -26,6 +27,7 @@ class EventsRouter {
     private readonly board: EventsBoard,
     private readonly pages: EventPages,
     private readonly shares: EventSharesService,
+    private readonly venueAt: VenueLookup,
   ) {}
 
   get router() {
@@ -54,7 +56,7 @@ class EventsRouter {
       {
         method: 'get',
         path: '/events/:id',
-        summary: 'One community event',
+        summary: 'One community event, and the venue it is held at',
         params: EventParams,
         responses: {
           200: {description: 'The event.', schema: EventPageResponse},
@@ -64,7 +66,15 @@ class EventsRouter {
         const event = await this.pages.event(req.params.id);
         if (event === null) throw unreachable();
         if (!event) throw notListed();
-        res.set('Cache-Control', 'public, max-age=60').json({event});
+        // The venues failing leaves the event's page without its venue.
+        const venue = await this.venueAt(event).catch(error => {
+          console.error(
+            `Events: finding event ${event.id}'s venue failed`,
+            error,
+          );
+          return null;
+        });
+        res.set('Cache-Control', 'public, max-age=60').json({event, venue});
       },
     );
 
