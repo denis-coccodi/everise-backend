@@ -34,6 +34,7 @@ import {DiscordAnnouncer, DiscordRouter, DiscordWidgetReader} from './discord';
 import {NotificationsRouter, NotificationsService} from './notifications';
 import {
   JWTService,
+  LeakedPasswords,
   ProfileImagesService,
   UsersService,
   usersRoutes,
@@ -68,11 +69,13 @@ function createApp(
     venues = url => fetch(url),
     events = url => fetch(url),
     turnstile = config.turnstile,
+    leakedPasswords,
     uploadStorageBytes = config.uploadStorageBytes,
     jobs,
   }: AppOptions = {},
 ) {
-  const usersService = new UsersService(db, now);
+  const leaked = leakedPasswords && new LeakedPasswords(leakedPasswords);
+  const usersService = new UsersService(db, now, leaked);
 
   const jwtService = new JWTService(usersService, config.jwt.secretKey, {
     issuer: config.jwt.issuer,
@@ -150,6 +153,7 @@ function createApp(
     },
     baseUrl: config.baseUrl,
     now,
+    leaked,
   });
 
   const socialLoginRouter = new SocialLoginRouter(

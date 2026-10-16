@@ -9,6 +9,7 @@ import {PartyFinderSource} from './party-finder';
 import {RelayFetch} from './relays';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
+import {PwnedFetch} from './users';
 import {VenuesFetch} from './venues';
 import {LoadBundledPicture} from './waking-sands';
 import {CharacterModel} from './waking-sands';
@@ -65,6 +66,9 @@ interface AppOptions {
     hostnames?: string[];
     fetch?: TurnstileFetch;
   };
+  // How the app reaches Have I Been Pwned to refuse new passwords that
+  // leaked. Without it (local runs, tests) they aren't checked.
+  leakedPasswords?: PwnedFetch;
   // The bytes everyone's uploads may keep together.
   uploadStorageBytes?: number;
   // Filled in by createApp: the jobs the Worker's cron trigger runs (and

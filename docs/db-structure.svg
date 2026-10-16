@@ -25,7 +25,7 @@
 
   <!-- Heading -->
   <text x="40" y="48" font-size="22" font-weight="700" fill="#0f172a">Everise database structure</text>
-  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite) holding documents in one SQL table: the app's 18 collections, no fixed schema (the cached FFXIV data is in the README).</text>
+  <text x="40" y="72" font-size="13.5" fill="#475569">One Durable Object <tspan font-family="Consolas, Menlo, monospace">EveriseDb</tspan> (SQLite) holding documents in one SQL table: the app's 19 collections, no fixed schema (the cached FFXIV data is in the README).</text>
 
   <!-- Storage notes panel -->
   <rect x="40" y="100" width="340" height="270" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
@@ -392,8 +392,20 @@
     <text x="908" y="1952" class="field">createdAt, updatedAt</text><text x="1144" y="1952" class="type" text-anchor="end">Date</text>
   </g>
 
+  <!-- signInFailures: wrong passwords per email address (its hash), for 15 minutes -->
+  <g>
+    <rect x="440" y="1835" width="300" height="136" rx="10" class="box"/>
+    <path d="M450,1835 h280 a10,10 0 0 1 10,10 v30 h-300 v-30 a10,10 0 0 1 10,-10 z" fill="#64748b"/>
+    <text x="456" y="1861" class="title">signInFailures</text>
+    <text x="724" y="1861" class="key" text-anchor="end">docs: signInFailures</text>
+    <rect x="452" y="1884" width="26" height="16" rx="3" class="pk"/><text x="465" y="1896" class="badge" text-anchor="middle">PK</text>
+    <text x="488" y="1896" class="field">id</text><text x="724" y="1896" class="type" text-anchor="end">sha-256 of the email</text>
+    <text x="488" y="1922" class="field">count, windowStartedAt</text><text x="724" y="1922" class="type" text-anchor="end">number, ms</text>
+    <text x="488" y="1948" class="field">createdAt, updatedAt</text><text x="724" y="1948" class="type" text-anchor="end">Date</text>
+  </g>
+
   <!-- Footer -->
   <text x="40" y="2004" font-size="12" fill="#64748b">Source: src/db/sql-document-store.ts, src/users/users-service.ts, src/profiles/profiles-service.ts, src/articles/articles-service.ts, src/users/profile-images-service.ts,</text>
   <text x="40" y="2022" font-size="12" fill="#64748b">src/roulette-posts/roulette-posts-service.ts, src/media/media-service.ts, src/users/email-confirmation.ts, src/users/password-reset.ts, src/waking-sands/waking-sands-service.ts, src/waking-sands/characters-service.ts,</text>
-  <text x="40" y="2040" font-size="12" fill="#64748b">src/files/upload-storage.ts, src/notifications/notification-docs.ts, src/party-finder-shares/shared-listings.ts, src/relays/relay-docs.ts</text>
+  <text x="40" y="2040" font-size="12" fill="#64748b">src/files/upload-storage.ts, src/notifications/notification-docs.ts, src/party-finder-shares/shared-listings.ts, src/relays/relay-docs.ts, src/users/sign-in-limit.ts</text>
 </svg>

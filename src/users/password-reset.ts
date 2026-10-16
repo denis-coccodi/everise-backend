@@ -87,6 +87,7 @@ class PasswordReset {
         'That code is wrong or has expired. Check it, or ask for a new one.',
       );
     }
+    await this.passwords.checkNew(password);
     const user = await this.passwords.set(doc.userId, password);
     await this.db.delete(this.collection, doc.id);
     await this.notifyChanged(user);

@@ -14,6 +14,7 @@ export {
   mail,
   marketOptions,
   partake,
+  pwned,
   providers,
   relays,
   staging,

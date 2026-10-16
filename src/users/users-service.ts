@@ -10,6 +10,7 @@ import {
   isAdminEmail,
   toUser,
 } from './user-doc';
+import {LeakedPasswords} from './leaked-passwords';
 import {checkNewPassword, hashPassword, passwordMatches} from './passwords';
 import {ProviderSignIns} from './provider-sign-ins';
 
@@ -26,6 +27,8 @@ class UsersService {
   constructor(
     private readonly db: Db,
     private readonly now: () => Date = () => new Date(),
+    // Without it (local runs, most tests), leaks aren't checked.
+    private readonly leaked?: LeakedPasswords,
   ) {}
 
   // A new account. With `confirmed` false it can't be signed in to until its
@@ -45,6 +48,7 @@ class UsersService {
     await this.validateUsernameOrThrow(username);
 
     checkNewPassword(password);
+    await this.leaked?.check(password);
 
     const passwordHash = await hashPassword(password);
 
