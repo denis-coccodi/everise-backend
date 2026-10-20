@@ -10,7 +10,7 @@ const THANCRED = {
 };
 const LEAKED = 'qwerty123456';
 const LEAK_MESSAGE =
-  'That password has appeared in a data leak, so it would be easy to guess. Choose another one.';
+  "Please choose a different password: this one is on a public list of passwords leaked from other websites, so it's easy to guess. This doesn't mean your account was exposed; we only compared it with that list.";
 
 function signUp(password: string, email = THANCRED.email) {
   return request(app)
