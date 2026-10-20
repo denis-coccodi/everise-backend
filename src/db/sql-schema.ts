@@ -24,6 +24,8 @@ const INDEXED: Record<string, string[]> = {
   relayedPosts: ['channel'],
 };
 
+const DROPPED_INDEXES = ['facebookId', 'microsoftId'];
+
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS docs (
     collection TEXT NOT NULL,
@@ -43,6 +45,9 @@ const SCHEMA = [
       field =>
         `CREATE INDEX IF NOT EXISTS docs_by_${field} ON docs (collection, ${fieldSql(field)})`,
     ),
+  // Indexes of fields nothing filters on any more: Facebook and Microsoft
+  // sign-in, never set up, were removed in October 2026.
+  ...DROPPED_INDEXES.map(field => `DROP INDEX IF EXISTS docs_by_${field}`),
 ];
 
 // A field as SQL. Field names come from the code, never from requests, and

@@ -200,6 +200,37 @@ describe('SqlDocumentStore', () => {
       db.find('posts', {where: [{field: "x') OR 1=1 --", op: '==', value: 1}]}),
     ).rejects.toThrow('Bad field name');
   });
+
+  test('drops the indexes of fields nothing filters on any more', () => {
+    // A database from before, with the Facebook and Microsoft indexes.
+    const storage = new SqliteStorage();
+    new SqlDocumentStore(storage);
+    for (const field of ['facebookId', 'microsoftId']) {
+      storage.sql.exec(
+        `CREATE INDEX docs_by_${field} ON docs (collection, json_extract(data, '$.${field}'))`,
+      );
+    }
+    const indexes = () =>
+      storage.sql
+        .exec("SELECT name FROM sqlite_master WHERE type = 'index'")
+        .toArray()
+        .map(row => row.name);
+    expect(indexes()).toIncludeAllMembers([
+      'docs_by_facebookId',
+      'docs_by_microsoftId',
+    ]);
+
+    new SqlDocumentStore(storage);
+
+    expect(indexes()).not.toIncludeAnyMembers([
+      'docs_by_facebookId',
+      'docs_by_microsoftId',
+    ]);
+    expect(indexes()).toIncludeAllMembers([
+      'docs_by_googleId',
+      'docs_by_email',
+    ]);
+  });
 });
 
 describe('copyKeyValueDocuments', () => {
