@@ -10,8 +10,10 @@ type PwnedFetch = (
 const RANGE_URL = 'https://api.pwnedpasswords.com/range/';
 const TIMEOUT_MS = 3000;
 
-// Refuses a new password that has shown up in a data leak (Have I Been
-// Pwned's Pwned Passwords): those are the first ones guessed. Only the
+// Refuses a new password that is on Have I Been Pwned's public list of
+// passwords leaked from other sites (Pwned Passwords): those are the first
+// ones guessed. The message only says it's too easy to guess: details about
+// leaks would sound as if the member's own account had leaked. Only the
 // first 5 characters of the password's SHA-1 leave the app (k-anonymity),
 // and the answer is padded so its size says nothing either. When the
 // service can't be reached the password is allowed: it's a nicety, not a
@@ -22,7 +24,7 @@ class LeakedPasswords {
   async check(password: string) {
     if (await this.leaked(password)) {
       throw new RangeError(
-        'That password has appeared in a data leak, so it would be easy to guess. Choose another one.',
+        'That password is too easy to guess. Please choose a different one.',
       );
     }
   }
