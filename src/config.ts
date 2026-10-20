@@ -23,16 +23,11 @@ const envVarsSchema = z.object({
   CF_ACCESS_POLICY_ID: z.string().optional(),
   // The setting's earlier name, still read when CF_ACCESS_POLICY_ID isn't set.
   CF_ACCESS_GROUP_ID: z.string().optional(),
-  // Sign-in with Google, Facebook, Microsoft and Discord: each needs its
-  // app's id and secret (Google Cloud console, Meta for Developers,
-  // Microsoft Entra, Discord Developer Portal); without them, that button
-  // isn't shown.
+  // Sign-in with Google and Discord: each needs its app's id and secret
+  // (Google Cloud console, Discord Developer Portal); without them, that
+  // button isn't shown.
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  FACEBOOK_APP_ID: z.string().optional(),
-  FACEBOOK_APP_SECRET: z.string().optional(),
-  MICROSOFT_CLIENT_ID: z.string().optional(),
-  MICROSOFT_CLIENT_SECRET: z.string().optional(),
   DISCORD_CLIENT_ID: z.string().optional(),
   DISCORD_CLIENT_SECRET: z.string().optional(),
   // Announces new posts in a Discord channel (the channel's webhook
@@ -100,14 +95,6 @@ const config = {
     google: {
       clientId: envVars.GOOGLE_CLIENT_ID,
       clientSecret: envVars.GOOGLE_CLIENT_SECRET,
-    },
-    facebook: {
-      clientId: envVars.FACEBOOK_APP_ID,
-      clientSecret: envVars.FACEBOOK_APP_SECRET,
-    },
-    microsoft: {
-      clientId: envVars.MICROSOFT_CLIENT_ID,
-      clientSecret: envVars.MICROSOFT_CLIENT_SECRET,
     },
     discord: {
       clientId: envVars.DISCORD_CLIENT_ID,

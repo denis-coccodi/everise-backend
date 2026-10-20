@@ -1,4 +1,4 @@
-// A provider account (Google, Facebook, Microsoft, Discord) that shares no
+// A provider account (Google, Discord) that shares no
 // confirmed email address, so it can't be matched to an Everise account or
 // make one.
 class MissingEmailError extends Error {

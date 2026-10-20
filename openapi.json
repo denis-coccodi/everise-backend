@@ -4364,8 +4364,6 @@
               "enum": [
                 "password",
                 "google",
-                "facebook",
-                "microsoft",
                 "discord"
               ]
             }
@@ -4622,8 +4620,6 @@
               "enum": [
                 "password",
                 "google",
-                "facebook",
-                "microsoft",
                 "discord"
               ]
             }
@@ -8705,8 +8701,6 @@
               "type": "string",
               "enum": [
                 "google",
-                "facebook",
-                "microsoft",
                 "discord"
               ]
             }

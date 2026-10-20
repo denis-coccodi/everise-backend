@@ -40,7 +40,7 @@ class UserDto {
       darkMode: user.darkMode ?? true,
       role: user.role,
       // How this account can be signed in to, e.g. ["password", "google"]:
-      // the settings show the Google and Facebook accounts tied to it.
+      // the settings show the Google and Discord accounts tied to it.
       signInMethods: user.signInMethods,
       // A new address from the settings, until its link is opened.
       pendingEmail: user.pendingEmail ?? null,

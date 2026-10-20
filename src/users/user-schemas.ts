@@ -26,9 +26,7 @@ const UserSchema = responseSchema(
     darkMode: z.boolean(),
     role: z.enum(['admin', 'staging-tester', 'user']),
     // How the account can be signed in to, e.g. ["password", "google"].
-    signInMethods: z.array(
-      z.enum(['password', 'google', 'facebook', 'microsoft', 'discord']),
-    ),
+    signInMethods: z.array(z.enum(['password', 'google', 'discord'])),
     // A new address from the settings, until its link is opened.
     pendingEmail: z.string().nullable(),
   }),

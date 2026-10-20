@@ -25,9 +25,7 @@ const Member = responseSchema(
     image: z.string(),
     role: z.enum(['admin', 'staging-tester', 'user']),
     // How they sign in, e.g. ["google"] for an account made with Google.
-    signInMethods: z.array(
-      z.enum(['password', 'google', 'facebook', 'microsoft', 'discord']),
-    ),
+    signInMethods: z.array(z.enum(['password', 'google', 'discord'])),
     // False for a sign-up whose email link hasn't been opened yet.
     emailConfirmed: z.boolean(),
   }),

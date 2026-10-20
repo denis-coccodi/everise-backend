@@ -18,13 +18,12 @@ interface UserDoc extends Doc {
   email: string;
   username: string;
   // Unset for someone who only ever signed in with a provider (Google,
-  // Facebook, Microsoft, Discord).
+  // Discord).
   passwordHash?: string;
   // The provider accounts that sign in to this one, by the provider's id for
-  // the person.
+  // the person. Accounts from before October 2026 may also hold facebookId
+  // or microsoftId, from providers since dropped; nothing reads them.
   googleId?: string;
-  facebookId?: string;
-  microsoftId?: string;
   discordId?: string;
   bio?: string;
   image?: string;
@@ -53,14 +52,10 @@ type SignInProvider = Exclude<SignInMethod, 'password'>;
 
 const PROVIDER_FIELDS = {
   google: 'googleId',
-  facebook: 'facebookId',
-  microsoft: 'microsoftId',
   discord: 'discordId',
 } as const;
 const PROVIDER_NAMES = {
   google: 'Google',
-  facebook: 'Facebook',
-  microsoft: 'Microsoft',
   discord: 'Discord',
 } as const;
 
