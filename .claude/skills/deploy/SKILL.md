@@ -18,16 +18,16 @@ Each Worker has its own Durable Objects: `EveriseDb` (`DB`, the data) and `LiveH
 
 Changes reach `main` only through pull requests (see the `feature-branch` skill); direct pushes are rejected. Merging is the "push to `main`" that triggers the staging deploy.
 
-`.github/workflows/ci-cd.yaml` (**CI/CD**: push to `main`, PRs, and `workflow_dispatch` on any branch):
+`.github/workflows/ci-cd.yaml` (**Test and deploy staging**: push to `main`, PRs, and `workflow_dispatch` on any branch):
 - **test**: `npm ci` then `npm test`, which also runs `tsc --noEmit` and `gts lint` via `posttest`. Test env vars are set in the workflow; `.env` is not committed.
 - **deploy-staging** (after test, on push to `main` or a manual run): deploys staging with message `<branch>@<sha>`, runs `scripts/smoke.sh create` against it, and writes a summary (on `main`, with a link to the production workflow). GitHub environment `staging`, any branch. Job-level `concurrency: deploy-staging` serializes deploys.
-- Deploy another branch to staging: `gh workflow run ci-cd.yaml --ref <branch>` (or Actions → CI/CD → Run workflow). There is one staging Worker, so this replaces what is there until the next merge to `main`. Tell the user which branch staging is now running.
+- Deploy another branch to staging: `gh workflow run ci-cd.yaml --ref <branch>` (or Actions → Test and deploy staging → Run workflow). There is one staging Worker, so this replaces what is there until the next merge to `main`. Tell the user which branch staging is now running.
 
 `.github/workflows/deploy-production.yaml` (**Deploy production**, `workflow_dispatch` only):
-- First checks that `GITHUB_SHA` has a successful CI/CD push run (`gh run list --commit ... --status success`); otherwise fails without deploying.
+- First checks that `GITHUB_SHA` has a successful Test and deploy staging push run (`gh run list --commit ... --status success`); otherwise fails without deploying.
 - Then `wrangler deploy` and a curl of `/api/tags`. GitHub environment `production`, limited to `main`, no reviewers.
 
-Production deploys are the user's decision: they start it from Actions → Deploy production → **Run workflow**. Only start it yourself (`gh workflow run deploy-production.yaml --ref main`) when the user explicitly asks for a production deploy, and only after the commit's CI/CD run is green.
+Production deploys are the user's decision: they start it from Actions → Deploy production → **Run workflow**. Only start it yourself (`gh workflow run deploy-production.yaml --ref main`) when the user explicitly asks for a production deploy, and only after the commit's Test and deploy staging run is green.
 
 Before pushing, run `npm test` locally; it must end with exit code 0, not just passing Jest.
 
