@@ -553,6 +553,8 @@ To try another branch on staging: Actions → **Test and deploy staging** → **
 **Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose **Test and deploy staging** run (tests and staging) has not succeeded.
 
 **Refresh game data from XIVAPI** (`.github/workflows/refresh-game-data.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh game data from XIVAPI** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
+
+**Dependabot** (`.github/dependabot.yml`) opens pull requests every Monday that update the npm packages and the GitHub Actions: one for all minor and patch updates, one per major update. They come from `dependabot/…` branches, the one exception to the branch names below, and are merged like any other PR once **test** passes.
 ### Contributing
 
 `main` is protected: changes can't be pushed to it directly, admins included. Every change goes through a pull request:

@@ -1,0 +1,28 @@
+# Weekly pull requests that update the dependencies. Minor and patch updates
+# come together in one PR per ecosystem; each major update gets its own, as it
+# may need code changes. Every PR runs the `test` check like any other.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Conventional Commits: build(deps): …, build(deps-dev): …
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
