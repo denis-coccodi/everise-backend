@@ -11,7 +11,7 @@ import {
 } from './user-doc';
 import type {UsersService} from './users-service';
 
-// Sign-in with Google, Facebook, Microsoft or Discord: finding, tying or
+// Sign-in with Google or Discord: finding, tying or
 // making the Everise account (UsersService.signInWithProvider).
 class ProviderSignIns {
   private readonly usersCollection = 'users';

@@ -7,19 +7,16 @@ type OAuthFetch = (
   init?: {method?: string; headers?: Record<string, string>; body?: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
-const PROVIDERS = ['google', 'facebook', 'microsoft', 'discord'] as const;
+const PROVIDERS = ['google', 'discord'] as const;
 type Provider = (typeof PROVIDERS)[number];
 
 const PROVIDER_NAMES: Record<Provider, string> = {
   google: 'Google',
-  facebook: 'Facebook',
-  microsoft: 'Microsoft',
   discord: 'Discord',
 };
 
-// An app registered with the provider (Google Cloud console, Meta for
-// Developers, Microsoft Entra, Discord Developer Portal). Unset means that
-// sign-in button isn't offered.
+// An app registered with the provider (Google Cloud console, Discord
+// Developer Portal). Unset means that sign-in button isn't offered.
 interface ProviderApp {
   clientId?: string;
   clientSecret?: string;
@@ -50,27 +47,15 @@ class SocialLoginError extends Error {
   }
 }
 
-const GRAPH = 'https://graph.facebook.com/v23.0';
-
-// Microsoft's "consumers" endpoints: personal Microsoft accounts only
-// (Outlook, Hotmail, Xbox). Work and school accounts are left out on
-// purpose: their organisations can set an email address nobody confirmed,
-// which mustn't be trusted to tie accounts together.
-const MICROSOFT = 'https://login.microsoftonline.com/consumers/oauth2/v2.0';
-
 const DISCORD = 'https://discord.com/api';
 
 const AUTHORIZE_URLS: Record<Provider, string> = {
   google: 'https://accounts.google.com/o/oauth2/v2/auth',
-  facebook: 'https://www.facebook.com/v23.0/dialog/oauth',
-  microsoft: `${MICROSOFT}/authorize`,
   discord: 'https://discord.com/oauth2/authorize',
 };
 
 const SCOPES: Record<Provider, string> = {
   google: 'openid email profile',
-  facebook: 'email public_profile',
-  microsoft: 'openid email profile',
   discord: 'identify email',
 };
 
@@ -89,7 +74,7 @@ function authorizeUrl(
     scope: SCOPES[provider],
     state,
   });
-  if (provider === 'google' || provider === 'microsoft') {
+  if (provider === 'google') {
     // Lets someone with several accounts choose which one.
     params.set('prompt', 'select_account');
   }
@@ -166,56 +151,6 @@ const PROFILE_READERS: Record<Provider, ProfileReader> = {
       id: required('Google', info.sub),
       // A Google account can carry an address its owner never confirmed.
       email: info.email_verified ? info.email : undefined,
-      name: info.name,
-    };
-  },
-
-  async facebook(app, code, redirectUri, fetchFn) {
-    const token = await json<{access_token?: string}>(
-      'Facebook: exchanging the code',
-      fetchFn(
-        `${GRAPH}/oauth/access_token?${new URLSearchParams({
-          client_id: app.clientId,
-          client_secret: app.clientSecret,
-          redirect_uri: redirectUri,
-          code,
-        })}`,
-      ),
-    );
-    // Facebook only shares an address its owner confirmed, and none for
-    // accounts made with a phone number.
-    const me = await json<{id?: string; email?: string; name?: string}>(
-      'Facebook: reading the profile',
-      fetchFn(
-        `${GRAPH}/me?${new URLSearchParams({
-          fields: 'id,name,email',
-          access_token: token.access_token ?? '',
-        })}`,
-      ),
-    );
-    return {id: required('Facebook', me.id), email: me.email, name: me.name};
-  },
-
-  async microsoft(app, code, redirectUri, fetchFn) {
-    const accessToken = await exchangeCode(
-      'Microsoft',
-      `${MICROSOFT}/token`,
-      app,
-      code,
-      redirectUri,
-      fetchFn,
-    );
-    // A personal Microsoft account's email is the address it signs in
-    // with, which Microsoft confirmed when the account was made.
-    const info = await json<{sub?: string; email?: string; name?: string}>(
-      'Microsoft: reading the profile',
-      fetchFn('https://graph.microsoft.com/oidc/userinfo', {
-        headers: {Authorization: `Bearer ${accessToken}`},
-      }),
-    );
-    return {
-      id: required('Microsoft', info.sub),
-      email: info.email,
       name: info.name,
     };
   },

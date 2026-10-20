@@ -11,14 +11,7 @@ const COLUMNS: Record<string, string> = {
 
 // The fields queries filter on, each with an index (per collection).
 const INDEXED: Record<string, string[]> = {
-  users: [
-    'email',
-    'username',
-    'googleId',
-    'facebookId',
-    'microsoftId',
-    'discordId',
-  ],
+  users: ['email', 'username', 'googleId', 'discordId'],
   follows: ['followerId', 'followeeId'],
   articles: ['authorId', 'slug'],
   comments: ['articleId', 'authorId'],

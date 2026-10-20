@@ -33,7 +33,7 @@ const STATE_SECONDS = 10 * 60;
 const ProvidersResponse = responseSchema(
   'ProvidersResponse',
   z.strictObject({
-    providers: z.array(z.enum(['google', 'facebook', 'microsoft', 'discord'])),
+    providers: z.array(z.enum(['google', 'discord'])),
   }),
 );
 
@@ -47,7 +47,7 @@ const CallbackQuery = z.object({
   error: lenient,
 });
 
-// Sign-in and sign-up with Google, Facebook, Microsoft or Discord, in one: the person picks an
+// Sign-in and sign-up with Google or Discord, in one: the person picks an
 // account with the provider, which sends them back here; they're signed in
 // to the Everise account tied to it, or with the same email, or a new one.
 // The session is the same cookie a password sign-in sets.

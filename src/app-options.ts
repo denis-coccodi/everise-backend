@@ -23,7 +23,7 @@ interface AppOptions {
   loadBundledPicture?: LoadBundledPicture;
   // Where staging testers are given access to the staging site.
   stagingAccess?: StagingAccess;
-  // Sign-in with Google and Facebook: the apps' settings, and how the app
+  // Sign-in with Google and Discord: the apps' settings, and how the app
   // reaches the providers.
   socialLogin?: {settings: SocialLoginSettings; fetch?: OAuthFetch};
   // The Discord channel members share in, and the server's widget.
