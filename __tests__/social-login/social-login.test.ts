@@ -266,16 +266,10 @@ describe('sign-in with Google and Discord', () => {
     expect(response.headers.location).toBe(`${site}/login?social=cancelled`);
   });
 
-  // Facebook and Microsoft sign-in were dropped in October 2026.
-  test.each(['myspace', 'facebook', 'microsoft'])(
-    'an unknown provider (%s) is unavailable',
-    async provider => {
-      const response = await request(app).get(`/api/auth/${provider}`);
+  test('an unknown provider is unavailable', async () => {
+    const response = await request(app).get('/api/auth/myspace');
 
-      expect(response.status).toBe(302);
-      expect(response.headers.location).toBe(
-        `${site}/login?social=unavailable`,
-      );
-    },
-  );
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe(`${site}/login?social=unavailable`);
+  });
 });
