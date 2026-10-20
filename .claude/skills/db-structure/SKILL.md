@@ -26,12 +26,12 @@ The app's collections, their fields and the files that define them are in [colle
 
 ## Updating the diagram
 
-`docs/db-structure.svg` is hand-written SVG (1200×1900) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
+`docs/db-structure.svg` is hand-written SVG (1200×2070) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
 1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
    $repo = (Get-Location).Path
-   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,1900 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
+   & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,2070 "--screenshot=$repo\docs\db-structure.png" "file:///$($repo -replace '\\','/')/docs/db-structure.svg"
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.
