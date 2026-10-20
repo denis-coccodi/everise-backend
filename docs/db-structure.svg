@@ -53,8 +53,8 @@
     <text x="488" y="180" class="field">email</text><text x="744" y="180" class="type" text-anchor="end">string</text>
     <text x="488" y="201" class="field">username</text><text x="744" y="201" class="type" text-anchor="end">string</text>
     <text x="488" y="222" class="field">passwordHash</text><text x="744" y="222" class="type" text-anchor="end">string? (bcrypt)</text>
-    <text x="488" y="243" class="field">googleId, discordId</text><text x="744" y="243" class="type" text-anchor="end">string?</text>
-    <text x="488" y="264" class="field">facebookId, microsoftId</text><text x="744" y="264" class="type" text-anchor="end">unused</text>
+    <text x="488" y="243" class="field">googleId</text><text x="744" y="243" class="type" text-anchor="end">string? (Google account)</text>
+    <text x="488" y="264" class="field">discordId</text><text x="744" y="264" class="type" text-anchor="end">string? (Discord account)</text>
     <text x="488" y="285" class="field">bio, image</text><text x="744" y="285" class="type" text-anchor="end">string? (image: URL)</text>
     <text x="488" y="306" class="field">darkMode</text><text x="744" y="306" class="type" text-anchor="end">boolean? (unset: dark)</text>
     <text x="488" y="327" class="field">role</text><text x="744" y="327" class="type" text-anchor="end">string? (unset: user)</text>

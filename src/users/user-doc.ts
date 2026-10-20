@@ -21,8 +21,7 @@ interface UserDoc extends Doc {
   // Discord).
   passwordHash?: string;
   // The provider accounts that sign in to this one, by the provider's id for
-  // the person. Accounts from before October 2026 may also hold facebookId
-  // or microsoftId, from providers since dropped; nothing reads them.
+  // the person.
   googleId?: string;
   discordId?: string;
   bio?: string;
