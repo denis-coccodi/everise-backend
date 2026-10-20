@@ -4614,6 +4614,22 @@
               "staging-tester",
               "user"
             ]
+          },
+          "signInMethods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "password",
+                "google",
+                "facebook",
+                "microsoft",
+                "discord"
+              ]
+            }
+          },
+          "emailConfirmed": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -4621,7 +4637,9 @@
           "username",
           "email",
           "image",
-          "role"
+          "role",
+          "signInMethods",
+          "emailConfirmed"
         ],
         "additionalProperties": false
       },
