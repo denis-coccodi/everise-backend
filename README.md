@@ -541,33 +541,32 @@ Both run on one Cloudflare account, whose daily limits (e.g. 100,000 Worker requ
 
 Three GitHub Actions workflows:
 
-**CI/CD** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
+**Test and deploy staging** (`.github/workflows/ci-cd.yaml`) runs on pushes to `main`, on pull requests, and by hand:
 
 1. **test**: installs dependencies and runs `npm test` (tests, type-check, lint, format and size checks).
 1. **deploy-staging**: after the tests pass, on pushes to `main` and on manual runs. Runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging: it registers a user and, with email confirmation on, checks that signing in waits for the emailed link (otherwise it creates an article and reads it back, and uploads an image and reads that back), and fails the run on any unexpected status code. On `main`, the run's summary page links to the production deploy.
 
 Pull requests only run **test**, and it must pass before the PR can be merged. Each staging run leaves one smoke-test user (unconfirmed, with email confirmation on) in the staging database, and one Resend email.
 
-To try another branch on staging: Actions → **CI/CD** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
+To try another branch on staging: Actions → **Test and deploy staging** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
 
-**Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose CI/CD run (tests and staging) has not succeeded.
+**Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose **Test and deploy staging** run (tests and staging) has not succeeded.
 
 **Refresh game data from XIVAPI** (`.github/workflows/refresh-game-data.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh game data from XIVAPI** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
-
 ### Contributing
 
 `main` is protected: changes can't be pushed to it directly, admins included. Every change goes through a pull request:
 
 1. Create a branch from `main` named `feature/<feature-name>` (e.g. `feature/staging-environment`), or `bugfix/<bug-description>` for a bug fix (e.g. `bugfix/flaky-tags-test`; `hotfix/` when production is broken). Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `fix(events): add .webp to bare banner names`.
 1. Push to it as often as you like; pushing one deploys nothing.
-1. Open a pull request to `main`. CI/CD runs **test** on it, and again on every push.
+1. Open a pull request to `main`. **Test and deploy staging** runs **test** on it, and again on every push.
 1. Merge once **test** passes (the branch must be up to date with `main`). The merge deploys to staging.
 
 ### Deploying to production
 
-1. Merge a pull request into `main` and wait for the CI/CD run to go green.
+1. Merge a pull request into `main` and wait for the **Test and deploy staging** run to go green.
 1. Optionally try the change on staging.
-1. Open Actions → **Deploy production** (or follow the link on the CI/CD run's summary page), click **Run workflow**, keep branch `main`, and confirm.
+1. Open Actions → **Deploy production** (or follow the link on the **Test and deploy staging** run's summary page), click **Run workflow**, keep branch `main`, and confirm.
 
 The `production` GitHub environment only accepts the `main` branch.
 
@@ -602,7 +601,7 @@ In the Cloudflare dashboard (menu names may differ slightly):
    - Cross-Origin Resource Sharing: allowed origins `https://staging.everise.dev` and `https://staging.everisefc.workers.dev` (plus `http://localhost:4200` to use staging from a local frontend), allow credentials, and **bypass OPTIONS requests to origin** so the API answers preflight requests itself.
    - Cookie settings: SameSite attribute **None**.
 1. **Protect the frontend**: `staging` → Domains → **Enable Access**, with the same Allow policy, and add `staging.everise.dev` to that application too.
-1. Re-run the latest CI/CD run on `main` and check the smoke test still passes.
+1. Re-run the latest **Test and deploy staging** run on `main` and check the smoke test still passes.
 
 Do steps 1 and 2's Service Auth policy before enabling Access on the backend, or the next staging smoke test fails.
 

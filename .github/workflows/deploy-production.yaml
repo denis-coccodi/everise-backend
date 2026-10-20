@@ -1,7 +1,7 @@
 name: Deploy production
 
 # Started by hand: Actions → Deploy production → Run workflow.
-# Deploys the latest commit on main, but only if that commit's CI/CD run
+# Deploys the latest commit on main, but only if that commit's Test and deploy staging run
 # (tests + staging deploy + smoke test) succeeded.
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
             --commit "$GITHUB_SHA" --event push --status success --limit 1 \
             --json conclusion -q '.[0].conclusion')
           if [ "$conclusion" != "success" ]; then
-            echo "::error::Commit ${GITHUB_SHA::7} has no successful CI/CD run (tests + staging). Wait for it to pass, or fix it, before deploying to production."
+            echo "::error::Commit ${GITHUB_SHA::7} has no successful Test and deploy staging run (tests + staging). Wait for it to pass, or fix it, before deploying to production."
             exit 1
           fi
           echo "Commit ${GITHUB_SHA::7} passed tests and staging."

@@ -5,7 +5,7 @@ description: The required way to make any change in this repo (code, tests, docs
 
 # Feature branch → pull request → main
 
-`main` is protected: nobody, admins included, can push to it directly. Every change reaches `main` through a pull request, and the PR can only be merged once the `test` check (the CI/CD workflow's test job) passes. Merging into `main` then deploys to staging automatically. Production stays a separate manual step (see the `deploy` skill).
+`main` is protected: nobody, admins included, can push to it directly. Every change reaches `main` through a pull request, and the PR can only be merged once the `test` check (the Test and deploy staging workflow's test job) passes. Merging into `main` then deploys to staging automatically. Production stays a separate manual step (see the `deploy` skill).
 
 ## 1. Start a branch before the first edit
 
@@ -89,9 +89,9 @@ gh pr merge <number> --squash --delete-branch --subject "$(gh pr view <number> -
 git switch main && git pull --ff-only
 ```
 
-Squash keeps one commit per change on `main`, its subject the PR title. After merging, follow the CI/CD push run on `main` (test → deploy-staging → smoke test) as in the `deploy` skill, and report the staging result.
+Squash keeps one commit per change on `main`, its subject the PR title. After merging, follow the Test and deploy staging push run on `main` (test → deploy-staging → smoke test) as in the `deploy` skill, and report the staging result.
 
 ## Notes
 
-- To try a branch on staging before merging, start CI/CD by hand on that branch (`gh workflow run ci-cd.yaml --ref <branch>`). It replaces what staging runs until the next merge to `main`; tell the user.
+- To try a branch on staging before merging, start Test and deploy staging by hand on that branch (`gh workflow run ci-cd.yaml --ref <branch>`). It replaces what staging runs until the next merge to `main`; tell the user.
 - Do not change branch protection or rulesets to get a PR merged. If something blocks the merge that is not a failing check, tell the user.
