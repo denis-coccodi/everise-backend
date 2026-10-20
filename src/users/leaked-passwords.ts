@@ -12,8 +12,9 @@ const TIMEOUT_MS = 3000;
 
 // Refuses a new password that is on Have I Been Pwned's public list of
 // passwords leaked from other sites (Pwned Passwords): those are the first
-// ones guessed. The message says so without suggesting the member's own
-// account leaked. Only the first 5 characters of the password's SHA-1 leave the app (k-anonymity),
+// ones guessed. The message calls it too common, without words like
+// "leaked" that make it sound as if the member's own account was. Only the
+// first 5 characters of the password's SHA-1 leave the app (k-anonymity),
 // and the answer is padded so its size says nothing either. When the
 // service can't be reached the password is allowed: it's a nicety, not a
 // lock. Only new passwords are checked; existing ones stay as they are.
@@ -23,7 +24,7 @@ class LeakedPasswords {
   async check(password: string) {
     if (await this.leaked(password)) {
       throw new RangeError(
-        "Please choose a different password: this one is on a public list of passwords leaked from other websites, so it's easy to guess. This doesn't mean your account was exposed; we only compared it with that list.",
+        "That password is too common: it's on a list of passwords used on many other websites, so it's easy to guess. Please choose a different one.",
       );
     }
   }
