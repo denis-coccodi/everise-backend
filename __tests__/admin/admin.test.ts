@@ -1,6 +1,6 @@
 import 'jest-extended';
 import request from 'supertest';
-import {app, staging, usersClient} from '../utils';
+import {app, db, staging, usersClient} from '../utils';
 
 // ADMIN_EMAILS is admin@example.com in the tests (utils/env.ts).
 const ADMIN = {
@@ -57,6 +57,8 @@ describe('roles', () => {
         email: user.email,
         image: expect.any(String),
         role: 'staging-tester',
+        signInMethods: ['password'],
+        emailConfirmed: true,
       },
       stagingAccess: {synced: true, message: 'Staging access updated.'},
     });
@@ -136,6 +138,42 @@ describe('roles', () => {
     );
     expect(users).toContainEqual(
       expect.objectContaining({username: ADMIN.username, role: 'admin'}),
+    );
+  });
+
+  test('lists accounts made with a provider and unconfirmed sign-ups too, saying how they sign in', async () => {
+    const admin = as(await adminToken());
+    await db.create('users', {
+      email: 'google-only@example.com',
+      username: 'GoogleOnly',
+      googleId: 'google-1',
+    });
+    await request(app)
+      .post('/api/users')
+      .send({
+        user: {
+          email: 'waiting@example.com',
+          username: 'Waiting',
+          password: 'a-long-password',
+        },
+      });
+
+    const response = await admin.get('/api/admin/users?search=o');
+
+    const users = response.body.users as Record<string, unknown>[];
+    expect(users).toContainEqual(
+      expect.objectContaining({
+        username: 'GoogleOnly',
+        signInMethods: ['google'],
+        emailConfirmed: true,
+      }),
+    );
+    expect(users).toContainEqual(
+      expect.objectContaining({
+        username: 'Waiting',
+        signInMethods: ['password'],
+        emailConfirmed: false,
+      }),
     );
   });
 

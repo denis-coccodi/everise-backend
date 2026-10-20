@@ -16,6 +16,10 @@ function memberDto(user: User) {
     email: user.email,
     image: pictureOf(user),
     role: user.role,
+    // How they sign in, e.g. ["google"] for an account made with Google.
+    signInMethods: user.signInMethods,
+    // False for a sign-up whose email link hasn't been opened yet.
+    emailConfirmed: user.emailConfirmed,
   };
 }
 
