@@ -1,5 +1,6 @@
 import {UpstreamError} from '../errors';
 import {DutyData, ImageRef} from './duty';
+import {fightTerritories} from './fight-territories';
 import {
   ContentType,
   ROULETTE_FLAGS,
@@ -37,6 +38,7 @@ const DUTY_FIELDS = [
   'ContentType@as(raw)',
   'RequiredExVersion@as(raw)',
   'ContentMemberType@as(raw)',
+  'TerritoryType@as(raw)',
   'RaidFinderParam@as(raw)',
   'ClassJobLevelRequired',
   'ClassJobLevelSync',
@@ -145,6 +147,7 @@ class XivApiClient {
       .sort((a, b) => a.sortKey - b.sortKey);
 
     const groups = groupDuties(duties, typeIcons);
+    const fights = fightTerritories(duties);
     const rouletteIcon = typeIcons.get(ROULETTE_CONTENT_TYPE) ?? null;
     const jobs = jobRows.rows
       .filter(({fields: f}) => isCombatJob(f))
@@ -154,6 +157,7 @@ class XivApiClient {
     return {
       dataVersion: dutyRows.version,
       groups,
+      fights,
       roulettes,
       rouletteIcon,
       jobs,

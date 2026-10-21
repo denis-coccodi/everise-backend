@@ -18,6 +18,7 @@ import {OAuthFetch} from '../../src/social-login';
 import {PwnedFetch} from '../../src/users';
 import {VenuesFetch} from '../../src/venues';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
+import {FakeFflogs} from './fake-fflogs';
 import {FakeXivApi} from './fake-xivapi';
 import {SqliteStorage} from './sqlite-storage';
 
@@ -27,6 +28,9 @@ const db = new SqlDocumentStore(new SqliteStorage());
 const files = new MemoryFileStore();
 
 const xivApi = new FakeXivApi();
+
+// FFLogs, for the fight planner.
+const fflogs = new FakeFflogs();
 
 // The app's clock. Tests that depend on the date set `clock.now`; undefined
 // means the real time.
@@ -427,6 +431,10 @@ const app = createApp(
     universalis: universalisFetch,
     venues: venuesFetch,
     events: eventsFetch,
+    fflogs: {
+      settings: {clientId: 'fflogs-client', clientSecret: 'fflogs-secret'},
+      fetch: fflogs.fetch,
+    },
     leakedPasswords: pwnedFetch,
   },
 );
@@ -444,6 +452,7 @@ export {
   db,
   discord,
   ffxivVenues,
+  fflogs,
   files,
   giphy,
   lastConfirmationToken,

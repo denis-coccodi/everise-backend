@@ -6,6 +6,7 @@ export {
   db,
   discord,
   ffxivVenues,
+  fflogs,
   files,
   giphy,
   jobs,
@@ -30,3 +31,4 @@ export {atOrAfter} from './dates';
 export {xivpfEntry} from './xivpf-entries';
 export {ffxivVenue} from './ffxiv-venues';
 export {partakeEvent} from './partake-events';
+export {fflogsReport} from './fake-fflogs';

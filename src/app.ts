@@ -6,13 +6,7 @@ import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
 import {ArticlesService, CommentsService, articleRoutes} from './articles';
 import {config} from './config';
 import {Db} from './db';
-import {
-  DutiesRouter,
-  DutiesService,
-  HttpGet,
-  ImagesService,
-  XivApiClient,
-} from './duties';
+import {HttpGet, dutiesRoutes} from './duties';
 import {emailSenderFor} from './email';
 import {eventRoutes} from './events';
 import {docsRouter} from './api';
@@ -22,6 +16,7 @@ import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {marketRouter, noMarket} from './market';
 import {Auth} from './middleware';
 import {PartyFinderBoard} from './party-finder';
+import {plannerRoutes} from './planner';
 import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
@@ -68,6 +63,7 @@ function createApp(
     universalis = (url, init) => fetch(url, init),
     venues = url => fetch(url),
     events = url => fetch(url),
+    fflogs = {settings: config.fflogs, fetch: (url, init) => fetch(url, init)},
     turnstile = config.turnstile,
     leakedPasswords,
     uploadStorageBytes = config.uploadStorageBytes,
@@ -204,17 +200,18 @@ function createApp(
     now,
   });
 
-  const xivApiClient = new XivApiClient(httpGet);
-
-  const imagesService = new ImagesService(db, xivApiClient, fileStore);
-
-  const dutiesService = new DutiesService(db, xivApiClient, imagesService, now);
-
-  const dutiesRouter = new DutiesRouter(
+  // The cached game data (XIVAPI): duties, roulettes, jobs, images.
+  const {
+    router: dutiesRouter,
     dutiesService,
-    imagesService,
-    config.dutiesRefreshKey,
-  ).router;
+    xivApiClient,
+  } = dutiesRoutes({
+    db,
+    httpGet,
+    fileStore,
+    refreshKey: config.dutiesRefreshKey,
+    now,
+  });
 
   const partyFinderParts = partyFinderRoutes({
     auth,
@@ -317,6 +314,18 @@ function createApp(
   app.use(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
+  );
+
+  // The fight planner: the FFLogs reports it plans from.
+  app.use(
+    '/api',
+    plannerRoutes({
+      auth,
+      db,
+      ...fflogs,
+      duties: dutiesService,
+      now,
+    }),
   );
 
   app.use('/api', roulettePostsRouter);
