@@ -47,6 +47,10 @@ const envVarsSchema = z.object({
   // The GIF search in posts and comments (GIPHY's API key); without it the
   // search isn't offered.
   GIPHY_API_KEY: z.string().optional(),
+  // The fight planner's FFLogs API client (made on fflogs.com/api/clients,
+  // both secrets); without them the planner isn't offered.
+  FFLOGS_CLIENT_ID: z.string().optional(),
+  FFLOGS_CLIENT_SECRET: z.string().optional(),
   // Email confirmation at sign-up and on a new address: Resend's API key
   // (a secret) and the sender, on a domain verified at Resend. Without the
   // key, emails aren't confirmed.
@@ -112,6 +116,10 @@ const config = {
     huntSources: envVars.DISCORD_HUNT_SOURCES,
   },
   giphyApiKey: envVars.GIPHY_API_KEY,
+  fflogs: {
+    clientId: envVars.FFLOGS_CLIENT_ID,
+    clientSecret: envVars.FFLOGS_CLIENT_SECRET,
+  },
   email: {
     resendApiKey: envVars.RESEND_API_KEY,
     from: envVars.EMAIL_FROM,

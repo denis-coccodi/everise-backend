@@ -6,6 +6,7 @@ import {FileStore} from './files';
 import {GifFetch} from './media';
 import {MarketSource, UniversalisFetch} from './market';
 import {PartyFinderSource} from './party-finder';
+import {FflogsFetch, FflogsSettings} from './planner';
 import {RelayFetch} from './relays';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
@@ -59,6 +60,8 @@ interface AppOptions {
   venues?: VenuesFetch;
   // How the app reaches Partake for the community events.
   events?: EventsFetch;
+  // The fight planner's FFLogs API client, and how the app reaches FFLogs.
+  fflogs?: {settings: FflogsSettings; fetch: FflogsFetch};
   // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
   // and how the app reaches siteverify. Without a secret, nothing is checked.
   turnstile?: {

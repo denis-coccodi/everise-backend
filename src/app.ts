@@ -22,6 +22,7 @@ import {LiveFeed, noLiveFeed} from './live/live-feed';
 import {marketRouter, noMarket} from './market';
 import {Auth} from './middleware';
 import {PartyFinderBoard} from './party-finder';
+import {plannerRoutes} from './planner';
 import {partyFinderRoutes} from './party-finder-shares';
 import {ProfilesRouter, ProfilesService} from './profiles';
 import {relayRoutes} from './relays';
@@ -68,6 +69,7 @@ function createApp(
     universalis = (url, init) => fetch(url, init),
     venues = url => fetch(url),
     events = url => fetch(url),
+    fflogs = {settings: config.fflogs, fetch: (url, init) => fetch(url, init)},
     turnstile = config.turnstile,
     leakedPasswords,
     uploadStorageBytes = config.uploadStorageBytes,
@@ -318,6 +320,9 @@ function createApp(
     '/api',
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
   );
+
+  // The fight planner: the FFLogs reports it plans from.
+  app.use('/api', plannerRoutes({db, ...fflogs, now}));
 
   app.use('/api', roulettePostsRouter);
 
