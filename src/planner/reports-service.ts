@@ -15,12 +15,17 @@ const REPORTS = 'fflogsReports';
 const REFRESH_MS = 2 * 60 * 1000;
 // A report that ended this long before it was read won't change any more.
 const FINISHED_MS = 60 * 60 * 1000;
+// How reports are read from FFLogs. Raised whenever that changes, so the
+// reports kept before are read again.
+const READ_VERSION = 2;
 
 // Every boss pull is kept, so a game data refresh that adds a fight's
 // territory makes its pulls show without reading the report again.
 interface StoredReport extends Doc {
   report: LoggedReport;
   fetchedAt: number;
+  // Unset on reports kept before versions (1).
+  version?: number;
 }
 
 // The FFLogs reports people load in the fight planner, kept so the same
@@ -61,7 +66,8 @@ class ReportsService {
     return reading;
   }
 
-  private fresh({report, fetchedAt}: StoredReport) {
+  private fresh({report, fetchedAt, version}: StoredReport) {
+    if (version !== READ_VERSION) return false;
     return (
       fetchedAt - Date.parse(report.endedAt) >= FINISHED_MS ||
       this.now().getTime() - fetchedAt < REFRESH_MS
@@ -77,7 +83,11 @@ class ReportsService {
       );
     }
     const report = toLoggedReport(found);
-    await this.db.set(REPORTS, code, {report, fetchedAt});
+    await this.db.set(REPORTS, code, {
+      report,
+      fetchedAt,
+      version: READ_VERSION,
+    });
     return report;
   }
 }

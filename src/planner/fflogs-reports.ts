@@ -56,10 +56,18 @@ function reportOf(data: unknown): FflogsReport | null {
 const percent = (value: number | null) =>
   typeof value === 'number' ? Math.round(value * 100) / 100 : null;
 
+// FFLogs lists the party's Limit Break, and stand-ins without a server
+// (the environment, damage it can't tie to anyone), as players too.
+function isPlayer(actor: FflogsActor) {
+  return !!actor.server && actor.subType !== 'LimitBreak';
+}
+
 // Every boss pull (trash is encounter 0) and the players in them.
 function toLoggedReport(report: FflogsReport): LoggedReport {
   const iso = (offset: number) =>
     new Date(report.startTime + offset).toISOString();
+  const actors = (report.masterData?.actors ?? []).filter(isPlayer);
+  const playerIds = new Set(actors.map(actor => actor.id));
   const pulls: LoggedPull[] = report.fights
     .filter(fight => fight.encounterID > 0)
     .map(fight => {
@@ -74,13 +82,15 @@ function toLoggedReport(report: FflogsReport): LoggedReport {
         bossHpLeft: kill ? 0 : percent(fight.bossPercentage),
         fightLeft: kill ? 0 : percent(fight.fightPercentage),
         phase: fight.lastPhase ? fight.lastPhase : null,
-        playerIds: fight.friendlyPlayers ?? [],
+        playerIds: (fight.friendlyPlayers ?? []).filter(id =>
+          playerIds.has(id),
+        ),
         territory: fight.gameZone?.id ?? null,
         difficulty: fight.difficulty ?? 0,
       };
     });
   const inPulls = new Set(pulls.flatMap(pull => pull.playerIds));
-  const players: ReportPlayer[] = (report.masterData?.actors ?? [])
+  const players: ReportPlayer[] = actors
     .filter(actor => inPulls.has(actor.id))
     .map(actor => {
       const job = jobOf(actor.subType);

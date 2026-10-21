@@ -70,12 +70,13 @@ function answer(status: number, body: unknown) {
 
 // A report as FFLogs sends it: a Savage boss pulled twice (a wipe, then a
 // kill), an Extreme kill (a Minstrel's Ballad), a normal-mode pull and
-// trash, by a party of eight. Starts at `startTime` (ms).
+// trash, by a party of eight. FFLogs counts the Limit Break and a stand-in
+// without a server among each pull's players. Starts at `startTime` (ms).
 function fflogsReport(
   overrides: Record<string, unknown> = {},
   startTime = Date.parse('2026-10-20T19:00:00Z'),
 ): Record<string, unknown> {
-  const party = [1, 2, 3, 4, 5, 6, 7, 8];
+  const party = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11];
   const fight = (
     id: number,
     encounterID: number,
@@ -136,6 +137,8 @@ function fflogsReport(
           subType,
         })),
         {id: 9, name: 'Benched', server: 'Phoenix', subType: 'Bard'},
+        {id: 10, name: 'Limit Break', server: null, subType: 'LimitBreak'},
+        {id: 11, name: 'Environment', server: null, subType: 'Unknown'},
       ],
     },
     ...overrides,
