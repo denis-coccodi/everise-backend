@@ -319,11 +319,13 @@ function createApp(
   // The fight planner: the FFLogs reports it plans from.
   app.use(
     '/api',
-    plannerRoutes({
+    ...plannerRoutes({
       auth,
       db,
       ...fflogs,
       duties: dutiesService,
+      xivapi: httpGet,
+      refreshKey: config.dutiesRefreshKey,
       now,
     }),
   );

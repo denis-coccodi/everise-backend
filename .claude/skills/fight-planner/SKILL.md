@@ -1,6 +1,6 @@
 ---
 name: fight-planner
-description: How the fight planner's backend works (src/planner) - reading FFLogs reports through the v2 API as the site's client, the planner's own fight model, how pulls are sorted into Extreme, Savage and Ultimate from the game data, what is kept in fflogsReports - what the planner is meant to do, and what is built so far. Use when working on src/planner, the /planner endpoints, the FFLOGS_* settings, or when a report won't load in the planner.
+description: How the fight planner's backend works (src/planner) - reading FFLogs reports through the v2 API as the site's client, the planner's own fight model, how pulls are sorted into Extreme, Savage and Ultimate from the game data, what is kept in fflogsReports, the hand-written action catalog and its patch check - what the planner is meant to do, and what is built so far. Use when working on src/planner, the /planner endpoints, the FFLOGS_* settings, or when a report won't load in the planner, or the game data refresh warns that an action's tooltip changed.
 ---
 
 # Fight planner
@@ -43,10 +43,17 @@ Settled with the user (don't re-ask):
 - **Free plan CPU:** a pull is 0.9 MB (M9S) to 2.5 MB (FRU) of timeline, more FFLogs JSON than a Worker request may parse (10 ms CPU). It's read in the `PlannerHub` Durable Object (`planner-hub.ts`, binding `PLANNER`, one instance named `fflogs` so the token is shared; 30 s CPU) and comes back as JSON text that the Worker sends as is (`sendJsonText` in `src/api/route.ts`; in tests it goes through `res.json`, so the schema is checked). Tests read pulls in the app (`LocalPulls`).
 - **Kept** in the data centre's cache (Cache API, free, evicts what isn't used), never in R2 (its free 10 GB are shared with uploads): finished reports' pulls for 30 days, keyed by `TIMELINE_VERSION` (raise it when the timeline's shape changes). A repeat look takes ~0.35 s instead of ~2.5 s and spends no FFLogs points. A first read costs about 10 points (the client has 1,000 an hour).
 
+## Action catalog (built)
+
+- `GET /api/planner/catalog` (open, cached an hour) answers an `ActionCatalog` (`src/planner/catalog/action-catalog.ts`): each combat job's actions with their use from XIVAPI (`xivapi-actions.ts`: `search` for `IsPlayerAction`, non-PvP actions, plus the table's ids by `rows` for actions that replace another on the hotbar and aren't flagged: Eukrasian Diagnosis, Accession, the Astrologian's cards, Lady of Crowns...), `jobs` from `ClassJobCategory` (classes and crafters dropped), `gcd` from `CooldownGroup` 58, and `effects` from the hand tables.
+- **Effects are written by hand** (decided with the user): `tank-effects.ts`, `whm-sch-effects.ts`, `ast-sge-effects.ts`, `dps-effects.ts` (role actions with their role), joined in `effect-table.ts`, written with `effect(kind, target, status, {percent, physical, magic, potency, of, s, stacks, condition})`. Values are the level-100 tooltips' (Dawntrail, game data `0874aee069e1e7c4`); actions a trait replaces are kept for lower levels. `status` is the status's name as logs show it: 117 of 123 were found in real reports; the rest belong to replaced actions (Medica II, Raw Intuition, Third Eye, Heart of Stone, Physis).
+- **The patch check** (`tooltip-check.ts`): each refresh looks for every table number in the action's tooltip (`ActionTransient.Description`): "20%" (or "20％", or "80%" for a mitigation written as what's left), "1,000", "15s", "5 stacks"; a 100% isn't looked for (tooltips write it in words). Missing ones are listed in the catalog's `changed` and the refresh's answer, which the GitHub Action turns into warnings. A number in another action's tooltip goes on that action: Neutral Sect's tooltip gives the barriers of Aspected Benefic and Helios Conjunction, so they're on Neutral Sect, with the condition. After a patch, fix the listed entries and run the refresh again until `changed` is empty.
+- Built by `POST /api/planner/catalog/refresh` (the duty refresh's `x-refresh-key`), step 3 of `refresh-game-data.yaml`; kept as JSON text in one `plannerCatalog` document and sent as is. Without one, `GET` answers 503.
+
 ## Next steps
 
-1. The action catalog: each job's actions (recast, cast time, charges, duration, potency) added to the XIVAPI refresh (`src/duties`, `POST /api/duties/refresh`), plus mitigation percentages and shield sizes, which XIVAPI doesn't have (tooltips, Lodestone job guides, patch notes).
-2. The planner in the browser (frontend): reading the timeline, the options form, the scheduler, one tab per player and the timeline graph.
+1. Status ids for the catalog's effects (from the Status sheet by name), so the planner can match logs' statuses by id rather than name.
+2. The planner in the browser (frontend): reading the timeline and the catalog, the options form, the scheduler, one tab per player and the timeline graph.
 3. Boss timelines for the unseen part of wiped pulls, from cleared reports in FFLogs' rankings.
 
 ## Checking against FFLogs

@@ -4,7 +4,9 @@ name: Refresh game data from XIVAPI
 # pick the target. Asks the backend to re-download the game data it keeps
 # from XIVAPI (duties, roulettes, jobs: POST /api/duties/refresh), then every
 # image the site shows from it: duty banners and type icons, job, role and
-# Party Finder icons (POST /api/duties/refresh/images, a batch per call).
+# Party Finder icons (POST /api/duties/refresh/images, a batch per call),
+# and builds the fight planner's action catalog again (POST
+# /api/planner/catalog/refresh), warning of actions whose tooltip changed.
 # Nothing is deployed.
 #
 # Needs a DUTIES_REFRESH_KEY secret in each GitHub environment (staging,
@@ -100,11 +102,22 @@ jobs:
             echo "::warning::XIVAPI has no image for ids $failed."
           fi
 
+          cp response.json images.json
+
+          # 3. The fight planner's action catalog, checked against the tooltips.
+          status=$(post /api/planner/catalog/refresh "$@")
+          cat response.json; echo
+          fail_on "$status" "Catalog refresh"
+          cp response.json catalog.json
+          jq -r '.changed[] | "::warning::Fight planner action \(.name) (\(.id)): its tooltip no longer has \(.missing | join(", ")). Check its effects in src/planner/catalog."' catalog.json
+
           {
             echo "Refreshed **$TARGET** ($url):"
             echo
             jq -r '"- \(.dutyCount) duties, \(.rouletteCount) roulettes, \(.jobCount) jobs (data \(.dataVersion), fetched \(.fetchedAt))"' refresh.json
             jq -r '.groups[] | "  - \(.name): \(.count)"' refresh.json
-            jq -r '"- \(.total - (.failed | length)) of \(.total) images downloaded"' response.json
+            jq -r '"- \(.total - (.failed | length)) of \(.total) images downloaded"' images.json
             if [ -n "$failed" ]; then echo "  - Not on XIVAPI: $failed"; fi
+            jq -r '"- Fight planner catalog: \(.actionCount) actions, \(.effectCount) with heals or mitigations, \(.changed | length) to check"' catalog.json
+            jq -r '.changed[] | "  - \(.name) (\(.id)): \(.missing | join(", "))"' catalog.json
           } >> "$GITHUB_STEP_SUMMARY"

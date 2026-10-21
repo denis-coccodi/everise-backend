@@ -2487,6 +2487,68 @@
         }
       }
     },
+    "/api/planner/catalog": {
+      "get": {
+        "tags": [
+          "planner"
+        ],
+        "summary": "The jobs' actions, with their heals and mitigations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCatalogResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/planner/catalog/refresh": {
+      "post": {
+        "tags": [
+          "planner"
+        ],
+        "summary": "Build the action catalog again (needs x-refresh-key)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "What was built.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogRefreshResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/planner/reports/{code}": {
       "get": {
         "tags": [
@@ -7831,6 +7893,321 @@
           "complete",
           "readBackTo",
           "refreshedAt"
+        ],
+        "additionalProperties": false
+      },
+      "ActionCatalogResponse": {
+        "type": "object",
+        "properties": {
+          "dataVersion": {
+            "type": "string"
+          },
+          "builtAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "icon": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "level": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "gcd": {
+                  "type": "boolean"
+                },
+                "castMs": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "recastMs": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "charges": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "cooldownGroup": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "range": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "effects": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "mitigation",
+                          "shield",
+                          "heal",
+                          "regen",
+                          "delayedHeal",
+                          "maxHp",
+                          "healingReceived",
+                          "healingPotency",
+                          "invulnerable"
+                        ]
+                      },
+                      "target": {
+                        "type": "string",
+                        "enum": [
+                          "self",
+                          "target",
+                          "party",
+                          "enemies"
+                        ]
+                      },
+                      "status": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "percent": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "physical": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "magic": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "potency": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "of": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "maxHp",
+                              "casterMaxHp",
+                              "healed"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "durationMs": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "stacks": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "condition": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "target",
+                      "status",
+                      "percent",
+                      "physical",
+                      "magic",
+                      "potency",
+                      "of",
+                      "durationMs",
+                      "stacks",
+                      "condition"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "icon",
+                "jobs",
+                "level",
+                "gcd",
+                "castMs",
+                "recastMs",
+                "charges",
+                "cooldownGroup",
+                "range",
+                "radius",
+                "effects"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "missing"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "dataVersion",
+          "builtAt",
+          "actions",
+          "changed"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogRefreshResponse": {
+        "type": "object",
+        "properties": {
+          "dataVersion": {
+            "type": "string"
+          },
+          "actionCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "effectCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "missing"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "dataVersion",
+          "actionCount",
+          "effectCount",
+          "changed"
         ],
         "additionalProperties": false
       },

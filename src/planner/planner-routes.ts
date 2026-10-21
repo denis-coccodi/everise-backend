@@ -1,3 +1,6 @@
+import {CatalogRouter} from './catalog/catalog-router';
+import {CatalogService} from './catalog/catalog-service';
+import {CatalogGet} from './catalog/xivapi-actions';
 import {Db} from '../db';
 import {Auth} from '../middleware';
 import {FflogsClient, FflogsFetch, FflogsSettings} from './fflogs-client';
@@ -19,6 +22,10 @@ interface PlannerParts {
   pulls?: PullSource;
   // The game data: what kind of fight each game territory holds.
   duties: {fightKinds(): Promise<FightKinds>};
+  // How the action catalog reaches XIVAPI, and the game data refresh's
+  // key, which rebuilds it.
+  xivapi: CatalogGet;
+  refreshKey?: string;
   now: () => Date;
 }
 
@@ -31,7 +38,11 @@ function plannerRoutes(parts: PlannerParts) {
     parts.now,
   );
   const pulls = parts.pulls ?? new LocalPulls(client);
-  return new PlannerRouter(parts.auth, reports, pulls).router;
+  const catalog = new CatalogService(parts.db, parts.xivapi, parts.now);
+  return [
+    new PlannerRouter(parts.auth, reports, pulls).router,
+    new CatalogRouter(catalog, parts.refreshKey).router,
+  ];
 }
 
 export {plannerRoutes};
