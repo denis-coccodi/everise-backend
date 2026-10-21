@@ -1,6 +1,6 @@
 ---
 name: fight-planner
-description: How the fight planner's backend works (src/planner) - reading FFLogs reports through the v2 API as the site's client, the planner's own fight model, what is kept in fflogsReports and fflogsEncounters - what the planner is meant to do, and what is built so far. Use when working on src/planner, the /planner endpoints, the FFLOGS_* settings, or when a report won't load in the planner.
+description: How the fight planner's backend works (src/planner) - reading FFLogs reports through the v2 API as the site's client, the planner's own fight model, how pulls are sorted into Extreme, Savage and Ultimate from the game data, what is kept in fflogsReports - what the planner is meant to do, and what is built so far. Use when working on src/planner, the /planner endpoints, the FFLOGS_* settings, or when a report won't load in the planner.
 ---
 
 # Fight planner
@@ -22,11 +22,12 @@ Settled with the user (don't re-ask):
 
 - `FflogsClient` (`fflogs-client.ts`) asks FFLogs' GraphQL API (`www.fflogs.com/api/v2/client`) with a client-credentials token from `www.fflogs.com/oauth/token`, kept until an hour before it expires and asked for again on a 401. A missing report is a `NotFoundError`, a private one a `ForbiddenError` (their GraphQL error messages say "does not exist" / "permission"), a 429 or any other failure an `UpstreamError`. Without `FFLOGS_CLIENT_ID` and `FFLOGS_CLIENT_SECRET`, `available` is false and every query throws an `UnavailableError` (503).
 - Private reports would need FFLogs' user sign-in (authorization code flow); not built, still undecided.
-- `GET /api/planner/reports/:code` reads the report's fights and players (`REPORT_QUERY` in `fflogs-reports.ts`), then the FFLogs zone of each encounter not kept yet (`encountersQuery`, one aliased query), and answers a `FightReport` (`fight-report.ts`).
+- `GET /api/planner/reports/:code` reads the report's fights and players (`REPORT_QUERY` in `fflogs-reports.ts`), keeps every boss pull (`LoggedReport`), and answers a `FightReport` (`fight-report.ts`, `coveredReport`) with only the pulls the planner covers. Members only (`auth.required`): each new report spends the site's FFLogs points; `GET /api/planner/available` stays open so the site can show the planner.
 - **Never let FFLogs' shapes leave `fflogs-reports.ts`.** Everything else reads the planner's own model (`FightReport`, `ReportPull`, `ReportPlayer`), so another source (local ACT logs, deferred) can fill it later.
-- Which pulls count: FFLogs difficulty 101 is Savage; otherwise the zone's name decides (`/ultimate/i`, `/extreme/i`, `pullKind`). A Savage zone also holds the normal-mode fights (difficulty 100), so a zone's name never makes a pull Savage. Trash (encounter 0) is dropped; other fights are only counted (`otherPulls`).
+- Which pulls count: **never from names** (FFLogs zone names don't always say Extreme or Ultimate, e.g. "The Minstrel's Ballad: …"). Each FFLogs fight has `gameZone.id`, the game's TerritoryType id. The duty refresh reads each duty's `TerritoryType` and keeps the Extreme trials and the Savage and Ultimate raids by territory (`fightTerritories` in `src/duties/fight-territories.ts`, from the same `groupOf` the Duties page uses; one `dutyFights` document; `DutiesService.fightKinds()`), and the planner looks pulls up there (`pullKind`). A territory the game data doesn't know (a fight newer than the last refresh, or before the first refresh that read territories) counts only if FFLogs says difficulty 101 (Savage). Unreal and normal fights are left out. Trash (encounter 0) is dropped; other fights are only counted (`otherPulls`).
+- After a new Extreme, Savage or Ultimate releases, run the duty refresh (the `refresh-game-data.yaml` GitHub Action) so its pulls show; kept reports pick it up without reading FFLogs again, since they keep every boss pull with its territory.
 - Jobs come from the actor's `subType` (`JOBS`: FFLogs' names, e.g. `WhiteMage`, to the abbreviation and role). A new job needs a line there; until then its players have a null job.
-- Kept: `fflogsReports` (one per code, with `fetchedAt`) and `fflogsEncounters` (zone per encounter, for good); see the `db-structure` skill's collections. A report that ended an hour before it was read is never read again; one still being logged is read again after 2 minutes. Requests for a report being read wait for that read.
+- Kept: `fflogsReports` (one per code, every boss pull, with `fetchedAt`); see the `db-structure` skill's collections. A report that ended an hour before it was read is never read again; one still being logged is read again after 2 minutes. Requests for a report being read wait for that read.
 
 ## Next steps
 

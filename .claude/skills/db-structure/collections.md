@@ -37,6 +37,7 @@ The FFXIV data from XIVAPI (`src/duties`). Every refresh (`POST /api/duties/refr
 | `dutyGroups` | a duty group (`DutyGroup`: its duties, their levels, types and images), one document each | `src/duties/duties-service.ts` (`DutyGroupDoc`) |
 | `dutyRoulettes` | roulettes[], icon (one document) | `src/duties/duties-service.ts` (`RoulettesDoc`) |
 | `jobs` | jobs[] (one document) | `src/duties/duties-service.ts` (`JobsDoc`) |
+| `dutyFights` | fights ({game territory id: `extreme`, `savage` or `ultimate`}, for the fight planner) (one document) | `src/duties/duties-service.ts` (`FightsDoc`) |
 | `dutyRefreshes` | dataVersion, fetchedAt, dutyCount, rouletteCount, jobCount (one per refresh) | `src/duties/duties-service.ts` (`RefreshDoc`) |
 | `gameImages` | contentType (id: the game's icon id; the bytes are in R2 at `game-images/<id>`; images stored before have `data` instead, until first read) | `src/duties/images-service.ts` (`ImageDoc`) |
 | `gameImageDownloads` | images[], pending[], failed[] (the current refresh's downloads); and the document `index`: ids[] of every stored image | `src/duties/images-service.ts` (`DownloadsDoc`, `IndexDoc`) |
@@ -47,5 +48,4 @@ The fight planner's FFLogs reads (`src/planner`). Rebuilt from FFLogs whenever m
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |
-| `fflogsReports` | report (the `FightReport`: title, times, players, the Extreme/Savage/Ultimate pulls, otherPulls), fetchedAt (ms) (id: the FFLogs report code, `a:` first for anonymous ones; read again after 2 minutes unless it ended an hour before it was read) | `src/planner/reports-service.ts` (`StoredReport`) |
-| `fflogsEncounters` | zone (the FFLogs zone's name, which says Extreme or Ultimate) (id: the FFLogs encounter id; kept for good) | `src/planner/reports-service.ts` (`StoredEncounter`) |
+| `fflogsReports` | report (the `LoggedReport`: title, times, players, every boss pull with its game territory and FFLogs difficulty; sorted into Extreme/Savage/Ultimate when answered), fetchedAt (ms) (id: the FFLogs report code, `a:` first for anonymous ones; read again after 2 minutes unless it ended an hour before it was read) | `src/planner/reports-service.ts` (`StoredReport`) |

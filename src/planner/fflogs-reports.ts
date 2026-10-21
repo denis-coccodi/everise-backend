@@ -1,12 +1,7 @@
-import {
-  FightReport,
-  ReportPlayer,
-  ReportPull,
-  jobOf,
-  pullKind,
-} from './fight-report';
+import {LoggedPull, LoggedReport, ReportPlayer, jobOf} from './fight-report';
 
-// What the report's summary is read with: its pulls and its players.
+// What the report's summary is read with: its pulls (with the game
+// territory each was fought in) and its players.
 const REPORT_QUERY = `query Report($code: String!) {
   reportData {
     report(code: $code) {
@@ -14,19 +9,12 @@ const REPORT_QUERY = `query Report($code: String!) {
       fights {
         id encounterID name difficulty kill startTime endTime
         bossPercentage fightPercentage lastPhase friendlyPlayers
+        gameZone { id }
       }
       masterData { actors(type: "Player") { id name server subType } }
     }
   }
 }`;
-
-// The FFLogs zone of each encounter, aliased e<id>.
-function encountersQuery(ids: number[]) {
-  const fields = ids.map(
-    id => `e${id}: encounter(id: ${id}) { id zone { name } }`,
-  );
-  return `query Encounters { worldData { ${fields.join(' ')} } }`;
-}
 
 interface FflogsFight {
   id: number;
@@ -40,6 +28,7 @@ interface FflogsFight {
   fightPercentage: number | null;
   lastPhase: number | null;
   friendlyPlayers: number[] | null;
+  gameZone: {id: number} | null;
 }
 
 interface FflogsActor {
@@ -64,60 +53,32 @@ function reportOf(data: unknown): FflogsReport | null {
   return report && Array.isArray(report.fights) ? report : null;
 }
 
-// The encounters the report has pulls of (0 is trash).
-function encounterIds(report: FflogsReport) {
-  return [
-    ...new Set(report.fights.map(f => f.encounterID).filter(id => id > 0)),
-  ];
-}
-
-// Each encounter's zone name, from encountersQuery's data.
-function zoneNames(data: unknown) {
-  const encounters = (data as {worldData?: Record<string, unknown>})?.worldData;
-  const names = new Map<number, string>();
-  for (const value of Object.values(encounters ?? {})) {
-    const encounter = value as {id?: unknown; zone?: {name?: unknown}} | null;
-    if (typeof encounter?.id === 'number') {
-      names.set(encounter.id, String(encounter.zone?.name ?? ''));
-    }
-  }
-  return names;
-}
-
 const percent = (value: number | null) =>
   typeof value === 'number' ? Math.round(value * 100) / 100 : null;
 
-function toReport(
-  report: FflogsReport,
-  zones: Map<number, string>,
-): FightReport {
+// Every boss pull (trash is encounter 0) and the players in them.
+function toLoggedReport(report: FflogsReport): LoggedReport {
   const iso = (offset: number) =>
     new Date(report.startTime + offset).toISOString();
-  const pulls: ReportPull[] = [];
-  let otherPulls = 0;
-  for (const fight of report.fights) {
-    if (fight.encounterID <= 0) continue;
-    const zone = zones.get(fight.encounterID) ?? '';
-    const kind = pullKind(zone, fight.difficulty ?? 0);
-    if (!kind) {
-      otherPulls++;
-      continue;
-    }
-    const kill = !!fight.kill;
-    pulls.push({
-      id: fight.id,
-      encounterId: fight.encounterID,
-      name: fight.name,
-      kind,
-      kill,
-      startedAt: iso(fight.startTime),
-      durationMs: Math.max(fight.endTime - fight.startTime, 0),
-      bossHpLeft: kill ? 0 : percent(fight.bossPercentage),
-      fightLeft: kill ? 0 : percent(fight.fightPercentage),
-      phase: fight.lastPhase ? fight.lastPhase : null,
-      playerIds: fight.friendlyPlayers ?? [],
+  const pulls: LoggedPull[] = report.fights
+    .filter(fight => fight.encounterID > 0)
+    .map(fight => {
+      const kill = !!fight.kill;
+      return {
+        id: fight.id,
+        encounterId: fight.encounterID,
+        name: fight.name,
+        kill,
+        startedAt: iso(fight.startTime),
+        durationMs: Math.max(fight.endTime - fight.startTime, 0),
+        bossHpLeft: kill ? 0 : percent(fight.bossPercentage),
+        fightLeft: kill ? 0 : percent(fight.fightPercentage),
+        phase: fight.lastPhase ? fight.lastPhase : null,
+        playerIds: fight.friendlyPlayers ?? [],
+        territory: fight.gameZone?.id ?? null,
+        difficulty: fight.difficulty ?? 0,
+      };
     });
-  }
   const inPulls = new Set(pulls.flatMap(pull => pull.playerIds));
   const players: ReportPlayer[] = (report.masterData?.actors ?? [])
     .filter(actor => inPulls.has(actor.id))
@@ -138,16 +99,7 @@ function toReport(
     endedAt: new Date(report.endTime).toISOString(),
     players,
     pulls,
-    otherPulls,
   };
 }
 
-export {
-  FflogsReport,
-  REPORT_QUERY,
-  encounterIds,
-  encountersQuery,
-  reportOf,
-  toReport,
-  zoneNames,
-};
+export {REPORT_QUERY, reportOf, toLoggedReport};

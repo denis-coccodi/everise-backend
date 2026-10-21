@@ -1,27 +1,74 @@
 import 'jest-extended';
 import request from 'supertest';
 import {createApp} from '../../src/app';
-import {clearDb, clock, db, fflogs, fflogsReport} from '../utils';
-import {app} from '../utils';
+import {
+  app,
+  clearDb,
+  clock,
+  db,
+  fflogs,
+  fflogsReport,
+  usersClient,
+  xivApi,
+} from '../utils';
+import {TERRITORIES} from '../utils/fake-fflogs';
+import {duty} from '../utils/fake-xivapi';
 
 const CODE = 'aBcD1234eFgH5678';
 const STARTED = Date.parse('2026-10-20T19:00:00Z');
 
-const load = (code = CODE) => request(app).get(`/api/planner/reports/${code}`);
+let token: string;
+const load = (code = CODE) =>
+  request(app)
+    .get(`/api/planner/reports/${code}`)
+    .set('authorization', `Token ${token}`);
 const reportQueries = () =>
   fflogs.queries.filter(q => q.query.includes('reportData'));
-const encounterQueries = () =>
-  fflogs.queries.filter(q => q.query.includes('worldData'));
+
+// The game data's high-end duties, with the territories they're fought in:
+// the Extreme trial's name doesn't say Extreme.
+const territory = (id: number) => ({'TerritoryType@as(raw)': id});
+function refreshGameData() {
+  xivApi.reset();
+  xivApi.sheets.ContentFinderCondition.push(
+    duty(
+      20,
+      "the Minstrel's Ballad: Sphene's Burden",
+      4,
+      territory(TERRITORIES.ballad),
+    ),
+    duty(21, 'AAC Cruiserweight M1 (Savage)', 5, territory(TERRITORIES.savage)),
+    duty(22, 'AAC Cruiserweight M1', 5, territory(TERRITORIES.normal)),
+    duty(
+      23,
+      'Futures Rewritten (Ultimate)',
+      28,
+      territory(TERRITORIES.ultimate),
+    ),
+    duty(
+      24,
+      'the Akh Afah Amphitheatre (Unreal)',
+      4,
+      territory(TERRITORIES.unreal),
+    ),
+  );
+  return request(app)
+    .post('/api/duties/refresh')
+    .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!);
+}
 
 beforeEach(async () => {
   await clearDb();
   fflogs.reset();
   fflogs.reports[CODE] = fflogsReport();
   clock.now = new Date('2026-10-21T12:00:00Z');
+  token = (await usersClient.registerRandomUser()).user.token;
+  expect((await refreshGameData()).status).toBe(200);
 });
 
 afterAll(() => {
   clock.now = undefined;
+  xivApi.reset();
 });
 
 describe('GET /api/planner/available', () => {
@@ -38,7 +85,9 @@ describe('GET /api/planner/available', () => {
     });
 
     const available = await request(bare).get('/api/planner/available');
-    const report = await request(bare).get(`/api/planner/reports/${CODE}`);
+    const report = await request(bare)
+      .get(`/api/planner/reports/${CODE}`)
+      .set('authorization', `Token ${token}`);
 
     expect(available.body).toEqual({available: false});
     expect(report.status).toBe(503);
@@ -50,6 +99,13 @@ describe('GET /api/planner/available', () => {
 });
 
 describe('GET /api/planner/reports/:code', () => {
+  test('is for members only', async () => {
+    const response = await request(app).get(`/api/planner/reports/${CODE}`);
+
+    expect(response.status).toBe(401);
+    expect(fflogs.queries).toBeEmpty();
+  });
+
   test("lists the report's Extreme, Savage and Ultimate pulls and their players", async () => {
     const response = await load();
 
@@ -105,7 +161,6 @@ describe('GET /api/planner/reports/:code', () => {
   });
 
   test('marks pulls of Ultimates, and keeps players of an unknown job', async () => {
-    fflogs.zones[301] = 'Futures Rewritten (Ultimate)';
     const report = fflogsReport();
     const actors = (report.masterData as {actors: Record<string, unknown>[]})
       .actors;
@@ -125,6 +180,21 @@ describe('GET /api/planner/reports/:code', () => {
           fightPercentage: 12.5,
           lastPhase: 5,
           friendlyPlayers: [1, 2],
+          gameZone: {id: TERRITORIES.ultimate},
+        },
+        {
+          id: 2,
+          encounterID: 302,
+          name: 'Ultima',
+          difficulty: 100,
+          kill: true,
+          startTime: 1_000_000,
+          endTime: 1_400_000,
+          bossPercentage: 0,
+          fightPercentage: 0,
+          lastPhase: 0,
+          friendlyPlayers: [1, 2],
+          gameZone: {id: TERRITORIES.unreal},
         },
       ],
     };
@@ -134,6 +204,8 @@ describe('GET /api/planner/reports/:code', () => {
     expect(response.body.pulls).toEqual([
       expect.objectContaining({kind: 'ultimate', fightLeft: 12.5, phase: 5}),
     ]);
+    // Unreal trials aren't covered.
+    expect(response.body.otherPulls).toBe(1);
     expect(response.body.players[0]).toMatchObject({job: null, role: null});
   });
 
@@ -159,17 +231,21 @@ describe('GET /api/planner/reports/:code', () => {
     expect(reportQueries()).toHaveLength(2);
   });
 
-  test("asks each encounter's zone once, for every report", async () => {
-    const other = 'zYxW9876vUtS5432';
-    fflogs.reports[other] = fflogsReport({code: other});
+  test('without game data, counts only the Savage pulls, then shows the others once it is read', async () => {
+    xivApi.reset();
+    await request(app)
+      .post('/api/duties/refresh')
+      .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!);
 
-    await load();
-    await load(other);
+    const before = await load();
+    expect(before.body.pulls.map((p: {id: number}) => p.id)).toEqual([2, 3]);
+    expect(before.body.otherPulls).toBe(2);
 
-    expect(encounterQueries()).toHaveLength(1);
-    expect(encounterQueries()[0].query).toContain('encounter(id: 101)');
-    expect(encounterQueries()[0].query).toContain('encounter(id: 201)');
-    expect(encounterQueries()[0].query).not.toContain('encounter(id: 0)');
+    await refreshGameData();
+    const after = await load();
+
+    expect(after.body.pulls.map((p: {id: number}) => p.id)).toEqual([2, 3, 4]);
+    expect(reportQueries()).toHaveLength(1);
   });
 
   test("keeps the site's token, and asks for a new one when FFLogs stops taking it", async () => {
@@ -187,6 +263,7 @@ describe('GET /api/planner/reports/:code', () => {
     expect(response.status).toBe(200);
     expect(fflogs.tokens).toBe(before + 1);
   });
+
   test('takes anonymous reports', async () => {
     fflogs.reports[`a:${CODE}`] = fflogsReport({code: `a:${CODE}`});
 

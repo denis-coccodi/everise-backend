@@ -1,44 +1,39 @@
 import {Db, Doc} from '../db';
 import {UpstreamError} from '../errors';
 import {FflogsClient} from './fflogs-client';
+import {REPORT_QUERY, reportOf, toLoggedReport} from './fflogs-reports';
 import {
-  REPORT_QUERY,
-  encounterIds,
-  encountersQuery,
-  reportOf,
-  toReport,
-  zoneNames,
-} from './fflogs-reports';
-import {FightReport} from './fight-report';
+  FightKinds,
+  FightReport,
+  LoggedReport,
+  coveredReport,
+} from './fight-report';
 
 const REPORTS = 'fflogsReports';
-const ENCOUNTERS = 'fflogsEncounters';
 
 // A report still being logged is read again after this long.
 const REFRESH_MS = 2 * 60 * 1000;
 // A report that ended this long before it was read won't change any more.
 const FINISHED_MS = 60 * 60 * 1000;
 
+// Every boss pull is kept, so a game data refresh that adds a fight's
+// territory makes its pulls show without reading the report again.
 interface StoredReport extends Doc {
-  report: FightReport;
+  report: LoggedReport;
   fetchedAt: number;
-}
-
-// An FFLogs encounter's zone, which says whether it's an Extreme, Savage
-// or Ultimate fight. Encounters never move, so they're kept for good.
-interface StoredEncounter extends Doc {
-  zone: string;
 }
 
 // The FFLogs reports people load in the fight planner, kept so the same
 // report isn't asked of FFLogs again (each read spends the site's FFLogs
 // points). A finished report is kept as read.
 class ReportsService {
-  private readonly reading = new Map<string, Promise<FightReport>>();
+  private readonly reading = new Map<string, Promise<LoggedReport>>();
 
   constructor(
     private readonly db: Db,
     private readonly client: FflogsClient,
+    // What kind of fight each game territory holds (the duties' game data).
+    private readonly fightKinds: () => Promise<FightKinds>,
     private readonly now: () => Date,
   ) {}
 
@@ -47,6 +42,14 @@ class ReportsService {
   }
 
   async report(code: string): Promise<FightReport> {
+    const [logged, kinds] = await Promise.all([
+      this.logged(code),
+      this.fightKinds(),
+    ]);
+    return coveredReport(logged, kinds);
+  }
+
+  private async logged(code: string) {
     const stored = await this.db.get<StoredReport>(REPORTS, code);
     if (stored && this.fresh(stored)) return stored.report;
     // One read of a report at a time: requests arriving meanwhile wait.
@@ -73,29 +76,9 @@ class ReportsService {
         "FFLogs didn't send that report. Try again in a few minutes.",
       );
     }
-    const zones = await this.zones(encounterIds(found));
-    const report = toReport(found, zones);
+    const report = toLoggedReport(found);
     await this.db.set(REPORTS, code, {report, fetchedAt});
     return report;
-  }
-
-  // The zone of each encounter: the ones not kept yet are asked of FFLogs.
-  private async zones(ids: number[]) {
-    const zones = new Map<number, string>();
-    const kept = await this.db.find<StoredEncounter>(ENCOUNTERS);
-    for (const encounter of kept)
-      zones.set(Number(encounter.id), encounter.zone);
-    const missing = ids.filter(id => !zones.has(id));
-    if (!missing.length) return zones;
-    const found = zoneNames(
-      await this.client.query(encountersQuery(missing), {}),
-    );
-    // A report has pulls of a few encounters at most.
-    for (const [id, zone] of found) {
-      await this.db.set(ENCOUNTERS, String(id), {zone});
-      zones.set(id, zone);
-    }
-    return zones;
   }
 }
 

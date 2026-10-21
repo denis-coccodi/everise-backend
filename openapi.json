@@ -2493,6 +2493,11 @@
           "planner"
         ],
         "summary": "An FFLogs report's players and its Extreme, Savage and Ultimate pulls",
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "parameters": [
           {
             "name": "code",

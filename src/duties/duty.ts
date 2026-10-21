@@ -1,3 +1,5 @@
+import {FightKind} from './fight-territories';
+
 // Where a duty is queued: "" when it's in neither finder (entered through an
 // NPC or an item, or not queueable at all).
 type Finder = 'Duty Finder' | 'Raid Finder' | '';
@@ -97,6 +99,8 @@ interface DutyData {
   // XIVAPI's id for the game data the lists were read from.
   dataVersion: string;
   groups: DutyGroup[];
+  // The high-end fights by game territory id, for the fight planner.
+  fights: Record<string, FightKind>;
   roulettes: Roulette[];
   // The Duty Roulettes type's icon (image id).
   rouletteIcon: number | null;

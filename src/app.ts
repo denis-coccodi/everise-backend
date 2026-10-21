@@ -6,13 +6,7 @@ import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
 import {ArticlesService, CommentsService, articleRoutes} from './articles';
 import {config} from './config';
 import {Db} from './db';
-import {
-  DutiesRouter,
-  DutiesService,
-  HttpGet,
-  ImagesService,
-  XivApiClient,
-} from './duties';
+import {HttpGet, dutiesRoutes} from './duties';
 import {emailSenderFor} from './email';
 import {eventRoutes} from './events';
 import {docsRouter} from './api';
@@ -206,17 +200,18 @@ function createApp(
     now,
   });
 
-  const xivApiClient = new XivApiClient(httpGet);
-
-  const imagesService = new ImagesService(db, xivApiClient, fileStore);
-
-  const dutiesService = new DutiesService(db, xivApiClient, imagesService, now);
-
-  const dutiesRouter = new DutiesRouter(
+  // The cached game data (XIVAPI): duties, roulettes, jobs, images.
+  const {
+    router: dutiesRouter,
     dutiesService,
-    imagesService,
-    config.dutiesRefreshKey,
-  ).router;
+    xivApiClient,
+  } = dutiesRoutes({
+    db,
+    httpGet,
+    fileStore,
+    refreshKey: config.dutiesRefreshKey,
+    now,
+  });
 
   const partyFinderParts = partyFinderRoutes({
     auth,
@@ -322,7 +317,16 @@ function createApp(
   );
 
   // The fight planner: the FFLogs reports it plans from.
-  app.use('/api', plannerRoutes({db, ...fflogs, now}));
+  app.use(
+    '/api',
+    plannerRoutes({
+      auth,
+      db,
+      ...fflogs,
+      duties: dutiesService,
+      now,
+    }),
+  );
 
   app.use('/api', roulettePostsRouter);
 

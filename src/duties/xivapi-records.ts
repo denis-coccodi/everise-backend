@@ -67,6 +67,8 @@ const KNOWN_RIVAL_WINGS = 'Hidden Gorge';
 interface RawDuty extends Duty {
   contentType: string;
   memberType: number;
+  // The game territory it's fought in (0 for none).
+  territory: number;
 }
 
 interface ContentType {
@@ -104,6 +106,7 @@ function toDuty(
     finder,
     contentType: contentTypes.get(Number(f['ContentType@as(raw)'])) ?? '',
     memberType: Number(f['ContentMemberType@as(raw)']),
+    territory: Number(f['TerritoryType@as(raw)']) || 0,
     expansion: expansions.get(Number(f['RequiredExVersion@as(raw)'])) ?? '',
     level,
     levelSync,
@@ -282,7 +285,7 @@ function groupDuties(
     seen.add(`${group}/${raw.name}`);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const {contentType, memberType, ...duty} = raw;
+    const {contentType, memberType, territory, ...duty} = raw;
     duty.pvpType = pvpTypeOf(raw, rivalWingsMemberType);
     groups.set(group, [...(groups.get(group) ?? []), duty]);
     if (!icons.has(group)) {

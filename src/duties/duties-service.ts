@@ -1,5 +1,6 @@
 import {Db, Doc} from '../db';
 import {Duty, DutyGroup, DutyStatus, Job, Roulette} from './duty';
+import {FightKind} from './fight-territories';
 import {
   frontlineMapAt,
   frontlineSchedule,
@@ -24,6 +25,10 @@ interface JobsDoc extends Doc {
   jobs: Job[];
 }
 
+interface FightsDoc extends Doc {
+  fights: Record<string, FightKind>;
+}
+
 interface RefreshDoc extends Doc {
   dataVersion: string;
   fetchedAt: string;
@@ -45,6 +50,7 @@ class DutiesService {
   private readonly groupsCollection = 'dutyGroups';
   private readonly roulettesCollection = 'dutyRoulettes';
   private readonly jobsCollection = 'jobs';
+  private readonly fightsCollection = 'dutyFights';
   private readonly refreshesCollection = 'dutyRefreshes';
 
   constructor(
@@ -63,6 +69,7 @@ class DutiesService {
       this.groupsCollection,
       this.roulettesCollection,
       this.jobsCollection,
+      this.fightsCollection,
       this.refreshesCollection,
     ]) {
       for (const doc of await this.db.find(collection)) {
@@ -78,6 +85,7 @@ class DutiesService {
       icon: data.rouletteIcon,
     });
     await this.db.create(this.jobsCollection, {jobs: data.jobs});
+    await this.db.create(this.fightsCollection, {fights: data.fights});
 
     const refresh = {
       dataVersion: data.dataVersion,
@@ -174,6 +182,15 @@ class DutiesService {
             ] as const,
         ),
       ),
+    );
+  }
+
+  // The Extreme, Savage and Ultimate fights by game territory id; empty
+  // until the first refresh that read territories.
+  async fightKinds() {
+    const [doc] = await this.db.find<FightsDoc>(this.fightsCollection);
+    return new Map(
+      Object.entries(doc?.fights ?? {}).map(([id, kind]) => [Number(id), kind]),
     );
   }
 

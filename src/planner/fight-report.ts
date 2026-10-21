@@ -5,6 +5,10 @@
 const PULL_KINDS = ['extreme', 'savage', 'ultimate'] as const;
 type PullKind = (typeof PULL_KINDS)[number];
 
+// What kind of fight each game territory holds (from the game data's
+// duties), by territory id.
+type FightKinds = Map<number, PullKind>;
+
 const ROLES = ['tank', 'healer', 'melee', 'ranged', 'caster'] as const;
 type Role = (typeof ROLES)[number];
 
@@ -51,6 +55,19 @@ interface FightReport {
   otherPulls: number;
 }
 
+// A pull as read from the log, before it's known whether the planner
+// covers it: where it was fought (the game territory, null when the log
+// doesn't say) and the log's difficulty (101 is Savage on FFLogs).
+interface LoggedPull extends Omit<ReportPull, 'kind'> {
+  territory: number | null;
+  difficulty: number;
+}
+
+// A report as read from the log, with every boss pull and their players.
+interface LoggedReport extends Omit<FightReport, 'pulls' | 'otherPulls'> {
+  pulls: LoggedPull[];
+}
+
 // FFLogs' names for the jobs (an actor's subType).
 const JOBS: Record<string, {job: string; role: Role}> = {
   Paladin: {job: 'PLD', role: 'tank'},
@@ -80,18 +97,39 @@ function jobOf(subType: unknown) {
   return (typeof subType === 'string' && JOBS[subType]) || null;
 }
 
-// What kind of fight an encounter is, from its FFLogs zone and the pull's
-// difficulty (101 is Savage: a Savage zone holds the normal fights too);
-// null for one the planner doesn't cover.
-function pullKind(zoneName: string, difficulty: number): PullKind | null {
-  if (difficulty === 101) return 'savage';
-  if (/ultimate/i.test(zoneName)) return 'ultimate';
-  if (/extreme/i.test(zoneName)) return 'extreme';
-  return null;
+// What kind of fight a pull is, from its territory; a pull fought where
+// the game data doesn't say (a fight newer than the last game data
+// refresh) counts as Savage when the log says so. Null for one the planner
+// doesn't cover.
+function pullKind(pull: LoggedPull, kinds: FightKinds): PullKind | null {
+  const kind = pull.territory === null ? undefined : kinds.get(pull.territory);
+  return kind ?? (pull.difficulty === 101 ? 'savage' : null);
+}
+
+// The report as the planner answers it: only the pulls it covers, and
+// their players.
+function coveredReport(report: LoggedReport, kinds: FightKinds): FightReport {
+  const pulls: ReportPull[] = [];
+  for (const logged of report.pulls) {
+    const kind = pullKind(logged, kinds);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const {territory, difficulty, ...pull} = logged;
+    if (kind) pulls.push({...pull, kind});
+  }
+  const inPulls = new Set(pulls.flatMap(pull => pull.playerIds));
+  return {
+    ...report,
+    players: report.players.filter(player => inPulls.has(player.id)),
+    pulls,
+    otherPulls: report.pulls.length - pulls.length,
+  };
 }
 
 export {
+  FightKinds,
   FightReport,
+  LoggedPull,
+  LoggedReport,
   JOBS,
   PULL_KINDS,
   PullKind,
@@ -99,6 +137,6 @@ export {
   ReportPlayer,
   ReportPull,
   Role,
+  coveredReport,
   jobOf,
-  pullKind,
 };

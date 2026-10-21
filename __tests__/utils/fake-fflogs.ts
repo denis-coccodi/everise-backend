@@ -1,18 +1,13 @@
 import {FflogsFetch} from '../../src/planner';
 
 // FFLogs' v2 API: `reports` by code (as its GraphQL sends them; a code in
-// `privateCodes` is refused), the FFLogs zone of each encounter (`zones`),
-// and `status` its next answers' status. `tokens` counts the tokens the app
+// `privateCodes` is refused) and `status` its next answers' status. `tokens` counts the tokens the app
 // asked for, `expiredTokens` makes the API refuse that many requests as
 // unauthorized, and `queries` holds what the app asked (the query and its
 // variables).
 class FakeFflogs {
   reports: Record<string, Record<string, unknown>> = {};
   privateCodes = new Set<string>();
-  zones: Record<number, string> = {
-    101: 'AAC Cruiserweight (Savage)',
-    201: 'Trials (Extreme)',
-  };
   status = 200;
   tokens = 0;
   expiredTokens = 0;
@@ -42,8 +37,6 @@ class FakeFflogs {
     const {query, variables} = JSON.parse(init.body);
     this.queries.push({query, variables});
     if (this.status !== 200) return answer(this.status, {});
-    if (query.includes('worldData'))
-      return answer(200, {data: {worldData: this.encounters(query)}});
     const code = String(variables.code);
     if (this.privateCodes.has(code)) {
       return answer(200, {
@@ -60,24 +53,24 @@ class FakeFflogs {
     }
     return answer(200, {data: {reportData: {report}}});
   };
-
-  private encounters(query: string) {
-    const found: Record<string, unknown> = {};
-    for (const [, id] of query.matchAll(/encounter\(id: (\d+)\)/g)) {
-      const zone = this.zones[Number(id)];
-      found[`e${id}`] = zone ? {id: Number(id), zone: {name: zone}} : null;
-    }
-    return found;
-  }
 }
+
+// The game territories the report's fights are fought in.
+const TERRITORIES = {
+  savage: 1257,
+  normal: 1256,
+  ballad: 1243,
+  ultimate: 1238,
+  unreal: 1300,
+};
 
 function answer(status: number, body: unknown) {
   return {ok: status < 300, status, json: async () => body};
 }
 
 // A report as FFLogs sends it: a Savage boss pulled twice (a wipe, then a
-// kill), an Extreme kill, a normal-mode pull and trash, by a party of
-// eight. Starts at `startTime` (ms).
+// kill), an Extreme kill (a Minstrel's Ballad), a normal-mode pull and
+// trash, by a party of eight. Starts at `startTime` (ms).
 function fflogsReport(
   overrides: Record<string, unknown> = {},
   startTime = Date.parse('2026-10-20T19:00:00Z'),
@@ -86,6 +79,7 @@ function fflogsReport(
   const fight = (
     id: number,
     encounterID: number,
+    territory: number,
     difficulty: number,
     from: number,
     to: number,
@@ -102,6 +96,7 @@ function fflogsReport(
     fightPercentage: 23.456,
     lastPhase: 0,
     friendlyPlayers: party,
+    gameZone: {id: territory},
     ...extra,
   });
   return {
@@ -110,15 +105,18 @@ function fflogsReport(
     startTime,
     endTime: startTime + 3_600_000,
     fights: [
-      fight(1, 0, 0, 0, 60_000),
-      fight(2, 101, 101, 120_000, 420_000),
-      fight(3, 101, 101, 600_000, 1_100_000, {
+      fight(1, 0, TERRITORIES.savage, 0, 0, 60_000),
+      fight(2, 101, TERRITORIES.savage, 101, 120_000, 420_000),
+      fight(3, 101, TERRITORIES.savage, 101, 600_000, 1_100_000, {
         kill: true,
         bossPercentage: 0.01,
         fightPercentage: 0.01,
       }),
-      fight(4, 201, 100, 1_200_000, 1_500_000, {kill: true, lastPhase: 2}),
-      fight(5, 101, 100, 1_600_000, 1_800_000),
+      fight(4, 201, TERRITORIES.ballad, 100, 1_200_000, 1_500_000, {
+        kill: true,
+        lastPhase: 2,
+      }),
+      fight(5, 102, TERRITORIES.normal, 100, 1_600_000, 1_800_000),
     ],
     masterData: {
       actors: [
@@ -144,4 +142,4 @@ function fflogsReport(
   };
 }
 
-export {FakeFflogs, fflogsReport};
+export {FakeFflogs, TERRITORIES, fflogsReport};

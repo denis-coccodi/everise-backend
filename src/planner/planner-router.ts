@@ -1,5 +1,6 @@
 import * as express from 'express';
 import {route} from '../api';
+import {Auth} from '../middleware';
 import {
   FightReportResponse,
   PlannerAvailableResponse,
@@ -7,10 +8,14 @@ import {
 } from './planner-schemas';
 import {ReportsService} from './reports-service';
 
-// The fight planner: the FFLogs reports it plans from, open to everyone.
-// The planning itself runs in the browser.
+// The fight planner: the FFLogs reports it plans from, for members (each
+// new report spends the site's FFLogs points). The planning itself runs in
+// the browser.
 class PlannerRouter {
-  constructor(private readonly reports: ReportsService) {}
+  constructor(
+    private readonly auth: Auth,
+    private readonly reports: ReportsService,
+  ) {}
 
   get router() {
     const router = express.Router();
@@ -39,6 +44,7 @@ class PlannerRouter {
         path: '/planner/reports/:code',
         summary:
           "An FFLogs report's players and its Extreme, Savage and Ultimate pulls",
+        auth: this.auth.required,
         params: ReportParams,
         responses: {
           200: {description: 'The report.', schema: FightReportResponse},
