@@ -1,4 +1,4 @@
-import {Request, RequestHandler, Router} from 'express';
+import {Request, RequestHandler, Response, Router} from 'express';
 import {z} from 'zod';
 import {config} from '../config';
 import {ValidationError} from '../errors';
@@ -138,4 +138,12 @@ function checkResponses(spec: RouteSpec): RequestHandler {
   };
 }
 
-export {RouteSpec, route, routeSpecs};
+// Sends JSON that is already text (e.g. written by a Durable Object), so
+// the Worker doesn't parse and write it again. When responses are checked
+// it goes through res.json, so its schema is checked too.
+function sendJsonText(res: Response, text: string) {
+  if (config.checkApiResponses) res.json(JSON.parse(text));
+  else res.type('json').send(text);
+}
+
+export {RouteSpec, route, routeSpecs, sendJsonText};

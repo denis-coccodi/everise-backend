@@ -1,0 +1,322 @@
+import {FakePull} from './fake-fflogs';
+
+// The report's pull 3 (the Savage kill) as FFLogs sends it, shaped like a
+// real M9S kill: event times are ms from the report's start, the pull runs
+// from 600,000 to 1,100,000. Actors: the eight players (1-8), Eos (12,
+// player 4's pet), the boss (13), FFLogs' "Multiple Players" (15, merged
+// heal-over-time ticks) and the environment (-1).
+function fflogsPull(): FakePull {
+  const t = (ms: number) => 600_000 + ms;
+  const resources = (hp: number) => ({
+    targetResources: {hitPoints: hp, maxHitPoints: 325_090, x: 1, y: 2},
+  });
+  return {
+    startTime: 600_000,
+    endTime: 1_100_000,
+    actors: [
+      ...[1, 2, 3, 4, 5, 6, 7, 8].map(id => ({
+        id,
+        name: `Player ${id}`,
+        type: 'Player',
+        subType: 'Paladin',
+        server: 'Phoenix',
+        petOwner: null,
+      })),
+      {id: 12, name: 'Eos', type: 'Pet', subType: 'Pet', petOwner: 4},
+      {id: 13, name: 'Vamp Fatale', type: 'NPC', subType: 'Boss'},
+      {id: 15, name: 'Multiple Players', type: 'Player', subType: 'LimitBreak'},
+      {id: -1, name: 'Environment', type: 'NPC', subType: 'NPC'},
+    ],
+    abilities: [
+      {gameID: 45956, name: 'Killer Voice'},
+      {gameID: 500000, name: 'Combined DoTs'},
+      {gameID: 500001, name: 'Combined HoTs'},
+      {gameID: 3569, name: 'Asylum'},
+      {gameID: 7535, name: 'Reprisal'},
+      {gameID: 16538, name: 'Fey Illumination'},
+      {gameID: 1000297, name: 'Galvanize'},
+      {gameID: 1000048, name: 'Well Fed'},
+      {gameID: 1001193, name: 'Reprisal'},
+      {gameID: 1004729, name: 'Vulnerability Up'},
+      {gameID: 1003680, name: 'Requiescat'},
+    ],
+    events: {
+      damage: [
+        // The attack as cast, before it lands: left out.
+        {
+          timestamp: t(4_000),
+          type: 'calculateddamage',
+          sourceID: 13,
+          targetID: 1,
+          abilityGameID: 45956,
+          amount: 0,
+        },
+        {
+          timestamp: t(5_000),
+          type: 'damage',
+          sourceID: 13,
+          targetID: 1,
+          abilityGameID: 45956,
+          hitType: 1,
+          amount: 4_000,
+          mitigated: 53_653,
+          unmitigatedAmount: 156_831,
+          absorbed: 99_178,
+          multiplier: 0.66,
+          buffs: '1001193.1000048.1000297.',
+          ...resources(321_090),
+        },
+        // A hit on Eos: the planner follows the players.
+        {
+          timestamp: t(5_000),
+          type: 'damage',
+          sourceID: 13,
+          targetID: 12,
+          abilityGameID: 45956,
+          amount: 9_000,
+        },
+        {
+          timestamp: t(20_000),
+          type: 'damage',
+          sourceID: -1,
+          targetID: 2,
+          abilityGameID: 500000,
+          amount: 45_816,
+          unmitigatedAmount: 45_816,
+          tick: true,
+          buffs: '1000048.',
+        },
+      ],
+      heals: [
+        {
+          timestamp: t(4_500),
+          type: 'calculatedheal',
+          sourceID: 3,
+          targetID: 1,
+          abilityGameID: 3569,
+          amount: 30_000,
+        },
+        {
+          timestamp: t(6_000),
+          type: 'heal',
+          sourceID: 3,
+          targetID: 1,
+          abilityGameID: 3569,
+          amount: 4_000,
+          overheal: 0,
+          ...resources(325_090),
+        },
+        {
+          timestamp: t(7_000),
+          type: 'heal',
+          sourceID: 12,
+          targetID: 2,
+          abilityGameID: 16538,
+          amount: 12_000,
+          overheal: 3_000,
+        },
+        {
+          timestamp: t(8_000),
+          type: 'heal',
+          sourceID: 15,
+          targetID: 1,
+          abilityGameID: 500001,
+          amount: 0,
+          overheal: 30_323,
+          tick: true,
+        },
+        {
+          timestamp: t(5_000),
+          type: 'absorbed',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1000297,
+          attackerID: 13,
+          amount: 99_178,
+          extraAbilityGameID: 45956,
+        },
+        {
+          timestamp: t(5_000),
+          type: 'removebuff',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1000297,
+        },
+      ],
+      playerCasts: [
+        {
+          timestamp: t(1_000),
+          type: 'begincast',
+          sourceID: 3,
+          targetID: 3,
+          abilityGameID: 3569,
+          duration: 1_390,
+        },
+        {
+          timestamp: t(2_390),
+          type: 'cast',
+          sourceID: 3,
+          targetID: -1,
+          abilityGameID: 3569,
+        },
+        {
+          timestamp: t(3_000),
+          type: 'cast',
+          sourceID: 1,
+          targetID: 13,
+          abilityGameID: 7535,
+        },
+        {
+          timestamp: t(6_500),
+          type: 'cast',
+          sourceID: 12,
+          targetID: 12,
+          abilityGameID: 16538,
+        },
+      ],
+      enemyCasts: [
+        {
+          timestamp: t(300),
+          type: 'begincast',
+          sourceID: 13,
+          targetID: 13,
+          abilityGameID: 45956,
+          duration: 4_700,
+        },
+        {
+          timestamp: t(5_000),
+          type: 'cast',
+          sourceID: 13,
+          targetID: -1,
+          abilityGameID: 45956,
+        },
+      ],
+      buffs: [
+        // A shield, broken by the hit.
+        {
+          timestamp: t(2_000),
+          type: 'applybuff',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1000297,
+          duration: 30_000,
+          absorb: 99_178,
+        },
+        {
+          timestamp: t(5_000),
+          type: 'removebuff',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1000297,
+        },
+        // Food from before the pull, refreshed, never removed.
+        {
+          timestamp: t(9_000),
+          type: 'refreshbuff',
+          sourceID: 1,
+          targetID: 1,
+          abilityGameID: 1000048,
+        },
+        // Stacks going down.
+        {
+          timestamp: t(10_000),
+          type: 'applybuff',
+          sourceID: 1,
+          targetID: 1,
+          abilityGameID: 1003680,
+          stack: 3,
+        },
+        {
+          timestamp: t(11_000),
+          type: 'removebuffstack',
+          sourceID: 1,
+          targetID: 1,
+          abilityGameID: 1003680,
+          stack: 2,
+        },
+        {
+          timestamp: t(12_000),
+          type: 'removebuff',
+          sourceID: 1,
+          targetID: 1,
+          abilityGameID: 1003680,
+        },
+        // A status on Eos: left out.
+        {
+          timestamp: t(2_000),
+          type: 'applybuff',
+          sourceID: 4,
+          targetID: 12,
+          abilityGameID: 1000297,
+        },
+      ],
+      debuffs: [
+        {
+          timestamp: t(20_000),
+          type: 'applydebuff',
+          sourceID: -1,
+          targetID: 2,
+          abilityGameID: 1004729,
+          duration: 9_999_000,
+        },
+        {
+          timestamp: t(30_000),
+          type: 'removedebuff',
+          sourceID: -1,
+          targetID: 2,
+          abilityGameID: 1004729,
+        },
+      ],
+      enemyDebuffs: [
+        {
+          timestamp: t(3_000),
+          type: 'applydebuff',
+          sourceID: 1,
+          targetID: 13,
+          abilityGameID: 1001193,
+          duration: 15_000,
+        },
+        {
+          timestamp: t(18_000),
+          type: 'removedebuff',
+          sourceID: 1,
+          targetID: 13,
+          abilityGameID: 1001193,
+        },
+      ],
+      deaths: [
+        {
+          timestamp: t(400_000),
+          type: 'death',
+          sourceID: 13,
+          targetID: 8,
+          abilityGameID: 0,
+          killerID: 13,
+          killingAbilityGameID: 45956,
+        },
+      ],
+      combatants: [
+        {
+          timestamp: t(0),
+          type: 'combatantinfo',
+          sourceID: 1,
+          level: 100,
+          strength: 6_837,
+          dexterity: 511,
+          vitality: 7_119,
+          intelligence: 233,
+          mind: 368,
+          piety: 440,
+          determination: 2_287,
+          criticalHit: 3_576,
+          directHit: 2_122,
+          skillSpeed: 420,
+          spellSpeed: 528,
+          tenacity: 420,
+        },
+      ],
+    },
+  };
+}
+
+export {fflogsPull};

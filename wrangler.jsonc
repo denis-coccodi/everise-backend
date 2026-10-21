@@ -20,7 +20,9 @@
       {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"},
       // The market board's price histories, one per item and place
       // (src/market).
-      {"name": "MARKET", "class_name": "MarketHistoryHub"}
+      {"name": "MARKET", "class_name": "MarketHistoryHub"},
+      // The fight planner's pulls, read from FFLogs (src/planner).
+      {"name": "PLANNER", "class_name": "PlannerHub"}
     ]
   },
   // Never edit or remove applied migrations; add new ones.
@@ -28,7 +30,8 @@
     {"tag": "v1", "new_sqlite_classes": ["EveriseDb"]},
     {"tag": "v2", "new_sqlite_classes": ["LiveHub"]},
     {"tag": "v3", "new_sqlite_classes": ["PartyFinderHub"]},
-    {"tag": "v4", "new_sqlite_classes": ["MarketHistoryHub"]}
+    {"tag": "v4", "new_sqlite_classes": ["MarketHistoryHub"]},
+    {"tag": "v5", "new_sqlite_classes": ["PlannerHub"]}
   ],
 
   // Workers AI, for the Waking Sands characters (src/waking-sands). On the
@@ -110,7 +113,8 @@
           {"name": "DB", "class_name": "EveriseDb"},
           {"name": "LIVE", "class_name": "LiveHub"},
           {"name": "PARTY_FINDER", "class_name": "PartyFinderHub"},
-          {"name": "MARKET", "class_name": "MarketHistoryHub"}
+          {"name": "MARKET", "class_name": "MarketHistoryHub"},
+          {"name": "PLANNER", "class_name": "PlannerHub"}
         ]
       },
       "ai": {"binding": "AI"},

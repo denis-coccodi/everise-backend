@@ -1,13 +1,29 @@
 import {FflogsFetch} from '../../src/planner';
 
+// A pull's events as FFLogs sends them, by kind (the app's aliases:
+// damage, heals, playerCasts, ...), with the report's actors and abilities.
+interface FakePull {
+  startTime: number;
+  endTime: number;
+  actors: Record<string, unknown>[];
+  abilities: {gameID: number; name: string}[];
+  events: Record<string, Record<string, unknown>[]>;
+}
+
 // FFLogs' v2 API: `reports` by code (as its GraphQL sends them; a code in
-// `privateCodes` is refused) and `status` its next answers' status. `tokens` counts the tokens the app
-// asked for, `expiredTokens` makes the API refuse that many requests as
-// unauthorized, and `queries` holds what the app asked (the query and its
-// variables).
+// `privateCodes` is refused), `pulls` by "<code>:<pull id>", sent
+// `pageSize` events of each kind a page (more to finish the last
+// timestamp, and nothing past the first page without an end time, as
+// FFLogs does), and `status` its next answers' status. `tokens` counts the
+// tokens the app asked for, `expiredTokens` makes the API refuse that many
+// requests as unauthorized, `gate` holds pull answers until it resolves,
+// and `queries` holds what the app asked (the query and its variables).
 class FakeFflogs {
   reports: Record<string, Record<string, unknown>> = {};
   privateCodes = new Set<string>();
+  pulls: Record<string, FakePull> = {};
+  pageSize = Infinity;
+  gate?: Promise<void>;
   status = 200;
   tokens = 0;
   expiredTokens = 0;
@@ -16,6 +32,9 @@ class FakeFflogs {
   reset() {
     this.reports = {};
     this.privateCodes = new Set();
+    this.pulls = {};
+    this.pageSize = Infinity;
+    this.gate = undefined;
     this.status = 200;
     this.tokens = 0;
     this.expiredTokens = 0;
@@ -51,8 +70,43 @@ class FakeFflogs {
         data: {reportData: {report: null}},
       });
     }
+    if (query.includes('events(')) {
+      await this.gate;
+      return answer(200, {
+        data: {reportData: {report: this.pullPage(query, variables)}},
+      });
+    }
     return answer(200, {data: {reportData: {report}}});
   };
+
+  // A page of each kind of event the query asks for, from `start`; the
+  // first query also gets the pull and the report's actors and abilities.
+  private pullPage(query: string, variables: Record<string, unknown>) {
+    const pull = this.pulls[`${variables.code}:${variables.pull}`];
+    const page: Record<string, unknown> = {};
+    if (query.includes('fights(')) {
+      page.fights = pull ? [{id: variables.pull, ...pull}] : [];
+      page.masterData = {
+        actors: pull?.actors ?? [],
+        abilities: pull?.abilities ?? [],
+      };
+    }
+    for (const [, kind] of query.matchAll(/(\w+): events\(/g)) {
+      const from = Number(variables.start ?? pull?.startTime ?? 0);
+      const unbounded = variables.start !== null && variables.end === null;
+      const left = [...(pull?.events[kind] ?? [])]
+        .sort((a, b) => Number(a.timestamp) - Number(b.timestamp))
+        .filter(event => !unbounded && Number(event.timestamp) >= from);
+      let size = Math.min(this.pageSize, left.length);
+      while (left[size] && left[size].timestamp === left[size - 1].timestamp) {
+        size++;
+      }
+      const data = left.slice(0, size);
+      const next = left[data.length];
+      page[kind] = {data, nextPageTimestamp: next ? next.timestamp : null};
+    }
+    return page;
+  }
 }
 
 // The game territories the report's fights are fought in.
@@ -145,4 +199,4 @@ function fflogsReport(
   };
 }
 
-export {FakeFflogs, TERRITORIES, fflogsReport};
+export {FakeFflogs, FakePull, TERRITORIES, fflogsReport};

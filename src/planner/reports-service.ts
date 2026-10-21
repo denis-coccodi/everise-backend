@@ -1,6 +1,7 @@
 import {Db, Doc} from '../db';
-import {UpstreamError} from '../errors';
+import {NotFoundError, UpstreamError} from '../errors';
 import {FflogsClient} from './fflogs-client';
+import {PullInput} from './fflogs-pull';
 import {REPORT_QUERY, reportOf, toLoggedReport} from './fflogs-reports';
 import {
   FightKinds,
@@ -52,6 +53,32 @@ class ReportsService {
       this.fightKinds(),
     ]);
     return coveredReport(logged, kinds);
+  }
+
+  // One of the report's Extreme, Savage or Ultimate pulls and its players,
+  // to read its timeline; `finished` when the report won't change any more.
+  async pull(
+    code: string,
+    pullId: number,
+  ): Promise<{input: PullInput; finished: boolean}> {
+    const report = await this.report(code);
+    const pull = report.pulls.find(p => p.id === pullId);
+    if (!pull) {
+      throw new NotFoundError(
+        "That pull isn't in this report, or isn't an Extreme, Savage or Ultimate fight. Pick one from the report's pulls.",
+      );
+    }
+    const inPull = new Set(pull.playerIds);
+    return {
+      input: {
+        code,
+        pullId,
+        startedAt: pull.startedAt,
+        players: report.players.filter(player => inPull.has(player.id)),
+      },
+      finished:
+        this.now().getTime() - Date.parse(report.endedAt) >= FINISHED_MS,
+    };
   }
 
   private async logged(code: string) {

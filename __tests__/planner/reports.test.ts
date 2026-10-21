@@ -12,7 +12,7 @@ import {
   xivApi,
 } from '../utils';
 import {TERRITORIES} from '../utils/fake-fflogs';
-import {duty} from '../utils/fake-xivapi';
+import {refreshGameData} from '../utils/planner-game-data';
 
 const CODE = 'aBcD1234eFgH5678';
 const STARTED = Date.parse('2026-10-20T19:00:00Z');
@@ -24,38 +24,6 @@ const load = (code = CODE) =>
     .set('authorization', `Token ${token}`);
 const reportQueries = () =>
   fflogs.queries.filter(q => q.query.includes('reportData'));
-
-// The game data's high-end duties, with the territories they're fought in:
-// the Extreme trial's name doesn't say Extreme.
-const territory = (id: number) => ({'TerritoryType@as(raw)': id});
-function refreshGameData() {
-  xivApi.reset();
-  xivApi.sheets.ContentFinderCondition.push(
-    duty(
-      20,
-      "the Minstrel's Ballad: Sphene's Burden",
-      4,
-      territory(TERRITORIES.ballad),
-    ),
-    duty(21, 'AAC Cruiserweight M1 (Savage)', 5, territory(TERRITORIES.savage)),
-    duty(22, 'AAC Cruiserweight M1', 5, territory(TERRITORIES.normal)),
-    duty(
-      23,
-      'Futures Rewritten (Ultimate)',
-      28,
-      territory(TERRITORIES.ultimate),
-    ),
-    duty(
-      24,
-      'the Akh Afah Amphitheatre (Unreal)',
-      4,
-      territory(TERRITORIES.unreal),
-    ),
-  );
-  return request(app)
-    .post('/api/duties/refresh')
-    .set('X-Refresh-Key', process.env.DUTIES_REFRESH_KEY!);
-}
 
 beforeEach(async () => {
   await clearDb();
