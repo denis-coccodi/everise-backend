@@ -39,6 +39,8 @@ function fflogsPull(): FakePull {
       {gameID: 1001193, name: 'Reprisal'},
       {gameID: 1004729, name: 'Vulnerability Up'},
       {gameID: 1003680, name: 'Requiescat'},
+      {gameID: 1001944, name: 'Sacred Soil'},
+      {gameID: 1000150, name: 'Medica II'},
     ],
     events: {
       damage: [
@@ -115,11 +117,55 @@ function fflogsPull(): FakePull {
           amount: 12_000,
           overheal: 3_000,
         },
+        // Two healers' HoTs on player 1, each ticking on its own: player
+        // 4's (1,000 a tick) and player 3's (3,000).
+        {
+          timestamp: t(9_000),
+          type: 'heal',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1001944,
+          amount: 1_000,
+          overheal: 0,
+          tick: true,
+        },
+        {
+          timestamp: t(16_000),
+          type: 'heal',
+          sourceID: 3,
+          targetID: 1,
+          abilityGameID: 1000150,
+          amount: 2_500,
+          overheal: 500,
+          tick: true,
+        },
+        // Merged ticks (FFLogs' "Multiple Players"): with both HoTs on the
+        // player, with only player 3's, and on a player with none.
         {
           timestamp: t(8_000),
           type: 'heal',
           sourceID: 15,
           targetID: 1,
+          abilityGameID: 500001,
+          amount: 4_000,
+          overheal: 400,
+          tick: true,
+        },
+        {
+          timestamp: t(17_000),
+          type: 'heal',
+          sourceID: 15,
+          targetID: 1,
+          abilityGameID: 500001,
+          amount: 2_900,
+          overheal: 0,
+          tick: true,
+        },
+        {
+          timestamp: t(8_000),
+          type: 'heal',
+          sourceID: 15,
+          targetID: 2,
           abilityGameID: 500001,
           amount: 0,
           overheal: 30_323,
@@ -192,6 +238,35 @@ function fflogsPull(): FakePull {
         },
       ],
       buffs: [
+        // The HoTs on player 1.
+        {
+          timestamp: t(7_000),
+          type: 'applybuff',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1001944,
+        },
+        {
+          timestamp: t(15_000),
+          type: 'removebuff',
+          sourceID: 4,
+          targetID: 1,
+          abilityGameID: 1001944,
+        },
+        {
+          timestamp: t(7_000),
+          type: 'applybuff',
+          sourceID: 3,
+          targetID: 1,
+          abilityGameID: 1000150,
+        },
+        {
+          timestamp: t(20_000),
+          type: 'removebuff',
+          sourceID: 3,
+          targetID: 1,
+          abilityGameID: 1000150,
+        },
         // A shield, broken by the hit.
         {
           timestamp: t(2_000),

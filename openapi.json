@@ -8403,9 +8403,28 @@
                   "maximum": 9007199254740991
                 },
                 "action": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "status": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 },
                 "amount": {
                   "type": "integer",
@@ -8418,6 +8437,9 @@
                   "maximum": 9007199254740991
                 },
                 "tick": {
+                  "type": "boolean"
+                },
+                "estimated": {
                   "type": "boolean"
                 },
                 "hp": {
@@ -8439,9 +8461,11 @@
                 "pet",
                 "target",
                 "action",
+                "status",
                 "amount",
                 "overheal",
                 "tick",
+                "estimated",
                 "hp"
               ],
               "additionalProperties": false

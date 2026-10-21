@@ -97,24 +97,35 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
     ]);
   });
 
-  test("credits pets' heals to their owner, and merged ticks to no one", async () => {
+  test("credits pets' heals to their owner, and gives HoT ticks their status", async () => {
     const response = await load();
+    const heals = response.body.heals;
 
-    expect(response.body.heals).toEqual([
-      {
-        at: 6_000,
-        source: 3,
-        pet: null,
-        target: 1,
-        action: 3569,
-        amount: 4_000,
-        overheal: 0,
-        tick: false,
-        hp: 325_090,
-      },
-      expect.objectContaining({source: 4, pet: 'Eos', target: 2}),
-      expect.objectContaining({source: null, action: 500001, tick: true}),
-    ]);
+    expect(heals[0]).toEqual({
+      at: 6_000,
+      source: 3,
+      pet: null,
+      target: 1,
+      action: 3569,
+      status: null,
+      amount: 4_000,
+      overheal: 0,
+      tick: false,
+      estimated: false,
+      hp: 325_090,
+    });
+    expect(heals[1]).toMatchObject({source: 4, pet: 'Eos', target: 2});
+    // FFLogs numbers a HoT's own ticks by the status.
+    expect(heals).toContainEqual(
+      expect.objectContaining({
+        at: 9_000,
+        source: 4,
+        action: null,
+        status: 1944,
+        amount: 1_000,
+        estimated: false,
+      }),
+    );
     expect(response.body.absorbs).toEqual([
       {
         at: 5_000,
@@ -124,6 +135,53 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
         amount: 99_178,
         hitAction: 45956,
       },
+    ]);
+  });
+
+  test("credits FFLogs' merged HoT ticks to the healers whose HoTs were on the player", async () => {
+    const response = await load();
+    const merged = response.body.heals.filter(
+      (heal: {action: number | null}) => heal.action === 500001,
+    );
+
+    expect(merged).toEqual([
+      // Both HoTs on player 1: split 1:3, as their own ticks are.
+      expect.objectContaining({
+        at: 8_000,
+        target: 1,
+        source: 4,
+        status: 1944,
+        amount: 1_000,
+        overheal: 100,
+        estimated: true,
+      }),
+      expect.objectContaining({
+        at: 8_000,
+        target: 1,
+        source: 3,
+        status: 150,
+        amount: 3_000,
+        overheal: 300,
+        estimated: true,
+      }),
+      // No known HoT on player 2: credited to no one.
+      expect.objectContaining({
+        at: 8_000,
+        target: 2,
+        source: null,
+        status: null,
+        overheal: 30_323,
+        estimated: false,
+      }),
+      // Only player 3's left: all theirs.
+      expect.objectContaining({
+        at: 17_000,
+        target: 1,
+        source: 3,
+        status: 150,
+        amount: 2_900,
+        estimated: false,
+      }),
     ]);
   });
 
@@ -173,6 +231,25 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
         stacks: null,
         shield: null,
       },
+      // The HoTs on player 1.
+      {
+        status: 1944,
+        source: 4,
+        target: 1,
+        from: 7_000,
+        to: 15_000,
+        stacks: null,
+        shield: null,
+      },
+      {
+        status: 150,
+        source: 3,
+        target: 1,
+        from: 7_000,
+        to: 20_000,
+        stacks: null,
+        shield: null,
+      },
       {
         status: 3680,
         source: 1,
@@ -219,8 +296,10 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
     ]);
     expect(response.body.statuses).toEqual([
       {id: 48, name: 'Well Fed'},
+      {id: 150, name: 'Medica II'},
       {id: 297, name: 'Galvanize'},
       {id: 1193, name: 'Reprisal'},
+      {id: 1944, name: 'Sacred Soil'},
       {id: 3680, name: 'Requiescat'},
       {id: 4729, name: 'Vulnerability Up'},
     ]);
