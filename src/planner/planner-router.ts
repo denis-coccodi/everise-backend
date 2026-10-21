@@ -1,11 +1,13 @@
 import * as express from 'express';
-import {route} from '../api';
+import {route, sendJsonText} from '../api';
 import {Auth} from '../middleware';
 import {
   FightReportResponse,
   PlannerAvailableResponse,
   ReportParams,
 } from './planner-schemas';
+import {PullParams, PullTimelineResponse} from './pull-schemas';
+import {PullSource} from './pull-source';
 import {ReportsService} from './reports-service';
 
 // The fight planner: the FFLogs reports it plans from, for members (each
@@ -15,6 +17,7 @@ class PlannerRouter {
   constructor(
     private readonly auth: Auth,
     private readonly reports: ReportsService,
+    private readonly pulls: PullSource,
   ) {}
 
   get router() {
@@ -52,6 +55,26 @@ class PlannerRouter {
       },
       async (req, res) => {
         res.json(await this.reports.report(req.params.code));
+      },
+    );
+
+    // Everything that happened in one pull, for the planner to plan from.
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/planner/reports/:code/pulls/:pullId',
+        summary: "One Extreme, Savage or Ultimate pull's timeline",
+        auth: this.auth.required,
+        params: PullParams,
+        responses: {
+          200: {description: 'The timeline.', schema: PullTimelineResponse},
+        },
+      },
+      async (req, res) => {
+        const {code, pullId} = req.params;
+        const {input, finished} = await this.reports.pull(code, pullId);
+        sendJsonText(res, await this.pulls.timeline(input, finished));
       },
     );
 

@@ -9,6 +9,7 @@ import {HubLiveFeed, LiveHub, connectToHub} from './live/live-hub';
 import {isAllowedOrigin, isLiveRequest} from './live/live-requests';
 import {HubMarket, MarketHistoryHub} from './market/market-hub';
 import {HubPartyFinder, PartyFinderHub} from './party-finder/party-finder-hub';
+import {HubPulls, PlannerHub} from './planner/planner-hub';
 import {AiBinding, WorkersAiModel} from './waking-sands';
 
 // Express runs inside the Worker through Cloudflare's Node.js HTTP server
@@ -78,6 +79,13 @@ createApp(db, undefined, undefined, new HubLiveFeed(hubs), {
   market: new HubMarket(env.MARKET),
   venues: cachedSourceFetch,
   events: cachedSourceFetch,
+  // The fight planner's pulls, read in a Durable Object (the "PLANNER"
+  // binding).
+  fflogs: {
+    settings: config.fflogs,
+    fetch: (url, init) => fetch(url, init),
+    pulls: new HubPulls(env.PLANNER),
+  },
   // New passwords are checked against Have I Been Pwned's leaks.
   leakedPasswords: (url, init) => fetch(url, init),
 }).listen(PORT);
@@ -147,4 +155,4 @@ export default {
   },
 };
 
-export {EveriseDb, LiveHub, MarketHistoryHub, PartyFinderHub};
+export {EveriseDb, LiveHub, MarketHistoryHub, PartyFinderHub, PlannerHub};
