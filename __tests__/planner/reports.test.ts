@@ -219,6 +219,17 @@ describe('GET /api/planner/reports/:code', () => {
     expect(reportQueries()).toHaveLength(1);
   });
 
+  test('reads a finished report again when it was kept by an older version', async () => {
+    await load();
+    const kept = await db.get('fflogsReports', CODE);
+    await db.set('fflogsReports', CODE, {...kept, version: undefined});
+
+    const again = await load();
+
+    expect(again.status).toBe(200);
+    expect(reportQueries()).toHaveLength(2);
+  });
+
   test('reads a report still being logged again after two minutes', async () => {
     clock.now = new Date('2026-10-20T20:10:00Z');
     await load();
