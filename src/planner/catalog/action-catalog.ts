@@ -1,3 +1,5 @@
+import {STATUS_IDS} from './status-ids';
+
 // The actions the planner schedules: how each is used (from the game data,
 // read from XIVAPI) and what its heals and mitigations do (the effect
 // tables next to this file, written by hand from the game's tooltips).
@@ -34,8 +36,10 @@ type ShieldBase = (typeof SHIELD_BASES)[number];
 interface ActionEffect {
   kind: EffectKind;
   target: EffectTarget;
-  // The status it puts on the target, as the game names it (and logs).
+  // The status it puts on the target, as the game names it (and logs),
+  // and its id in the game data (and logs).
   status: string | null;
+  statusId: number | null;
   // Mitigation of all damage, max HP, healing, or a shield (of `of`).
   percent: number | null;
   // Mitigation that differs for physical and magic damage.
@@ -91,6 +95,9 @@ interface EffectValues {
   s?: number;
   stacks?: number;
   condition?: string;
+  // The status's id when its name isn't enough (Neutral Sect's barriers
+  // and its buff share a name); otherwise it comes from STATUS_IDS.
+  statusId?: number;
 }
 
 // An effect for the tables.
@@ -104,6 +111,9 @@ function effect(
     kind,
     target,
     status,
+    statusId:
+      values.statusId ??
+      (status === null ? null : (STATUS_IDS[status] ?? null)),
     percent: values.percent ?? null,
     physical: values.physical ?? null,
     magic: values.magic ?? null,

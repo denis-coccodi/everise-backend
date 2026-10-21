@@ -1,5 +1,12 @@
 import {DurableObject} from 'cloudflare:workers';
 import {config} from '../config';
+import {
+  ForbiddenError,
+  HttpError,
+  NotFoundError,
+  UnavailableError,
+  UpstreamError,
+} from '../errors';
 import {FflogsClient} from './fflogs-client';
 import {PullInput} from './fflogs-pull';
 import {LocalPulls, PullSource} from './pull-source';
@@ -24,9 +31,26 @@ class PlannerHub extends DurableObject {
     ),
   );
 
-  timeline(input: PullInput): Promise<string> {
-    return this.pulls.timeline(input);
+  // An error's class doesn't survive the trip back to the Worker, so the
+  // app's own errors come back as their status and message.
+  async timeline(input: PullInput): Promise<HubAnswer> {
+    try {
+      return {json: await this.pulls.timeline(input)};
+    } catch (error) {
+      if (!(error instanceof HttpError)) throw error;
+      return {status: error.status, message: error.publicMessage};
+    }
   }
+}
+
+type HubAnswer = {json: string} | {status: number; message: string};
+
+// The app's error for a status the hub answered.
+function hubError(status: number, message: string) {
+  if (status === 403) return new ForbiddenError(message);
+  if (status === 404) return new NotFoundError(message);
+  if (status === 503) return new UnavailableError(message);
+  return new UpstreamError(message);
 }
 
 // Reads pulls through the hub, and keeps finished ones in the data
@@ -43,9 +67,11 @@ class HubPulls implements PullSource {
     const hit = await cache.match(key);
     if (hit) return hit.text();
     // RPC stubs drop the method's types: typed once here.
-    const text = (await this.hubs
+    const answer = (await this.hubs
       .getByName(HUB_NAME)
-      .timeline(input)) as string;
+      .timeline(input)) as HubAnswer;
+    if (!('json' in answer)) throw hubError(answer.status, answer.message);
+    const text = answer.json;
     if (finished) {
       await cache.put(
         key,
