@@ -72,18 +72,24 @@ interface Hit {
 }
 
 // Healing a player received. `source` is the healer (a pet's owner for
-// its heals), or null for what the log credits to no player: merged
-// heal-over-time ticks and the Limit Break.
+// its heals), or null for what the log credits to no player: the Limit
+// Break, and merged heal-over-time ticks it couldn't credit.
 interface Heal {
   at: number;
   source: number | null;
   // The pet that cast it (Eos, Seraph, Earthly Star...), if one did.
   pet: string | null;
   target: number;
-  action: number;
+  // The action that healed; null for a heal-over-time tick, which comes
+  // from `status`.
+  action: number | null;
+  status: number | null;
   amount: number;
   overheal: number;
   tick: boolean;
+  // A share of a merged tick split between several healers' HoTs, by how
+  // big each one's own ticks were.
+  estimated: boolean;
   hp: number | null;
 }
 

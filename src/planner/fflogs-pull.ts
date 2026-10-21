@@ -1,4 +1,5 @@
 import {ReportPlayer} from './fight-report';
+import {creditMergedHots} from './fflogs-hots';
 import {FflogsEvent, FflogsPullData} from './fflogs-pull-query';
 import {
   STATUS_OFFSET,
@@ -89,19 +90,26 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       hp: orNull(resources(event)?.hitPoints),
     }));
 
+  // FFLogs numbers a heal-over-time tick by its status.
   const heals = ofType(events.heals, 'heal')
     .filter(onPlayer)
-    .map(event => ({
-      at: at(event),
-      source: ownerOf(orNull(event.sourceID)),
-      pet: petOf(orNull(event.sourceID)),
-      target: num(event.targetID),
-      action: num(event.abilityGameID),
-      amount: num(event.amount),
-      overheal: num(event.overheal),
-      tick: event.tick === true,
-      hp: orNull(resources(event)?.hitPoints),
-    }));
+    .map(event => {
+      const id = num(event.abilityGameID);
+      const fromStatus = id >= STATUS_OFFSET;
+      return {
+        at: at(event),
+        source: ownerOf(orNull(event.sourceID)),
+        pet: petOf(orNull(event.sourceID)),
+        target: num(event.targetID),
+        action: fromStatus ? null : id,
+        status: fromStatus ? statusId(id) : null,
+        amount: num(event.amount),
+        overheal: num(event.overheal),
+        tick: event.tick === true,
+        estimated: false,
+        hp: orNull(resources(event)?.hitPoints),
+      };
+    });
 
   const absorbs = ofType(events.heals, 'absorbed')
     .filter(onPlayer)
@@ -171,6 +179,15 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       boss: actors.get(id)?.subType === 'Boss',
     }));
 
+  const auras = statusSpans(
+    [...events.buffs, ...events.debuffs, ...events.enemyDebuffs]
+      .filter(event => actors.get(num(event.targetID))?.type !== 'Pet')
+      .sort((a, b) => num(a.timestamp) - num(b.timestamp)),
+    durationMs,
+    at,
+    id => ownerOf(id) ?? id,
+  );
+
   const timeline: PullTimeline = {
     code: input.code,
     pullId: input.pullId,
@@ -181,18 +198,11 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
     actions: [],
     statuses: [],
     damage,
-    heals,
+    heals: creditMergedHots(heals, auras),
     absorbs,
     playerCasts: casts(events.playerCasts, id => ownerOf(id) ?? id),
     enemyCasts: casts(events.enemyCasts, id => id),
-    auras: statusSpans(
-      [...events.buffs, ...events.debuffs, ...events.enemyDebuffs]
-        .filter(event => actors.get(num(event.targetID))?.type !== 'Pet')
-        .sort((a, b) => num(a.timestamp) - num(b.timestamp)),
-      durationMs,
-      at,
-      id => ownerOf(id) ?? id,
-    ),
+    auras,
     deaths: ofType(events.deaths, 'death').map(event => ({
       at: at(event),
       player: num(event.targetID),
@@ -219,7 +229,7 @@ function names(
   const byId = new Map(abilities.map(a => [a.gameID, a.name]));
   const actionIds = new Set([
     ...timeline.damage.map(e => e.action),
-    ...timeline.heals.map(e => e.action),
+    ...timeline.heals.flatMap(e => (e.action === null ? [] : [e.action])),
     ...timeline.playerCasts.map(e => e.action),
     ...timeline.enemyCasts.map(e => e.action),
     ...timeline.absorbs.flatMap(e =>
@@ -230,6 +240,7 @@ function names(
   const statusIds = new Set([
     ...timeline.auras.map(e => e.status),
     ...timeline.absorbs.map(e => e.status),
+    ...timeline.heals.flatMap(e => (e.status === null ? [] : [e.status])),
     ...timeline.damage.flatMap(e => e.statuses),
   ]);
   const named = (ids: Set<number>, offset: number) =>

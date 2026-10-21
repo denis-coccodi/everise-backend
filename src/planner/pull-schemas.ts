@@ -62,15 +62,19 @@ const Hit = z.strictObject({
 
 const Heal = z.strictObject({
   at,
-  // The healer (a pet's owner); null for merged heal-over-time ticks and
-  // the Limit Break.
+  // The healer (a pet's owner); null for the Limit Break, and merged
+  // heal-over-time ticks that couldn't be credited.
   source: int.nullable(),
   pet: z.string().nullable(),
   target: int,
-  action: int,
+  // Null for a heal-over-time tick, which comes from `status`.
+  action: int.nullable(),
+  status: int.nullable(),
   amount: int,
   overheal: int,
   tick: z.boolean(),
+  // A share of a merged tick split between several healers' HoTs.
+  estimated: z.boolean(),
   hp: int.nullable(),
 });
 
