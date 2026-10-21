@@ -48,4 +48,5 @@ The fight planner's FFLogs reads (`src/planner`). Rebuilt from FFLogs whenever m
 
 | Collection | Fields (besides id/createdAt/updatedAt) | Defined in |
 | --- | --- | --- |
+| `plannerCatalog` | json (the whole `ActionCatalog` as JSON text, sent as is) (one document, id `catalog`; built again by `POST /api/planner/catalog/refresh`) | `src/planner/catalog/catalog-service.ts` (`CatalogDoc`) |
 | `fflogsReports` | report (the `LoggedReport`: title, times, players, every boss pull with its game territory and FFLogs difficulty; sorted into Extreme/Savage/Ultimate when answered), fetchedAt (ms) (id: the FFLogs report code, `a:` first for anonymous ones; read again after 2 minutes unless it ended an hour before it was read) | `src/planner/reports-service.ts` (`StoredReport`) |
