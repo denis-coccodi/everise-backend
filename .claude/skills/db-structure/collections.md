@@ -23,6 +23,7 @@ Every collection of the `docs` table, its fields (besides `id`, `createdAt`, `up
 | `relayedPosts` | channel (`weekly` or `hunts`), kind (`fashion-report`, `island-sanctuary`, `hunt`), dataCentre? (a hunt train's, from its source server), postedAt, startsAt? (a hunt train's start: the time in its text, or postedAt), message (the Discord message as it was sent: content, embeds, attachments; pictures from Discord's file server copied to R2 at `relays/<file>`) (id: Discord's message id; no history: only the latest Fashion Report and Island Sanctuary season, and per data centre the hunt trains to come, running (2 hours) and the last started; deleted when deleted in Discord) | `src/relays/relay-docs.ts` (`RelayedPostDoc`) |
 | `relayCursors` | lastId (the newest Discord message looked at in the channel) (id: `weekly` or `hunts`) | `src/relays/relay-docs.ts` (`RelayCursorDoc`) |
 | `chatUsage` | neurons, members ({users.id or `guests`: Neurons}) (id: the UTC day, `YYYY-MM-DD`; the Waking Sands daily limits) | `src/waking-sands/sands-docs.ts` (`UsageDoc`) |
+| `demoContent` | ids ({collection: ids[]}: every document the demo content added, so it can be removed) (one document, id `added`; its presence means the site shows demo content) | `src/demo/demo-content-service.ts` (`DemoRecordDoc`) |
 
 Tags and favorites have no collection of their own; they are arrays on articles.
 

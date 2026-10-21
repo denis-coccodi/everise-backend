@@ -200,6 +200,78 @@
         }
       }
     },
+    "/api/admin/demo-content": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add the demo members, posts and comments",
+        "description": "Admins only.",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "It was added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoContentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Remove the demo content and everything added to it",
+        "description": "Admins only.",
+        "security": [
+          {
+            "token": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "It was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoContentResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/staging-access": {
       "post": {
         "tags": [
@@ -1116,6 +1188,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProvidersResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo-content": {
+      "get": {
+        "tags": [
+          "demo-content"
+        ],
+        "summary": "Whether the site shows demo content",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Whether it does.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoContentResponse"
                 }
               }
             }
@@ -6339,6 +6442,45 @@
         },
         "required": [
           "tags"
+        ],
+        "additionalProperties": false
+      },
+      "DemoContentResponse": {
+        "type": "object",
+        "properties": {
+          "demoContent": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "members": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "posts": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "comments": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "active",
+              "members",
+              "posts",
+              "comments"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "demoContent"
         ],
         "additionalProperties": false
       },

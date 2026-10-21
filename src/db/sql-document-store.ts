@@ -95,6 +95,9 @@ class SqlDocumentStore implements Db {
             write.collection,
             write.id,
           );
+        } else if (write.op === 'put') {
+          const {collection, id, data, createdAt} = write;
+          this.write(collection, id, data, createdAt, createdAt);
         } else {
           this.updateNow(write.collection, write.id, write.data);
         }

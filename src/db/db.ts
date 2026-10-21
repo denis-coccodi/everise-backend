@@ -26,7 +26,9 @@ interface FindOptions {
 // One change in a batch.
 type Write =
   | {op: 'delete'; collection: string; id: string}
-  | {op: 'update'; collection: string; id: string; data: DocData};
+  | {op: 'update'; collection: string; id: string; data: DocData}
+  // Creates or replaces a document dated `createdAt` (the demo content).
+  | {op: 'put'; collection: string; id: string; data: DocData; createdAt: Date};
 
 // A minimal document store. Implemented by `SqlDocumentStore`, which runs
 // inside the `EveriseDb` Durable Object, and on in-memory SQLite in tests.

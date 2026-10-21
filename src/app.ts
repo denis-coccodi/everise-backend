@@ -6,6 +6,7 @@ import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
 import {ArticlesService, CommentsService, articleRoutes} from './articles';
 import {config} from './config';
 import {Db} from './db';
+import {DemoContentService, DemoRouter} from './demo';
 import {
   DutiesRouter,
   DutiesService,
@@ -324,6 +325,10 @@ function createApp(
   app.use('/api', wakingSandsRouter);
 
   app.use('/api', adminRouter);
+  app.use(
+    '/api',
+    new DemoRouter(auth, new DemoContentService(db, usersService, now)).router,
+  );
 
   app.use('/api', new SitemapRouter(new SitemapService(db)).router);
 
