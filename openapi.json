@@ -8010,6 +8010,18 @@
                           "null"
                         ]
                       },
+                      "statusId": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
                       "percent": {
                         "type": [
                           "number",
@@ -8090,6 +8102,7 @@
                       "kind",
                       "target",
                       "status",
+                      "statusId",
                       "percent",
                       "physical",
                       "magic",

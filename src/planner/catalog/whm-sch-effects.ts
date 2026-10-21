@@ -62,7 +62,11 @@ const WHM_SCH_EFFECTS: EffectEntry[] = [
     id: 16536, // Temperance
     effects: [
       effect('mitigation', 'party', 'Temperance', {percent: 10, s: 20}),
-      effect('healingPotency', 'self', 'Temperance', {percent: 20, s: 20}),
+      effect('healingPotency', 'self', 'Temperance', {
+        percent: 20,
+        s: 20,
+        statusId: 1872,
+      }),
     ],
   },
   {

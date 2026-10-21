@@ -1,11 +1,13 @@
 import {ActionEffect} from './action-catalog';
 
-// An action whose tooltip no longer has a number its effects give: a
-// patch may have changed it, so the table needs a look.
+// An action whose tooltip no longer has a number its effects give, or one
+// of whose status ids no longer has its name: a patch may have changed
+// it, so the table needs a look.
 interface TooltipChange {
   id: number;
   name: string;
-  // The numbers looked for, as a tooltip writes them ("20%", "400", "15s").
+  // The numbers looked for, as a tooltip writes them ("20%", "400", "15s"),
+  // and the statuses that changed ('status 1191 "Rampart"').
   missing: string[];
 }
 
@@ -35,6 +37,7 @@ function expected(effects: ActionEffect[]) {
 function tooltipChanges(
   entries: {id: number; name: string; effects: ActionEffect[]}[],
   tooltips: Map<number, string>,
+  statusNames: Map<number, string>,
 ): TooltipChange[] {
   const changes: TooltipChange[] = [];
   for (const entry of entries) {
@@ -42,6 +45,11 @@ function tooltipChanges(
     const missing = expected(entry.effects)
       .filter(n => !n.alternatives.some(text => contains(tooltip, text)))
       .map(n => n.text);
+    for (const e of entry.effects) {
+      if (e.statusId !== null && statusNames.get(e.statusId) !== e.status) {
+        missing.push(`status ${e.statusId} "${e.status}"`);
+      }
+    }
     if (missing.length) {
       changes.push({
         id: entry.id,

@@ -1,6 +1,7 @@
 import 'jest-extended';
 import request from 'supertest';
 import {ENTRIES} from '../../src/planner/catalog/effect-table';
+import {STATUS_IDS} from '../../src/planner/catalog/status-ids';
 import {app, clearDb, xivApi} from '../utils';
 
 const KEY = process.env.DUTIES_REFRESH_KEY!;
@@ -66,6 +67,15 @@ beforeEach(async () => {
       CooldownGroup: 58,
     }),
   ];
+  // The statuses the actions above apply, by the tables' ids.
+  xivApi.sheets.Status = [
+    [1191, 'Rampart'],
+    [297, 'Galvanize'],
+    [1918, 'Catalyze'],
+    [1944, 'Sacred Soil'],
+    [2607, 'Eukrasian Diagnosis'],
+    [2608, 'Differential Diagnosis'],
+  ].map(([id, name]) => ({row_id: id as number, fields: {Name: name}}));
   xivApi.sheets.ActionTransient = [
     tooltip(
       7531,
@@ -131,12 +141,26 @@ describe('POST /api/planner/catalog/refresh', () => {
     for (const id of [7531, 185, 188, 16230, 24291]) {
       expect(changed.map((c: {id: number}) => c.id)).not.toContain(id);
     }
+    // A status id that no longer has its name.
+    expect(changed.map((c: {id: number}) => c.id)).not.toContain(185);
     // Effects of actions the game data doesn't have.
     expect(changed).toContainEqual({
       id: 25751,
       name: '',
       missing: ['the action'],
     });
+  });
+});
+
+test('lists actions one of whose status ids has another name now', async () => {
+  xivApi.sheets.Status[2].fields.Name = 'Catalyze (Old)';
+
+  const response = await refresh();
+
+  expect(response.body.changed).toContainEqual({
+    id: 185,
+    name: 'Adloquium',
+    missing: ['status 1918 "Catalyze"'],
   });
 });
 
@@ -180,6 +204,7 @@ describe('GET /api/planner/catalog', () => {
           kind: 'mitigation',
           target: 'self',
           status: 'Rampart',
+          statusId: 1191,
           percent: 20,
           durationMs: 20_000,
         }),
@@ -209,6 +234,18 @@ describe('GET /api/planner/catalog', () => {
 });
 
 describe('the effect tables', () => {
+  test('give every status its game id, and name only statuses they use', () => {
+    const used = new Set<string>();
+    for (const {id, effects} of ENTRIES) {
+      for (const e of effects) {
+        if (e.status === null) continue;
+        used.add(e.status);
+        expect([id, e.status, e.statusId]).not.toEqual([id, e.status, null]);
+      }
+    }
+    expect(Object.keys(STATUS_IDS).filter(name => !used.has(name))).toEqual([]);
+  });
+
   test('list each action once', () => {
     const ids = ENTRIES.map(entry => entry.id);
 

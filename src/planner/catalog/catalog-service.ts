@@ -7,6 +7,7 @@ import {TooltipChange, tooltipChanges} from './tooltip-check';
 import {
   CatalogGet,
   readActions,
+  readStatusNames,
   readTooltips,
   toCatalogAction,
 } from './xivapi-actions';
@@ -44,9 +45,17 @@ class CatalogService {
   // Reads the game data again; a failed read leaves the kept catalog.
   async refresh() {
     const ids = [...EFFECTS.keys()];
-    const [{version, rows}, tooltips] = await Promise.all([
+    const statusIds = [
+      ...new Set(
+        ENTRIES.flatMap(entry => entry.effects.map(e => e.statusId)).filter(
+          (id): id is number => id !== null,
+        ),
+      ),
+    ];
+    const [{version, rows}, tooltips, statusNames] = await Promise.all([
       readActions(this.get, ids),
       readTooltips(this.get, ids),
+      readStatusNames(this.get, statusIds),
     ]);
     const actions = rows
       .map(row =>
@@ -58,6 +67,7 @@ class CatalogService {
     const changed = tooltipChanges(
       ENTRIES.map(entry => ({...entry, name: names.get(entry.id) ?? ''})),
       tooltips,
+      statusNames,
     );
     // Effects for actions the game data doesn't have any more.
     for (const id of ids) {

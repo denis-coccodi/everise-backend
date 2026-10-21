@@ -9,6 +9,8 @@ const ActionEffect = z.strictObject({
   target: z.enum(TARGETS),
   // The status it puts on the target, as the game (and logs) name it.
   status: z.string().nullable(),
+  // Its id in the game data, as logs give it.
+  statusId: int.nullable(),
   percent: z.number().nullable(),
   physical: z.number().nullable(),
   magic: z.number().nullable(),

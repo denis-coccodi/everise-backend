@@ -75,21 +75,34 @@ async function readActions(get: CatalogGet, extra: number[]) {
   return {version, rows};
 }
 
-// The actions' tooltips (ActionTransient), by action id.
-async function readTooltips(get: CatalogGet, ids: number[]) {
-  const tooltips = new Map<number, string>();
+// One text field of a sheet's rows, by row id.
+async function readField(
+  get: CatalogGet,
+  sheet: string,
+  field: string,
+  ids: number[],
+) {
+  const values = new Map<number, string>();
   for (let i = 0; i < ids.length; i += ROWS_PER_READ) {
     const rows = ids.slice(i, i + ROWS_PER_READ).join(',');
     const body = (await getJson(
       get,
-      `${XIVAPI}/sheet/ActionTransient?rows=${rows}&fields=Description`,
+      `${XIVAPI}/sheet/${sheet}?rows=${rows}&fields=${field}`,
     )) as {rows?: ActionRow[]};
     for (const row of body.rows ?? []) {
-      tooltips.set(row.row_id, String(row.fields.Description ?? ''));
+      values.set(row.row_id, String(row.fields[field] ?? ''));
     }
   }
-  return tooltips;
+  return values;
 }
+
+// The actions' tooltips (ActionTransient), by action id.
+const readTooltips = (get: CatalogGet, ids: number[]) =>
+  readField(get, 'ActionTransient', 'Description', ids);
+
+// The statuses' names, by status id.
+const readStatusNames = (get: CatalogGet, ids: number[]) =>
+  readField(get, 'Status', 'Name', ids);
 
 const num = (value: unknown) => (typeof value === 'number' ? value : 0);
 
@@ -125,4 +138,11 @@ function toCatalogAction(
   };
 }
 
-export {ActionRow, CatalogGet, readActions, readTooltips, toCatalogAction};
+export {
+  ActionRow,
+  CatalogGet,
+  readActions,
+  readStatusNames,
+  readTooltips,
+  toCatalogAction,
+};
