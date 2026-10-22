@@ -25,7 +25,8 @@ Changes reach `main` only through pull requests (see the `feature-branch` skill)
 
 `.github/workflows/deploy-production.yaml` (**Deploy production**, `workflow_dispatch` only):
 - First checks that `GITHUB_SHA` has a successful Test and deploy staging push run (`gh run list --commit ... --status success`); otherwise fails without deploying.
-- Then `wrangler deploy` and a curl of `/api/tags`. GitHub environment `production`, limited to `main`, no reviewers.
+- Then `wrangler deploy`, a curl of `/api/tags` and the article count check, and finally tags the commit `prod-YYYY-MM-DD-HHMM` (UTC) and pushes the tag (`contents: write`). GitHub environment `production`, limited to `main`, no reviewers.
+- The latest `prod-*` tag is what production runs: `git fetch --tags && git tag --list 'prod-*' --sort=-creatordate | head -1`; `git log --oneline <tag>..origin/main` is what the next deploy would add. Features still being built are switched off in production by `FEATURES` (the `trunk-based` skill), so deploying `main` doesn't release them.
 
 Production deploys are the user's decision: they start it from Actions → Deploy production → **Run workflow**. Only start it yourself (`gh workflow run deploy-production.yaml --ref main`) when the user explicitly asks for a production deploy, and only after the commit's Test and deploy staging run is green.
 
@@ -43,7 +44,7 @@ The Jest log is noisy (expected `console.error` output from error-path tests). S
 
 ## Manual deploy
 
-Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploying production by hand skips the "passed staging" check, so only do it when the user explicitly asks for a manual production deploy.
+Wrangler on this machine is logged in with OAuth (`npx wrangler whoami`). Deploying production by hand skips the "passed staging" check, so only do it when the user explicitly asks for a manual production deploy. Deploy with `--message "<branch>@<short sha>"` and tag the commit `prod-YYYY-MM-DD-HHMM` yourself, as the workflow would (a hotfix from a `prod-*` tag: the `trunk-based` skill).
 
 ## Secrets
 

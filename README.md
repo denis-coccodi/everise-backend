@@ -283,7 +283,7 @@ The Venues page shows the player-run venues (taverns, cafés, clubs, bathhouses�
 
 ## Fight planner
 
-The fight planner (being built) schedules a party's heals and mitigations for a pull of an Extreme, Savage or Ultimate fight, from that party's FFLogs report (`src/planner`, the `fight-planner` skill). The planning runs in the browser; the backend reads FFLogs and keeps what it read. For members: each new report spends the site's FFLogs points. It is its own module, so it can move to a project of its own later.
+The fight planner (being built) schedules a party's heals and mitigations for a pull of an Extreme, Savage or Ultimate fight, from that party's FFLogs report (`src/planner`, the `fight-planner` skill). The planning runs in the browser; the backend reads FFLogs and keeps what it read. For members: each new report spends the site's FFLogs points. It is its own module, so it can move to a project of its own later. Still being built, it's behind the `planner` [feature flag](#feature-flags): switched on on staging, off in production, where its endpoints are 404s.
 
 - **Read from FFLogs' v2 API** (GraphQL, `www.fflogs.com/api/v2/client`) as the site's API client (`FFLOGS_CLIENT_ID`, `FFLOGS_CLIENT_SECRET`; client credentials), so only public and unlisted reports. The token is kept until an hour before it expires, and asked for again when FFLogs refuses it. Without the client, `GET /api/planner/available` says `false` and the report endpoint answers 503.
 - **`GET /api/planner/reports/:code`** (the code from the report's link, 16 letters and digits, `a:` first for an anonymous report) answers the report in the planner's own shape (`fight-report.ts`), never FFLogs': its title and times, the Extreme, Savage and Ultimate pulls in order (boss, kind, kill, start, length, what was left of the boss and of the whole fight, last phase, the players in it), how many pulls of other fights were left out, and the players of those pulls with their job and role. Which fight a pull is comes from the game data, not from names (many Extreme trials are called "The Minstrel's Ballad: …"): FFLogs gives the game territory each pull was fought in (`gameZone`), and every [duty refresh](#ffxiv-duties) now also reads each duty's territory and keeps the Extreme trials and the Savage and Ultimate raids by territory (`dutyFights`), sorted as the Duties page groups them. A pull in a territory the game data doesn't know yet (a fight newer than the last refresh) counts only when FFLogs says Savage (difficulty 101); Unreal and normal fights are left out. A missing report is a 404, a private one a 403, FFLogs failing or busy a 502, each with a message saying what to do.
@@ -522,6 +522,7 @@ curl http://localhost:8080/api/tags
 | `DISCORD_BOT_TOKEN`         | The Everise app's bot token, which reads the relayed channels ([Weekly and hunt trains](#weekly-and-hunt-trains)). A Worker secret (and in `.dev.vars` locally); without it nothing is read |
 | `DISCORD_WEEKLY_CHANNEL_ID` | The channel following the Fashion Report and Island Sanctuary channels; in `wrangler.jsonc` |
 | `DISCORD_HUNTS_CHANNEL_ID`  | The channel following the hunt groups' train announcements; in `wrangler.jsonc` |
+| `FEATURES`                  | Comma-separated [feature flags](#feature-flags) switched on: features still being built (`planner`). In `wrangler.jsonc`: all of them on staging, only released ones in production |
 | `DISCORD_HUNT_SOURCES`      | The hunt groups' followed channels (or servers) and their data centres, `<id>:<data centre>,…`, for trains whose text names no world; in `wrangler.jsonc` |
 
 ## Testing
@@ -545,6 +546,7 @@ How work is done in this repo is written down as skills in [`.claude/skills/`](.
 | Skill | For |
 | --- | --- |
 | `feature-branch` | Every change: a `bugfix/`, `hotfix/` or `feature/` branch, Conventional Commits, a pull request, merging once `test` passes |
+| `trunk-based` | Trunk-based development: feature flags (`FEATURES`), releasing a feature, `prod-*` tags, hotfixing production |
 | `backend-best-practices` | Writing code under `src/` and `__tests__/`: routers, services, errors, types, data, tests, file sizes |
 | `db-structure` | The data model (collections in `collections.md`) and the database diagram |
 | `deploy` | Staging and production, secrets, failing pipelines (`troubleshooting.md`) |
@@ -594,12 +596,14 @@ Pull requests only run **test**, and it must pass before the PR can be merged. E
 
 To try another branch on staging: Actions → **Test and deploy staging** → **Run workflow**, pick the branch, and confirm. It runs the tests, then deploys that branch to staging. There is only one staging Worker, so it replaces whatever was there; the next merge to `main` puts `main` back.
 
-**Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy` and checks the API responds. It refuses to deploy a commit whose **Test and deploy staging** run (tests and staging) has not succeeded.
+**Deploy production** (`.github/workflows/deploy-production.yaml`) only runs when started by hand. It deploys the latest commit on `main` with `wrangler deploy`, checks the API responds, and tags the commit `prod-YYYY-MM-DD-HHMM` (UTC), so the latest `prod-*` tag is always what production runs. It refuses to deploy a commit whose **Test and deploy staging** run (tests and staging) has not succeeded.
 
-**Refresh game data from XIVAPI** (`.github/workflows/refresh-game-data.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh game data from XIVAPI** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), and lists the new counts on the run's summary page. It deploys nothing.
+**Refresh game data from XIVAPI** (`.github/workflows/refresh-game-data.yaml`) only runs when started by hand, and only for the repository owner (`denis-coccodi`). Actions → **Refresh game data from XIVAPI** → **Run workflow** → pick `staging` or `production` (production only from `main`). It calls `POST /api/duties/refresh` on that backend, then `POST /api/duties/refresh/images` until every image is downloaded (retrying a failed batch up to three times), then `POST /api/planner/catalog/refresh` (skipped when the planner is switched off there), and lists the new counts on the run's summary page. It deploys nothing.
 
 **Dependabot** (`.github/dependabot.yml`) opens pull requests every Monday that update the npm packages and the GitHub Actions: one for all minor and patch updates, one per major update. They come from `dependabot/…` branches, the one exception to the branch names below, and are merged like any other PR once **test** passes.
 ### Contributing
+
+The repo follows **trunk-based development**: there is one long-lived branch, `main`, and it must always be fine to deploy to production. Branches are short-lived (a day or two) and merge straight into `main`; there is no `develop` branch and there are no release branches.
 
 `main` is protected: changes can't be pushed to it directly, admins included. Every change goes through a pull request:
 
@@ -608,13 +612,19 @@ To try another branch on staging: Actions → **Test and deploy staging** → **
 1. Open a pull request to `main`. **Test and deploy staging** runs **test** on it, and again on every push.
 1. Merge once **test** passes (the branch must be up to date with `main`). The merge deploys to staging.
 
+#### Feature flags
+
+A feature that takes more than one pull request merges each of them switched off in production, so `main` stays releasable and a fix never waits behind unfinished work. `FEATURES` lists the features switched on in a deployment; `src/config.ts` names the ones that can be switched, and the app mounts a feature's routes only when it's on. Staging switches on everything being built, production only what's released, and the tests switch on everything. To release a feature, add it to production's `FEATURES` in `wrangler.jsonc` (and to the frontend's production flags) and deploy; once it has settled, remove the flag. Details in the `trunk-based` skill.
+
 ### Deploying to production
 
 1. Merge a pull request into `main` and wait for the **Test and deploy staging** run to go green.
 1. Optionally try the change on staging.
 1. Open Actions → **Deploy production** (or follow the link on the **Test and deploy staging** run's summary page), click **Run workflow**, keep branch `main`, and confirm.
 
-The `production` GitHub environment only accepts the `main` branch.
+The `production` GitHub environment only accepts the `main` branch. Each run tags what it deployed `prod-YYYY-MM-DD-HHMM`.
+
+A fix for production is normally a `hotfix/` branch merged into `main` and deployed like any change. Only if `main` holds something that can't go to production yet does the hotfix start from the latest `prod-*` tag and get deployed by hand (`trunk-based` skill).
 
 ## Smoke test
 

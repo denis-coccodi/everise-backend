@@ -7,6 +7,8 @@ description: How the fight planner's backend works (src/planner) - reading FFLog
 
 From one FFLogs report, the planner schedules the heals and mitigations of a party for a chosen pull of an Extreme, Savage or Ultimate fight, so that every unavoidable hit is survived with a margin. The planning runs in the browser; the backend only supplies the data (FFLogs reports, later the action catalog). It lives in `src/planner` and talks to nothing else in the app but `Db`, so it can move to its own project.
 
+It is behind the `planner` feature flag (the `trunk-based` skill): its routes are only mounted where `FEATURES` lists `planner`, which is staging, the tests and `.dev.vars`, not production yet. Elsewhere every `/api/planner/*` route is a 404, and the game data refresh skips the catalog.
+
 ## What it is meant to do
 
 Settled with the user (don't re-ask):
