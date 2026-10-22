@@ -34,13 +34,7 @@ import {
   UsersService,
   usersRoutes,
 } from './users';
-import {
-  CharacterRemarks,
-  CharactersService,
-  NeuronBudget,
-  WakingSandsRouter,
-  WakingSandsService,
-} from './waking-sands';
+import {CharactersService, wakingSandsRoutes} from './waking-sands';
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
 function createApp(
@@ -98,14 +92,6 @@ function createApp(
     db,
     usersService,
     charactersService,
-  );
-
-  // What the characters may spend on Workers AI a day, in the Waking Sands
-  // and on Tataru's lines for guests' roulette results.
-  const neuronBudget = new NeuronBudget(
-    db,
-    now,
-    wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
   );
 
   const mediaService = new MediaService(db, fileStore, uploadStorage, now);
@@ -254,29 +240,28 @@ function createApp(
     jobs.readRelays = () => relayParts.sync.sync();
   }
 
+  // The Waking Sands chat, and the characters' remarks (on Workers AI).
+  const sands = wakingSandsRoutes({
+    auth,
+    db,
+    model: wakingSands.model,
+    characters: charactersService,
+    liveFeed,
+    dailyNeurons: wakingSands.dailyNeurons ?? config.wakingSandsDailyNeurons,
+    loadBundledPicture,
+    now,
+  });
+
   const roulettePostsRouter = new RoulettePostsRouter(
     auth,
     new RoulettePostsService(
       db,
       dutiesService,
       articlesService,
-      new CharacterRemarks(wakingSands.model, charactersService, neuronBudget),
+      sands.remarks,
       now,
     ),
     profilesService,
-  ).router;
-
-  const wakingSandsRouter = new WakingSandsRouter(
-    auth,
-    new WakingSandsService(
-      db,
-      wakingSands.model,
-      charactersService,
-      liveFeed,
-      now,
-      neuronBudget,
-    ),
-    loadBundledPicture,
   ).router;
 
   const app = express();
@@ -332,7 +317,7 @@ function createApp(
 
   app.use('/api', roulettePostsRouter);
 
-  app.use('/api', wakingSandsRouter);
+  app.use('/api', sands.router);
 
   app.use('/api', adminRouter);
 
