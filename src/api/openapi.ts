@@ -1,6 +1,7 @@
 import {z} from 'zod';
-import {RouteSpec, routeSpecs} from './route';
+import {routeSpecs} from './route';
 import {ErrorResponse, requestSchemas, responseSchemas} from './schemas';
+import {RouteSpec} from './route-model';
 
 type JsonSchema = Record<string, unknown>;
 
@@ -28,13 +29,17 @@ function components(
   io: 'input' | 'output',
 ) {
   const {schemas} = z.toJSONSchema(registry, {uri, io});
+  // By name: the order the schemas were registered in follows the order
+  // modules load, which moving a file changes.
   return Object.fromEntries(
-    Object.entries(schemas).map(([id, schema]) => {
-      const {$schema, $id, ...rest} = schema;
-      void $schema;
-      void $id;
-      return [id, rest];
-    }),
+    Object.entries(schemas)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, schema]) => {
+        const {$schema, $id, ...rest} = schema;
+        void $schema;
+        void $id;
+        return [id, rest];
+      }),
   );
 }
 
