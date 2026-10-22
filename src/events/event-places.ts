@@ -1,20 +1,6 @@
-import {CommunityEvent} from './event';
 import {EventsBoard} from './events-board';
-
-// Where a venue is, as an event is matched to it: its world, its house
-// (district, ward and plot; none for an apartment or a place elsewhere) and
-// its Discord invite.
-interface VenuePlace {
-  world: string | null;
-  house: House | null;
-  discord: string | null;
-}
-
-interface House {
-  district: District;
-  ward: number;
-  plot: number;
-}
+import {CommunityEvent, House, District} from './event-model';
+import {VenuePlace} from './event-model';
 
 // The housing districts, with the names and short forms organisers write.
 const DISTRICTS = {
@@ -24,7 +10,6 @@ const DISTRICTS = {
   shirogane: /\bshiro(?:gane)?\b/i,
   empyreum: /\bempy(?:reum)?\b/i,
 };
-type District = keyof typeof DISTRICTS;
 
 const WARD = /\b(?:w|ward)\.?\s*(\d{1,2})\b/gi;
 const PLOT = /\b(?:p|plot)\.?\s*(\d{1,2})\b/gi;
@@ -110,9 +95,9 @@ class EventsAtVenues {
 export {
   EventsAtVenues,
   VenueLookup,
-  VenuePlace,
   districtOf,
   houseIn,
   inviteCode,
   isAt,
+  DISTRICTS,
 };

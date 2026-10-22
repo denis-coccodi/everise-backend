@@ -1,11 +1,5 @@
 import {UpstreamError} from '../errors';
-
-interface EmailMessage {
-  to: string;
-  subject: string;
-  text: string;
-  html: string;
-}
+import {EmailMessage} from './email-model';
 
 interface EmailSender {
   send(message: EmailMessage): Promise<void>;
@@ -72,7 +66,6 @@ function emailSenderFor(
 export {
   ConsoleEmailSender,
   EmailFetch,
-  EmailMessage,
   EmailSender,
   ResendEmailSender,
   emailSenderFor,

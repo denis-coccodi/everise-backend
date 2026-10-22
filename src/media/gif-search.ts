@@ -1,21 +1,11 @@
 import {URLSearchParams} from 'url';
 import {UpstreamError} from '../errors';
+import {Gif} from './media-model';
 
 // How the app calls GIPHY (the parts of fetch it uses); tests pass a fake.
 type GifFetch = (
   url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-// A GIF as the site's picker shows it: a small preview, and the larger one
-// put in the post or comment.
-interface Gif {
-  id: string;
-  title: string;
-  previewUrl: string;
-  url: string;
-  width: number;
-  height: number;
-}
 
 interface GiphyImage {
   url?: string;
@@ -95,4 +85,4 @@ function toGif(gif: GiphyGif): Gif[] {
   ];
 }
 
-export {Gif, GifFetch, GifSearch};
+export {GifFetch, GifSearch};

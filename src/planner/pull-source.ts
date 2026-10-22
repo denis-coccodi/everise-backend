@@ -1,6 +1,7 @@
 import {FflogsClient} from './fflogs-client';
-import {PullInput, toTimeline} from './fflogs-pull';
+import {toTimeline} from './fflogs-pull';
 import {readPull} from './fflogs-pull-query';
+import {PullInput} from './fflogs-model';
 
 // Where pulls' timelines come from. Each is JSON text, sent to the browser
 // as is: a pull is a few MB, more than a Worker request on the Free plan

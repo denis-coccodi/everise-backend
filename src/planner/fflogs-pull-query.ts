@@ -1,5 +1,11 @@
 import {UpstreamError} from '../errors';
 import {FflogsClient} from './fflogs-client';
+import {
+  FflogsEvent,
+  FflogsPullActor,
+  FflogsPullData,
+  EventKind,
+} from './fflogs-dto';
 
 // The kinds of events a pull is read with. Damage and healing include the
 // target's HP (includeResources); damage is what the party took from any
@@ -16,33 +22,11 @@ const EVENT_KINDS = {
   deaths: 'dataType: Deaths, hostilityType: Friendlies',
   combatants: 'dataType: CombatantInfo, hostilityType: Friendlies',
 } as const;
-type EventKind = keyof typeof EVENT_KINDS;
 
 // FFLogs' most per page; a Savage pull fits in one of each kind.
 const PAGE_SIZE = 10_000;
 // More than an Ultimate's longest pull needs.
 const MAX_PAGES = 20;
-
-// An FFLogs event: its fields depend on its type.
-type FflogsEvent = Record<string, unknown>;
-
-interface FflogsPullActor {
-  id: number;
-  name: string;
-  type: string;
-  subType: string | null;
-  server: string | null;
-  petOwner: number | null;
-}
-
-interface FflogsPullData {
-  // The pull's start and end, in ms from the report's start.
-  startTime: number;
-  endTime: number;
-  actors: FflogsPullActor[];
-  abilities: {gameID: number; name: string}[];
-  events: Record<EventKind, FflogsEvent[]>;
-}
 
 interface EventPage {
   data: FflogsEvent[] | null;
@@ -131,4 +115,4 @@ async function readPull(
   };
 }
 
-export {EVENT_KINDS, FflogsEvent, FflogsPullActor, FflogsPullData, readPull};
+export {EVENT_KINDS, readPull};

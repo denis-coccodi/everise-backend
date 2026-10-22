@@ -4,12 +4,11 @@ import {User} from './user';
 import {
   PROVIDER_FIELDS,
   PROVIDER_NAMES,
-  ProviderSignIn,
   RESERVED_USERNAMES,
-  UserDoc,
   toUser,
 } from './user-doc';
 import type {UsersService} from './users-service';
+import {ProviderSignIn, UserDoc} from './user-model';
 
 // Sign-in with Google or Discord: finding, tying or
 // making the Everise account (UsersService.signInWithProvider).

@@ -1,3 +1,6 @@
+import {AgeRating, CommunityEvent, EventDetail} from './event-model';
+import {PartakeEvent} from './partake-dto';
+
 // How the app reaches Partake (partake.gg); tests pass a fake. Partake's
 // GraphQL API answers GET requests too, so its answers can be cached.
 type EventsFetch = (
@@ -12,76 +15,9 @@ const GAME = 'final-fantasy-xiv';
 
 // The age ratings the site shows. Partake's ADULT events never are.
 const SHOWN_RATINGS = ['EVERYONE', 'TEEN', 'MATURE'] as const;
-type AgeRating = (typeof SHOWN_RATINGS)[number];
 
 // How long the card's summary of the description is at most.
 const MAX_SUMMARY = 200;
-
-// A community event as the Events page shows it: a party, a club night, a
-// race or a gathering players run in game, with its start and end.
-interface CommunityEvent {
-  id: number;
-  title: string;
-  // The description's start, as plain text, for the card.
-  summary: string;
-  startsAt: string;
-  endsAt: string;
-  // Whether it's going on now.
-  live: boolean;
-  ageRating: AgeRating;
-  dataCentre: string | null;
-  world: string | null;
-  // Where it is, in the organisers' words ("Goblet, Ward 13, Plot 43").
-  location: string | null;
-  tags: string[];
-  // The banner picture's address on Partake.
-  banner: string | null;
-  recurring: boolean;
-  // How many said they're going, on Partake.
-  attendees: number;
-  // Who runs it: a venue, a club, a Free Company.
-  team: {
-    name: string;
-    icon: string | null;
-    discord: string | null;
-    website: string | null;
-  } | null;
-  // Its page on Partake.
-  url: string;
-}
-
-// An event's own page: what its card shows, and the description as the
-// organisers wrote it (Markdown).
-interface EventDetail extends CommunityEvent {
-  description: string;
-}
-
-// Partake's event, as far as the site uses it. Fields may be missing or
-// null, so every one is checked.
-interface PartakeEvent {
-  id?: number;
-  title?: string | null;
-  description?: string | null;
-  startsAt?: string | null;
-  endsAt?: string | null;
-  location?: string | null;
-  locationData?: {
-    dataCenter?: {name?: string | null} | null;
-    server?: {name?: string | null} | null;
-  } | null;
-  ageRating?: string | null;
-  tags?: (string | null)[] | null;
-  attachments?: (string | null)[] | null;
-  isRecurring?: boolean | null;
-  attendeeCount?: number | null;
-  game?: {id?: string | null} | null;
-  team?: {
-    name?: string | null;
-    iconUrl?: string | null;
-    discordUrl?: string | null;
-    websiteUrl?: string | null;
-  } | null;
-}
 
 // The fields every read asks Partake for.
 const EVENT_FIELDS = `id title description startsAt endsAt location
@@ -184,14 +120,10 @@ function summaryOf(markdown: string) {
 }
 
 export {
-  AgeRating,
   EVENT_FIELDS,
-  CommunityEvent,
-  EventDetail,
   EventsFetch,
   GAME,
   MAX_SUMMARY,
-  PartakeEvent,
   SHOWN_RATINGS,
   partakeUrl,
   toEvent,

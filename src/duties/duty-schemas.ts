@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {isoDate, responseSchema} from '../api';
 
-// The API's answers about the game's duties (see duty.ts for what each field
+// The API's answers about the game's duties (see duty-model.ts for what each field
 // means). Image fields are ids for GET /api/images/:id.
 
 const imageId = z.number().int().nullable();

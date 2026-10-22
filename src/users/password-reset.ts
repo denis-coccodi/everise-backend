@@ -2,10 +2,11 @@ import {createHash, randomBytes} from 'crypto';
 import {Db, Doc} from '../db';
 import {EmailSender} from '../email';
 import {UnavailableError} from '../errors';
-import {SendCount, escapeHtml, nextSend} from './send-limits';
+import {escapeHtml, nextSend} from './send-limits';
 import {User} from './user';
 import {UserPasswords} from './user-passwords';
 import {UsersService} from './users-service';
+import {SendCount} from './user-model';
 
 // One code waiting to be used, per account. Only its hash is stored.
 interface PasswordResetDoc extends Doc, SendCount {

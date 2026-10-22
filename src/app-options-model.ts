@@ -1,5 +1,4 @@
 import {StagingAccess} from './admin';
-import {Feature} from './config';
 import {DiscordFetch} from './discord';
 import {EmailSender} from './email';
 import {EventsFetch} from './events';
@@ -13,8 +12,15 @@ import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
 import {PwnedFetch} from './users';
 import {VenuesFetch} from './venues';
-import {LoadBundledPicture} from './waking-sands';
-import {CharacterModel} from './waking-sands';
+import {LoadBundledPicture, CharacterModel} from './waking-sands';
+import {Feature} from './config-model';
+
+interface AppJobs {
+  // The shared Party Finder listings no longer up: their sharers told.
+  checkSharedListings?: () => Promise<void>;
+  // The relayed Discord channels read again.
+  readRelays?: () => Promise<void>;
+}
 
 // What createApp (src/app.ts) can be given instead of its defaults: the
 // Worker's bindings, and the tests' fakes for every outside service.
@@ -82,13 +88,6 @@ interface AppOptions {
   // Filled in by createApp: the jobs the Worker's cron trigger runs (and
   // tests call).
   jobs?: AppJobs;
-}
-
-interface AppJobs {
-  // The shared Party Finder listings no longer up: their sharers told.
-  checkSharedListings?: () => Promise<void>;
-  // The relayed Discord channels read again.
-  readRelays?: () => Promise<void>;
 }
 
 export {AppJobs, AppOptions};

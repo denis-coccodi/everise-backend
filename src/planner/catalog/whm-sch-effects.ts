@@ -1,5 +1,6 @@
-import {EffectEntry, effect} from './action-catalog';
+import {effect} from './action-catalog';
 import {heal, healAndShield} from './effect-helpers';
+import {EffectEntry} from './catalog-model';
 
 // The White Mage's and Scholar's heals and mitigations as the tooltips give them at level 100
 // (Dawntrail). Actions a trait replaces are kept for lower levels.

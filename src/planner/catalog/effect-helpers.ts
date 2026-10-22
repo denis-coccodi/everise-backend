@@ -1,4 +1,5 @@
-import {EffectEntry, effect} from './action-catalog';
+import {effect} from './action-catalog';
+import {EffectEntry} from './catalog-model';
 
 // Shorthands for the effect tables.
 const heal = (id: number, potency: number, party = false): EffectEntry => ({

@@ -1,10 +1,12 @@
 import {DurableObject} from 'cloudflare:workers';
 import {UpstreamError} from '../errors';
-import {Quality} from './daily-stats';
-import {ItemHistory, ItemSeries, World} from './item-history';
-import {MarketRegion, regionWorlds} from './market-regions';
+import {ItemHistory} from './item-history';
+import {regionWorlds} from './market-regions';
 import {MarketSource} from './market-source';
 import {universalisSales} from './universalis';
+import {Quality} from './market-model';
+import {ItemSeries, World} from './market-model';
+import {MarketRegion} from './market-model';
 
 // Steps an alarm reads before handing over to the next one: each reads up
 // to 8 worlds (8 outbound requests), and an invocation may make 50 on the

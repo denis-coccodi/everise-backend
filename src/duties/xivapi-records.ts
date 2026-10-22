@@ -1,3 +1,4 @@
+import {PARTY_FINDER_IMAGES} from '../party-finder';
 import {
   Duty,
   DutyGroup,
@@ -7,8 +8,8 @@ import {
   PvpType,
   Role,
   Roulette,
-} from './duty';
-import {PARTY_FINDER_IMAGES} from '../party-finder';
+} from './duty-model';
+import {RawDuty, ContentType} from './xivapi-dto';
 
 // XIVAPI's records read as duties, roulettes, jobs and their images.
 
@@ -63,18 +64,6 @@ const GROUP_ORDER = [
 // Rival Wings maps likewise, from a known Rival Wings map.
 const KNOWN_ALLIANCE_RAID = 'the Labyrinth of the Ancients';
 const KNOWN_RIVAL_WINGS = 'Hidden Gorge';
-
-interface RawDuty extends Duty {
-  contentType: string;
-  memberType: number;
-  // The game territory it's fought in (0 for none).
-  territory: number;
-}
-
-interface ContentType {
-  name: string;
-  icon: number | null;
-}
 
 function toDuty(
   id: number,
@@ -322,8 +311,6 @@ export {
   GROUP_ORDER,
   KNOWN_ALLIANCE_RAID,
   KNOWN_RIVAL_WINGS,
-  RawDuty,
-  ContentType,
   toDuty,
   toRoulette,
   isCombatJob,

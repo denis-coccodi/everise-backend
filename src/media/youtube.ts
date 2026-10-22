@@ -1,4 +1,5 @@
 import {URL} from 'url';
+import {YouTubeVideo} from './media-model';
 
 const ID = /^[A-Za-z0-9_-]{11}$/;
 const HOSTS = [
@@ -9,12 +10,6 @@ const HOSTS = [
   'youtu.be',
   'www.youtube-nocookie.com',
 ];
-
-// A YouTube video: its id, and where to start (seconds).
-interface YouTubeVideo {
-  id: string;
-  start: number;
-}
 
 // The video a link points at, or undefined for anything else. Understands
 // the links YouTube shares: watch?v=, youtu.be/, /shorts/, /live/, /embed/.
@@ -61,4 +56,4 @@ function youTubeLink(video: YouTubeVideo): string {
   }`;
 }
 
-export {YouTubeVideo, youTubeLink, youTubeVideo};
+export {youTubeLink, youTubeVideo};

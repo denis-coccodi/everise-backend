@@ -1,1 +1,2 @@
-export {Auth, AuthCheck} from './auth';
+export {Auth} from './auth';
+export {AuthCheck} from './auth-model';

@@ -1,61 +1,5 @@
-// A player-run venue as the page shows it: a club, café, tavern or other
-// place players open in their house, with its next opening.
-interface Venue {
-  id: string;
-  name: string;
-  // Its paragraphs, as the owners wrote them.
-  description: string[];
-  banner: string | null;
-  world: string | null;
-  // Where it is on its world, ready to show ("Goblet, Ward 25
-  // (subdivision), Plot 48"), or the owners' own words for it.
-  address: string | null;
-  tags: string[];
-  website: string | null;
-  discord: string | null;
-  // Its page on FFXIV Venues.
-  url: string;
-  // What the owners say right now ("Closed this week").
-  notices: string[];
-  // Its next opening (or the one going on).
-  opensAt: string;
-  closesAt: string;
-  openNow: boolean;
-}
-
-// FFXIV Venues' venue, as far as the page uses it. Fields may be missing or
-// null, so every one is checked.
-interface FfxivVenue {
-  id?: string;
-  name?: string;
-  description?: (string | null)[] | null;
-  bannerUri?: string | null;
-  location?: {
-    dataCenter?: string | null;
-    world?: string | null;
-    district?: string | null;
-    ward?: number;
-    plot?: number;
-    apartment?: number;
-    room?: number;
-    subdivision?: boolean;
-    override?: string | null;
-  } | null;
-  website?: string | null;
-  discord?: string | null;
-  sfw?: boolean;
-  approved?: boolean;
-  tags?: (string | null)[] | null;
-  notices?: {start?: string; end?: string; message?: string}[] | null;
-  resolution?: {start?: string; end?: string} | null;
-  // Its weekly or monthly openings, each with its next one.
-  schedule?:
-    | {
-        interval?: {intervalType?: number; intervalArgument?: number} | null;
-        resolution?: {start?: string; end?: string} | null;
-      }[]
-    | null;
-}
+import {FfxivVenue} from './ffxiv-venues-dto';
+import {Venue} from './venue-model';
 
 const VENUE_PAGE = 'https://ffxivvenues.com/venue/';
 
@@ -146,4 +90,4 @@ function addressOf(location: FfxivVenue['location']) {
   return parts.filter(Boolean).join(', ');
 }
 
-export {FfxivVenue, Venue, isShown, nextOpening, shownFields, toVenue};
+export {isShown, nextOpening, shownFields, toVenue};

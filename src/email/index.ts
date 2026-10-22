@@ -1,8 +1,8 @@
 export {
   ConsoleEmailSender,
   EmailFetch,
-  EmailMessage,
   EmailSender,
   ResendEmailSender,
   emailSenderFor,
 } from './email-sender';
+export {EmailMessage} from './email-model';

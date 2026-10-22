@@ -1,10 +1,10 @@
 import {z} from 'zod';
+import {Feature} from './config-model';
 
 // The features that can be switched on and off per deployment while they
 // are being built (trunk-based development: unfinished work merges to main
 // switched off in production). Remove a name once its feature ships.
 const FEATURES = ['planner'] as const;
-type Feature = (typeof FEATURES)[number];
 
 const envVarsSchema = z.object({
   BASE_URL: z.url(),
@@ -158,4 +158,4 @@ const config = {
   },
 };
 
-export {config, Feature};
+export {config, FEATURES};

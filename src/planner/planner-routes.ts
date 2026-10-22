@@ -3,11 +3,12 @@ import {CatalogService} from './catalog/catalog-service';
 import {CatalogGet} from './catalog/xivapi-actions';
 import {Db} from '../db';
 import {Auth} from '../middleware';
-import {FflogsClient, FflogsFetch, FflogsSettings} from './fflogs-client';
-import {FightKinds} from './fight-report';
+import {FflogsClient, FflogsFetch} from './fflogs-client';
 import {PlannerRouter} from './planner-router';
 import {LocalPulls, PullSource} from './pull-source';
 import {ReportsService} from './reports-service';
+import {FflogsSettings} from './fflogs-model';
+import {FightKinds} from './fight-report-model';
 
 // Everything the fight planner needs, put together for the app
 // (src/app.ts). Kept to itself so it can move to its own project later.

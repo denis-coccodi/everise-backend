@@ -1,4 +1,5 @@
-import {DAY_MS, ResetPeriod, gameDayAt} from './resets';
+import {DAY_MS, gameDayAt} from './resets';
+import {FrontlineDay} from './duty-model';
 
 // The Frontline daily challenge plays one map a day, in a fixed cycle that the
 // game data doesn't contain, so it is kept here and computed without any API
@@ -26,10 +27,6 @@ const ROTATION = [
 // the daily reset (see resets.ts).
 const ROTATION_START = Date.UTC(2025, 10, 14, 15);
 
-interface FrontlineDay extends ResetPeriod {
-  map: string;
-}
-
 // The Frontline map in play at `at`, and the day it is in play.
 function frontlineMapAt(at: Date): FrontlineDay {
   const {from, until} = gameDayAt(at);
@@ -50,4 +47,4 @@ function isSameMap(a: string, b: string) {
   return a.toLowerCase() === b.toLowerCase();
 }
 
-export {FrontlineDay, frontlineMapAt, frontlineSchedule, isSameMap};
+export {frontlineMapAt, frontlineSchedule, isSameMap};

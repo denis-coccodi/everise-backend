@@ -1,8 +1,8 @@
-import {ActionEffect} from './action-catalog';
 import {AST_SGE_EFFECTS} from './ast-sge-effects';
 import {DPS_EFFECTS} from './dps-effects';
 import {TANK_EFFECTS} from './tank-effects';
 import {WHM_SCH_EFFECTS} from './whm-sch-effects';
+import {ActionEffect} from './catalog-model';
 
 // Every action's hand-written effects, by action id.
 const ENTRIES = [

@@ -1,6 +1,6 @@
-import {Doc} from './db';
 import {isDate} from './json-values';
 import {SqlDocumentStore} from './sql-document-store';
+import {Doc} from './db-model';
 
 // The key-value storage the database used before its SQL table: documents
 // under "<collection>/<id>".

@@ -1,4 +1,4 @@
-import {Character} from '../character';
+import {Character} from '../sands-model';
 
 const URIANGER: Character = {
   id: 'urianger',

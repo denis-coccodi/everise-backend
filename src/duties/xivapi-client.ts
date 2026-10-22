@@ -1,8 +1,6 @@
 import {UpstreamError} from '../errors';
-import {DutyData, ImageRef} from './duty';
 import {fightTerritories} from './fight-territories';
 import {
-  ContentType,
   ROULETTE_FLAGS,
   groupDuties,
   iconPath,
@@ -14,6 +12,8 @@ import {
   toJob,
   toRoulette,
 } from './xivapi-records';
+import {DutyData, ImageRef} from './duty-model';
+import {ContentType} from './xivapi-dto';
 
 const XIVAPI_URL = 'https://v2.xivapi.com/api';
 

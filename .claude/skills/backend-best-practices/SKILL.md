@@ -5,7 +5,7 @@ description: Describes how backend code in this repo is written - routers and th
 
 # Backend best practices
 
-The Everise API: Express 5 running in a Cloudflare Worker, with the data in the `EveriseDb` Durable Object (see the `db-structure` skill). Code is organised by feature: `src/<feature>/` holds a `<feature>-router.ts`, a `<feature>-service.ts`, its models and DTOs, and an `index.ts` that exports them. Other features import from that `index.ts`, never from a file inside it.
+The Everise API: Express 5 running in a Cloudflare Worker, with the data in the `EveriseDb` Durable Object (see the `db-structure` skill). Code is organised by feature: `src/<feature>/` holds a `<feature>-router.ts`, a `<feature>-service.ts`, its models and DTOs (`<name>-model.ts`, `<name>-dto.ts`), and an `index.ts` that exports them. Other features import from that `index.ts`, never from a file inside it.
 
 ## Routers and the API description
 
@@ -42,6 +42,11 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 
 - No `any` in `src/` (lint fails: `@typescript-eslint/no-explicit-any`). Use `unknown` and narrow it, or write the type. Tests may use `any`.
 - Stored documents are interfaces that extend `Doc`; read them with `db.get<T>()` / `db.find<T>()`.
+- **Data types live in model and DTO files**, named after what they describe, in kebab case like every file here:
+  - `<name>-model.ts`: the app's own data. That's stored documents, the records the app works with, and a service's params and results (`article-model.ts`, `duty-model.ts`, `pull-timeline-model.ts`). Several files of one feature share one model (`market-model.ts`).
+  - `<name>-dto.ts`: what crosses the boundary. That's what the API answers when it's built by hand (`ArticleDto`, `memberDto`), and what an outside service sends before it becomes a model (`xivpf-dto.ts`, `partake-dto.ts`, `fflogs-dto.ts`, `discord-dto.ts`).
+  - The API's request and response schemas stay in `<feature>-schemas.ts`.
+- **Ports stay with their code.** An interface with methods (`Db`, `FileStore`, `EmailSender`, `CharacterModel`) or a function type (the `*Fetch` types tests replace) is declared next to what implements or uses it. A type only one file uses stays there, unexported. A type computed from a value (`typeof REGIONS`) goes to the model, which imports the value. `scripts/check-types.mjs` (part of `npm test`) fails an exported data type anywhere else.
 - Settings come from `config` (`src/config.ts`), checked once by its zod schema (values come out typed). Never read `process.env` anywhere else. A new setting goes in the schema, `wrangler.jsonc` (or as a secret), and the test env in `__tests__/utils/env.ts`.
 - A feature that isn't finished goes behind a feature flag: a name in `FEATURES` (`src/config.ts`), checked once where its routes are mounted in `src/app.ts` (the `trunk-based` skill).
 - Workers runtime types (`DurableObjectNamespace`, `Request`, `Env`, `ctx.storage`) come from `worker-configuration.d.ts`, made by `wrangler types` on every `npm install` and not committed. After changing `wrangler.jsonc` (a binding, a variable), run `npx wrangler types`. Don't hand-write runtime types.

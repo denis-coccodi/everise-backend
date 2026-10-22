@@ -1,8 +1,8 @@
+import {Json} from './db-model';
+
 // Documents are kept as JSON, which has no dates or bytes. These are written
 // as {"$date": ms} and {"$bytes": base64}, and read back as Date and
 // Uint8Array, so services get the same values the key-value store gave them.
-
-type Json = null | boolean | number | string | Json[] | {[key: string]: Json};
 
 // Tested by tag rather than instanceof, so values from another realm (e.g.
 // cloned by the runtime) count too.
@@ -40,4 +40,4 @@ function decode(value: Json): unknown {
   return Object.fromEntries(keys.map(key => [key, decode(value[key])]));
 }
 
-export {Json, decode, encode, isDate};
+export {decode, encode, isDate};

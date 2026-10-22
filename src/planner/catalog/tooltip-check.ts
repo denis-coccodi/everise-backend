@@ -1,15 +1,5 @@
-import {ActionEffect} from './action-catalog';
-
-// An action whose tooltip no longer has a number its effects give, or one
-// of whose status ids no longer has its name: a patch may have changed
-// it, so the table needs a look.
-interface TooltipChange {
-  id: number;
-  name: string;
-  // The numbers looked for, as a tooltip writes them ("20%", "400", "15s"),
-  // and the statuses that changed ('status 1191 "Rampart"').
-  missing: string[];
-}
+import {ActionEffect} from './catalog-model';
+import {TooltipChange} from './catalog-model';
 
 // The numbers a tooltip should have for these effects. A 100% often comes
 // in words ("all of a target's HP", "equaling the HP restored"), so it
@@ -71,4 +61,4 @@ function contains(tooltip: string, text: string) {
   return at(0);
 }
 
-export {TooltipChange, tooltipChanges};
+export {tooltipChanges};

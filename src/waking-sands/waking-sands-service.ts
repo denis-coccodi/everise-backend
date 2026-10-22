@@ -2,10 +2,9 @@ import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
 import {LiveFeed} from '../live';
 import {User} from '../users';
-import {CharacterModel} from './character-model';
-import {CharacterProfile, CharactersService} from './characters-service';
+import {CharacterModel} from './character-ai';
+import {CharactersService} from './characters-service';
 import {NeuronBudget} from './neuron-budget';
-import {LineDoc, RoomDoc, RoomLine} from './sands-docs';
 import {
   MAX_PRESENT,
   MEMBER_SHARE,
@@ -15,6 +14,8 @@ import {
   prompt,
   toLine,
 } from './room-prompts';
+import {CharacterProfile} from './sands-model';
+import {LineDoc, RoomDoc, RoomLine} from './sands-model';
 
 // What the room keeps: the last day, and at most this many lines.
 const HISTORY_MS = 24 * 60 * 60 * 1000;

@@ -1,6 +1,4 @@
 import {Db, Doc} from '../db';
-import {Duty, DutyGroup, DutyStatus, Job, Roulette} from './duty';
-import {FightKind} from './fight-territories';
 import {
   frontlineMapAt,
   frontlineSchedule,
@@ -10,6 +8,8 @@ import {groupId} from './group-ids';
 import {gameDayAt, gameWeekAt} from './resets';
 import {ImagesService} from './images-service';
 import {XivApiClient} from './xivapi-client';
+import {Duty, DutyGroup, DutyStatus, Job, Roulette} from './duty-model';
+import {FightKind} from './duty-model';
 
 // One full Frontline cycle.
 const FRONTLINE_SCHEDULE_DAYS = 8;

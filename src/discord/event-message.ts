@@ -1,7 +1,6 @@
 import type {EventDetail} from '../events';
 import {
   CREST_ORANGE,
-  Sharer,
   authorOf,
   crest,
   escape,
@@ -9,6 +8,7 @@ import {
   quote,
   truncate,
 } from './discord-format';
+import {Sharer} from './discord-model';
 
 // An event shared by a member, with their words: the start of its
 // description, when it is (in each reader's own time, Discord's

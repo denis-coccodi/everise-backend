@@ -8,14 +8,16 @@ import {setSessionCookie} from '../users';
 import {
   OAuthFetch,
   PROVIDERS,
-  Provider,
   SocialLoginError,
-  SocialLoginProblem,
-  SocialLoginSettings,
   authorizeUrl,
   fetchProfile,
   isProvider,
 } from './providers';
+import {
+  Provider,
+  SocialLoginProblem,
+  SocialLoginSettings,
+} from './social-login-model';
 
 // Remembers, for the trip to the provider and back, which sign-in this
 // browser started: a random state the provider must send back, so nobody can

@@ -1,28 +1,6 @@
 import {currentSiteUrl, sitePathRest} from '../site-urls';
 import {youTubeLink, youTubeVideo} from './youtube';
-
-// An image, GIF or YouTube video attached to a post or comment, shown apart
-// from its text: in a grid in the feeds, below the text on the post's page.
-type Attachment =
-  | {
-      kind: 'image' | 'gif';
-      // An upload (this site's /api/media/:id), a GIPHY GIF, or any https
-      // image.
-      url: string;
-      // What it shows, for people who can't see it.
-      alt?: string;
-      // Its size, when known, so the page keeps its space while it loads.
-      width?: number;
-      height?: number;
-    }
-  | {
-      kind: 'video';
-      // A plain YouTube watch link.
-      url: string;
-      videoId: string;
-      start?: number;
-      alt?: string;
-    };
+import {Attachment} from './media-model';
 
 const MAX_POST_ATTACHMENTS = 4;
 const MAX_COMMENT_ATTACHMENTS = 1;
@@ -123,7 +101,6 @@ function attachmentsFromText(text: string): {
 }
 
 export {
-  Attachment,
   MAX_COMMENT_ATTACHMENTS,
   MAX_POST_ATTACHMENTS,
   attachmentsFromText,

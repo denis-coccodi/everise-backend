@@ -1,4 +1,4 @@
-import {Heal, StatusSpan} from './pull-timeline';
+import {Heal, StatusSpan} from './pull-timeline-model';
 
 // FFLogs' action for heal-over-time ticks it merged: when several HoTs
 // tick on a player at once, the game reports one sum, which FFLogs credits

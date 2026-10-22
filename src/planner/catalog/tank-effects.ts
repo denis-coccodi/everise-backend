@@ -1,4 +1,5 @@
-import {EffectEntry, effect} from './action-catalog';
+import {effect} from './action-catalog';
+import {EffectEntry} from './catalog-model';
 
 // The tanks' heals and mitigations, and the tank role actions, as the
 // tooltips give them at level 100 (Dawntrail). Actions a trait replaces

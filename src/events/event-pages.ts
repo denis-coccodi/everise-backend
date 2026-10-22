@@ -1,12 +1,7 @@
-import {
-  EVENT_FIELDS,
-  EventDetail,
-  EventsFetch,
-  PartakeEvent,
-  partakeUrl,
-  toEventDetail,
-} from './event';
+import {EVENT_FIELDS, EventsFetch, partakeUrl, toEventDetail} from './event';
 import {REFRESH_MS, STALE_MS} from './events-board';
+import {EventDetail} from './event-model';
+import {PartakeEvent} from './partake-dto';
 
 // The events read one at a time are few: the ones people open or share.
 // Past this many, the oldest read is dropped.

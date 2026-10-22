@@ -1,8 +1,9 @@
 import {Db, Doc} from '../db';
-import {Write} from '../db/db';
 import {InvalidRoleError, NotFoundError} from '../errors';
 import {MediaService} from '../media';
 import {ProfileImagesService, UsersService} from '../users';
+import {DeletedMember} from './admin-model';
+import {Write} from '../db/db-model';
 
 interface ArticleDoc extends Doc {
   authorId: string;
@@ -17,14 +18,6 @@ interface CommentDoc extends Doc {
 interface FollowDoc extends Doc {
   followerId: string;
   followeeId: string;
-}
-
-// What a deletion removed, for the admin's confirmation.
-interface DeletedMember {
-  username: string;
-  wasStagingTester: boolean;
-  articles: number;
-  comments: number;
 }
 
 // Deletes a member and everything they leave behind: their posts (with the
@@ -141,4 +134,4 @@ function remove(collection: string, id: string): Write {
   return {op: 'delete', collection, id};
 }
 
-export {DeletedMember, MemberDeletion};
+export {MemberDeletion};

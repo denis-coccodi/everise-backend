@@ -4,7 +4,7 @@ import {Auth} from '../middleware';
 import {NotificationsService} from '../notifications';
 import {UsersService, readImageBody} from '../users';
 import {CharacterParams, CharactersService} from '../waking-sands';
-import {memberDto, uploadedFile} from './admin-dtos';
+import {memberDto, uploadedFile} from './admin-dto';
 import {
   AdminCharacterResponse,
   AdminCharactersResponse,

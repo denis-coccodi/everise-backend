@@ -1,6 +1,6 @@
-import {ModelMessage} from './character-model';
-import {CharacterProfile} from './characters-service';
-import {LineDoc, RoomLine} from './sands-docs';
+import {ModelMessage} from './sands-model';
+import {CharacterProfile} from './sands-model';
+import {LineDoc, RoomLine} from './sands-model';
 
 // The Waking Sands' rules, and the text it sends the model: the prompts and
 // what's kept of an answer.

@@ -5,7 +5,8 @@ import {Db, Doc} from '../db';
 import {InvalidImageError} from '../errors';
 import {FileStore, StoredFile, UploadStorage} from '../files';
 import {sitePathRest} from '../site-urls';
-import {ImageType, readImageInfo} from './image-info';
+import {readImageInfo} from './image-info';
+import {ImageType} from './user-model';
 
 // The limits on an uploaded profile picture. Pictures are kept as uploaded
 // (not resized) and shown at most about 100 px wide, so 500 px is sharp even

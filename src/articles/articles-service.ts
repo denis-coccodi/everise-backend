@@ -7,6 +7,7 @@ import {ProfilesService} from '../profiles';
 import {LiveFeed, noLiveFeed} from '../live';
 import {attachmentsFromText, cleanAttachment} from '../media';
 import {MediaService} from '../media';
+import {tidyTags, toArticle, uploadsIn} from './article-docs';
 import {
   ArticleDoc,
   CommentDoc,
@@ -14,10 +15,7 @@ import {
   ListArticlesParams,
   UpdateArticleParams,
   UserFeedParams,
-  tidyTags,
-  toArticle,
-  uploadsIn,
-} from './article-docs';
+} from './article-model';
 
 class ArticlesService {
   private readonly articlesCollection = 'articles';

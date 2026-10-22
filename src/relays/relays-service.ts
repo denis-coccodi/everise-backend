@@ -1,12 +1,13 @@
 import {Db} from '../db';
 import {DATA_CENTRE_NAMES, DataCentre} from '../party-finder';
-import {RELAYED_POSTS, RelayChannel, RelayedPostDoc} from './relay-docs';
+import {RELAYED_POSTS} from './relay-docs';
 import {
   fashionReportDays,
   islandSeasonDays,
   nextJudgingAt,
   nextResets,
 } from './weekly-times';
+import {RelayChannel, RelayedPostDoc} from './relay-model';
 
 // What the site shows of the relayed channels: the weekly page (the
 // resets, the latest Fashion Report and Island Sanctuary recommendations,

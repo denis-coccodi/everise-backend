@@ -1,20 +1,11 @@
+import {StagingAccessSettings, SyncResult} from './admin-model';
+
 // How the app calls the Cloudflare API (the parts of fetch it uses); tests
 // pass a fake.
 type Fetch = (
   url: string,
   init?: {method?: string; headers?: Record<string, string>; body?: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-interface StagingAccessSettings {
-  apiToken?: string;
-  accountId?: string;
-  policyId?: string;
-}
-
-interface SyncResult {
-  synced: boolean;
-  message: string;
-}
 
 // Keeps who may open the staging site in Cloudflare Access: a reusable
 // Access policy (Zero Trust → Access controls → Policies), used by both
@@ -198,11 +189,4 @@ function failed(reason: string): SyncResult {
   };
 }
 
-export {
-  CloudflareStagingAccess,
-  Fetch,
-  STAGING_ACCESS_SETTINGS,
-  StagingAccess,
-  StagingAccessSettings,
-  SyncResult,
-};
+export {CloudflareStagingAccess, Fetch, STAGING_ACCESS_SETTINGS, StagingAccess};

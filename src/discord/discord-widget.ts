@@ -1,12 +1,5 @@
 import {DiscordFetch} from './discord-announcer';
-
-// The server's public widget, as the site's home page shows it.
-interface DiscordWidget {
-  name: string;
-  // Who's online now.
-  presenceCount: number;
-  members: {name: string; avatarUrl: string; status: string}[];
-}
+import {DiscordWidget} from './discord-model';
 
 // The most members the site lists; the count says how many in all.
 const MEMBERS_SHOWN = 12;
@@ -91,4 +84,4 @@ class DiscordWidgetReader {
   }
 }
 
-export {DiscordWidget, DiscordWidgetReader};
+export {DiscordWidgetReader};

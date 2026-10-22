@@ -1,31 +1,10 @@
-import {Sale} from './universalis';
+import {Figures, WorldDay} from './market-model';
+import {Sale} from './universalis-dto';
 
 const DAY = 86400;
 
 // Which sales a day's figures count: all of them, or normal or high quality.
 const QUALITIES = ['all', 'nq', 'hq'] as const;
-type Quality = (typeof QUALITIES)[number];
-
-// One quality's sales on a world in a day.
-interface Figures {
-  // The middle price per unit: a few sales at silly prices (gil moved
-  // between characters) don't sway it, as they would an average.
-  median: number;
-  min: number;
-  max: number;
-  sales: number;
-  quantity: number;
-}
-
-// A world's day: each quality's figures, null when none of it sold.
-interface WorldDay {
-  world: number;
-  // The day's start (UTC midnight, s since the epoch).
-  day: number;
-  all: Figures;
-  nq: Figures | null;
-  hq: Figures | null;
-}
 
 // The start of the UTC day `at` (s) falls on.
 function dayOf(at: number) {
@@ -71,4 +50,4 @@ function median(sorted: number[]) {
     : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 }
 
-export {DAY, Figures, QUALITIES, Quality, WorldDay, dayOf, worldDays};
+export {DAY, QUALITIES, dayOf, worldDays};

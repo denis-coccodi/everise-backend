@@ -1,17 +1,19 @@
 import {Db} from '../db';
-import {Write} from '../db/db';
 import {ProfilesService, profileView} from '../profiles';
 import {characterOfAuthor} from '../waking-sands';
 import {
   LIST_SIZE,
   NOTIFICATIONS,
-  NotificationDoc,
-  NotificationType,
-  SharedListingRef,
   excerpt,
   groupKey,
   grouped,
 } from './notification-docs';
+import {Write} from '../db/db-model';
+import {
+  NotificationDoc,
+  NotificationType,
+  SharedListingRef,
+} from './notification-model';
 
 // Tells members what happened to their things, as Facebook does: a like
 // (favorite) or a comment on one of their posts, a new follower; and the

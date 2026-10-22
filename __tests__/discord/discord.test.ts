@@ -2,8 +2,8 @@ import 'jest-extended';
 import request from 'supertest';
 import {config} from '../../src/config';
 import {DiscordAnnouncer, DiscordFetch} from '../../src/discord';
-import {ArticleEvent} from '../../src/live/live-feed';
 import {app, articlesClient, clock, discord, usersClient} from '../utils';
+import {ArticleEvent} from '../../src/live/live-model';
 
 const site = config.baseUrl;
 

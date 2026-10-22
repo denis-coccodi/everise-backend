@@ -1,5 +1,6 @@
 import {SqlStorage} from '../db';
-import {Figures, QUALITIES, Quality, WorldDay, dayOf} from './daily-stats';
+import {QUALITIES, dayOf} from './daily-stats';
+import {Figures, Quality, WorldDay} from './market-model';
 
 // A day's figures as kept: [median, min, max, sales, quantity] for all
 // sales, then normal and high quality (null when none of it sold).

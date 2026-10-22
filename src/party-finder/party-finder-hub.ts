@@ -1,6 +1,7 @@
 import {DurableObject} from 'cloudflare:workers';
-import {DataCentre} from './data-centres';
-import {Board, PartyFinderBoard, PartyFinderSource} from './party-finder-board';
+import {PartyFinderBoard, PartyFinderSource} from './party-finder-board';
+import {DataCentre} from './party-finder-model';
+import {Board} from './party-finder-model';
 
 // The one board every request reads.
 const BOARD_NAME = 'board';

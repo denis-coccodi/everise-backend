@@ -3,9 +3,8 @@ import {readFile} from 'fs/promises';
 import {join} from 'path';
 import {StagingAccess, SyncResult} from '../../src/admin';
 import {createApp} from '../../src/app';
-import {AppJobs} from '../../src/app-options';
 import {SqlDocumentStore} from '../../src/db';
-import {LiveEvent, LiveFeed} from '../../src/live/live-feed';
+import {LiveFeed} from '../../src/live/live-feed';
 import {DiscordFetch} from '../../src/discord';
 import {EmailMessage, EmailSender} from '../../src/email';
 import {EventsFetch} from '../../src/events';
@@ -21,6 +20,8 @@ import {CharacterModel, ModelMessage} from '../../src/waking-sands';
 import {FakeFflogs} from './fake-fflogs';
 import {FakeXivApi} from './fake-xivapi';
 import {SqliteStorage} from './sqlite-storage';
+import {AppJobs} from '../../src/app-options-model';
+import {LiveEvent} from '../../src/live/live-model';
 
 const db = new SqlDocumentStore(new SqliteStorage());
 

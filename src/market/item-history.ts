@@ -1,7 +1,10 @@
 import {SqlStorage} from '../db';
-import {DAY, Figures, Quality, dayOf, worldDays} from './daily-stats';
+import {DAY, dayOf, worldDays} from './daily-stats';
 import {MonthRows} from './month-rows';
-import {ReadSales, Sale} from './universalis';
+import {ReadSales} from './universalis';
+import {Quality} from './market-model';
+import {ItemSeries, World} from './market-model';
+import {Sale} from './universalis-dto';
 
 // Sales read per call to Universalis.
 const CHUNK = 10_000;
@@ -18,25 +21,6 @@ const HISTORY_START = Date.UTC(2022, 9, 1) / 1000;
 const FIRST_WINDOW = 90 * DAY;
 const MIN_WINDOW = 7 * DAY;
 const MAX_WINDOW = 4 * 365 * DAY;
-
-// A world of the region: its game id (as kept) and name (as Universalis
-// takes it).
-interface World {
-  id: number;
-  name: string;
-}
-
-// One quality's days on each world, the oldest first.
-interface ItemSeries {
-  days: {world: number; day: number; figures: Figures}[];
-  // Every day asked for has been read (until then, older days are still
-  // coming in).
-  complete: boolean;
-  // While not complete: the oldest day read on every world so far.
-  readBackTo: number | null;
-  // When the newest sales were last read.
-  refreshedAt: Date | null;
-}
 
 interface Gap {
   id: number;
@@ -271,4 +255,4 @@ const TABLES = [
   'CREATE TABLE IF NOT EXISTS history_state (key TEXT PRIMARY KEY, value INTEGER NOT NULL)',
 ];
 
-export {HISTORY_START, ItemHistory, ItemSeries, World};
+export {HISTORY_START, ItemHistory};

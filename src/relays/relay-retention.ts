@@ -1,4 +1,4 @@
-import {RelayedPostDoc} from './relay-docs';
+import {RelayedPostDoc} from './relay-model';
 
 // How long a hunt train counts as running after it starts: a single
 // expansion's train takes well under an hour, a triple train with breaks

@@ -1,4 +1,5 @@
-import {RelayMessage, relayMessage} from './relay-message';
+import {relayMessage} from './relay-message';
+import {RelayMessage} from './discord-dto';
 
 // How the app calls Discord's API and its file server (the parts of fetch
 // it uses); tests pass a fake.

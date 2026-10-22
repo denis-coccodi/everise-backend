@@ -1,17 +1,5 @@
 import {TooManyRequestsError, UpstreamError} from '../errors';
-
-// A message for the model, in the usual chat form.
-interface ModelMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-// A character's next line, and what writing it cost in Workers AI's
-// Neurons (the free plan has 10,000 a day).
-interface ModelReply {
-  text: string;
-  neurons: number;
-}
+import {ModelMessage, ModelReply} from './sands-model';
 
 // Writes a character's next line; tests pass a fake.
 interface CharacterModel {
@@ -107,11 +95,4 @@ function secondsToMidnightUtc(now: Date) {
   return Math.max(1, Math.ceil((midnight - now.getTime()) / 1000));
 }
 
-export {
-  AiBinding,
-  CharacterModel,
-  ModelMessage,
-  ModelReply,
-  WorkersAiModel,
-  secondsToMidnightUtc,
-};
+export {AiBinding, CharacterModel, WorkersAiModel, secondsToMidnightUtc};

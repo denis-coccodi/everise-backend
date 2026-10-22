@@ -1,3 +1,5 @@
+import {DataCentre} from './party-finder-model';
+
 // The game's data centres with public worlds, by region (ids from the
 // game's World sheet, as XIVAPI and xivpf give them). Europe comes first:
 // Everise is on Light (Odin), and Chaos is its neighbour.
@@ -131,13 +133,6 @@ const REGIONS = [
   },
 ] as const;
 
-// A region's data centres' names; over a union of regions, all of them.
-type DataCentresOf<R> = R extends {dataCentres: infer D}
-  ? keyof D & string
-  : never;
-// "Light" | "Chaos" | "Aether" | ...
-type DataCentre = DataCentresOf<(typeof REGIONS)[number]>;
-
 type World = {readonly id: number; readonly name: string};
 
 const DATA_CENTRES = Object.fromEntries(
@@ -167,4 +162,4 @@ function dataCentreOf(worldId: number): DataCentre | undefined {
   return WORLD_DATA_CENTRES.get(worldId);
 }
 
-export {DATA_CENTRES, DATA_CENTRE_NAMES, DataCentre, REGION_LIST, dataCentreOf};
+export {DATA_CENTRES, DATA_CENTRE_NAMES, REGION_LIST, dataCentreOf, REGIONS};

@@ -1,26 +1,7 @@
 import {RouletteCard} from '../articles';
-import {Duty, DutyGroup, Job, Roulette} from '../duties';
+import {Duty, Roulette} from '../duties';
 import {InvalidRouletteResultError} from '../errors';
-
-// What the client says the reels landed on: ids only. The card shown in the
-// feed is built from the backend's own duty data (see buildRouletteCard), so a
-// post can only ever show a real result.
-interface RouletteResultInput {
-  // The first reel: a duty group's name, or one of the picked types.
-  type: string;
-  // The second reel: a duty or a roulette, by id.
-  candidate: {kind: 'duty' | 'roulette'; id: number};
-  // The third reel.
-  mode: string;
-  // The job dealt by "dealer's choice".
-  jobId?: number;
-}
-
-interface DutyData {
-  groups: DutyGroup<Duty & {activeFrontline?: boolean}>[];
-  roulettes: Roulette[];
-  jobs: Job[];
-}
+import {DutyData, RouletteResultInput} from './roulette-result-model';
 
 // The roulette's picked types and party settings. Keep in step with the
 // frontend's roulette-engine.ts, which offers them.
@@ -156,4 +137,4 @@ function buildRouletteCard(
   };
 }
 
-export {DutyData, RouletteResultInput, buildRouletteCard};
+export {buildRouletteCard};
