@@ -1,4 +1,5 @@
 import {StagingAccess} from './admin';
+import {Feature} from './config';
 import {DiscordFetch} from './discord';
 import {EmailSender} from './email';
 import {EventsFetch} from './events';
@@ -73,6 +74,9 @@ interface AppOptions {
   // How the app reaches Have I Been Pwned to refuse new passwords that
   // leaked. Without it (local runs, tests) they aren't checked.
   leakedPasswords?: PwnedFetch;
+  // The features switched on (config.ts's FEATURES); the others' routes
+  // aren't mounted.
+  features?: readonly Feature[];
   // The bytes everyone's uploads may keep together.
   uploadStorageBytes?: number;
   // Filled in by createApp: the jobs the Worker's cron trigger runs (and

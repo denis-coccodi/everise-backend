@@ -105,10 +105,16 @@ jobs:
           cp response.json images.json
 
           # 3. The fight planner's action catalog, checked against the tooltips.
+          #    A 404 means the planner is switched off on this backend (FEATURES).
           status=$(post /api/planner/catalog/refresh "$@")
-          cat response.json; echo
-          fail_on "$status" "Catalog refresh"
-          cp response.json catalog.json
+          if [ "$status" = 404 ]; then
+            echo "::notice::The fight planner is switched off on $TARGET: no catalog to build."
+            echo '{"changed":[]}' > catalog.json
+          else
+            cat response.json; echo
+            fail_on "$status" "Catalog refresh"
+            cp response.json catalog.json
+          fi
           jq -r '.changed[] | "::warning::Fight planner action \(.name) (\(.id)): its tooltip no longer has \(.missing | join(", ")). Check its effects in src/planner/catalog."' catalog.json
 
           {
@@ -118,6 +124,10 @@ jobs:
             jq -r '.groups[] | "  - \(.name): \(.count)"' refresh.json
             jq -r '"- \(.total - (.failed | length)) of \(.total) images downloaded"' images.json
             if [ -n "$failed" ]; then echo "  - Not on XIVAPI: $failed"; fi
-            jq -r '"- Fight planner catalog: \(.actionCount) actions, \(.effectCount) with heals or mitigations, \(.changed | length) to check"' catalog.json
-            jq -r '.changed[] | "  - \(.name) (\(.id)): \(.missing | join(", "))"' catalog.json
+            if [ "$status" = 404 ]; then
+              echo "- Fight planner: switched off"
+            else
+              jq -r '"- Fight planner catalog: \(.actionCount) actions, \(.effectCount) with heals or mitigations, \(.changed | length) to check"' catalog.json
+              jq -r '.changed[] | "  - \(.name) (\(.id)): \(.missing | join(", "))"' catalog.json
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

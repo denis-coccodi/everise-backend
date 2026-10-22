@@ -61,6 +61,7 @@ function createApp(
     turnstile = config.turnstile,
     leakedPasswords,
     uploadStorageBytes = config.uploadStorageBytes,
+    features = config.features,
     jobs,
   }: AppOptions = {},
 ) {
@@ -301,19 +302,22 @@ function createApp(
     marketRouter({auth, httpGet, xivApiClient, market, universalis, now}),
   );
 
-  // The fight planner: the FFLogs reports it plans from.
-  app.use(
-    '/api',
-    ...plannerRoutes({
-      auth,
-      db,
-      ...fflogs,
-      duties: dutiesService,
-      xivapi: httpGet,
-      refreshKey: config.dutiesRefreshKey,
-      now,
-    }),
-  );
+  // The fight planner: the FFLogs reports it plans from. Still being
+  // built, so only where it's switched on.
+  if (features.includes('planner')) {
+    app.use(
+      '/api',
+      ...plannerRoutes({
+        auth,
+        db,
+        ...fflogs,
+        duties: dutiesService,
+        xivapi: httpGet,
+        refreshKey: config.dutiesRefreshKey,
+        now,
+      }),
+    );
+  }
 
   app.use('/api', roulettePostsRouter);
 
