@@ -29,4 +29,5 @@ export {
   WakingSandsService,
 } from './waking-sands-service';
 export {WakingSandsRouter} from './waking-sands-router';
+export {wakingSandsRoutes} from './waking-sands-routes';
 export {CharacterParams} from './waking-sands-schemas';

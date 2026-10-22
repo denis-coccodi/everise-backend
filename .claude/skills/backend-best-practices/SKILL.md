@@ -43,6 +43,7 @@ The Everise API: Express 5 running in a Cloudflare Worker, with the data in the 
 - No `any` in `src/` (lint fails: `@typescript-eslint/no-explicit-any`). Use `unknown` and narrow it, or write the type. Tests may use `any`.
 - Stored documents are interfaces that extend `Doc`; read them with `db.get<T>()` / `db.find<T>()`.
 - Settings come from `config` (`src/config.ts`), checked once by its zod schema (values come out typed). Never read `process.env` anywhere else. A new setting goes in the schema, `wrangler.jsonc` (or as a secret), and the test env in `__tests__/utils/env.ts`.
+- A feature that isn't finished goes behind a feature flag: a name in `FEATURES` (`src/config.ts`), checked once where its routes are mounted in `src/app.ts` (the `trunk-based` skill).
 - Workers runtime types (`DurableObjectNamespace`, `Request`, `Env`, `ctx.storage`) come from `worker-configuration.d.ts`, made by `wrangler types` on every `npm install` and not committed. After changing `wrangler.jsonc` (a binding, a variable), run `npx wrangler types`. Don't hand-write runtime types.
 - A Durable Object's RPC stub types drop generics; type the stub once where it is wrapped (see `DurableObjectDb`), not at each call.
 

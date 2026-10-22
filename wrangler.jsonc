@@ -75,7 +75,10 @@
     "WAKING_SANDS_DAILY_NEURONS": "8000",
     // The MB everyone's uploads may keep in R2. With staging's 1,024 this
     // stays under the account's free 10 GB.
-    "UPLOAD_STORAGE_MB": "9216"
+    "UPLOAD_STORAGE_MB": "9216",
+    // The features switched on (src/config.ts's FEATURES): in production only
+    // those released. The fight planner is still being built.
+    "FEATURES": ""
     // TURNSTILE_SECRET_KEY (the bot check) is a secret:
     // `wrangler secret put TURNSTILE_SECRET_KEY`.
   },
@@ -137,7 +140,9 @@
         // Staging's share of the account's free Workers AI Neurons (see above).
         "WAKING_SANDS_DAILY_NEURONS": "1500",
         // Staging's share of the account's free 10 GB of R2 (see above).
-        "UPLOAD_STORAGE_MB": "1024"
+        "UPLOAD_STORAGE_MB": "1024",
+        // Staging has every feature being built switched on (see above).
+        "FEATURES": "planner"
       }
     }
   }

@@ -66,6 +66,21 @@ describe('GET /api/planner/available', () => {
   });
 });
 
+describe('the planner switched off', () => {
+  test('has none of its routes', async () => {
+    const off = createApp(db, undefined, undefined, undefined, {
+      fflogs: {settings: {}, fetch: fflogs.fetch},
+      features: [],
+    });
+
+    const available = await request(off).get('/api/planner/available');
+    const report = await request(off).get(`/api/planner/reports/${CODE}`);
+
+    expect(available.status).toBe(404);
+    expect(report.status).toBe(404);
+  });
+});
+
 describe('GET /api/planner/reports/:code', () => {
   test('is for members only', async () => {
     const response = await request(app).get(`/api/planner/reports/${CODE}`);

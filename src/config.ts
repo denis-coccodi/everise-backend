@@ -1,5 +1,11 @@
 import {z} from 'zod';
 
+// The features that can be switched on and off per deployment while they
+// are being built (trunk-based development: unfinished work merges to main
+// switched off in production). Remove a name once its feature ships.
+const FEATURES = ['planner'] as const;
+type Feature = (typeof FEATURES)[number];
+
 const envVarsSchema = z.object({
   BASE_URL: z.url(),
   // Comma-separated addresses the site had before BASE_URL. Pictures and
@@ -67,6 +73,18 @@ const envVarsSchema = z.object({
   // free 10,000 are shared by staging and production, so the two settings
   // together must stay under them. 0 (the default) keeps the chat closed.
   WAKING_SANDS_DAILY_NEURONS: z.coerce.number().int().min(0).default(0),
+  // Comma-separated features switched on (FEATURES above): staging lists
+  // the ones being built, production only those released.
+  FEATURES: z
+    .string()
+    .default('')
+    .transform(names =>
+      names
+        .split(',')
+        .map(name => name.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.enum(FEATURES))),
   // Checks every response against its route's schema (src/api), failing
   // with a 500 when they differ. On in the tests, off when deployed.
   CHECK_API_RESPONSES: z.stringbool().default(false),
@@ -131,6 +149,7 @@ const config = {
   },
   uploadStorageBytes: envVars.UPLOAD_STORAGE_MB * 1024 * 1024,
   wakingSandsDailyNeurons: envVars.WAKING_SANDS_DAILY_NEURONS,
+  features: envVars.FEATURES as readonly Feature[],
   checkApiResponses: envVars.CHECK_API_RESPONSES,
   stagingAccess: {
     apiToken: envVars.CF_ACCESS_API_TOKEN,
@@ -139,4 +158,4 @@ const config = {
   },
 };
 
-export {config};
+export {config, Feature};

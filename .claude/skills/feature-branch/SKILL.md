@@ -7,6 +7,8 @@ description: The required way to make any change in this repo (code, tests, docs
 
 `main` is protected: nobody, admins included, can push to it directly. Every change reaches `main` through a pull request, and the PR can only be merged once the `test` check (the Test and deploy staging workflow's test job) passes. Merging into `main` then deploys to staging automatically. Production stays a separate manual step (see the `deploy` skill).
 
+The repo follows trunk-based development (the `trunk-based` skill): branches live a day or two, and `main` must always be fine to deploy to production. A feature that takes several PRs merges each one switched off in production behind a feature flag.
+
 ## 1. Start a branch before the first edit
 
 ```
@@ -17,10 +19,11 @@ git switch -c <branch>      # bugfix/…, hotfix/… or feature/…
 
 - Name the branch `<type>/<description>`, the type saying what kind of change it is:
   - `bugfix/`: a bug fix, something that doesn't work as it should (`bugfix/event-banner-extension`, `bugfix/flaky-tags-test`). Never `feature/` for a fix.
-  - `hotfix/`: an urgent fix for something broken in production, deployed by hand right after it merges (the `deploy` skill).
+  - `hotfix/`: an urgent fix for something broken in production, deployed to production right after it merges (the `deploy` skill). Only when `main` holds something that can't go to production, it starts from the latest `prod-*` tag instead (the `trunk-based` skill).
   - `feature/`: everything else: a new feature, a change in behaviour, docs, config, skills, refactoring (`feature/venue-events`, `feature/readme-endpoints`).
 - The description is 2 to 5 words saying what the branch does, lowercase, words joined by hyphens: letters, digits and hyphens only, no trailing hyphen, no dates or names. Below, `<branch>` stands for the whole name.
 - One branch per change. If already on a branch for the same change, keep using it. If the working tree has unrelated uncommitted changes, ask the user before carrying them onto the new branch.
+- Unfinished work that merges must be switched off in production: behind a flag in `FEATURES` (the `trunk-based` skill). Never leave a half-built feature reachable on `main`.
 - Never commit on `main`. If you notice commits made on `main` by mistake, move them: `git switch -c <branch>` then reset local `main` to `origin/main` (check with the user before resetting).
 
 ## 2. Commit and push as often as needed
