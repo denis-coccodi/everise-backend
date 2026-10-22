@@ -79,6 +79,7 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
         target: 1,
         source: 13,
         action: 45956,
+        damageType: 'magic',
         amount: 4_000,
         unmitigated: 156_831,
         mitigated: 53_653,
@@ -89,11 +90,39 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
         statuses: [1193, 48, 297],
         hp: 321_090,
       },
-      expect.objectContaining({at: 20_000, source: -1, tick: true}),
+      // Combined DoTs: the log has no damage type for it.
+      expect.objectContaining({at: 20_000, damageType: null, tick: true}),
     ]);
     expect(response.body.enemies).toEqual([
       {id: -1, name: 'Environment', boss: false},
       {id: 13, name: 'Vamp Fatale', boss: true},
+    ]);
+  });
+
+  test('reads physical, magic and unique damage from the ability types', async () => {
+    const pull = fflogsPull();
+    pull.abilities.push(
+      {gameID: 46287, name: 'Raptor Knuckles', type: 128},
+      {gameID: 46288, name: 'Shining Armor', type: 32},
+    );
+    const hit = pull.events.damage.find(e => e.type === 'damage')!;
+    pull.events.damage.push(
+      {...hit, timestamp: Number(hit.timestamp) + 1, abilityGameID: 46287},
+      {...hit, timestamp: Number(hit.timestamp) + 2, abilityGameID: 46288},
+    );
+    fflogs.pulls[`${CODE}:3`] = pull;
+
+    const types = (await load()).body.damage.map(
+      (hit: {action: number; damageType: string | null}) => [
+        hit.action,
+        hit.damageType,
+      ],
+    );
+
+    expect(types).toIncludeAllMembers([
+      [45956, 'magic'],
+      [46287, 'physical'],
+      [46288, 'unique'],
     ]);
   });
 

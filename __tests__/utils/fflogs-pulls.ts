@@ -28,7 +28,7 @@ function fflogsPull(): FakePull {
       {id: -1, name: 'Environment', type: 'NPC', subType: 'NPC'},
     ],
     abilities: [
-      {gameID: 45956, name: 'Killer Voice'},
+      {gameID: 45956, name: 'Killer Voice', type: 1024},
       {gameID: 500000, name: 'Combined DoTs'},
       {gameID: 500001, name: 'Combined HoTs'},
       {gameID: 3569, name: 'Asylum'},

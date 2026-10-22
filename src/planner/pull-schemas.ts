@@ -47,6 +47,9 @@ const Hit = z.strictObject({
   // An enemy's id; -1 for the environment.
   source: int,
   action: int,
+  // How mitigation works on it: a physical or magic share, or none of it
+  // on unique damage; null when the log doesn't say.
+  damageType: z.enum(['physical', 'magic', 'unique']).nullable(),
   // What the player lost, after mitigation and shields.
   amount: int,
   unmitigated: int.nullable(),
