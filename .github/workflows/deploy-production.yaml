@@ -19,7 +19,8 @@ jobs:
       name: production
       url: https://apis.everise.dev
     permissions:
-      contents: read
+      # write: to push the release tag.
+      contents: write
       actions: read
     steps:
       - name: Check this commit passed staging
@@ -58,3 +59,10 @@ jobs:
             echo "::error::Production lost articles in the deploy ($ARTICLES_BEFORE -> $after). Roll back in the Cloudflare dashboard (be-prod -> Deployments) and investigate."
             exit 1
           fi
+      # Marks what production runs now; a hotfix can start from the latest one.
+      - name: Tag the release
+        run: |
+          tag="prod-$(date -u +%Y-%m-%d-%H%M)"
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "$tag"
+          echo "Production runs ${GITHUB_SHA::7}, tagged $tag." >> "$GITHUB_STEP_SUMMARY"
