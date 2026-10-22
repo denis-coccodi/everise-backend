@@ -13,6 +13,7 @@ import {
   PlayerStats,
   PullTimeline,
   TimelinePlayer,
+  DamageType,
 } from './pull-timeline-model';
 
 const STAT_FIELDS: Record<keyof PlayerStats, string> = {
@@ -29,6 +30,17 @@ const STAT_FIELDS: Record<keyof PlayerStats, string> = {
   skillSpeed: 'skillSpeed',
   spellSpeed: 'spellSpeed',
   tenacity: 'tenacity',
+};
+
+// FFLogs' ability types for damage, checked against the game's AttackType
+// and the logs' own multipliers on twelve Savage, Extreme and Ultimate kills
+// (October 2026): 128 physical (the game's slashing and blunt), 1024 magic,
+// 32 unique (gazes, a cleansed debuff's blast: no mitigation takes any of it
+// off). Others (1: an attack as cast, before it lands) say nothing.
+const DAMAGE_TYPES: Record<number, DamageType> = {
+  128: 'physical',
+  1024: 'magic',
+  32: 'unique',
 };
 
 const num = (value: unknown) => numberOr(value, 0);
@@ -58,6 +70,9 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
   const petOf = (id: number | null) =>
     id !== null && actors.get(id)?.petOwner ? actors.get(id)!.name : null;
   const {events} = data;
+  const abilityTypes = new Map(data.abilities.map(a => [a.gameID, a.type]));
+  const damageType = (action: number) =>
+    DAMAGE_TYPES[abilityTypes.get(action) ?? 0] ?? null;
   // Pets take hits and heals too; the planner follows the players.
   const onPlayer = (event: FflogsEvent) => playerIds.has(num(event.targetID));
 
@@ -68,6 +83,7 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       target: num(event.targetID),
       source: num(event.sourceID),
       action: num(event.abilityGameID),
+      damageType: damageType(num(event.abilityGameID)),
       amount: num(event.amount),
       unmitigated: orNull(event.unmitigatedAmount),
       mitigated: num(event.mitigated),

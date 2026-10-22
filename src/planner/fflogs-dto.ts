@@ -17,7 +17,8 @@ interface FflogsPullData {
   startTime: number;
   endTime: number;
   actors: FflogsPullActor[];
-  abilities: {gameID: number; name: string}[];
+  // `type` is the ability's damage type (fflogs-pull.ts's DAMAGE_TYPES).
+  abilities: {gameID: number; name: string; type?: number}[];
   events: Record<EventKind, FflogsEvent[]>;
 }
 type EventKind = keyof typeof EVENT_KINDS;

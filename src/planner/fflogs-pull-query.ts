@@ -46,7 +46,7 @@ const FIRST_QUERY = `query Pull($code: String!, $pull: Int!, $start: Float, $end
       fights(fightIDs: [$pull]) { id startTime endTime }
       masterData {
         actors { id name type subType server petOwner }
-        abilities { gameID name }
+        abilities { gameID name type }
       }
       ${(Object.keys(EVENT_KINDS) as EventKind[]).map(eventsField).join('\n      ')}
     }

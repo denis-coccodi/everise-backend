@@ -65,6 +65,9 @@ interface Hit {
   // An enemy's id; -1 for the environment.
   source: number;
   action: number;
+  // How mitigation works on it: a physical or magic share, or none of it
+  // on unique damage; null when the log doesn't say.
+  damageType: DamageType | null;
   // What the player lost, after mitigation and shields.
   amount: number;
   // Before anything reduced it; null when the log doesn't say.
@@ -83,6 +86,8 @@ interface Hit {
   // The player's HP as the log has it at this hit.
   hp: number | null;
 }
+
+type DamageType = 'physical' | 'magic' | 'unique';
 
 // The game's ids: actions (skills, spells, the boss's attacks) and
 // statuses (buffs, debuffs, shields) are numbered separately.
@@ -158,6 +163,7 @@ interface TimelinePlayer {
 export {
   Absorb,
   Cast,
+  DamageType,
   Death,
   Heal,
   Hit,

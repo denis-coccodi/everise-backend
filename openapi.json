@@ -8484,6 +8484,21 @@
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
                 },
+                "damageType": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "physical",
+                        "magic",
+                        "unique"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "amount": {
                   "type": "integer",
                   "minimum": -9007199254740991,
@@ -8551,6 +8566,7 @@
                 "target",
                 "source",
                 "action",
+                "damageType",
                 "amount",
                 "unmitigated",
                 "mitigated",

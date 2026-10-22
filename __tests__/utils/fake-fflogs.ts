@@ -6,7 +6,7 @@ interface FakePull {
   startTime: number;
   endTime: number;
   actors: Record<string, unknown>[];
-  abilities: {gameID: number; name: string}[];
+  abilities: {gameID: number; name: string; type?: number}[];
   events: Record<string, Record<string, unknown>[]>;
 }
 
