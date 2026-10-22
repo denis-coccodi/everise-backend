@@ -1,15 +1,13 @@
-import {DataCentre, REGION_LIST} from './data-centres';
+import {REGION_LIST} from './data-centres';
 import {PartyFinderSource} from './party-finder-board';
 import {PARTY_FINDER_ICONS, categoryIcon} from './xivpf-duties';
-import {PartyFinderListing} from './xivpf-listing';
+import {DataCentre} from './party-finder-model';
+import {PartyFinderListing} from './party-finder-model';
 
 // A duty's level, sort key and type icon, by its name in lower case.
 type DutiesByName = () => Promise<
   ReadonlyMap<string, {level: number; sortKey: number; icon: number | null}>
 >;
-
-// A listing as the site shows it: with its duty's level, sort key and type icon.
-type ShownListing = ReturnType<typeof withDuty>;
 
 // The duty data changes only with a refresh: it's read again after this.
 const DUTIES_CACHE_MS = 10 * 60 * 1000;
@@ -83,4 +81,4 @@ function withDuty(
   };
 }
 
-export {DutiesByName, PartyFinderReader, ShownListing};
+export {DutiesByName, PartyFinderReader, withDuty};

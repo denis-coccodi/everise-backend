@@ -1,9 +1,8 @@
 import {Db, Doc} from '../../db';
 import {UnavailableError} from '../../errors';
 import {JOBS} from '../fight-report';
-import {CatalogAction} from './action-catalog';
 import {EFFECTS, ENTRIES} from './effect-table';
-import {TooltipChange, tooltipChanges} from './tooltip-check';
+import {tooltipChanges} from './tooltip-check';
 import {
   CatalogGet,
   readActions,
@@ -11,21 +10,14 @@ import {
   readTooltips,
   toCatalogAction,
 } from './xivapi-actions';
+import {CatalogAction} from './catalog-model';
+import {ActionCatalog} from './catalog-model';
 
 const CATALOGS = 'plannerCatalog';
 const CATALOG_ID = 'catalog';
 
 // The combat jobs the planner knows (PLD, WHM...).
 const COMBAT_JOBS = new Set(Object.values(JOBS).map(job => job.job));
-
-interface ActionCatalog {
-  // XIVAPI's id for the game data the catalog was read from.
-  dataVersion: string;
-  builtAt: string;
-  actions: CatalogAction[];
-  // Actions whose tooltip no longer has a number of their effects.
-  changed: TooltipChange[];
-}
 
 // The catalog kept as JSON text: a few hundred KB, sent as is.
 interface CatalogDoc extends Doc {
@@ -100,4 +92,4 @@ class CatalogService {
   }
 }
 
-export {ActionCatalog, CatalogService};
+export {CatalogService};

@@ -1,15 +1,7 @@
-// What a person may do: everyone registers as a user; an admin (set by the
-// ADMIN_EMAILS secret) can make a user a staging tester, who may open the
-// staging site, and edit the Waking Sands characters.
-type Role = 'admin' | 'staging-tester' | 'user';
+import {Role, SignInMethod} from './user-model';
 
 // The roles an admin can give; admin itself comes from the configuration.
 const ASSIGNABLE_ROLES = ['user', 'staging-tester'] as const;
-type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
-
-// The ways someone can sign in to an account: its password, and the
-// provider accounts (Google, Discord) tied to it.
-type SignInMethod = 'password' | 'google' | 'discord';
 
 class User {
   constructor(
@@ -33,4 +25,4 @@ class User {
   ) {}
 }
 
-export {ASSIGNABLE_ROLES, AssignableRole, Role, SignInMethod, User};
+export {ASSIGNABLE_ROLES, User};

@@ -1,12 +1,7 @@
-import {
-  CommunityEvent,
-  EVENT_FIELDS,
-  EventsFetch,
-  GAME,
-  PartakeEvent,
-  partakeUrl,
-  toEvent,
-} from './event';
+import {EVENT_FIELDS, EventsFetch, GAME, partakeUrl, toEvent} from './event';
+import {CommunityEvent} from './event-model';
+import {PartakeEvent} from './partake-dto';
+import {EventList} from './event-model';
 
 // Partake asks to be cached and not polled: the week's events are read at
 // most this often, and only while someone is looking. The window starts on
@@ -22,13 +17,6 @@ const RETRY_MS = 30 * 1000;
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 // More than a week of FFXIV events ever has (about 50 in October 2026).
 const MAX_EVENTS = 200;
-
-interface EventList {
-  // When the site last read Partake.
-  fetchedAt: string;
-  // The ones going on first, then by their start.
-  events: CommunityEvent[];
-}
 
 // The Final Fantasy XIV events on Partake (partake.gg), the community's
 // calendar, for the coming week and kept between requests. Only the events
@@ -115,4 +103,4 @@ function weekQuery(from: number) {
     limit: ${MAX_EVENTS}, sortBy: STARTS_AT_ASC) { ${EVENT_FIELDS} } }`;
 }
 
-export {EventList, EventsBoard, REFRESH_MS, RETRY_MS, STALE_MS};
+export {EventsBoard, REFRESH_MS, RETRY_MS, STALE_MS};

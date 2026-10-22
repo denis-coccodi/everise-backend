@@ -1,15 +1,5 @@
 import {DATA_CENTRES, REGION_LIST} from '../party-finder';
-
-// A region of the game: its worlds can all be reached from each other (and
-// any world can visit Oceania). Ids are the names in lower case with dashes
-// ("north-america"), as links carry them; Universalis' name joins the words
-// with a dash too ("North-America").
-interface MarketRegion {
-  id: string;
-  name: string;
-  universalis: string;
-  dataCentres: {name: string; worlds: {id: number; name: string}[]}[];
-}
+import {MarketRegion} from './market-model';
 
 // Everise's region and home world: where the page starts.
 const DEFAULT_REGION = 'europe';
@@ -51,7 +41,6 @@ function marketRegions() {
 export {
   DEFAULT_REGION,
   HOME_WORLD,
-  MarketRegion,
   REGION_IDS,
   marketRegion,
   marketRegions,

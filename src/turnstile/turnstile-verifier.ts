@@ -1,5 +1,6 @@
 import {URLSearchParams} from 'url';
 import {BotCheckError, UpstreamError} from '../errors';
+import {TurnstileAction} from './turnstile-model';
 
 // How the app calls Cloudflare's siteverify (the parts of fetch it uses);
 // tests pass a fake.
@@ -12,11 +13,6 @@ type TurnstileFetch = (
     signal?: AbortSignal;
   },
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-// What the site's forms ask the check for; siteverify answers with it, so a
-// token from the login form can't sign anyone up.
-type TurnstileAction =
-  'signup' | 'login' | 'resend' | 'forgot-password' | 'reset-password';
 
 interface SiteverifyAnswer {
   success?: boolean;
@@ -93,4 +89,4 @@ class TurnstileVerifier {
   }
 }
 
-export {TurnstileAction, TurnstileFetch, TurnstileVerifier};
+export {TurnstileFetch, TurnstileVerifier};

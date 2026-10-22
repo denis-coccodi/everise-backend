@@ -5,12 +5,6 @@ interface StorageDoc extends Doc {
   bytes?: number;
 }
 
-// A file in the file store and its bytes, e.g. to delete with an account.
-interface StoredFile {
-  id: string;
-  size: number;
-}
-
 const COLLECTION = 'siteStorage';
 const UPLOADS = 'uploads';
 
@@ -56,4 +50,4 @@ class UploadStorage {
   }
 }
 
-export {StoredFile, UploadStorage};
+export {UploadStorage};

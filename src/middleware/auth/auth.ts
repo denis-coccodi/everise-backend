@@ -1,11 +1,7 @@
-import {NextFunction, Request, RequestHandler, Response} from 'express';
+import {NextFunction, Request, Response} from 'express';
 import {ForbiddenError, UnauthorizedError} from '../../errors';
 import {JWTService} from '../../users';
-
-interface AuthCheck {
-  mode: 'required' | 'optional' | 'admin';
-  handler: RequestHandler;
-}
+import {AuthCheck} from './auth-model';
 
 class Auth {
   constructor(private readonly jwtService: JWTService) {}
@@ -91,4 +87,4 @@ class Auth {
   };
 }
 
-export {Auth, AuthCheck};
+export {Auth};

@@ -1,11 +1,7 @@
+import {Sharer} from './discord-model';
+
 // What every message the site sends to the Everise Discord shares: who
 // sends it, the author line, quoting and trimming text.
-
-// Who shared something, as the message names them.
-interface Sharer {
-  username: string;
-  image: string;
-}
 
 // The crest's orange, the colour of the line beside a post's message.
 const CREST_ORANGE = 0xf78627;
@@ -56,7 +52,6 @@ function escape(text: string) {
 
 export {
   CREST_ORANGE,
-  Sharer,
   authorOf,
   crest,
   escape,

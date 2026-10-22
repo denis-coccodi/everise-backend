@@ -1,5 +1,6 @@
 import {HttpGet} from '../duties';
 import {UpstreamError} from '../errors';
+import {MarketItem} from './market-model';
 
 const XIVAPI_URL = 'https://v2.xivapi.com/api';
 
@@ -7,18 +8,6 @@ const XIVAPI_URL = 'https://v2.xivapi.com/api';
 const MAX_RESULTS = 20;
 
 const FIELDS = 'Name,Icon,CanBeHq,ItemSearchCategory.Name';
-
-// An item that can be sold on the market board.
-interface MarketItem {
-  id: number;
-  name: string;
-  // Its icon: an id for GET /api/market/icons/:id.
-  icon: number;
-  // Comes in high quality too.
-  canBeHq: boolean;
-  // Its market board category ("Stone", "Medicine").
-  category: string;
-}
 
 interface ItemRow {
   row_id: number;
@@ -88,4 +77,4 @@ function toItems(body: unknown, key: 'results' | 'rows'): MarketItem[] {
   });
 }
 
-export {MAX_RESULTS, MarketItem, MarketItems};
+export {MAX_RESULTS, MarketItems};

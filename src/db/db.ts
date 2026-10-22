@@ -1,32 +1,4 @@
-// Every stored document gets these fields from the store itself.
-interface Doc {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-type DocData = Record<string, unknown>;
-
-interface Where {
-  field: string;
-  op: '==' | 'array-contains';
-  value: unknown;
-}
-
-interface FindOptions {
-  where?: Where[];
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  }[];
-  limit?: number;
-  offset?: number;
-}
-
-// One change in a batch.
-type Write =
-  | {op: 'delete'; collection: string; id: string}
-  | {op: 'update'; collection: string; id: string; data: DocData};
+import {Doc, DocData, FindOptions, SetOptions, Write} from './db-model';
 
 // A minimal document store. Implemented by `SqlDocumentStore`, which runs
 // inside the `EveriseDb` Durable Object, and on in-memory SQLite in tests.
@@ -94,9 +66,4 @@ interface Db {
   clear(): Promise<void>;
 }
 
-interface SetOptions {
-  max?: number;
-  create?: boolean;
-}
-
-export {Db, Doc, DocData, FindOptions, SetOptions, Where, Write};
+export {Db};

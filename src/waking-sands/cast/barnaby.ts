@@ -1,4 +1,4 @@
-import {Character} from '../character';
+import {Character} from '../sands-model';
 
 // The Everise free company's own character, not one of the game's.
 const BARNABY: Character = {

@@ -1,5 +1,4 @@
 import cookieParser from 'cookie-parser';
-import {AppOptions} from './app-options';
 import cors from 'cors';
 import express from 'express';
 import {AdminRouter, CloudflareStagingAccess, MemberDeletion} from './admin';
@@ -35,6 +34,7 @@ import {
   usersRoutes,
 } from './users';
 import {CharactersService, wakingSandsRoutes} from './waking-sands';
+import {AppOptions} from './app-options-model';
 
 // httpGet is how the app reaches XIVAPI and now is its clock; tests pass fakes.
 function createApp(

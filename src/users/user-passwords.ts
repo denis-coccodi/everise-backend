@@ -3,7 +3,8 @@ import {NotFoundError} from '../errors';
 import {LeakedPasswords} from './leaked-passwords';
 import {checkNewPassword, hashPassword, passwordMatches} from './passwords';
 import {User} from './user';
-import {UserDoc, toUser} from './user-doc';
+import {toUser} from './user-doc';
+import {UserDoc} from './user-model';
 
 // Changing a password: from the settings with the current one, or with a
 // code from a password reset email. Either signs the account out of every

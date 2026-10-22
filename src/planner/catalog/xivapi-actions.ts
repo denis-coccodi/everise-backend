@@ -1,5 +1,6 @@
 import {UpstreamError} from '../../errors';
-import {ActionEffect, CatalogAction} from './action-catalog';
+import {ActionEffect, CatalogAction} from './catalog-model';
+import {ActionRow} from './xivapi-dto';
 
 const XIVAPI = 'https://v2.xivapi.com/api';
 
@@ -7,11 +8,6 @@ const XIVAPI = 'https://v2.xivapi.com/api';
 type CatalogGet = (
   url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-interface ActionRow {
-  row_id: number;
-  fields: Record<string, unknown>;
-}
 
 const FIELDS = [
   'Name',
@@ -139,7 +135,6 @@ function toCatalogAction(
 }
 
 export {
-  ActionRow,
   CatalogGet,
   readActions,
   readStatusNames,

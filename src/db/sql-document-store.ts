@@ -1,9 +1,10 @@
 import {randomUUID} from 'crypto';
-import {Db, Doc, DocData, FindOptions, SetOptions, Where, Write} from './db';
-import {Json, decode, encode} from './json-values';
+import {Db} from './db';
+import {decode, encode} from './json-values';
 import {SCHEMA, fieldName, fieldSql, sqlValue} from './sql-schema';
-
-type SqlValue = string | number | null;
+import {Doc, DocData, FindOptions, SetOptions, Where, Write} from './db-model';
+import {Json} from './db-model';
+import {SqlValue} from './db-model';
 
 // The subset of the Durable Object SQL storage API the store relies on
 // (ctx.storage in the Durable Object, node:sqlite in tests).
@@ -337,4 +338,4 @@ class SqlDocumentStore implements Db {
   }
 }
 
-export {SqlDocumentStore, SqlStorage, SqlValue};
+export {SqlDocumentStore, SqlStorage};

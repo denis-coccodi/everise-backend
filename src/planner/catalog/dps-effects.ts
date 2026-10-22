@@ -1,5 +1,6 @@
-import {EffectEntry, effect} from './action-catalog';
+import {effect} from './action-catalog';
 import {heal} from './effect-helpers';
+import {EffectEntry} from './catalog-model';
 
 // A party-wide mitigation (Troubadour, Tactician, Shield Samba...).
 const partyMitigation = (

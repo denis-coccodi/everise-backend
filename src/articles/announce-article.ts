@@ -1,7 +1,8 @@
 import {LiveFeed} from '../live';
 import {ProfilesService} from '../profiles';
-import {ArticleDoc, toArticle} from './article-docs';
+import {toArticle} from './article-docs';
 import {ArticleDto} from './article-dto';
+import {ArticleDoc} from './article-model';
 
 // Where a post goes when its author asks: the Everise Discord
 // (DiscordAnnouncer). `available` when it's set up on this site;

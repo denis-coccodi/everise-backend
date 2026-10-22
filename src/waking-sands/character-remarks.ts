@@ -1,7 +1,9 @@
-import {CharacterModel, ModelMessage} from './character-model';
-import {CharacterProfile, CharactersService} from './characters-service';
+import {CharacterModel} from './character-ai';
+import {CharactersService} from './characters-service';
 import {NeuronBudget} from './neuron-budget';
 import {clean} from './room-prompts';
+import {ModelMessage} from './sands-model';
+import {CharacterProfile} from './sands-model';
 
 // A remark is the text of a post, so it stays short.
 const MAX_REMARK_LENGTH = 400;

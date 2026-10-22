@@ -1,4 +1,4 @@
-import {Character} from '../character';
+import {Character} from '../sands-model';
 
 // The Everise free company's own Astrologian (the job: star globe, deck of
 // arcana, healing by the stars). She reads fortunes with the far-off zodiac

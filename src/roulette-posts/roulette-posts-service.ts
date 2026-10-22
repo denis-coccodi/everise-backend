@@ -5,7 +5,8 @@ import {DutiesService} from '../duties';
 import {InvalidRouletteResultError, TooManyRequestsError} from '../errors';
 import {User} from '../users';
 import {CharacterRemarks, TATARU, characterAuthorId} from '../waking-sands';
-import {RouletteResultInput, buildRouletteCard} from './roulette-result';
+import {buildRouletteCard} from './roulette-result';
+import {RouletteResultInput} from './roulette-result-model';
 
 // The Waking Sands character who posts guests' results.
 const GUEST_POSTER = TATARU;

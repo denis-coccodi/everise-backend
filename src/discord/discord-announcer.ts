@@ -1,13 +1,15 @@
 import {URL} from 'url';
 import type {ArticleDto} from '../articles';
 import {LiveEvent, LiveFeed} from '../live';
-import {Sharer, escape, fromDiscord, message} from './discord-format';
+import {escape, fromDiscord, message} from './discord-format';
 import {articleMessages} from './discord-messages';
 import type {EventDetail} from '../events';
 import type {VenueDetail} from '../venues';
 import {eventMessage} from './event-message';
-import {SharedListing, listingMessage} from './listing-message';
+import {listingMessage} from './listing-message';
 import {venueMessage} from './venue-message';
+import {Sharer} from './discord-model';
+import {SharedListing} from './discord-model';
 
 // How the app calls Discord (the parts of fetch it uses); tests pass a fake.
 type DiscordFetch = (

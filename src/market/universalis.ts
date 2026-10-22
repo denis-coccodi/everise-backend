@@ -1,22 +1,6 @@
 import {UpstreamError} from '../errors';
-
-// One sale on the market board, as Universalis recorded it.
-interface Sale {
-  // When it sold (s since the epoch).
-  at: number;
-  // Gil per unit.
-  price: number;
-  quantity: number;
-  hq: boolean;
-}
-
-// A window of sales to read: those made in [until - within, until] (s),
-// the newest first, at most `limit` of them.
-interface SalesWindow {
-  until: number;
-  within: number;
-  limit: number;
-}
+import {Sale} from './universalis-dto';
+import {SalesWindow} from './market-model';
 
 // The minimal HTTP GET the reader needs; the Worker's global fetch fits it.
 type UniversalisFetch = (
@@ -77,4 +61,4 @@ function toSales(body: unknown): Sale[] {
   });
 }
 
-export {ReadSales, Sale, SalesWindow, UniversalisFetch, universalisSales};
+export {ReadSales, UniversalisFetch, universalisSales};

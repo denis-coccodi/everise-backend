@@ -1,8 +1,8 @@
 import {Db} from '../db';
 import {TooManyRequestsError} from '../errors';
-import {secondsToMidnightUtc} from './character-model';
+import {secondsToMidnightUtc} from './character-ai';
 import {MEMBER_SHARE, day} from './room-prompts';
-import {UsageDoc} from './sands-docs';
+import {UsageDoc} from './sands-model';
 
 // The Workers AI Neurons the characters may spend a day: the site's, and a
 // share of them for each payer (a member, or the guests whose roulette

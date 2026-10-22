@@ -1,5 +1,2 @@
-export {
-  TurnstileAction,
-  TurnstileFetch,
-  TurnstileVerifier,
-} from './turnstile-verifier';
+export {TurnstileFetch, TurnstileVerifier} from './turnstile-verifier';
+export {TurnstileAction} from './turnstile-model';

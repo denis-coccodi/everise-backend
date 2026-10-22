@@ -1,25 +1,9 @@
-import {Db, Doc} from '../db';
-import {Write} from '../db/db';
+import {Db} from '../db';
 import {DiscordAnnouncer} from '../discord';
 import {NotificationsService} from '../notifications';
 import {DataCentre, PartyFinderReader} from '../party-finder';
-
-// A Party Finder listing a member shared, watched until it's no longer up.
-interface SharedListingDoc extends Doc {
-  listingId: string;
-  dataCentre: DataCentre;
-  // What the listing is for, as it was shared ("The Omega Protocol").
-  title: string;
-  sharerId: string;
-  // The member's name then, for the Discord message.
-  sharerName: string;
-  // The post it was shared as, if it was.
-  articleId?: string;
-  // Shared in the Everise Discord too (or only there).
-  discord: boolean;
-}
-
-type NewShare = Omit<SharedListingDoc, keyof Doc>;
+import {Write} from '../db/db-model';
+import {NewShare, SharedListingDoc} from './shared-listing-model';
 
 const SHARED_LISTINGS = 'sharedListings';
 
@@ -86,4 +70,4 @@ class SharedListings {
   }
 }
 
-export {NewShare, SHARED_LISTINGS, SharedListingDoc, SharedListings};
+export {SHARED_LISTINGS, SharedListings};

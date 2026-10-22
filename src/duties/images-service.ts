@@ -1,7 +1,8 @@
 import {Db, Doc} from '../db';
 import {FileStore} from '../files';
-import {ImageRef} from './duty';
 import {XivApiClient} from './xivapi-client';
+import {ImageRef} from './duty-model';
+import {DownloadProgress} from './duty-model';
 
 // Images per download batch. A Worker on the free plan may make 50 outbound
 // requests per incoming request, so a batch stays well below that.
@@ -37,12 +38,6 @@ interface DownloadsDoc extends Doc {
 // reading the images themselves.
 interface IndexDoc extends Doc {
   ids: number[];
-}
-
-interface DownloadProgress {
-  total: number;
-  pending: number;
-  failed: number[];
 }
 
 // Keeps copies of the game images the duty data refers to (job icons, duty
@@ -191,4 +186,4 @@ async function inParallel<T>(
   await Promise.all(Array.from({length: limit}, worker));
 }
 
-export {ImagesService, DownloadProgress};
+export {ImagesService};

@@ -1,7 +1,6 @@
-import {ShownListing, listingName} from '../party-finder';
+import {listingName} from '../party-finder';
 import {
   CREST_ORANGE,
-  Sharer,
   authorOf,
   crest,
   escape,
@@ -9,15 +8,8 @@ import {
   quote,
   truncate,
 } from './discord-format';
-
-// A shared Party Finder listing as it was: its data centre, the listing,
-// and the picture of the site's card for it, when the member's browser made
-// one.
-interface SharedListing {
-  dataCentre: string;
-  listing: ShownListing;
-  picture?: string;
-}
+import {Sharer} from './discord-model';
+import {SharedListing} from './discord-model';
 
 // The line beside the card, by the game's Party Finder tab.
 const CATEGORY_COLOURS: Record<string, number> = {
@@ -139,4 +131,4 @@ function listingMessage(
   return message(siteUrl, headline + quote(comment), [embed]);
 }
 
-export {SharedListing, listingMessage};
+export {listingMessage};

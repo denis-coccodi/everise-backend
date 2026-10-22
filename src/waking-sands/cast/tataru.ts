@@ -1,4 +1,4 @@
-import {Character} from '../character';
+import {Character} from '../sands-model';
 
 // Tataru also posts guests' roulette results to the feeds, as their author
 // (roulette-posts).

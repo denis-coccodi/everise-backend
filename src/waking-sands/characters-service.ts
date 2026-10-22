@@ -1,4 +1,4 @@
-import {Db, Doc} from '../db';
+import {Db} from '../db';
 import {NotFoundError} from '../errors';
 import {ProfileImagesService, profileImageUrl, uploadedImageId} from '../users';
 import {
@@ -7,37 +7,7 @@ import {
   characterAuthorId,
   characterById,
 } from './characters';
-
-// What an admin changed about a character; unset fields keep the default.
-interface CharacterDoc extends Doc {
-  title?: string | null;
-  persona?: string | null;
-  bio?: string | null;
-  // An uploaded picture's address (profileImages).
-  image?: string | null;
-}
-
-// A character as the chat and the settings see it: the default with the
-// admin's changes. `edited` says which fields differ from the default
-// (`image`: an uploaded picture replaces the shipped one).
-interface CharacterProfile {
-  id: string;
-  name: string;
-  title: string;
-  persona: string;
-  defaultPersona: string;
-  // Their profile's bio.
-  bio: string;
-  image?: string;
-  edited: {title: boolean; persona: boolean; bio: boolean; image: boolean};
-}
-
-interface CharacterChanges {
-  // An empty value goes back to the default.
-  title?: string | null;
-  persona?: string | null;
-  bio?: string | null;
-}
+import {CharacterChanges, CharacterDoc, CharacterProfile} from './sands-model';
 
 // The owner of a character's uploaded pictures in profileImages.
 const ownerOf = characterAuthorId;
@@ -171,4 +141,4 @@ function custom(value: string | null, fallback: string) {
   return text && text !== fallback.trim() ? text : null;
 }
 
-export {CharacterChanges, CharacterDoc, CharacterProfile, CharactersService};
+export {CharactersService};

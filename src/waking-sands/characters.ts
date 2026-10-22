@@ -20,7 +20,7 @@ import {VENAT} from './cast/venat';
 import {YOTSUYU} from './cast/yotsuyu';
 import {YSHTOLA} from './cast/yshtola';
 import {ZENOS} from './cast/zenos';
-import {Character} from './character';
+import {Character} from './sands-model';
 
 // Who a character is as a post's author (Tataru posts guests' roulette
 // results) and as the owner of their uploaded pictures: not a member.

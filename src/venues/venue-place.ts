@@ -1,5 +1,5 @@
 import {VenuePlace, districtOf} from '../events';
-import {FfxivVenue} from './venue';
+import {FfxivVenue} from './ffxiv-venues-dto';
 
 // Where the venue is, for matching the week's events to it: its house
 // only when it's a plot in a housing district (not an apartment, or a

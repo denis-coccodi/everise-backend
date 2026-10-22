@@ -1,4 +1,4 @@
-import type {SqlValue} from './sql-document-store';
+import {SqlValue} from './db-model';
 
 // The `docs` table, its indexes, and how fields are written in SQL.
 

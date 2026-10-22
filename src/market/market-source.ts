@@ -1,9 +1,11 @@
 import {SqlStorage} from '../db';
 import {UpstreamError} from '../errors';
-import {Quality} from './daily-stats';
-import {ItemHistory, ItemSeries} from './item-history';
-import {MarketRegion, regionWorlds} from './market-regions';
+import {ItemHistory} from './item-history';
+import {regionWorlds} from './market-regions';
 import {UniversalisFetch, universalisSales} from './universalis';
+import {Quality} from './market-model';
+import {ItemSeries} from './market-model';
+import {MarketRegion} from './market-model';
 
 // Where the page's price histories come from. In the Worker, a Durable
 // Object per item and region (market-hub.ts), which keeps reading older

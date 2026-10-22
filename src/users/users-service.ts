@@ -1,18 +1,13 @@
 import {config} from '../config';
 import {Db} from '../db';
 import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
-import {AssignableRole, User} from './user';
-import {
-  UpdateUserParams,
-  UserDoc,
-  ProviderSignIn,
-  RESERVED_USERNAMES,
-  isAdminEmail,
-  toUser,
-} from './user-doc';
+import {User} from './user';
+import {RESERVED_USERNAMES, isAdminEmail, toUser} from './user-doc';
 import {LeakedPasswords} from './leaked-passwords';
 import {checkNewPassword, hashPassword, passwordMatches} from './passwords';
 import {ProviderSignIns} from './provider-sign-ins';
+import {UpdateUserParams, UserDoc, ProviderSignIn} from './user-model';
+import {AssignableRole} from './user-model';
 
 // How long an unconfirmed sign-up keeps its username.
 const UNCONFIRMED_DAYS = 7;

@@ -4,6 +4,7 @@ import {
   UnavailableError,
   UpstreamError,
 } from '../errors';
+import {FflogsSettings} from './fflogs-model';
 
 const TOKEN_URL = 'https://www.fflogs.com/oauth/token';
 const API_URL = 'https://www.fflogs.com/api/v2/client';
@@ -15,13 +16,6 @@ type FflogsFetch = (
   url: string,
   init: {method: 'POST'; headers: Record<string, string>; body: string},
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
-
-// The site's FFLogs API client (made from an FFLogs account's client
-// page): its id and secret. Without them the planner isn't offered.
-interface FflogsSettings {
-  clientId?: string;
-  clientSecret?: string;
-}
 
 interface GraphQlAnswer {
   data?: unknown;
@@ -138,4 +132,4 @@ function reportError(message: string) {
   return unreachable();
 }
 
-export {FflogsClient, FflogsFetch, FflogsSettings};
+export {FflogsClient, FflogsFetch};

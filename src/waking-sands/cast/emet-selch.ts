@@ -1,4 +1,4 @@
-import {Character} from '../character';
+import {Character} from '../sands-model';
 
 const EMET_SELCH: Character = {
   id: 'emet-selch',

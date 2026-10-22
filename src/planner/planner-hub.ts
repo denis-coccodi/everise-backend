@@ -8,8 +8,8 @@ import {
   UpstreamError,
 } from '../errors';
 import {FflogsClient} from './fflogs-client';
-import {PullInput} from './fflogs-pull';
 import {LocalPulls, PullSource} from './pull-source';
+import {PullInput} from './fflogs-model';
 
 // The one hub every pull is read in, so its FFLogs token is shared.
 const HUB_NAME = 'fflogs';

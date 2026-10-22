@@ -1,3 +1,5 @@
+import {ResetPeriod} from './duty-model';
+
 // The game's daily and weekly resets. Square Enix keeps them on UTC all year:
 // the daily reset is at 15:00 UTC (also when the Frontline map changes), the
 // weekly reset on Tuesdays at 08:00 UTC. Daylight saving time doesn't move
@@ -14,12 +16,6 @@ const DAILY_RESET_UTC_HOUR = 15;
 const WEEKLY_RESET_UTC_HOUR = 8;
 // Date.getUTCDay(): 0 is Sunday.
 const WEEKLY_RESET_UTC_DAY = 2;
-
-// A stretch of game time, from one reset to the next.
-interface ResetPeriod {
-  from: Date;
-  until: Date;
-}
 
 // The game day `at` is in: from the last daily reset to the next.
 function gameDayAt(at: Date): ResetPeriod {
@@ -39,4 +35,4 @@ function gameWeekAt(at: Date): ResetPeriod {
   return {from: new Date(from), until: new Date(from + WEEK_MS)};
 }
 
-export {DAY_MS, ResetPeriod, gameDayAt, gameWeekAt};
+export {DAY_MS, gameDayAt, gameWeekAt};

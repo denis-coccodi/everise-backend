@@ -1,53 +1,10 @@
 import {config} from '../config';
-import {Doc} from '../db';
 import {currentSiteUrl} from '../site-urls';
-import {AssignableRole, Role, SignInMethod, User} from './user';
+import {User} from './user';
+import {UserDoc, SignInProvider} from './user-model';
+import {Role, SignInMethod} from './user-model';
 
 // A user as the database stores them, and how it becomes a User.
-
-// The settings; the password changes through UserPasswords.
-interface UpdateUserParams {
-  email?: string;
-  username?: string;
-  bio?: string | null;
-  image?: string;
-  darkMode?: boolean;
-}
-
-interface UserDoc extends Doc {
-  email: string;
-  username: string;
-  // Unset for someone who only ever signed in with a provider (Google,
-  // Discord).
-  passwordHash?: string;
-  // The provider accounts that sign in to this one, by the provider's id for
-  // the person.
-  googleId?: string;
-  discordId?: string;
-  bio?: string;
-  image?: string;
-  darkMode?: boolean;
-  // false until a password sign-up opens its confirmation link; missing on
-  // accounts from before email confirmation, which count as confirmed.
-  emailConfirmed?: boolean;
-  // A new address from the settings, used once its link is opened.
-  pendingEmail?: string;
-  // Given by an admin; admins themselves come from ADMIN_EMAILS.
-  role?: AssignableRole;
-  // In every token; raised to sign out everywhere (missing counts as 0).
-  sessionVersion?: number;
-}
-
-// Someone signing in with a provider, as the provider vouches for them;
-// email is only set when the provider confirmed it.
-interface ProviderSignIn {
-  provider: SignInProvider;
-  id: string;
-  email?: string;
-  name?: string;
-}
-
-type SignInProvider = Exclude<SignInMethod, 'password'>;
 
 const PROVIDER_FIELDS = {
   google: 'googleId',
@@ -96,10 +53,6 @@ function toUser(doc: UserDoc): User {
 }
 
 export {
-  UpdateUserParams,
-  UserDoc,
-  ProviderSignIn,
-  SignInProvider,
   PROVIDER_FIELDS,
   PROVIDER_NAMES,
   RESERVED_USERNAMES,

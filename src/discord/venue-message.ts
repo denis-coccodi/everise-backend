@@ -1,7 +1,6 @@
 import type {VenueDetail} from '../venues';
 import {
   CREST_ORANGE,
-  Sharer,
   authorOf,
   crest,
   escape,
@@ -9,6 +8,7 @@ import {
   quote,
   truncate,
 } from './discord-format';
+import {Sharer} from './discord-model';
 
 // A venue shared by a member, with their words: what the owners say about
 // it (the first paragraph), where it is, when it next opens (in each

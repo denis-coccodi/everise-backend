@@ -1,4 +1,10 @@
 import {URLSearchParams} from 'url';
+import {
+  Provider,
+  ProviderApp,
+  ProviderProfile,
+  SocialLoginProblem,
+} from './social-login-model';
 
 // How the app calls the sign-in providers' APIs (the parts of fetch it
 // uses); tests pass a fake.
@@ -8,35 +14,11 @@ type OAuthFetch = (
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
 const PROVIDERS = ['google', 'discord'] as const;
-type Provider = (typeof PROVIDERS)[number];
 
 const PROVIDER_NAMES: Record<Provider, string> = {
   google: 'Google',
   discord: 'Discord',
 };
-
-// An app registered with the provider (Google Cloud console, Discord
-// Developer Portal). Unset means that sign-in button isn't offered.
-interface ProviderApp {
-  clientId?: string;
-  clientSecret?: string;
-}
-
-type SocialLoginSettings = Record<Provider, ProviderApp>;
-
-// Who signed in, as the provider vouches for them.
-interface ProviderProfile {
-  // The provider's own id for the person, which never changes.
-  id: string;
-  // Only an address the provider has confirmed belongs to them.
-  email?: string;
-  name?: string;
-}
-
-// Why a sign-in through a provider didn't finish; the sign-in page explains
-// each one.
-type SocialLoginProblem =
-  'cancelled' | 'expired' | 'no-email' | 'failed' | 'unavailable';
 
 class SocialLoginError extends Error {
   constructor(
@@ -211,12 +193,7 @@ export {
   OAuthFetch,
   PROVIDERS,
   PROVIDER_NAMES,
-  Provider,
-  ProviderApp,
-  ProviderProfile,
   SocialLoginError,
-  SocialLoginProblem,
-  SocialLoginSettings,
   authorizeUrl,
   fetchProfile,
   isProvider,

@@ -1,8 +1,9 @@
 import {VenuePlace} from '../events';
-import {VenueDetail, toVenueDetail} from './venue-detail';
+import {toVenueDetail} from './venue-detail';
 import {placeOf} from './venue-place';
-import {FfxivVenue} from './venue';
 import {FFXIV_VENUES, REFRESH_MS, STALE_MS, VenuesFetch} from './venues-board';
+import {FfxivVenue} from './ffxiv-venues-dto';
+import {VenueDetail} from './venue-model';
 
 // The venues read one at a time are few: the ones people open or share.
 // Past this many, the oldest read is dropped.

@@ -1,7 +1,6 @@
-import {KNOWN_ALLIANCE_RAID, RawDuty, groupOf} from './xivapi-records';
-
-// The high-end fights the fight planner covers.
-type FightKind = 'extreme' | 'savage' | 'ultimate';
+import {KNOWN_ALLIANCE_RAID, groupOf} from './xivapi-records';
+import {FightKind} from './duty-model';
+import {RawDuty} from './xivapi-dto';
 
 const FIGHT_GROUPS: Record<string, FightKind> = {
   'Trials — Extreme': 'extreme',
@@ -25,4 +24,4 @@ function fightTerritories(duties: RawDuty[]): Record<string, FightKind> {
   return fights;
 }
 
-export {FightKind, fightTerritories};
+export {fightTerritories};

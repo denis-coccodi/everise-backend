@@ -1,4 +1,5 @@
-import {LoggedPull, LoggedReport, ReportPlayer, jobOf} from './fight-report';
+import {jobOf} from './fight-report';
+import {LoggedPull, LoggedReport, ReportPlayer} from './fight-report-model';
 
 // What the report's summary is read with: its pulls (with the game
 // territory each was fought in) and its players.

@@ -1,7 +1,7 @@
 import {Db, Doc, Write} from '../db';
 import {profileImageUrl, uploadedImageId} from '../users';
 import {TATARU, characterAuthorId} from './characters';
-import {CharacterDoc} from './characters-service';
+import {CharacterDoc} from './sands-model';
 
 // Tataru used to be a member account too, which posted guests' roulette
 // results; now she is only the Waking Sands character, who posts them

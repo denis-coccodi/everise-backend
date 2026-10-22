@@ -1,4 +1,5 @@
 import {TooManyRequestsError} from '../errors';
+import {SendCount} from './user-model';
 
 // How often an account may be sent an email with a link or code: once a
 // minute, and DAILY_SENDS times a day. The confirmation links and the
@@ -7,14 +8,6 @@ import {TooManyRequestsError} from '../errors';
 const RESEND_SECONDS = 60;
 const DAILY_SENDS = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-// What a sending document keeps of the last ones.
-interface SendCount {
-  lastSentAt: string;
-  // Sent since dayStartedAt, against DAILY_SENDS.
-  sendsToday: number;
-  dayStartedAt: string;
-}
 
 // The count after one more email, or a 429 when it's too soon. `what` is
 // what the email holds ("link", "code"), for the message.
@@ -61,4 +54,4 @@ function escapeHtml(value: string) {
     .replace(/"/g, '&quot;');
 }
 
-export {SendCount, escapeHtml, nextSend};
+export {escapeHtml, nextSend};

@@ -1,10 +1,5 @@
-export {
-  ASSIGNABLE_ROLES,
-  AssignableRole,
-  Role,
-  SignInMethod,
-  User,
-} from './user';
+export {ASSIGNABLE_ROLES, User} from './user';
+export {AssignableRole, Role, SignInMethod} from './user-model';
 export {UsersService} from './users-service';
 export {EmailConfirmation} from './email-confirmation';
 export {PasswordReset} from './password-reset';
@@ -17,5 +12,6 @@ export {usersRoutes} from './users-routes';
 export {ProfileImagesService} from './profile-images-service';
 export {UserDto, readImageBody} from './users-router';
 export {profileImageUrl, uploadedImageId} from './profile-images-service';
-export {ImageInfo, ImageType, readImageInfo} from './image-info';
+export {readImageInfo} from './image-info';
+export {ImageInfo, ImageType} from './user-model';
 export {setSessionCookie} from './users-router';

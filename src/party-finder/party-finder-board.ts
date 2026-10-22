@@ -1,24 +1,14 @@
-import {
-  DATA_CENTRES,
-  DATA_CENTRE_NAMES,
-  DataCentre,
-  dataCentreOf,
-} from './data-centres';
-import {PartyFinderListing, XivpfListing, toListing} from './xivpf-listing';
+import {DATA_CENTRES, DATA_CENTRE_NAMES, dataCentreOf} from './data-centres';
+import {toListing} from './xivpf-listing';
+import {DataCentre} from './party-finder-model';
+import {Board} from './party-finder-model';
+import {PartyFinderListing} from './party-finder-model';
+import {XivpfListing} from './xivpf-dto';
 
 // How the board reaches xivpf; tests pass a fake.
 type XivpfFetch = (
   url: string,
 ) => Promise<{ok: boolean; status: number; text(): Promise<string>}>;
-
-// One data centre's listings, as the page gets them.
-interface Board {
-  dataCentre: DataCentre;
-  worlds: readonly {id: number; name: string}[];
-  // When the site last read xivpf.
-  fetchedAt: string;
-  listings: PartyFinderListing[];
-}
 
 // Where the router gets boards: the board itself, or (in the Worker) the
 // Durable Object that holds it. Null while xivpf can't be reached.
@@ -153,7 +143,6 @@ function dataCentreOfListing(id: string): DataCentre | undefined {
 }
 
 export {
-  Board,
   PartyFinderBoard,
   PartyFinderSource,
   REFRESH_MS,

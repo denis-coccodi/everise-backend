@@ -10,6 +10,5 @@ const VENUE_DATA_CENTRES = [
   'Primal',
   'Materia',
 ] as const satisfies readonly DataCentre[];
-type VenueDataCentre = (typeof VENUE_DATA_CENTRES)[number];
 
-export {VENUE_DATA_CENTRES, VenueDataCentre};
+export {VENUE_DATA_CENTRES};

@@ -1,5 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
-import {LiveEvent, LiveFeed} from './live-feed';
+import {LiveFeed} from './live-feed';
+import {LiveEvent} from './live-model';
 
 // The one hub every client connects to.
 const HUB_NAME = 'feed';

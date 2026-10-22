@@ -1,27 +1,19 @@
-import {ReportPlayer} from './fight-report';
 import {creditMergedHots} from './fflogs-hots';
-import {FflogsEvent, FflogsPullData} from './fflogs-pull-query';
 import {
   STATUS_OFFSET,
   numberOr,
   statusId,
   statusSpans,
 } from './fflogs-statuses';
+import {PullInput} from './fflogs-model';
+import {FflogsEvent, FflogsPullData} from './fflogs-dto';
 import {
   Cast,
   Named,
   PlayerStats,
   PullTimeline,
   TimelinePlayer,
-} from './pull-timeline';
-
-// Which pull, and its players (from the report's summary).
-interface PullInput {
-  code: string;
-  pullId: number;
-  startedAt: string;
-  players: ReportPlayer[];
-}
+} from './pull-timeline-model';
 
 const STAT_FIELDS: Record<keyof PlayerStats, string> = {
   level: 'level',
@@ -253,4 +245,4 @@ function names(
   };
 }
 
-export {PullInput, toTimeline};
+export {toTimeline};

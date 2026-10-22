@@ -1,8 +1,8 @@
-import {ArticleEvent} from '../../src/live/live-feed';
 import 'jest-extended';
 import request from 'supertest';
 import {isAllowedOrigin, isLiveRequest} from '../../src/live/live-requests';
 import {app, clearDb, live, usersClient, xivApi} from '../utils';
+import {ArticleEvent} from '../../src/live/live-model';
 
 const wsRequest = (url: string, headers: Record<string, string>) => ({
   url,

@@ -4,7 +4,7 @@ import {XivApiClient} from '../duties';
 import {NotFoundError} from '../errors';
 import {Auth} from '../middleware';
 import {DAY, dayOf} from './daily-stats';
-import {HISTORY_START, ItemSeries} from './item-history';
+import {HISTORY_START} from './item-history';
 import {MarketItems} from './market-items';
 import {MarketListings} from './market-listings';
 import {
@@ -26,6 +26,7 @@ import {
   MarketRegionsResponse,
 } from './market-schemas';
 import {MarketSource} from './market-source';
+import {ItemSeries} from './market-model';
 
 // Icons and the regions never change between game patches.
 const LONG_CACHE = 'public, max-age=604800';

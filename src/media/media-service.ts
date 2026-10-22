@@ -5,6 +5,7 @@ import {Db, Doc} from '../db';
 import {InvalidImageError, TooManyRequestsError} from '../errors';
 import {FileStore, StoredFile, UploadStorage} from '../files';
 import {ImageType, readImageInfo} from '../users';
+import {StoredMedia} from './media-model';
 
 // Images and GIFs people upload for their posts and comments: the bytes in
 // the file store (R2), a document each with the rest. The site shrinks large
@@ -34,14 +35,6 @@ interface MediaDoc extends Doc {
   // unused is deleted. Unset on uploads from before attachments, which old
   // posts use from their text: those are never swept.
   attached?: boolean;
-}
-
-interface StoredMedia {
-  id: string;
-  url: string;
-  contentType: ImageType;
-  width: number;
-  height: number;
 }
 
 class MediaService {
@@ -244,10 +237,4 @@ function tooLarge() {
   );
 }
 
-export {
-  MAX_MEDIA_BYTES,
-  MEMBER_STORAGE_MB,
-  MediaService,
-  StoredMedia,
-  tooLarge,
-};
+export {MAX_MEDIA_BYTES, MEMBER_STORAGE_MB, MediaService, tooLarge};

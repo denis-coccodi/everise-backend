@@ -1,6 +1,7 @@
 import {FileStore} from '../files';
 import {DiscordChannel} from './discord-channel';
-import {RelayImage, RelayMessage, imagesOf} from './relay-message';
+import {imagesOf} from './relay-message';
+import {RelayImage, RelayMessage} from './discord-dto';
 
 // The pictures kept, by their type: the file's name ends with it.
 const EXTENSIONS: Record<string, string> = {

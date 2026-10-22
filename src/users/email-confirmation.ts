@@ -1,9 +1,10 @@
 import {createHash, randomBytes} from 'crypto';
 import {Db, Doc} from '../db';
 import {EmailSender} from '../email';
-import {SendCount, escapeHtml, nextSend} from './send-limits';
+import {escapeHtml, nextSend} from './send-limits';
 import {User} from './user';
 import {UsersService} from './users-service';
+import {SendCount} from './user-model';
 
 // One link waiting to be opened, per account. Only the token's hash is
 // stored, so the database alone can't confirm anything.

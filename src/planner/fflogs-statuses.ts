@@ -1,5 +1,5 @@
-import {FflogsEvent} from './fflogs-pull-query';
-import {StatusSpan} from './pull-timeline';
+import {FflogsEvent} from './fflogs-dto';
+import {StatusSpan} from './pull-timeline-model';
 
 // FFLogs numbers a status as 1,000,000 plus the game's status id.
 const STATUS_OFFSET = 1_000_000;

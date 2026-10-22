@@ -1,5 +1,5 @@
 import {DATA_CENTRES, DATA_CENTRE_NAMES, DataCentre} from '../party-finder';
-import {RelayMessage} from './relay-message';
+import {RelayMessage} from './discord-dto';
 
 // Every public world's data centre, by its name.
 const WORLDS = new Map(

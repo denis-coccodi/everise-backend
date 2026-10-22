@@ -1,7 +1,6 @@
 import {env} from 'cloudflare:workers';
 import {httpServerHandler} from 'cloudflare:node';
 import {createApp} from './app';
-import {AppJobs} from './app-options';
 import {config} from './config';
 import {DurableObjectDb, EveriseDb} from './db/everise-db';
 import {R2Bucket, R2FileStore} from './files';
@@ -11,6 +10,7 @@ import {HubMarket, MarketHistoryHub} from './market/market-hub';
 import {HubPartyFinder, PartyFinderHub} from './party-finder/party-finder-hub';
 import {HubPulls, PlannerHub} from './planner/planner-hub';
 import {AiBinding, WorkersAiModel} from './waking-sands';
+import {AppJobs} from './app-options-model';
 
 // Express runs inside the Worker through Cloudflare's Node.js HTTP server
 // support: the app listens on a virtual port that the handler forwards to.

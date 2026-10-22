@@ -1,18 +1,19 @@
 import {Db, Write} from '../db';
 import {DATA_CENTRE_NAMES, DataCentre} from '../party-finder';
 import {DiscordChannel} from './discord-channel';
+import {RELAYED_POSTS, RELAY_CURSORS} from './relay-docs';
+import {RelayImages} from './relay-images';
+import {isNewer} from './relay-message';
+import {trainDataCentre, trainStartsAt} from './hunt-trains';
+import {outdated} from './relay-retention';
 import {
-  RELAYED_POSTS,
-  RELAY_CURSORS,
   RelayChannel,
   RelayCursorDoc,
   RelayKind,
   RelayedPostDoc,
-} from './relay-docs';
-import {RelayImages} from './relay-images';
-import {RelayMessage, isNewer} from './relay-message';
-import {trainDataCentre, trainStartsAt} from './hunt-trains';
-import {outdated} from './relay-retention';
+} from './relay-model';
+import {RelaySettings} from './relay-model';
+import {RelayMessage} from './discord-dto';
 
 // The servers whose channels the weekly channel follows: the Fashion
 // Report's infographics (Kaiyoko's "Fashion Reporter") and the Island
@@ -31,14 +32,6 @@ const KEPT_MS: Record<RelayChannel, number> = {
 // picture, and a Worker run may only make so many requests. The rest wait
 // for the next read.
 const MAX_PER_READ = 10;
-
-interface RelaySettings {
-  weeklyChannelId?: string;
-  huntsChannelId?: string;
-  // Which data centre each hunt group's channel is for, by channel id (or
-  // by server id, for a group with one channel).
-  huntSources: Record<string, DataCentre>;
-}
 
 // The hunt groups' channels, from the setting "<id>:<data centre>,…" (the
 // id of the followed channel, or of its server).
@@ -221,4 +214,4 @@ class RelaySync {
   }
 }
 
-export {RelaySettings, RelaySync, huntSources};
+export {RelaySync, huntSources};

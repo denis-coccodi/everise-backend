@@ -5,5 +5,5 @@ export {
   Fetch,
   STAGING_ACCESS_SETTINGS,
   StagingAccess,
-  SyncResult,
 } from './staging-access';
+export {SyncResult} from './admin-model';

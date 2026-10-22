@@ -3,15 +3,10 @@ import {NotFoundError} from '../errors';
 import {cleanAttachment} from '../media';
 import {MediaService} from '../media';
 import {UsersService} from '../users';
-import {
-  AttachmentInput,
-  CommentDoc,
-  ListCommentsParams,
-  toComment,
-  uploadsIn,
-} from './article-docs';
+import {toComment, uploadsIn} from './article-docs';
 import {ArticlesService} from './articles-service';
 import {Comment} from './comment';
+import {AttachmentInput, CommentDoc, ListCommentsParams} from './article-model';
 
 // A post's comments: writing, listing and deleting them, with the upload a
 // comment may carry.

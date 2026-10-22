@@ -1,31 +1,13 @@
 import {UpstreamError} from '../errors';
-import {Quality} from './daily-stats';
 import {UniversalisFetch} from './universalis';
+import {Quality} from './market-model';
+import {CurrentListings} from './market-model';
 
 const UNIVERSALIS_URL = 'https://universalis.app/api/v2';
 const HEADERS = {'User-Agent': 'Everise (https://everise.dev)'};
 
 // Listings answered: the cheapest first.
 const LISTINGS = 5;
-
-// An item for sale on a world's market board now.
-interface Listing {
-  // The game's world id.
-  world: number;
-  // Gil per unit, before tax.
-  price: number;
-  quantity: number;
-  hq: boolean;
-  // When a player's upload last saw it (sellers undercut each other, so the
-  // cheapest moves).
-  reviewedAt: Date;
-}
-
-interface CurrentListings {
-  listings: Listing[];
-  // When any of the region's market boards was last uploaded.
-  updatedAt: Date | null;
-}
 
 // The cheapest listings of an item on any world of a region right now, from
 // Universalis (one quick request: it keeps every world's current listings
@@ -88,4 +70,4 @@ function toListings(body: unknown): CurrentListings {
   };
 }
 
-export {CurrentListings, Listing, MarketListings};
+export {MarketListings};

@@ -1,5 +1,8 @@
-import {FfxivVenue, Venue, isShown, toVenue} from './venue';
-import {VenueDataCentre} from './venue-data-centres';
+import {isShown, toVenue} from './venue';
+import {FfxivVenue} from './ffxiv-venues-dto';
+import {Venue} from './venue-model';
+import {VenueDataCentre} from './venue-model';
+import {VenueList} from './venue-model';
 
 // How the board reaches FFXIV Venues; tests pass a fake.
 type VenuesFetch = (
@@ -16,14 +19,6 @@ const STALE_MS = 60 * 60 * 1000;
 // After a failed read (FFXIV Venues turns bursts away), it's asked again
 // this soon rather than after a whole refresh.
 const RETRY_MS = 30 * 1000;
-
-interface VenueList {
-  dataCentre: VenueDataCentre;
-  // When the site last read FFXIV Venues.
-  fetchedAt: string;
-  // The ones open now first, then by their next opening.
-  venues: Venue[];
-}
 
 // The venues of FFXIV Venues (ffxivvenues.com), the community's index of
 // player-run venues, read a data centre at a time and kept between
@@ -118,12 +113,4 @@ class VenuesBoard {
   }
 }
 
-export {
-  FFXIV_VENUES,
-  REFRESH_MS,
-  RETRY_MS,
-  STALE_MS,
-  VenueList,
-  VenuesBoard,
-  VenuesFetch,
-};
+export {FFXIV_VENUES, REFRESH_MS, RETRY_MS, STALE_MS, VenuesBoard, VenuesFetch};

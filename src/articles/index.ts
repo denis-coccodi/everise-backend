@@ -1,4 +1,5 @@
-export {Article, PartyFinderPost, RouletteCard} from './article';
+export {Article} from './article';
+export {PartyFinderPost, RouletteCard} from './article-model';
 export {ArticleAnnouncer} from './announce-article';
 export {ArticlesService} from './articles-service';
 export {CommentsService} from './comments-service';

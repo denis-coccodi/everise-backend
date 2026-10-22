@@ -1,8 +1,9 @@
-export {Gif, GifFetch, GifSearch} from './gif-search';
+export {GifFetch, GifSearch} from './gif-search';
+export {Gif} from './media-model';
 export {MediaRouter} from './media-router';
-export {MediaService, StoredMedia} from './media-service';
+export {MediaService} from './media-service';
+export {StoredMedia} from './media-model';
 export {
-  Attachment,
   MAX_COMMENT_ATTACHMENTS,
   MAX_POST_ATTACHMENTS,
   attachmentsFromText,
@@ -10,4 +11,5 @@ export {
   currentAttachment,
   uploadIdOf,
 } from './attachments';
+export {Attachment} from './media-model';
 export {AttachmentSchema, newAttachments} from './attachment-schemas';

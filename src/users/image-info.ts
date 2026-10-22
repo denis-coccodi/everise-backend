@@ -1,14 +1,8 @@
+import {ImageInfo, ImageType} from './user-model';
+
 // Reads an image's format and size from its first bytes, without decoding it.
 // The format comes from the file itself, never from what the client claims,
 // so only these four kinds of image are ever stored and served.
-
-type ImageType = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
-
-interface ImageInfo {
-  type: ImageType;
-  width: number;
-  height: number;
-}
 
 function readImageInfo(bytes: Uint8Array): ImageInfo | null {
   const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -115,4 +109,4 @@ function sized(type: ImageType, width: number, height: number) {
   return width > 0 && height > 0 ? {type, width, height} : null;
 }
 
-export {ImageInfo, ImageType, readImageInfo};
+export {readImageInfo};

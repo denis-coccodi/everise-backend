@@ -1,14 +1,10 @@
 import {Db, Doc} from '../db';
 import {NotFoundError, UpstreamError} from '../errors';
 import {FflogsClient} from './fflogs-client';
-import {PullInput} from './fflogs-pull';
 import {REPORT_QUERY, reportOf, toLoggedReport} from './fflogs-reports';
-import {
-  FightKinds,
-  FightReport,
-  LoggedReport,
-  coveredReport,
-} from './fight-report';
+import {coveredReport} from './fight-report';
+import {PullInput} from './fflogs-model';
+import {FightKinds, FightReport, LoggedReport} from './fight-report-model';
 
 const REPORTS = 'fflogsReports';
 
