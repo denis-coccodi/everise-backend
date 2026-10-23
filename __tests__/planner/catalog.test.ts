@@ -189,6 +189,8 @@ describe('GET /api/planner/catalog', () => {
       id: 7531,
       name: 'Rampart',
       icon: 831,
+      description:
+        'Reduces damage taken by 20%.\nAdditional Effect: Increases HP recovery via healing actions on self by 15%\nDuration: 20s',
       // The jobs only: classes are left out.
       jobs: ['PLD', 'WAR', 'DRK', 'GNB'],
       level: 8,
@@ -218,6 +220,8 @@ describe('GET /api/planner/catalog', () => {
       range: 30,
     });
     expect(byId.get(3570)).toMatchObject({charges: 2});
+    // Only the actions with effects keep their tooltip.
+    expect(byId.get(9)).toMatchObject({description: null});
     expect(byId.get(16230)).toMatchObject({jobs: ['SMN']});
     expect(byId.get(24291)).toMatchObject({
       jobs: ['SGE'],

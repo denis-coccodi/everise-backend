@@ -28,6 +28,8 @@ const CatalogAction = z.strictObject({
   name: z.string(),
   // The game's icon id.
   icon: int.nullable(),
+  // Its tooltip, for the actions with effects.
+  description: z.string().nullable(),
   jobs: z.array(z.string()),
   level: int,
   gcd: z.boolean(),

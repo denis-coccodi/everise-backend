@@ -29,6 +29,9 @@ interface CatalogAction {
   name: string;
   // The action's icon (the game's icon id).
   icon: number | null;
+  // Its tooltip, as the game writes it (lines split by "\n"), for the
+  // actions with effects; null for the others.
+  description: string | null;
   // The jobs that have it (abbreviations); role actions list each job.
   jobs: string[];
   level: number;

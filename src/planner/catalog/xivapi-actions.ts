@@ -120,6 +120,7 @@ function toCatalogAction(
     id: row.row_id,
     name: String(f.Name ?? ''),
     icon: icon || null,
+    description: null,
     jobs: its,
     level: num(f.ClassJobLevel),
     gcd:
