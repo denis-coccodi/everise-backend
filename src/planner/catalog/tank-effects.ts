@@ -309,7 +309,7 @@ const TANK_EFFECTS: EffectEntry[] = [
     effects: [
       effect('invulnerable', 'self', 'Superbolide', {
         s: 10,
-        condition: 'HP drops to 1',
+        condition: 'loses 50% of max HP first',
       }),
     ],
   },
