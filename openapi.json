@@ -4526,6 +4526,12 @@
                     }
                   ]
                 },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "jobs": {
                   "type": "array",
                   "items": {
@@ -4714,6 +4720,7 @@
                 "id",
                 "name",
                 "icon",
+                "description",
                 "jobs",
                 "level",
                 "gcd",

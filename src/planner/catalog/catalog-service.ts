@@ -54,6 +54,10 @@ class CatalogService {
         toCatalogAction(row, COMBAT_JOBS, EFFECTS.get(row.row_id) ?? []),
       )
       .filter((action): action is CatalogAction => action !== null)
+      .map(action => ({
+        ...action,
+        description: tooltips.get(action.id) || null,
+      }))
       .sort((a, b) => a.id - b.id);
     const names = new Map(actions.map(action => [action.id, action.name]));
     const changed = tooltipChanges(
