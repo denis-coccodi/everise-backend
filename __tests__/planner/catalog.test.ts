@@ -93,6 +93,7 @@ beforeEach(async () => {
     // A patch changed it: 700 became 1,700 (a whole number, not "700").
     tooltip(3570, "Restores target's HP.\nCure Potency: 1,700"),
     tooltip(16230, "Restores target's HP.\nCure Potency: 400"),
+    tooltip(9, 'Delivers an attack with a potency of 220.'),
     // A full-width percent sign, as the game writes it here.
     tooltip(
       24291,
@@ -220,8 +221,10 @@ describe('GET /api/planner/catalog', () => {
       range: 30,
     });
     expect(byId.get(3570)).toMatchObject({charges: 2});
-    // Only the actions with effects keep their tooltip.
-    expect(byId.get(9)).toMatchObject({description: null});
+    // Actions without effects keep their tooltip too.
+    expect(byId.get(9)).toMatchObject({
+      description: 'Delivers an attack with a potency of 220.',
+    });
     expect(byId.get(16230)).toMatchObject({jobs: ['SMN']});
     expect(byId.get(24291)).toMatchObject({
       jobs: ['SGE'],
