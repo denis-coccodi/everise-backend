@@ -6103,6 +6103,15 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "expansion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "outdated": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -6112,7 +6121,9 @@
           "endedAt",
           "players",
           "pulls",
-          "otherPulls"
+          "otherPulls",
+          "expansion",
+          "outdated"
         ],
         "additionalProperties": false
       },

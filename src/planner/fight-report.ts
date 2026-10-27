@@ -52,10 +52,18 @@ function pullKind(pull: LoggedPull, kinds: FightKinds): PullKind | null {
 }
 
 // The report as the planner answers it: only the pulls it covers, and
-// their players.
-function coveredReport(report: LoggedReport, kinds: FightKinds): FightReport {
+// their players. A report from before the latest expansion (`latest`,
+// from the game data) covers none: the planner plans for the jobs as they are
+// now, and those pulls couldn't be played that way.
+function coveredReport(
+  report: LoggedReport,
+  kinds: FightKinds,
+  latest: string | null,
+): FightReport {
+  const outdated =
+    latest !== null && report.expansion !== null && report.expansion !== latest;
   const pulls: ReportPull[] = [];
-  for (const logged of report.pulls) {
+  for (const logged of outdated ? [] : report.pulls) {
     const kind = pullKind(logged, kinds);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const {territory, difficulty, ...pull} = logged;
@@ -67,6 +75,7 @@ function coveredReport(report: LoggedReport, kinds: FightKinds): FightReport {
     players: report.players.filter(player => inPulls.has(player.id)),
     pulls,
     otherPulls: report.pulls.length - pulls.length,
+    outdated,
   };
 }
 
