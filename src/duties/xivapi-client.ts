@@ -158,6 +158,7 @@ class XivApiClient {
       dataVersion: dutyRows.version,
       groups,
       fights,
+      latestExpansion: expansions.get(Math.max(...expansions.keys())) ?? '',
       roulettes,
       rouletteIcon,
       jobs,

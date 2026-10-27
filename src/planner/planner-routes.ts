@@ -21,8 +21,12 @@ interface PlannerParts {
   // Where pulls' timelines are read: in the Worker, the PlannerHub
   // Durable Object; otherwise in this process.
   pulls?: PullSource;
-  // The game data: what kind of fight each game territory holds.
-  duties: {fightKinds(): Promise<FightKinds>};
+  // The game data: what kind of fight each game territory holds, and the
+  // latest expansion.
+  duties: {
+    fightKinds(): Promise<FightKinds>;
+    latestExpansion(): Promise<string | null>;
+  };
   // How the action catalog reaches XIVAPI, and the game data refresh's
   // key, which rebuilds it.
   xivapi: CatalogGet;
@@ -36,6 +40,7 @@ function plannerRoutes(parts: PlannerParts) {
     parts.db,
     client,
     () => parts.duties.fightKinds(),
+    () => parts.duties.latestExpansion(),
     parts.now,
   );
   const pulls = parts.pulls ?? new LocalPulls(client);

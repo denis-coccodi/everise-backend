@@ -27,6 +27,8 @@ interface JobsDoc extends Doc {
 
 interface FightsDoc extends Doc {
   fights: Record<string, FightKind>;
+  // Missing before the first refresh that read it.
+  latestExpansion?: string;
 }
 
 interface RefreshDoc extends Doc {
@@ -85,7 +87,10 @@ class DutiesService {
       icon: data.rouletteIcon,
     });
     await this.db.create(this.jobsCollection, {jobs: data.jobs});
-    await this.db.create(this.fightsCollection, {fights: data.fights});
+    await this.db.create(this.fightsCollection, {
+      fights: data.fights,
+      latestExpansion: data.latestExpansion,
+    });
 
     const refresh = {
       dataVersion: data.dataVersion,
@@ -192,6 +197,13 @@ class DutiesService {
     return new Map(
       Object.entries(doc?.fights ?? {}).map(([id, kind]) => [Number(id), kind]),
     );
+  }
+
+  // The latest expansion's name, from the game data; null until the first
+  // refresh that read it.
+  async latestExpansion() {
+    const [doc] = await this.db.find<FightsDoc>(this.fightsCollection);
+    return doc?.latestExpansion || null;
   }
 
   private findGroups() {

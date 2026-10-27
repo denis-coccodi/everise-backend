@@ -159,6 +159,8 @@ function fflogsReport(
     title: 'M5S prog',
     startTime,
     endTime: startTime + 3_600_000,
+    // FFLogs' zone for the report's fights, and its expansion.
+    zone: {expansion: {name: 'Dawntrail'}},
     fights: [
       fight(1, 0, TERRITORIES.savage, 0, 0, 60_000),
       fight(2, 101, TERRITORIES.savage, 101, 120_000, 420_000),

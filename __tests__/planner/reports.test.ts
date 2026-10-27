@@ -100,6 +100,8 @@ describe('GET /api/planner/reports/:code', () => {
       startedAt: '2026-10-20T19:00:00.000Z',
       endedAt: '2026-10-20T20:00:00.000Z',
       otherPulls: 1,
+      expansion: 'Dawntrail',
+      outdated: false,
     });
     expect(response.body.pulls).toEqual([
       {
@@ -190,6 +192,32 @@ describe('GET /api/planner/reports/:code', () => {
     // Unreal trials aren't covered.
     expect(response.body.otherPulls).toBe(1);
     expect(response.body.players[0]).toMatchObject({job: null, role: null});
+  });
+
+  test('plans none of the pulls of a report from an earlier expansion', async () => {
+    fflogs.reports[CODE] = fflogsReport({
+      zone: {expansion: {name: 'Endwalker'}},
+    });
+
+    const response = await load();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      expansion: 'Endwalker',
+      outdated: true,
+      pulls: [],
+      otherPulls: 4,
+      players: [],
+    });
+  });
+
+  test('plans a report FFLogs gives no expansion for', async () => {
+    fflogs.reports[CODE] = fflogsReport({zone: null});
+
+    const response = await load();
+
+    expect(response.body).toMatchObject({expansion: null, outdated: false});
+    expect(response.body.pulls).toHaveLength(3);
   });
 
   test('keeps a finished report, so FFLogs is asked once', async () => {

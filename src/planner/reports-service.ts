@@ -14,7 +14,7 @@ const REFRESH_MS = 2 * 60 * 1000;
 const FINISHED_MS = 60 * 60 * 1000;
 // How reports are read from FFLogs. Raised whenever that changes, so the
 // reports kept before are read again.
-const READ_VERSION = 2;
+const READ_VERSION = 3;
 
 // Every boss pull is kept, so a game data refresh that adds a fight's
 // territory makes its pulls show without reading the report again.
@@ -36,6 +36,8 @@ class ReportsService {
     private readonly client: FflogsClient,
     // What kind of fight each game territory holds (the duties' game data).
     private readonly fightKinds: () => Promise<FightKinds>,
+    // The latest expansion's name (the game data), null before it's known.
+    private readonly latestExpansion: () => Promise<string | null>,
     private readonly now: () => Date,
   ) {}
 
@@ -44,11 +46,12 @@ class ReportsService {
   }
 
   async report(code: string): Promise<FightReport> {
-    const [logged, kinds] = await Promise.all([
+    const [logged, kinds, latest] = await Promise.all([
       this.logged(code),
       this.fightKinds(),
+      this.latestExpansion(),
     ]);
-    return coveredReport(logged, kinds);
+    return coveredReport(logged, kinds, latest);
   }
 
   // One of the report's Extreme, Savage or Ultimate pulls and its players,

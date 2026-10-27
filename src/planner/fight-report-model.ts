@@ -17,6 +17,12 @@ interface FightReport {
   pulls: ReportPull[];
   // The pulls of other fights, left out.
   otherPulls: number;
+  // The expansion its fights belong to on FFLogs ("Dawntrail"), null when
+  // FFLogs doesn't say.
+  expansion: string | null;
+  // Recorded in an earlier expansion than the latest: the jobs have changed
+  // since, so none of its pulls are planned.
+  outdated: boolean;
 }
 
 // A pull as read from the log, before it's known whether the planner
@@ -28,7 +34,10 @@ interface LoggedPull extends Omit<ReportPull, 'kind'> {
 }
 
 // A report as read from the log, with every boss pull and their players.
-interface LoggedReport extends Omit<FightReport, 'pulls' | 'otherPulls'> {
+interface LoggedReport extends Omit<
+  FightReport,
+  'pulls' | 'otherPulls' | 'outdated'
+> {
   pulls: LoggedPull[];
 }
 

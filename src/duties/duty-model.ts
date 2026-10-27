@@ -29,6 +29,9 @@ interface DutyData {
   groups: DutyGroup[];
   // The high-end fights by game territory id, for the fight planner.
   fights: Record<string, FightKind>;
+  // The latest expansion's name ("Dawntrail"): the fight planner only plans
+  // reports recorded in it.
+  latestExpansion: string;
   roulettes: Roulette[];
   // The Duty Roulettes type's icon (image id).
   rouletteIcon: number | null;
