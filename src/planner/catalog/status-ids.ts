@@ -13,6 +13,7 @@ const STATUS_IDS: Record<string, number> = {
   'Blackest Night': 1178,
   Bloodwhetting: 2678,
   'Brutal Shell': 1898,
+  Bulwark: 77,
   Camouflage: 1832,
   Catalyze: 1918,
   'Catharsis of Corundum': 2685,

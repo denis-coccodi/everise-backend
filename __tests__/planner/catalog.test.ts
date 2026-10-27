@@ -61,6 +61,7 @@ beforeEach(async () => {
     action(3570, 'Tetragrammaton', 'WHM', {MaxCharges: 1}),
     action(16230, 'Physick', 'ACN SMN', {Cast100ms: 15, CooldownGroup: 58}),
     action(9, 'Fast Blade', 'GLA PLD', {Recast100ms: 25, CooldownGroup: 58}),
+    action(22, 'Bulwark', 'PLD', {ClassJobLevel: 52, Recast100ms: 900}),
     // A crafter's: none of the planner's jobs.
     action(100001, 'Basic Synthesis', 'CRP'),
     // Replaces Diagnosis on the hotbar: not flagged as a player action.
@@ -88,6 +89,7 @@ beforeEach(async () => {
     [1944, 'Sacred Soil'],
     [2607, 'Eukrasian Diagnosis'],
     [2608, 'Differential Diagnosis'],
+    [77, 'Bulwark'],
   ].map(([id, name]) => ({row_id: id as number, fields: {Name: name}}));
   xivApi.sheets.ActionTransient = [
     tooltip(
@@ -107,6 +109,8 @@ beforeEach(async () => {
     tooltip(3570, "Restores target's HP.\nCure Potency: 1,700"),
     tooltip(16230, "Restores target's HP.\nCure Potency: 400"),
     tooltip(9, 'Delivers an attack with a potency of 220.'),
+    // Its 20% is a block's, from the shield, not in its tooltip.
+    tooltip(22, 'Block incoming attacks.\nDuration: 10s'),
     // A full-width percent sign, as the game writes it here.
     tooltip(
       24291,
@@ -134,8 +138,8 @@ describe('POST /api/planner/catalog/refresh', () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       dataVersion: 'test-version',
-      actionCount: 7,
-      effectCount: 6,
+      actionCount: 8,
+      effectCount: 7,
     });
     expect(
       xivApi.requests.filter(url => url.includes('/search?sheets=Action')),
@@ -152,7 +156,7 @@ describe('POST /api/planner/catalog/refresh', () => {
       missing: ['700'],
     });
     // Matching tooltips aren't listed, however the number is written.
-    for (const id of [7531, 185, 188, 16230, 24291]) {
+    for (const id of [7531, 185, 188, 16230, 24291, 22]) {
       expect(changed.map((c: {id: number}) => c.id)).not.toContain(id);
     }
     // A status id that no longer has its name.
@@ -218,7 +222,9 @@ describe('GET /api/planner/catalog', () => {
     const byId = new Map(
       response.body.actions.map((a: {id: number}) => [a.id, a]),
     );
-    expect([...byId.keys()]).toEqual([9, 185, 188, 3570, 7531, 16230, 24291]);
+    expect([...byId.keys()]).toEqual([
+      9, 22, 185, 188, 3570, 7531, 16230, 24291,
+    ]);
     expect(byId.get(7531)).toEqual({
       id: 7531,
       name: 'Rampart',
