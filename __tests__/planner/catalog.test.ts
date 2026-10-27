@@ -75,6 +75,8 @@ beforeEach(async () => {
     [639, 'Enhanced Rampart', 94],
     [313, 'Enhanced Sacred Soil', 78],
     [625, 'Enhanced Tetragrammaton', 98],
+    [493, 'Enhanced Healing Magic', 85],
+    [377, 'Enhanced Healing Magic', 85],
   ].map(([id, name, level]) => ({
     row_id: id as number,
     fields: {Name: name, Level: level},

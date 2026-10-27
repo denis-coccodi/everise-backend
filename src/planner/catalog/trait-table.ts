@@ -4,11 +4,10 @@ import {ActionEffect, EffectKind, TraitEntry} from './catalog-model';
 // sheet (TraitTransient for the text). The game data's recast and charges
 // are those before any trait, and the effect tables are the level-100
 // tooltips', so each trait says what it gives (recast, charges) or what
-// the action was before it (`undo`). A trait's text doesn't always give
-// the earlier value; those come from the level-90 tooltips (Endwalker) and
-// are marked. Left out: Enhanced Healing Magic (85, healers' potencies),
-// whose earlier values no source at hand gives, and Enhanced Sheltron (74),
-// as Sheltron is replaced at 82.
+// the action was before it (`undo`). A trait's text rarely gives the
+// earlier value; those come from the game wiki's notes on each action
+// ("Duration is 10s prior to learning the Enhanced Reprisal trait"), checked
+// against its patch history for later changes.
 
 // The effects without the ones a trait added.
 const without =
@@ -49,20 +48,27 @@ const t = (
   change: Omit<TraitEntry, 'action' | 'traitId' | 'trait' | 'level'>,
 ): TraitEntry => ({action, traitId, trait, level, ...change});
 
+// One job's Enhanced Healing Magic, by its trait row.
+const ehm = (
+  traitId: number,
+  actions: [number, (effects: ActionEffect[]) => ActionEffect[]][],
+) =>
+  actions.map(([action, undo]) =>
+    t(action, traitId, 'Enhanced Healing Magic', 85, {undo}),
+  );
+
 const TRAITS: TraitEntry[] = [
   // Role actions.
   t(7531, 639, 'Enhanced Rampart', 94, {undo: without('healingReceived')}),
-  // 10s at level 90 (Endwalker's tooltips), for these three.
   t(7535, 640, 'Enhanced Reprisal', 98, {undo: was('Reprisal', {s: 10})}),
   t(7549, 641, 'Enhanced Feint', 98, {undo: was('Feint', {s: 10})}),
   t(7560, 643, 'Enhanced Addle', 98, {undo: was('Addle', {s: 10})}),
-  // 500 at level 90 (Endwalker's tooltip).
   t(7541, 642, 'Enhanced Second Wind', 94, {undo: was('heal', {potency: 500})}),
   t(7561, 644, 'Enhanced Swiftcast', 94, {recastMs: 40_000}),
 
   // Tanks.
   t(3540, 416, 'Enhanced Divine Veil', 88, {undo: without('heal')}),
-  // 6s before it (Shadowbringers' tooltip).
+  t(3542, 262, 'Enhanced Sheltron', 74, {undo: was('Sheltron', {s: 4})}),
   t(7382, 413, 'Enhanced Intervention', 82, {
     undo: both(
       without('mitigation', "Knight's Resolve"),
@@ -78,7 +84,6 @@ const TRAITS: TraitEntry[] = [
   }),
   t(7388, 417, 'Enhanced Shake It Off', 76, {undo: without('heal')}),
   t(3552, 420, 'Enhanced Equilibrium', 84, {undo: without('regen')}),
-  // 6s before it (Shadowbringers' tooltip).
   t(16464, 419, 'Enhanced Nascent Flash', 82, {
     undo: both(
       without('mitigation', 'Stem the Flow'),
@@ -103,8 +108,59 @@ const TRAITS: TraitEntry[] = [
   t(24298, 375, 'Enhanced Kerachole', 78, {undo: without('regen')}),
   t(24300, 378, 'Enhanced Zoe', 88, {recastMs: 90_000}),
   t(24294, 636, 'Enhanced Soteria', 94, {recastMs: 60_000}),
-  // 10s at level 90 (Endwalker's tooltip).
   t(24302, 638, 'Enhanced Physis II', 98, {undo: was('Autophysis', {s: 10})}),
+
+  // Enhanced Healing Magic (85): the healers' potencies and barriers before.
+  ...ehm(489, [
+    [120, was('heal', {potency: 450})], // Cure
+    [124, was('heal', {potency: 300})], // Medica
+    [135, was('heal', {potency: 700})], // Cure II
+    [137, was('Regen', {potency: 200})],
+    [131, was('heal', {potency: 550})], // Cure III
+    [
+      133, // Medica II
+      both(was('heal', {potency: 200}), was('Medica II', {potency: 100})),
+    ],
+    [16531, was('heal', {potency: 700})], // Afflatus Solace
+    [16534, was('heal', {potency: 300})], // Afflatus Rapture
+  ]),
+  ...ehm(493, [
+    [190, was('heal', {potency: 400})], // Physick
+    [16548, was('heal', {potency: 150})], // Seraphic Veil
+    [
+      185, // Adloquium
+      both(was('Galvanize', {percent: 125}), was('Catalyze', {percent: 125})),
+    ],
+    [186, was('Galvanize', {percent: 115})], // Succor
+  ]),
+  ...ehm(499, [
+    [3594, was('heal', {potency: 450})], // Benefic
+    [3600, was('heal', {potency: 300})], // Helios
+    [3610, was('heal', {potency: 700})], // Benefic II
+    [
+      3595, // Aspected Benefic
+      both(
+        was('heal', {potency: 200}),
+        was('Aspected Benefic', {potency: 200}),
+      ),
+    ],
+    [
+      3601, // Aspected Helios
+      both(was('heal', {potency: 200}), was('Aspected Helios', {potency: 100})),
+    ],
+  ]),
+  ...ehm(377, [
+    [24284, was('heal', {potency: 400})], // Diagnosis
+    [24285, was('Kardion', {potency: 130})], // Kardia
+    [
+      24291, // Eukrasian Diagnosis
+      both(
+        was('Eukrasian Diagnosis', {percent: 125}),
+        was('Differential Diagnosis', {percent: 125}),
+      ),
+    ],
+    [24292, was('Eukrasian Prognosis', {percent: 230})],
+  ]),
 
   // DPS: the party mitigations (120s and 10% before), and their own.
   t(7405, 447, 'Enhanced Troubadour', 88, {recastMs: 90_000}),
