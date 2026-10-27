@@ -24,6 +24,12 @@ function expected(effects: ActionEffect[]) {
   return numbers;
 }
 
+// Numbers of the tables that come from elsewhere than the action's tooltip,
+// by action, each with where it comes from: they aren't looked for.
+const NOT_IN_TOOLTIP: Record<number, string[]> = {
+  22: ['20%'], // Bulwark: a block's, from the shield (consolegameswiki)
+};
+
 function tooltipChanges(
   entries: {id: number; name: string; effects: ActionEffect[]}[],
   tooltips: Map<number, string>,
@@ -32,7 +38,9 @@ function tooltipChanges(
   const changes: TooltipChange[] = [];
   for (const entry of entries) {
     const tooltip = tooltips.get(entry.id) ?? '';
+    const elsewhere = NOT_IN_TOOLTIP[entry.id] ?? [];
     const missing = expected(entry.effects)
+      .filter(n => !elsewhere.includes(n.text))
       .filter(n => !n.alternatives.some(text => contains(tooltip, text)))
       .map(n => n.text);
     for (const e of entry.effects) {

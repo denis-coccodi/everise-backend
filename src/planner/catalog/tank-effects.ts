@@ -73,6 +73,12 @@ const TANK_EFFECTS: EffectEntry[] = [
     ],
   },
   {
+    // Its 20% is a block's, from the shield (consolegameswiki: about 20%
+    // from IL 430): not in its tooltip, see NOT_IN_TOOLTIP.
+    id: 22, // Bulwark
+    effects: [effect('mitigation', 'self', 'Bulwark', {percent: 20, s: 10})],
+  },
+  {
     id: 7385, // Passage of Arms
     effects: [
       effect('mitigation', 'party', 'Passage of Arms', {
