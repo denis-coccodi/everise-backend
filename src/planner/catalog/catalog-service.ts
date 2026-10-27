@@ -44,16 +44,21 @@ class CatalogService {
         ),
       ),
     ];
-    const [{version, rows}, tooltips, statusNames] = await Promise.all([
+    const [{version, rows}, statusNames] = await Promise.all([
       readActions(this.get, ids),
-      readTooltips(this.get, ids),
       readStatusNames(this.get, statusIds),
     ]);
-    const actions = rows
+    const jobActions = rows
       .map(row =>
         toCatalogAction(row, COMBAT_JOBS, EFFECTS.get(row.row_id) ?? []),
       )
-      .filter((action): action is CatalogAction => action !== null)
+      .filter((action): action is CatalogAction => action !== null);
+    // Every action's tooltip, for the plan's tables (a damage GCD's too).
+    const tooltips = await readTooltips(
+      this.get,
+      jobActions.map(action => action.id),
+    );
+    const actions = jobActions
       .map(action => ({
         ...action,
         description: tooltips.get(action.id) || null,
