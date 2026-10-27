@@ -7,7 +7,6 @@ const REPORT_QUERY = `query Report($code: String!) {
   reportData {
     report(code: $code) {
       code title startTime endTime
-      zone { expansion { name } }
       fights {
         id encounterID name difficulty kill startTime endTime
         bossPercentage fightPercentage lastPhase friendlyPlayers
@@ -45,7 +44,6 @@ interface FflogsReport {
   title: string;
   startTime: number;
   endTime: number;
-  zone: {expansion: {name: string} | null} | null;
   fights: FflogsFight[];
   masterData: {actors: FflogsActor[]} | null;
 }
@@ -110,7 +108,6 @@ function toLoggedReport(report: FflogsReport): LoggedReport {
     title: report.title,
     startedAt: iso(0),
     endedAt: new Date(report.endTime).toISOString(),
-    expansion: report.zone?.expansion?.name ?? null,
     players,
     pulls,
   };
