@@ -42,6 +42,17 @@ const CatalogAction = z.strictObject({
   radius: int,
   // Its heals and mitigations; empty for the others.
   effects: z.array(ActionEffect),
+  // What it was before each trait that changes it, highest level first:
+  // below `level`, these values instead.
+  traits: z.array(
+    z.strictObject({
+      trait: z.string(),
+      level: int,
+      recastMs: int,
+      charges: int,
+      effects: z.array(ActionEffect),
+    }),
+  ),
 });
 
 const TooltipChange = z.strictObject({
