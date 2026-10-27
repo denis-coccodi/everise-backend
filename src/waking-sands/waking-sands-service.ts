@@ -1,7 +1,7 @@
 import {Db, Doc} from '../db';
 import {NotFoundError} from '../errors';
 import {LiveFeed} from '../live';
-import {User} from '../users';
+import {User, displayName} from '../users';
 import {CharacterModel} from './character-ai';
 import {CharactersService} from './characters-service';
 import {NeuronBudget} from './neuron-budget';
@@ -88,7 +88,7 @@ class WakingSandsService {
     }
     return this.announcePresent(
       present,
-      `${member.username} invited ${character.name} in.`,
+      `${displayName(member)} invited ${character.name} in.`,
     );
   }
 
@@ -105,7 +105,7 @@ class WakingSandsService {
     );
     return this.announcePresent(
       room?.present ?? [],
-      `${character.name} leaves; ${member.username} saw them out.`,
+      `${character.name} leaves; ${displayName(member)} saw them out.`,
     );
   }
 
@@ -115,7 +115,7 @@ class WakingSandsService {
     await this.budget.check(member.id);
     const line = await this.addLine({
       from: 'member',
-      name: member.username,
+      name: displayName(member),
       image: member.image,
       userId: member.id,
       text,

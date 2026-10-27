@@ -24,6 +24,9 @@ describe('POST /api/profiles/:username/follow', () => {
         profile: {
           id: expect.any(String),
           username: followee.user.username,
+          characterName: null,
+          server: null,
+          displayName: followee.user.username,
           following: true,
           bio: followee.user.bio,
           image: followee.user.image,

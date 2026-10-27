@@ -3,6 +3,8 @@ import {ShownListing} from '../party-finder';
 // Who shared something, as the message names them.
 interface Sharer {
   username: string;
+  // What the site calls them ("Avar Kriss (Odin)", or the username).
+  displayName: string;
   image: string;
 }
 

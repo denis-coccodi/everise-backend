@@ -233,6 +233,9 @@ describe('editing the Waking Sands characters', () => {
     expect(posted.body.article.author).toStrictEqual({
       id: 'character:tataru',
       username: 'Tataru Taru',
+      characterName: null,
+      server: null,
+      displayName: 'Tataru Taru',
       following: false,
       bio: 'Every gil accounted for.',
       image: saved.body.character.image,

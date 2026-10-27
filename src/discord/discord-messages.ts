@@ -54,7 +54,7 @@ function articleCard(article: ArticleEvent, link: string, siteUrl: string) {
       : {}),
     ...imageOf(article, siteUrl),
   };
-  const author = escape(article.author.username);
+  const author = escape(article.author.displayName);
   const headline = roulette
     ? `🎲 **${author}** spun the duty roulette!`
     : `📜 New post by **${author}**`;

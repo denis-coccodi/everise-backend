@@ -86,6 +86,9 @@ describe('DiscordAnnouncer', () => {
       author: {
         id: expect.any(String),
         username: 'snek_lord',
+        characterName: null,
+        server: null,
+        displayName: 'snek_lord',
         bio: null,
         image: 'https://site/a.png',
         following: false,

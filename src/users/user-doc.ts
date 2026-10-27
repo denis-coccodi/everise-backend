@@ -49,6 +49,8 @@ function toUser(doc: UserDoc): User {
     doc.emailConfirmed !== false,
     doc.pendingEmail,
     doc.sessionVersion ?? 0,
+    doc.characterName,
+    doc.server,
   );
 }
 

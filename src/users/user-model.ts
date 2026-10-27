@@ -5,6 +5,9 @@ import {ASSIGNABLE_ROLES} from './user';
 interface UpdateUserParams {
   email?: string;
   username?: string;
+  // Null clears them (both or neither).
+  characterName?: string | null;
+  server?: string | null;
   bio?: string | null;
   image?: string;
   darkMode?: boolean;
@@ -13,6 +16,10 @@ interface UpdateUserParams {
 interface UserDoc extends Doc {
   email: string;
   username: string;
+  // Their character in the game and its world, both or neither: what the
+  // site calls them (see displayName).
+  characterName?: string;
+  server?: string;
   // Unset for someone who only ever signed in with a provider (Google,
   // Discord).
   passwordHash?: string;

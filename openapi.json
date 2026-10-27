@@ -4348,6 +4348,18 @@
               "password": {
                 "type": "string",
                 "minLength": 1
+              },
+              "characterName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "server": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -4461,6 +4473,18 @@
               "username": {
                 "type": "string",
                 "minLength": 1
+              },
+              "characterName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "server": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "password": {
                 "type": "string",
@@ -7172,6 +7196,9 @@
                       "username": {
                         "type": "string"
                       },
+                      "displayName": {
+                        "type": "string"
+                      },
                       "image": {
                         "type": "string"
                       }
@@ -7179,6 +7206,7 @@
                     "required": [
                       "id",
                       "username",
+                      "displayName",
                       "image"
                     ],
                     "additionalProperties": false
@@ -8354,6 +8382,21 @@
           "username": {
             "type": "string"
           },
+          "characterName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "server": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
           "following": {
             "type": "boolean"
           },
@@ -8373,6 +8416,9 @@
         "required": [
           "id",
           "username",
+          "characterName",
+          "server",
+          "displayName",
           "following",
           "bio",
           "image"
@@ -9916,6 +9962,21 @@
           "username": {
             "type": "string"
           },
+          "characterName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "server": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
           "token": {
             "type": "string"
           },
@@ -9961,6 +10022,9 @@
           "id",
           "email",
           "username",
+          "characterName",
+          "server",
+          "displayName",
           "token",
           "bio",
           "image",

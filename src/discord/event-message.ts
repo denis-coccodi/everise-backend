@@ -79,7 +79,7 @@ function eventMessage(
       icon_url: crest(siteUrl),
     },
   };
-  const headline = `🎉 **${escape(sharer.username)}** shared an event`;
+  const headline = `🎉 **${escape(sharer.displayName)}** shared an event`;
   return message(siteUrl, headline + quote(comment), [embed]);
 }
 

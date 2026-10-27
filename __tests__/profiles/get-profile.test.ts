@@ -33,6 +33,9 @@ describe('POST /api/profiles/:username/follow', () => {
           profile: {
             id: expect.any(String),
             username: updatedFollowee.user.username,
+            characterName: null,
+            server: null,
+            displayName: updatedFollowee.user.username,
             following: false,
             bio: updatedFollowee.user.bio,
             image: updatedFollowee.user.image,
@@ -71,6 +74,9 @@ describe('POST /api/profiles/:username/follow', () => {
           profile: {
             id: expect.any(String),
             username: updatedFollowee.user.username,
+            characterName: null,
+            server: null,
+            displayName: updatedFollowee.user.username,
             following: true,
             bio: updatedFollowee.user.bio,
             image: updatedFollowee.user.image,
@@ -102,6 +108,9 @@ describe('POST /api/profiles/:username/follow', () => {
           profile: {
             id: expect.any(String),
             username: updatedFollowee.user.username,
+            characterName: null,
+            server: null,
+            displayName: updatedFollowee.user.username,
             following: false,
             bio: updatedFollowee.user.bio,
             image: updatedFollowee.user.image,

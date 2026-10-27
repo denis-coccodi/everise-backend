@@ -1,6 +1,7 @@
 import {config} from '../config';
 import {Db} from '../db';
 import {AlreadyExistsError, InvalidRoleError, NotFoundError} from '../errors';
+import {checkCharacter} from './character-name';
 import {User} from './user';
 import {RESERVED_USERNAMES, isAdminEmail, toUser} from './user-doc';
 import {LeakedPasswords} from './leaked-passwords';
@@ -35,7 +36,9 @@ class UsersService {
     username: string,
     password: string,
     confirmed = true,
+    character: {characterName?: string | null; server?: string | null} = {},
   ): Promise<User> {
+    checkCharacter(character);
     await this.removeUnconfirmed(email);
 
     await this.validateEmailOrThrow(email);
@@ -50,6 +53,9 @@ class UsersService {
     const userData = {
       email,
       username,
+      ...(character.characterName && character.server
+        ? {characterName: character.characterName, server: character.server}
+        : {}),
       passwordHash,
       ...(confirmed ? {} : {emailConfirmed: false}),
     };
@@ -129,6 +135,21 @@ class UsersService {
       userData.username = params.username;
     }
 
+    // Both or neither, as the account will have them.
+    const character = {
+      characterName:
+        params.characterName === undefined
+          ? userData.characterName
+          : (params.characterName ?? undefined),
+      server:
+        params.server === undefined
+          ? userData.server
+          : (params.server ?? undefined),
+    };
+    checkCharacter(character);
+    userData.characterName = character.characterName;
+    userData.server = character.server;
+
     if (params.bio !== undefined && params.bio !== userData.bio) {
       userData.bio = params.bio ?? '';
     }
@@ -148,6 +169,8 @@ class UsersService {
         email: userData.email,
         pendingEmail: userData.pendingEmail,
         username: userData.username,
+        characterName: userData.characterName,
+        server: userData.server,
         bio: userData.bio,
         image: userData.image,
         darkMode: userData.darkMode,

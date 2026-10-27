@@ -54,7 +54,11 @@ class EventSharesService {
       false,
     );
     const sent = await this.discord.shareEvent(
-      {username: profile.username, image: profile.image},
+      {
+        username: profile.username,
+        displayName: profile.displayName,
+        image: profile.image,
+      },
       event,
       comment ?? '',
     );

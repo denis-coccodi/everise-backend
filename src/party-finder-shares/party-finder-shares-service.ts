@@ -17,7 +17,7 @@ import {
   unreachable,
 } from '../party-finder';
 import {ProfilesService, profileView} from '../profiles';
-import {User} from '../users';
+import {User, displayName} from '../users';
 import {SharedListings} from './shared-listings';
 
 // What a member may write with a shared listing.
@@ -99,7 +99,11 @@ class PartyFinderSharesService {
       false,
     );
     const sent = await this.discord.shareListing(
-      {username: profile.username, image: profile.image},
+      {
+        username: profile.username,
+        displayName: profile.displayName,
+        image: profile.image,
+      },
       {dataCentre: shared.dataCentre, listing: shared.listing, picture},
       comment ?? '',
     );
@@ -165,7 +169,7 @@ function watched(
     dataCentre: shared.dataCentre,
     title: listingName(shared.listing),
     sharerId: user.id,
-    sharerName: user.username,
+    sharerName: displayName(user),
   };
 }
 

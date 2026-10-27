@@ -40,7 +40,17 @@ function grouped(docs: NotificationDoc[]): NotificationGroup[] {
       const actors = [
         ...new Map(
           all.flatMap((doc): [string, Actor][] =>
-            doc.actor ? [[doc.actor.id, doc.actor]] : [],
+            doc.actor
+              ? [
+                  [
+                    doc.actor.id,
+                    {
+                      ...doc.actor,
+                      displayName: doc.actor.displayName ?? doc.actor.username,
+                    },
+                  ],
+                ]
+              : [],
           ),
         ).values(),
       ];

@@ -58,11 +58,13 @@ describe('notifications', () => {
           {
             id: expect.any(String),
             username: alphinaud.user.username,
+            displayName: alphinaud.user.username,
             image: expect.any(String),
           },
           {
             id: expect.any(String),
             username: alisaie.user.username,
+            displayName: alisaie.user.username,
             image: expect.any(String),
           },
         ],

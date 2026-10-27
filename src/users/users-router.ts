@@ -10,6 +10,7 @@ import {ProfileImagesService} from './profile-images-service';
 import {EmailConfirmation} from './email-confirmation';
 import {PasswordReset} from './password-reset';
 import {SignInLimit} from './sign-in-limit';
+import {displayName} from './character-name';
 import {User} from './user';
 import {UserPasswords} from './user-passwords';
 import {
@@ -33,6 +34,10 @@ class UserDto {
       id: user.id,
       email: user.email,
       username: user.username,
+      // Their character in the game, and what the site calls them.
+      characterName: user.characterName ?? null,
+      server: user.server ?? null,
+      displayName: displayName(user),
       token,
       bio: user.bio || null,
       image: user.image || `${config.baseUrl}/assets/images/avatar-profile.png`,
@@ -124,13 +129,15 @@ class UsersRouter {
       },
       async (req, res) => {
         await this.botCheck(req, req.body.turnstileToken, 'signup');
-        const {email, username, password} = req.body.user;
+        const {email, username, password, characterName, server} =
+          req.body.user;
         const confirming = this.emailConfirmation.enabled;
         const user = await this.usersService.registerUser(
           email,
           username,
           password,
           !confirming,
+          {characterName, server},
         );
 
         // Signed in only once the link in the email is opened.

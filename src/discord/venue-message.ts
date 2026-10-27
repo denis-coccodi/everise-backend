@@ -71,7 +71,7 @@ function venueMessage(
       icon_url: crest(siteUrl),
     },
   };
-  const headline = `🏮 **${escape(sharer.username)}** shared a venue`;
+  const headline = `🏮 **${escape(sharer.displayName)}** shared a venue`;
   return message(siteUrl, headline + quote(comment), [embed]);
 }
 

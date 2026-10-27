@@ -1,3 +1,4 @@
+import {displayName} from './character-name';
 import {createHash, randomBytes} from 'crypto';
 import {Db, Doc} from '../db';
 import {EmailSender} from '../email';
@@ -112,8 +113,8 @@ class EmailConfirmation {
       ? 'Confirm your new email address for Everise'
       : 'Confirm your email address for Everise';
     const intro = changing
-      ? `Open this link to use ${email} for your Everise account, ${user.username}:`
-      : `Welcome to Everise, ${user.username}! Open this link to confirm your email address and sign in:`;
+      ? `Open this link to use ${email} for your Everise account, ${displayName(user)}:`
+      : `Welcome to Everise, ${displayName(user)}! Open this link to confirm your email address and sign in:`;
     const outro = `The link works once, for ${LINK_HOURS} hours. If you didn't ask for it, ignore this email.`;
     const text = `${intro}\n\n${link}\n\n${outro}\n`;
     const href = escapeHtml(link);

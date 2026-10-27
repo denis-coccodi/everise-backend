@@ -1,4 +1,5 @@
 export {ASSIGNABLE_ROLES, User} from './user';
+export {displayName} from './character-name';
 export {AssignableRole, Role, SignInMethod} from './user-model';
 export {UsersService} from './users-service';
 export {EmailConfirmation} from './email-confirmation';
