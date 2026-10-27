@@ -4714,6 +4714,179 @@
                     ],
                     "additionalProperties": false
                   }
+                },
+                "traits": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "trait": {
+                        "type": "string"
+                      },
+                      "level": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "recastMs": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "charges": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "effects": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "mitigation",
+                                "shield",
+                                "heal",
+                                "regen",
+                                "delayedHeal",
+                                "maxHp",
+                                "healingReceived",
+                                "healingPotency",
+                                "invulnerable"
+                              ]
+                            },
+                            "target": {
+                              "type": "string",
+                              "enum": [
+                                "self",
+                                "target",
+                                "party",
+                                "enemies"
+                              ]
+                            },
+                            "status": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "statusId": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "percent": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "physical": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "magic": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "potency": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "of": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "maxHp",
+                                    "casterMaxHp",
+                                    "healed"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "stacks": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "condition": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "target",
+                            "status",
+                            "statusId",
+                            "percent",
+                            "physical",
+                            "magic",
+                            "potency",
+                            "of",
+                            "durationMs",
+                            "stacks",
+                            "condition"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "trait",
+                      "level",
+                      "recastMs",
+                      "charges",
+                      "effects"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
@@ -4730,7 +4903,8 @@
                 "cooldownGroup",
                 "range",
                 "radius",
-                "effects"
+                "effects",
+                "traits"
               ],
               "additionalProperties": false
             }

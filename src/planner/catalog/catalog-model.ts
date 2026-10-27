@@ -45,7 +45,36 @@ interface CatalogAction {
   // How far it reaches, and its area's radius (yalms).
   range: number;
   radius: number;
+  // Its values at level 100 (the game data's recast and charges are those
+  // before any trait; the effects are the level-100 tooltip's).
   effects: ActionEffect[];
+  // What it was before each trait that changes it, highest level first.
+  traits: TraitChange[];
+}
+
+// An action below the level of a trait: its values without that trait (and
+// without the higher-level ones after it).
+interface TraitChange {
+  trait: string;
+  level: number;
+  recastMs: number;
+  charges: number;
+  effects: ActionEffect[];
+}
+
+// A trait of the hand-written table: what it changes about an action. Its
+// row in the game's Trait sheet is checked to still have that name and
+// level.
+interface TraitEntry {
+  action: number;
+  traitId: number;
+  trait: string;
+  level: number;
+  // The recast and charges it gives (the game data has those before it).
+  recastMs?: number;
+  charges?: number;
+  // The level-100 effects as they were before it.
+  undo?: (effects: ActionEffect[]) => ActionEffect[];
 }
 
 // An effect of the hand-written tables, whose numbers the refresh checks
@@ -88,5 +117,7 @@ export {
   EffectKind,
   EffectTarget,
   TooltipChange,
+  TraitChange,
+  TraitEntry,
   ShieldBase,
 };

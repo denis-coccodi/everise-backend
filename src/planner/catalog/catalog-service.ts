@@ -3,11 +3,14 @@ import {UnavailableError} from '../../errors';
 import {JOBS} from '../fight-report';
 import {EFFECTS, ENTRIES} from './effect-table';
 import {tooltipChanges} from './tooltip-check';
+import {traitChanges, withTraits} from './trait-levels';
+import {TRAITS} from './trait-table';
 import {
   CatalogGet,
   readActions,
   readStatusNames,
   readTooltips,
+  readTraits,
   toCatalogAction,
 } from './xivapi-actions';
 import {CatalogAction} from './catalog-model';
@@ -44,15 +47,18 @@ class CatalogService {
         ),
       ),
     ];
-    const [{version, rows}, statusNames] = await Promise.all([
+    const traitIds = [...new Set(TRAITS.map(trait => trait.traitId))];
+    const [{version, rows}, statusNames, traits] = await Promise.all([
       readActions(this.get, ids),
       readStatusNames(this.get, statusIds),
+      readTraits(this.get, traitIds),
     ]);
     const jobActions = rows
       .map(row =>
         toCatalogAction(row, COMBAT_JOBS, EFFECTS.get(row.row_id) ?? []),
       )
-      .filter((action): action is CatalogAction => action !== null);
+      .filter((action): action is CatalogAction => action !== null)
+      .map(action => withTraits(action, TRAITS));
     // Every action's tooltip, for the plan's tables (a damage GCD's too).
     const tooltips = await readTooltips(
       this.get,
@@ -70,6 +76,11 @@ class CatalogService {
       tooltips,
       statusNames,
     );
+    for (const change of traitChanges(actions, TRAITS, traits, tooltips)) {
+      const same = changed.find(c => c.id === change.id);
+      if (same) same.missing.push(...change.missing);
+      else changed.push(change);
+    }
     // Effects for actions the game data doesn't have any more.
     for (const id of ids) {
       if (!names.has(id)) changed.push({id, name: '', missing: ['the action']});

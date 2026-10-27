@@ -102,6 +102,25 @@ const readStatusNames = (get: CatalogGet, ids: number[]) =>
 
 const num = (value: unknown) => (typeof value === 'number' ? value : 0);
 
+// The traits' names and levels, by trait id (the Trait sheet's row).
+async function readTraits(get: CatalogGet, ids: number[]) {
+  const traits = new Map<number, {name: string; level: number}>();
+  for (let i = 0; i < ids.length; i += ROWS_PER_READ) {
+    const rows = ids.slice(i, i + ROWS_PER_READ).join(',');
+    const body = (await getJson(
+      get,
+      `${XIVAPI}/sheet/Trait?rows=${rows}&fields=Name,Level`,
+    )) as {rows?: ActionRow[]};
+    for (const row of body.rows ?? []) {
+      traits.set(row.row_id, {
+        name: String(row.fields.Name ?? ''),
+        level: num(row.fields.Level),
+      });
+    }
+  }
+  return traits;
+}
+
 // An action of the given jobs; null for one none of them has (crafters,
 // gatherers, limited jobs).
 function toCatalogAction(
@@ -132,12 +151,14 @@ function toCatalogAction(
     range: num(f.Range),
     radius: num(f.EffectRange),
     effects,
+    traits: [],
   };
 }
 
 export {
   CatalogGet,
   readActions,
+  readTraits,
   readStatusNames,
   readTooltips,
   toCatalogAction,
