@@ -61,7 +61,7 @@ const FightReportResponse = responseSchema(
     pulls: z.array(ReportPull),
     // How many pulls of other fights the report has, left out.
     otherPulls: z.number().int().min(0),
-    // The expansion its fights belong to on FFLogs, null when it doesn't say.
+    // The expansion that was the game's latest when it was recorded.
     expansion: z.string().nullable(),
     // Recorded in an earlier expansion than the latest: no pulls planned.
     outdated: z.boolean(),

@@ -194,10 +194,9 @@ describe('GET /api/planner/reports/:code', () => {
     expect(response.body.players[0]).toMatchObject({job: null, role: null});
   });
 
-  test('plans none of the pulls of a report from an earlier expansion', async () => {
-    fflogs.reports[CODE] = fflogsReport({
-      zone: {expansion: {name: 'Endwalker'}},
-    });
+  test('plans none of the pulls of a report recorded in an earlier expansion', async () => {
+    // Recorded in 2023, while Endwalker was the latest.
+    fflogs.reports[CODE] = fflogsReport({}, Date.parse('2023-05-10T19:00:00Z'));
 
     const response = await load();
 
@@ -211,12 +210,14 @@ describe('GET /api/planner/reports/:code', () => {
     });
   });
 
-  test('plans a report FFLogs gives no expansion for', async () => {
-    fflogs.reports[CODE] = fflogsReport({zone: null});
-
+  test('plans a report recorded since the latest expansion came out, whatever its fights', async () => {
+    // The fixture's report was recorded in 2026, in Dawntrail.
     const response = await load();
 
-    expect(response.body).toMatchObject({expansion: null, outdated: false});
+    expect(response.body).toMatchObject({
+      expansion: 'Dawntrail',
+      outdated: false,
+    });
     expect(response.body.pulls).toHaveLength(3);
   });
 
