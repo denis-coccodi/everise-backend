@@ -127,7 +127,7 @@ function listingMessage(
       icon_url: crest(siteUrl),
     },
   };
-  const headline = `📣 **${escape(sharer.username)}** shared a Party Finder listing`;
+  const headline = `📣 **${escape(sharer.displayName)}** shared a Party Finder listing`;
   return message(siteUrl, headline + quote(comment), [embed]);
 }
 

@@ -47,6 +47,9 @@ describe('POST /api/articles', () => {
           author: {
             id: expect.any(String),
             username: author.user.username,
+            characterName: null,
+            server: null,
+            displayName: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
             following: false,
@@ -89,6 +92,9 @@ describe('POST /api/articles', () => {
           author: {
             id: expect.any(String),
             username: author.user.username,
+            characterName: null,
+            server: null,
+            displayName: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
             following: false,

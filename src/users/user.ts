@@ -22,6 +22,9 @@ class User {
     // Goes up when the password changes or the member signs out everywhere:
     // tokens made before then no longer sign in.
     readonly sessionVersion = 0,
+    // Their character in the game and its world, when they gave them.
+    readonly characterName?: string,
+    readonly server?: string,
   ) {}
 }
 

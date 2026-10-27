@@ -59,6 +59,9 @@ describe('GET /api/articles/:slug/comments', () => {
               author: {
                 id: expect.any(String),
                 username: author1.user.username,
+                characterName: null,
+                server: null,
+                displayName: author1.user.username,
                 bio: author1.user.bio,
                 image: author1.user.image,
                 following: true,
@@ -73,6 +76,9 @@ describe('GET /api/articles/:slug/comments', () => {
               author: {
                 id: expect.any(String),
                 username: author2.user.username,
+                characterName: null,
+                server: null,
+                displayName: author2.user.username,
                 bio: author2.user.bio,
                 image: author2.user.image,
                 following: false,
@@ -87,6 +93,9 @@ describe('GET /api/articles/:slug/comments', () => {
               author: {
                 id: expect.any(String),
                 username: author1.user.username,
+                characterName: null,
+                server: null,
+                displayName: author1.user.username,
                 bio: author1.user.bio,
                 image: author1.user.image,
                 following: true,

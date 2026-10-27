@@ -5,6 +5,8 @@ import {isoDate, responseSchema} from '../api';
 const NotificationActor = z.strictObject({
   id: z.string(),
   username: z.string(),
+  // What the site called them then ("Avar Kriss (Odin)", or the username).
+  displayName: z.string(),
   image: z.string(),
 });
 

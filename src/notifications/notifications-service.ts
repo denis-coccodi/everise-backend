@@ -197,13 +197,13 @@ class NotificationsService {
   ) {
     if (userId === actorId || characterOfAuthor(userId)) return;
     if (await this.db.get(NOTIFICATIONS, id)) return;
-    const {username, image} = profileView(
+    const {username, displayName, image} = profileView(
       await this.profilesService.getProfile(actorId),
       false,
     );
     await this.tell(id, userId, type, {
       actorId,
-      actor: {id: actorId, username, image},
+      actor: {id: actorId, username, displayName, image},
       ...about,
     });
   }

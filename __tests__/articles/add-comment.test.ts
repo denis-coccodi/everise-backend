@@ -40,6 +40,9 @@ describe('POST /api/articles/:slug/comments', () => {
           author: {
             id: expect.any(String),
             username: author.user.username,
+            characterName: null,
+            server: null,
+            displayName: author.user.username,
             bio: author.user.bio,
             image: author.user.image,
             following: false,

@@ -80,6 +80,9 @@ describe('POST /api/roulette-results', () => {
       expect(article.author).toStrictEqual({
         id: 'character:tataru',
         username: 'Tataru Taru',
+        characterName: null,
+        server: null,
+        displayName: 'Tataru Taru',
         following: false,
         bio: expect.stringContaining('roulette results'),
         image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,

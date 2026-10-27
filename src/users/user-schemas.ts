@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {requestSchema, responseSchema} from '../api';
+import {characterName, server} from './character-name';
 import {
   bio,
   email,
@@ -17,6 +18,12 @@ const UserSchema = responseSchema(
     id: z.string(),
     email: z.string(),
     username: z.string(),
+    // Their character in the game and its world ("Avar Kriss", "Odin"),
+    // both or neither, and what the site calls them: "Avar Kriss (Odin)",
+    // or their username.
+    characterName: z.string().nullable(),
+    server: z.string().nullable(),
+    displayName: z.string(),
     // For the Authorization header (`Token <token>`); browsers also get it
     // as the session cookie.
     token: z.string(),
@@ -60,6 +67,9 @@ const NewUser = requestSchema(
       email: email(),
       username: username(),
       password: newPassword(),
+      // Optional: both or neither.
+      characterName: characterName().optional(),
+      server: server().optional(),
     }),
     turnstileToken: turnstileToken(),
   }),
@@ -122,6 +132,9 @@ const UserUpdate = requestSchema(
     user: z.object({
       email: email().optional(),
       username: username().optional(),
+      // Null or empty clears them; both or neither.
+      characterName: characterName().optional(),
+      server: server().optional(),
       password: newPassword().optional(),
       currentPassword: z.string().max(1024).optional(),
       bio: bio().optional(),

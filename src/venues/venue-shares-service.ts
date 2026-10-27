@@ -48,7 +48,11 @@ class VenueSharesService {
       false,
     );
     const sent = await this.discord.shareVenue(
-      {username: profile.username, image: profile.image},
+      {
+        username: profile.username,
+        displayName: profile.displayName,
+        image: profile.image,
+      },
       venue,
       comment ?? '',
     );

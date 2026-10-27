@@ -5,6 +5,9 @@ import {Doc} from '../db';
 interface Actor {
   id: string;
   username: string;
+  // What the site called them ("Avar Kriss (Odin)"); missing on those kept
+  // before character names, which show the username.
+  displayName?: string;
   image: string;
 }
 

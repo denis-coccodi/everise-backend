@@ -23,7 +23,7 @@ function crest(siteUrl: string) {
 
 function authorOf(sharer: Sharer, siteUrl: string) {
   return {
-    name: sharer.username,
+    name: sharer.displayName,
     url: `${siteUrl}/profile/${encodeURIComponent(sharer.username)}`,
     icon_url: sharer.image,
   };

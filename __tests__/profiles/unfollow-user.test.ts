@@ -29,6 +29,9 @@ describe('DELETE /api/profiles/:username/follow', () => {
         profile: {
           id: expect.any(String),
           username: followee.user.username,
+          characterName: null,
+          server: null,
+          displayName: followee.user.username,
           following: false,
           bio: followee.user.bio,
           image: followee.user.image,
@@ -57,6 +60,9 @@ describe('DELETE /api/profiles/:username/follow', () => {
         profile: {
           id: expect.any(String),
           username: followee.user.username,
+          characterName: null,
+          server: null,
+          displayName: followee.user.username,
           following: false,
           bio: followee.user.bio,
           image: followee.user.image,

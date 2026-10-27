@@ -1,3 +1,4 @@
+import {displayName} from './character-name';
 import {createHash, randomBytes} from 'crypto';
 import {Db, Doc} from '../db';
 import {EmailSender} from '../email';
@@ -114,7 +115,7 @@ class PasswordReset {
 
   private codeMessage(user: User, code: string) {
     const link = `${this.baseUrl}/reset-password?code=${code}`;
-    const intro = `Here is the code to choose a new password for your Everise account, ${user.username}:`;
+    const intro = `Here is the code to choose a new password for your Everise account, ${displayName(user)}:`;
     const outro = `It works once, for ${CODE_MINUTES} minutes. If you didn't ask for it, ignore this email: your password stays as it is.`;
     const text = `${intro}\n\n${code}\n\nOr open ${link}\n\n${outro}\n`;
     const href = escapeHtml(link);
@@ -129,7 +130,7 @@ class PasswordReset {
 
   private changedMessage(user: User) {
     const lines = [
-      `The password of your Everise account, ${user.username}, was just changed, and every device signed in to it was signed out.`,
+      `The password of your Everise account, ${displayName(user)}, was just changed, and every device signed in to it was signed out.`,
       `If that wasn't you, choose a new password with "Forgot password?" on ${this.baseUrl}/login.`,
     ];
     const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#1b2a4a;line-height:1.5">

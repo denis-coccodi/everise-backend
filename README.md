@@ -354,6 +354,10 @@ Only the **production** backend has the Cloudflare settings (`CF_ACCESS_API_TOKE
 
 The user returned by sign-up, sign-in, `GET /api/user` and `PUT /api/user` has a `darkMode` flag: the site's colour mode, saved with the other settings so it follows the person to every browser. It's `true` until they turn it off with `PUT /api/user` `{"user": {"darkMode": false}}`; other updates leave it as it is.
 
+## Character names
+
+A member can give their character's name and world at sign-up (`POST /api/users`) or in the settings (`PUT /api/user`): `characterName` and `server`, both or neither (`422` otherwise). The name follows the game's rules (a forename and a surname of 2 to 15 letters each, an apostrophe or hyphen inside one, 20 letters in all), and the world is one of the game's public worlds (`src/party-finder/data-centres.ts`). Empty or null clears them. Once given, the site calls the member by them everywhere: `displayName` on the user, on every profile (authors, comments, follows) and on notification actors is "Avar Kriss (Odin)", or the username otherwise; emails, Discord messages and the Waking Sands' lines use it too. Links and the API still name members by id or username.
+
 ## Roulette results
 
 An accepted roulette result is posted to the feeds as an article tagged `roulette`, with a `roulette` card (`type`, `name`, `detail`, `mode`, `dutyUnknown`, `image`, `job`, `guest`) that the frontend shows like the roulette's "Duty Found" window. Other articles don't have the field; a shared Party Finder listing has `partyFinder` instead ([Sharing listings](#sharing-listings)).
