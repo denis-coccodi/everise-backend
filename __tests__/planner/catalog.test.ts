@@ -2,6 +2,7 @@ import 'jest-extended';
 import request from 'supertest';
 import {ENTRIES} from '../../src/planner/catalog/effect-table';
 import {STATUS_IDS} from '../../src/planner/catalog/status-ids';
+import {TRAITS} from '../../src/planner/catalog/trait-table';
 import {app, clearDb, xivApi} from '../utils';
 
 const KEY = process.env.DUTIES_REFRESH_KEY!;
@@ -56,7 +57,8 @@ beforeEach(async () => {
       Range: 30,
     }),
     action(188, 'Sacred Soil', 'SCH', {Recast100ms: 300, EffectRange: 15}),
-    action(3570, 'Tetragrammaton', 'WHM', {MaxCharges: 2}),
+    // The game data's charges are those before its trait.
+    action(3570, 'Tetragrammaton', 'WHM', {MaxCharges: 1}),
     action(16230, 'Physick', 'ACN SMN', {Cast100ms: 15, CooldownGroup: 58}),
     action(9, 'Fast Blade', 'GLA PLD', {Recast100ms: 25, CooldownGroup: 58}),
     // A crafter's: none of the planner's jobs.
@@ -68,6 +70,15 @@ beforeEach(async () => {
     }),
   ];
   // The statuses the actions above apply, by the tables' ids.
+  // The traits the table has for the actions above.
+  xivApi.sheets.Trait = [
+    [639, 'Enhanced Rampart', 94],
+    [313, 'Enhanced Sacred Soil', 78],
+    [625, 'Enhanced Tetragrammaton', 98],
+  ].map(([id, name, level]) => ({
+    row_id: id as number,
+    fields: {Name: name, Level: level},
+  }));
   xivApi.sheets.Status = [
     [1191, 'Rampart'],
     [297, 'Galvanize'],
@@ -165,6 +176,26 @@ test('lists actions one of whose status ids has another name now', async () => {
   });
 });
 
+test('lists traits that changed, and tooltips with other charges', async () => {
+  xivApi.sheets.Trait[0].fields.Level = 96;
+  const tips = xivApi.sheets.ActionTransient;
+  const tetragrammaton = tips.find(row => row.row_id === 3570)!;
+  tetragrammaton.fields.Description += '\nMaximum Charges: 3';
+
+  const response = await refresh();
+
+  expect(response.body.changed).toContainEqual({
+    id: 7531,
+    name: 'Rampart',
+    missing: ['trait 639 "Enhanced Rampart" at 94'],
+  });
+  expect(response.body.changed).toContainEqual({
+    id: 3570,
+    name: 'Tetragrammaton',
+    missing: ['700', '3 charges'],
+  });
+});
+
 describe('GET /api/planner/catalog', () => {
   test('says it is not ready before the first refresh', async () => {
     const response = await request(app).get('/api/planner/catalog');
@@ -213,6 +244,16 @@ describe('GET /api/planner/catalog', () => {
         }),
         expect.objectContaining({kind: 'healingReceived', percent: 15}),
       ],
+      // Below Enhanced Rampart, no healing received.
+      traits: [
+        {
+          trait: 'Enhanced Rampart',
+          level: 94,
+          recastMs: 90_000,
+          charges: 1,
+          effects: [expect.objectContaining({kind: 'mitigation'})],
+        },
+      ],
     });
     expect(byId.get(185)).toMatchObject({
       gcd: true,
@@ -220,7 +261,18 @@ describe('GET /api/planner/catalog', () => {
       recastMs: 2_500,
       range: 30,
     });
-    expect(byId.get(3570)).toMatchObject({charges: 2});
+    // 2 charges from Enhanced Tetragrammaton, 1 below it.
+    expect(byId.get(3570)).toMatchObject({
+      charges: 2,
+      traits: [
+        expect.objectContaining({
+          trait: 'Enhanced Tetragrammaton',
+          level: 98,
+          charges: 1,
+        }),
+      ],
+    });
+    expect(byId.get(9)).toMatchObject({traits: []});
     // Actions without effects keep their tooltip too.
     expect(byId.get(9)).toMatchObject({
       description: 'Delivers an attack with a potency of 220.',
@@ -251,6 +303,17 @@ describe('the effect tables', () => {
       }
     }
     expect(Object.keys(STATUS_IDS).filter(name => !used.has(name))).toEqual([]);
+  });
+
+  test('undo something of the effects for each trait that changes them', () => {
+    const effects = new Map(ENTRIES.map(entry => [entry.id, entry.effects]));
+    for (const trait of TRAITS.filter(trait => trait.undo)) {
+      const label = `${trait.action} ${trait.trait}`;
+      const before = effects.get(trait.action);
+
+      expect([label, before]).not.toEqual([label, undefined]);
+      expect([label, trait.undo!(before!)]).not.toEqual([label, before]);
+    }
   });
 
   test('list each action once', () => {
