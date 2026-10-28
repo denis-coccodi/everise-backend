@@ -37,21 +37,23 @@ const as = (token: string) => ({
 const png = readFileSync(join(__dirname, '../fixtures/images/small.png'));
 const path = (url: string) => url.slice(config.baseUrl.length);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const byId = (characters: any[], id: string) =>
+  characters.find(c => c.id === id);
+
 describe('editing the Waking Sands characters', () => {
   test('an admin sees every character with its personality and picture', async () => {
     const response = await as(await adminToken()).get('/api/admin/characters');
 
     expect(response.status).toBe(200);
     const characters = response.body.characters;
-    expect(characters.map((c: {id: string}) => c.id).slice(0, 5)).toEqual([
-      'tataru',
-      'urianger',
-      'yshtola',
-      'barnaby',
-      'bernadette',
-    ]);
+    const ids = characters.map((c: {id: string}) => c.id);
+    expect(ids.slice(0, 3)).toEqual(['tataru', 'urianger', 'yshtola']);
+    // Everise's own come last.
+    expect(ids.slice(-2)).toEqual(['barnaby', 'bernadette']);
     expect(characters).toHaveLength(22);
-    const [tataru, , , barnaby] = characters;
+    const [tataru] = characters;
+    const barnaby = characters[20];
     expect(tataru).toMatchObject({
       name: 'Tataru Taru',
       image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
@@ -143,8 +145,7 @@ describe('editing the Waking Sands characters', () => {
     expect(pictured.status).toBe(200);
     expect(pictured.body.character.image).toContain('/api/profile-images/');
     const listed = await request(app).get('/api/waking-sands/room');
-    expect(listed.body.characters[4]).toMatchObject({
-      id: 'bernadette',
+    expect(byId(listed.body.characters, 'bernadette')).toMatchObject({
       title: 'Astrologian on holiday',
       image: pictured.body.character.image,
     });
@@ -175,7 +176,9 @@ describe('editing the Waking Sands characters', () => {
     expect((await request(app).get(path(firstImage))).status).toBe(404);
 
     const listed = await request(app).get('/api/waking-sands/room');
-    expect(listed.body.characters[3].image).toBe(second.body.character.image);
+    expect(byId(listed.body.characters, 'barnaby').image).toBe(
+      second.body.character.image,
+    );
   });
 
   test('an admin goes back to the default picture; the upload is deleted', async () => {

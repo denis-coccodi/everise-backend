@@ -9791,12 +9791,16 @@
                 },
                 "image": {
                   "type": "string"
+                },
+                "local": {
+                  "type": "boolean"
                 }
               },
               "required": [
                 "id",
                 "name",
-                "title"
+                "title",
+                "local"
               ],
               "additionalProperties": false
             }

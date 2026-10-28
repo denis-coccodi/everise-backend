@@ -6,6 +6,7 @@ import {Character} from '../sands-model';
 // to that month's god (Pisces, from February, is Menphina's).
 const BERNADETTE: Character = {
   id: 'bernadette',
+  local: true,
   name: 'Bernadette Starling',
   title: 'Astrologian of Vesper Bay, fortunes by the Twelve',
   bio: "Astrologian, healer and fortune-teller at the little striped stall on the steps of the Waking Sands. Tell me your nameday and I'll find your guardian among the Twelve, then draw a card and see what the stars have in store for you, petal. The Professor (the owl) sends his regards.",

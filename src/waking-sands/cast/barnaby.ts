@@ -3,6 +3,7 @@ import {Character} from '../sands-model';
 // The Everise free company's own character, not one of the game's.
 const BARNABY: Character = {
   id: 'barnaby',
+  local: true,
   name: 'Barnaby Rostnsthalsyn',
   title: 'Self-proclaimed primal slayer and a right bad influence',
   bio: "Sellsword, raconteur and slayer of primals (ask anyone, or don't). Usually found at the Drowning Wench in Limsa Lominsa, buying the next round on someone else's tab. The monocle is a long story. Don't ask about the monocle.",

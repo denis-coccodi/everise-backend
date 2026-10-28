@@ -3,6 +3,7 @@ import {NotFoundError} from '../errors';
 import {LiveFeed} from '../live';
 import {User, displayName} from '../users';
 import {CharacterModel} from './character-ai';
+import {characterById} from './characters';
 import {CharactersService} from './characters-service';
 import {NeuronBudget} from './neuron-budget';
 import {
@@ -55,6 +56,7 @@ class WakingSandsService {
       name: c.name,
       title: c.title,
       image: c.image,
+      local: !!characterById(c.id)?.local,
     }));
     return {
       available: this.available,

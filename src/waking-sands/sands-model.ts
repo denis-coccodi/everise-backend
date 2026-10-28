@@ -32,6 +32,9 @@ interface Character {
   persona: string;
   // Their picture in public/, served at /api/waking-sands/characters/:id/picture
   picture?: string;
+  // Everise's own (Barnaby, Bernadette), not the game's: the picker lists
+  // them apart.
+  local?: boolean;
 }
 
 interface CharacterChanges {
