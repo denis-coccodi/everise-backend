@@ -9,10 +9,10 @@ type CatalogGet = (
   url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
-// The game data's cost type for MP, whose value is hundreds of MP. Other
-// types are gauges (68 Addersgall...) or unexplained (70, on Eukrasian
-// Diagnosis): no MP cost is read from them.
-const MP_COST = 3;
+// The game data's cost types for MP, whose value is hundreds of MP: 3, and
+// 70 on the Eukrasian actions (Eukrasian Diagnosis's 8 is its 800 MP since
+// 7.1). Other types are gauges (68 Addersgall...).
+const MP_COSTS = [3, 70];
 
 const FIELDS = [
   'Name',
@@ -154,8 +154,9 @@ function toCatalogAction(
     castMs: num(f.Cast100ms) * 100,
     recastMs: num(f.Recast100ms) * 100,
     charges: Math.max(num(f.MaxCharges), 1),
-    mpCost:
-      num(f.PrimaryCostType) === MP_COST ? num(f.PrimaryCostValue) * 100 : 0,
+    mpCost: MP_COSTS.includes(num(f.PrimaryCostType))
+      ? num(f.PrimaryCostValue) * 100
+      : 0,
     cooldownGroup: num(f.CooldownGroup),
     range: num(f.Range),
     radius: num(f.EffectRange),

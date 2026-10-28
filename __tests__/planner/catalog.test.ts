@@ -66,10 +66,13 @@ beforeEach(async () => {
     action(22, 'Bulwark', 'PLD', {ClassJobLevel: 52, Recast100ms: 900}),
     // A crafter's: none of the planner's jobs.
     action(100001, 'Basic Synthesis', 'CRP'),
-    // Replaces Diagnosis on the hotbar: not flagged as a player action.
+    // Replaces Diagnosis on the hotbar: not flagged as a player action. Its
+    // MP comes under another cost type.
     action(24291, 'Eukrasian Diagnosis', 'SGE', {
       IsPlayerAction: false,
       CooldownGroup: 58,
+      PrimaryCostType: 70,
+      PrimaryCostValue: 8,
     }),
   ];
   // The statuses the actions above apply, by the tables' ids.
@@ -276,6 +279,7 @@ describe('GET /api/planner/catalog', () => {
     });
     // An oGCD costs no MP.
     expect(byId.get(188)).toMatchObject({mpCost: 0});
+    expect(byId.get(24291)).toMatchObject({mpCost: 800});
     // 2 charges from Enhanced Tetragrammaton, 1 below it.
     expect(byId.get(3570)).toMatchObject({
       charges: 2,
