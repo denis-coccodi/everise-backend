@@ -157,11 +157,21 @@ interface TimelinePlayer {
   role: Role | null;
   // Null when the log never says (no hit or heal landed on them).
   maxHp: number | null;
+  // Their MP as the log reads it, where it changed; null and [] when it
+  // never says.
+  maxMp: number | null;
+  mp: MpSample[];
   stats: PlayerStats | null;
+}
+
+interface MpSample {
+  at: number;
+  mp: number;
 }
 
 export {
   Absorb,
+  MpSample,
   Cast,
   DamageType,
   Death,

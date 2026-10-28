@@ -197,6 +197,8 @@ function fflogsPull(): FakePull {
           targetID: 3,
           abilityGameID: 3569,
           duration: 1_390,
+          // The caster's MP (includeResources).
+          sourceResources: {mp: 10_000, maxMP: 10_000},
         },
         {
           timestamp: t(2_390),
@@ -204,6 +206,7 @@ function fflogsPull(): FakePull {
           sourceID: 3,
           targetID: -1,
           abilityGameID: 3569,
+          sourceResources: {mp: 9_000, maxMP: 10_000},
         },
         {
           timestamp: t(3_000),

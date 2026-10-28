@@ -15,7 +15,7 @@ import {BeforeRead} from './reports-service';
 // The one hub every pull is read in, so its FFLogs token is shared.
 const HUB_NAME = 'fflogs';
 // Raised whenever the timeline's shape changes, so kept ones aren't used.
-const TIMELINE_VERSION = 3;
+const TIMELINE_VERSION = 4;
 // A finished pull never changes: kept this long in the data centre's
 // cache, which drops what isn't used before then.
 const CACHE_CONTROL = 'public, max-age=2592000';

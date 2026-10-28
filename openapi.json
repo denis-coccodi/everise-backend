@@ -8537,6 +8537,41 @@
                     }
                   ]
                 },
+                "maxMp": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mp": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "at": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "mp": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "at",
+                      "mp"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
                 "stats": {
                   "anyOf": [
                     {
@@ -8637,6 +8672,8 @@
                 "job",
                 "role",
                 "maxHp",
+                "maxMp",
+                "mp",
                 "stats"
               ],
               "additionalProperties": false
