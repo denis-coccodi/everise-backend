@@ -55,6 +55,8 @@ beforeEach(async () => {
       Recast100ms: 25,
       CooldownGroup: 58,
       Range: 30,
+      PrimaryCostType: 3,
+      PrimaryCostValue: 9,
     }),
     action(188, 'Sacred Soil', 'SCH', {Recast100ms: 300, EffectRange: 15}),
     // The game data's charges are those before its trait.
@@ -64,10 +66,13 @@ beforeEach(async () => {
     action(22, 'Bulwark', 'PLD', {ClassJobLevel: 52, Recast100ms: 900}),
     // A crafter's: none of the planner's jobs.
     action(100001, 'Basic Synthesis', 'CRP'),
-    // Replaces Diagnosis on the hotbar: not flagged as a player action.
+    // Replaces Diagnosis on the hotbar: not flagged as a player action. Its
+    // MP comes under another cost type.
     action(24291, 'Eukrasian Diagnosis', 'SGE', {
       IsPlayerAction: false,
       CooldownGroup: 58,
+      PrimaryCostType: 70,
+      PrimaryCostValue: 8,
     }),
   ];
   // The statuses the actions above apply, by the tables' ids.
@@ -238,6 +243,7 @@ describe('GET /api/planner/catalog', () => {
       castMs: 0,
       recastMs: 90_000,
       charges: 1,
+      mpCost: 0,
       cooldownGroup: 10,
       range: 0,
       radius: 0,
@@ -267,8 +273,13 @@ describe('GET /api/planner/catalog', () => {
       gcd: true,
       castMs: 2_000,
       recastMs: 2_500,
+      // 900 MP: the game data counts it in hundreds.
+      mpCost: 900,
       range: 30,
     });
+    // An oGCD costs no MP.
+    expect(byId.get(188)).toMatchObject({mpCost: 0});
+    expect(byId.get(24291)).toMatchObject({mpCost: 800});
     // 2 charges from Enhanced Tetragrammaton, 1 below it.
     expect(byId.get(3570)).toMatchObject({
       charges: 2,

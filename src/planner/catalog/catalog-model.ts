@@ -40,6 +40,8 @@ interface CatalogAction {
   castMs: number;
   recastMs: number;
   charges: number;
+  // MP spent per use (0 for none).
+  mpCost: number;
   // Actions with the same group share their recast timer.
   cooldownGroup: number;
   // How far it reaches, and its area's radius (yalms).
