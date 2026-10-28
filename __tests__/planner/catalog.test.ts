@@ -55,6 +55,8 @@ beforeEach(async () => {
       Recast100ms: 25,
       CooldownGroup: 58,
       Range: 30,
+      PrimaryCostType: 3,
+      PrimaryCostValue: 9,
     }),
     action(188, 'Sacred Soil', 'SCH', {Recast100ms: 300, EffectRange: 15}),
     // The game data's charges are those before its trait.
@@ -238,6 +240,7 @@ describe('GET /api/planner/catalog', () => {
       castMs: 0,
       recastMs: 90_000,
       charges: 1,
+      mpCost: 0,
       cooldownGroup: 10,
       range: 0,
       radius: 0,
@@ -267,8 +270,12 @@ describe('GET /api/planner/catalog', () => {
       gcd: true,
       castMs: 2_000,
       recastMs: 2_500,
+      // 900 MP: the game data counts it in hundreds.
+      mpCost: 900,
       range: 30,
     });
+    // An oGCD costs no MP.
+    expect(byId.get(188)).toMatchObject({mpCost: 0});
     // 2 charges from Enhanced Tetragrammaton, 1 below it.
     expect(byId.get(3570)).toMatchObject({
       charges: 2,

@@ -9,6 +9,11 @@ type CatalogGet = (
   url: string,
 ) => Promise<{ok: boolean; status: number; json(): Promise<unknown>}>;
 
+// The game data's cost type for MP, whose value is hundreds of MP. Other
+// types are gauges (68 Addersgall...) or unexplained (70, on Eukrasian
+// Diagnosis): no MP cost is read from them.
+const MP_COST = 3;
+
 const FIELDS = [
   'Name',
   'Icon@as(raw)',
@@ -17,6 +22,8 @@ const FIELDS = [
   'Cast100ms',
   'Recast100ms',
   'MaxCharges',
+  'PrimaryCostType',
+  'PrimaryCostValue',
   'CooldownGroup',
   'AdditionalCooldownGroup',
   'Range',
@@ -147,6 +154,8 @@ function toCatalogAction(
     castMs: num(f.Cast100ms) * 100,
     recastMs: num(f.Recast100ms) * 100,
     charges: Math.max(num(f.MaxCharges), 1),
+    mpCost:
+      num(f.PrimaryCostType) === MP_COST ? num(f.PrimaryCostValue) * 100 : 0,
     cooldownGroup: num(f.CooldownGroup),
     range: num(f.Range),
     radius: num(f.EffectRange),

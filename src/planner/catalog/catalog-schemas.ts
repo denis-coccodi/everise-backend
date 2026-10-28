@@ -36,6 +36,8 @@ const CatalogAction = z.strictObject({
   castMs: int,
   recastMs: int,
   charges: int,
+  // MP spent per use (0 for none).
+  mpCost: int,
   // Actions with the same group share their recast timer.
   cooldownGroup: int,
   range: int,
