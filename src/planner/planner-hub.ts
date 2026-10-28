@@ -10,6 +10,7 @@ import {
 import {FflogsClient} from './fflogs-client';
 import {LocalPulls, PullSource} from './pull-source';
 import {PullInput} from './fflogs-model';
+import {BeforeRead} from './reports-service';
 
 // The one hub every pull is read in, so its FFLogs token is shared.
 const HUB_NAME = 'fflogs';
@@ -35,7 +36,7 @@ class PlannerHub extends DurableObject {
   // app's own errors come back as their status and message.
   async timeline(input: PullInput): Promise<HubAnswer> {
     try {
-      return {json: await this.pulls.timeline(input)};
+      return {json: await this.pulls.timeline(input, false)};
     } catch (error) {
       if (!(error instanceof HttpError)) throw error;
       return {status: error.status, message: error.publicMessage};
@@ -59,13 +60,14 @@ function hubError(status: number, message: string) {
 class HubPulls implements PullSource {
   constructor(private readonly hubs: DurableObjectNamespace<PlannerHub>) {}
 
-  async timeline(input: PullInput, finished: boolean) {
+  async timeline(input: PullInput, finished: boolean, beforeRead?: BeforeRead) {
     const cache = caches.default;
     const key = new Request(
       `https://planner.invalid/v${TIMELINE_VERSION}/${encodeURIComponent(input.code)}/${input.pullId}`,
     );
     const hit = await cache.match(key);
     if (hit) return hit.text();
+    await beforeRead?.();
     // RPC stubs drop the method's types: typed once here.
     const answer = (await this.hubs
       .getByName(HUB_NAME)
