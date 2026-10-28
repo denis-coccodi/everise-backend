@@ -30,6 +30,10 @@ const EFFECT_KINDS = [
   'healingPotency',
   // Attacks can't kill (Hallowed Ground, Holmgang, Living Dead...).
   'invulnerable',
+  // MP restored: `percent` of max MP, or `potency` MP.
+  'mp',
+  // MP over time: `potency` a 3s tick, each worth 10 MP (Lucid Dreaming).
+  'mpRegen',
 ] as const;
 
 // What a shield's `percent` is of: the target's max HP, the user's max
