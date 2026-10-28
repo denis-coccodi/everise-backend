@@ -22,6 +22,11 @@ const load = (code = CODE) =>
   request(app)
     .get(`/api/planner/reports/${code}`)
     .set('authorization', `Token ${token}`);
+const asGuest = (address: string, code = CODE) =>
+  request(app)
+    .get(`/api/planner/reports/${code}`)
+    .set('cf-connecting-ip', address);
+const guestCode = (i: number) => `gUeSt000${String(i).padStart(8, '0')}`;
 const reportQueries = () =>
   fflogs.queries.filter(q => q.query.includes('reportData'));
 
@@ -82,11 +87,49 @@ describe('the planner switched off', () => {
 });
 
 describe('GET /api/planner/reports/:code', () => {
-  test('is for members only', async () => {
-    const response = await request(app).get(`/api/planner/reports/${CODE}`);
+  test('is open to guests; a report already read costs them nothing', async () => {
+    const first = await asGuest('203.0.113.1');
+    clock.now = new Date('2026-11-21T12:00:00Z');
+    const again = await asGuest('203.0.113.1');
 
-    expect(response.status).toBe(401);
-    expect(fflogs.queries).toBeEmpty();
+    expect(first.status).toBe(200);
+    expect(first.body.pulls).toHaveLength(3);
+    expect(again.status).toBe(200);
+    expect(reportQueries()).toHaveLength(1);
+  });
+
+  test('lets each guest read 10 new reports an hour, and members as many as they like', async () => {
+    const codes = Array.from({length: 12}, (_, i) => guestCode(i));
+    for (const code of codes) fflogs.reports[code] = fflogsReport();
+
+    for (const code of codes.slice(0, 10)) {
+      expect((await asGuest('203.0.113.1', code)).status).toBe(200);
+    }
+    const refused = await asGuest('203.0.113.1', codes[10]);
+
+    expect(refused.status).toBe(429);
+    expect(refused.body.errors.body[0]).toContain('Sign in');
+    expect(Number(refused.headers['retry-after'])).toBeGreaterThan(0);
+    expect(reportQueries()).toHaveLength(10);
+    // Another guest, a member, or the same guest the next hour may.
+    expect((await asGuest('203.0.113.2', codes[10])).status).toBe(200);
+    expect((await load(codes[11])).status).toBe(200);
+    clock.now = new Date('2026-10-21T13:00:00Z');
+    expect((await asGuest('203.0.113.1', CODE)).status).toBe(200);
+  });
+
+  test('lets all guests together read 40 new reports an hour', async () => {
+    const codes = Array.from({length: 41}, (_, i) => guestCode(i));
+    for (const code of codes) fflogs.reports[code] = fflogsReport();
+
+    for (const [i, code] of codes.slice(0, 40).entries()) {
+      expect((await asGuest(`198.51.100.${i}`, code)).status).toBe(200);
+    }
+    const refused = await asGuest('198.51.100.99', codes[40]);
+
+    expect(refused.status).toBe(429);
+    expect(refused.body.errors.body[0]).toContain('Guests have loaded all');
+    expect((await load(codes[40])).status).toBe(200);
   });
 
   test("lists the report's Extreme, Savage and Ultimate pulls and their players", async () => {

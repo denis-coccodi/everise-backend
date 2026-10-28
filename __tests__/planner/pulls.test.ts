@@ -29,13 +29,26 @@ afterAll(() => {
 });
 
 describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
-  test('is for members only', async () => {
-    const response = await request(app).get(
-      `/api/planner/reports/${CODE}/pulls/3`,
-    );
+  test('lets each guest read 10 new pulls an hour, and members as many as they like', async () => {
+    const asGuest = (address: string) =>
+      request(app)
+        .get(`/api/planner/reports/${CODE}/pulls/3`)
+        .set('cf-connecting-ip', address);
 
-    expect(response.status).toBe(401);
-    expect(fflogs.queries).toBeEmpty();
+    // Read from FFLogs each time here: in the Worker, a finished pull is
+    // cached and costs nothing again.
+    for (let i = 0; i < 10; i++) {
+      const response = await asGuest('203.0.113.1');
+      expect(response.status).toBe(200);
+      expect(response.body.players).not.toBeEmpty();
+    }
+    const refused = await asGuest('203.0.113.1');
+
+    expect(refused.status).toBe(429);
+    expect(refused.body.errors.body[0]).toContain('10 new pulls this hour');
+    expect(pullQueries()).toHaveLength(10);
+    expect((await asGuest('203.0.113.2')).status).toBe(200);
+    expect((await load()).status).toBe(200);
   });
 
   test("answers the pull's players, with their HP and stats", async () => {

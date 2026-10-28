@@ -8,6 +8,9 @@ import {FightKinds, FightReport, LoggedReport} from './fight-report-model';
 
 const REPORTS = 'fflogsReports';
 
+// Runs before something is asked of FFLogs; throws to refuse it.
+type BeforeRead = () => Promise<void>;
+
 // A report still being logged is read again after this long.
 const REFRESH_MS = 2 * 60 * 1000;
 // A report that ended this long before it was read won't change any more.
@@ -45,9 +48,11 @@ class ReportsService {
     return this.client.available;
   }
 
-  async report(code: string): Promise<FightReport> {
+  // `beforeRead` runs before the report is asked of FFLogs (not when it's
+  // kept, or already being read), and may refuse it by throwing.
+  async report(code: string, beforeRead?: BeforeRead): Promise<FightReport> {
     const [logged, kinds, latest] = await Promise.all([
-      this.logged(code),
+      this.logged(code, beforeRead),
       this.fightKinds(),
       this.latestExpansion(),
     ]);
@@ -59,8 +64,9 @@ class ReportsService {
   async pull(
     code: string,
     pullId: number,
+    beforeRead?: BeforeRead,
   ): Promise<{input: PullInput; finished: boolean}> {
-    const report = await this.report(code);
+    const report = await this.report(code, beforeRead);
     const pull = report.pulls.find(p => p.id === pullId);
     if (!pull) {
       throw new NotFoundError(
@@ -80,12 +86,13 @@ class ReportsService {
     };
   }
 
-  private async logged(code: string) {
+  private async logged(code: string, beforeRead?: BeforeRead) {
     const stored = await this.db.get<StoredReport>(REPORTS, code);
     if (stored && this.fresh(stored)) return stored.report;
     // One read of a report at a time: requests arriving meanwhile wait.
     let reading = this.reading.get(code);
     if (!reading) {
+      await beforeRead?.();
       reading = this.read(code).finally(() => this.reading.delete(code));
       this.reading.set(code, reading);
     }
@@ -118,4 +125,4 @@ class ReportsService {
   }
 }
 
-export {ReportsService, REFRESH_MS, FINISHED_MS};
+export {BeforeRead, ReportsService, REFRESH_MS, FINISHED_MS};

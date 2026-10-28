@@ -4,6 +4,7 @@ import {CatalogGet} from './catalog/xivapi-actions';
 import {Db} from '../db';
 import {Auth} from '../middleware';
 import {FflogsClient, FflogsFetch} from './fflogs-client';
+import {GuestLookups} from './guest-lookups';
 import {PlannerRouter} from './planner-router';
 import {LocalPulls, PullSource} from './pull-source';
 import {ReportsService} from './reports-service';
@@ -46,7 +47,12 @@ function plannerRoutes(parts: PlannerParts) {
   const pulls = parts.pulls ?? new LocalPulls(client);
   const catalog = new CatalogService(parts.db, parts.xivapi, parts.now);
   return [
-    new PlannerRouter(parts.auth, reports, pulls).router,
+    new PlannerRouter(
+      parts.auth,
+      reports,
+      pulls,
+      new GuestLookups(parts.db, parts.now),
+    ).router,
     new CatalogRouter(catalog, parts.refreshKey).router,
   ];
 }
