@@ -68,6 +68,7 @@ const STATUS_IDS: Record<string, number> = {
   Krasis: 2622,
   'Liturgy of the Bell': 2709,
   'Living Dead': 810,
+  'Lucid Dreaming': 1204,
   Macrocosmos: 2718,
   'Magick Barrier': 2707,
   Manaward: 168,

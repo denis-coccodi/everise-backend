@@ -4623,7 +4623,9 @@
                           "maxHp",
                           "healingReceived",
                           "healingPotency",
-                          "invulnerable"
+                          "invulnerable",
+                          "mp",
+                          "mpRegen"
                         ]
                       },
                       "target": {
@@ -4785,7 +4787,9 @@
                                 "maxHp",
                                 "healingReceived",
                                 "healingPotency",
-                                "invulnerable"
+                                "invulnerable",
+                                "mp",
+                                "mpRegen"
                               ]
                             },
                             "target": {

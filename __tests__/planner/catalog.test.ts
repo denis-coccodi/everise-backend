@@ -361,8 +361,15 @@ describe('the effect tables', () => {
         if (e.kind === 'regen' || e.kind === 'heal') {
           expect([label, e.potency ?? e.percent]).not.toEqual([label, null]);
         }
+        if (e.kind === 'mp' || e.kind === 'mpRegen') {
+          expect([label, e.potency ?? e.percent]).not.toEqual([label, null]);
+        }
+        // Only heals and MP need no status.
         if (e.status === null) {
-          expect([label, e.kind]).toEqual([label, 'heal']);
+          expect([label, ['heal', 'mp'].includes(e.kind)]).toEqual([
+            label,
+            true,
+          ]);
         }
       }
     }

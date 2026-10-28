@@ -28,6 +28,11 @@ function expected(effects: ActionEffect[]) {
 // by action, each with where it comes from: they aren't looked for.
 const NOT_IN_TOOLTIP: Record<number, string[]> = {
   22: ['20%'], // Bulwark: a block's, from the shield (consolegameswiki)
+  // Dark Knight's MP: the tooltips say only "restores MP" (consolegameswiki).
+  3625: ['600'], // Blood Weapon
+  7390: ['600'], // Delirium
+  3623: ['600'], // Syphon Strike
+  3643: ['600'], // Carve and Spit
 };
 
 function tooltipChanges(
