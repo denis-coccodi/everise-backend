@@ -11,6 +11,7 @@ import {
   Cast,
   Named,
   PlayerStats,
+  MpSample,
   PullTimeline,
   TimelinePlayer,
   DamageType,
@@ -47,11 +48,14 @@ const num = (value: unknown) => numberOr(value, 0);
 const orNull = (value: unknown) => numberOr(value, null);
 const ofType = (events: FflogsEvent[], ...types: string[]) =>
   events.filter(event => types.includes(String(event.type)));
+interface Resources {
+  hitPoints?: unknown;
+  maxHitPoints?: unknown;
+  mp?: unknown;
+  maxMP?: unknown;
+}
 const resources = (event: FflogsEvent) =>
-  (event.targetResources ?? null) as {
-    hitPoints?: unknown;
-    maxHitPoints?: unknown;
-  } | null;
+  (event.targetResources ?? null) as Resources | null;
 
 // The pull in the planner's model. FFLogs' "calculated" events (the
 // amount as the attack left, before it lands) are left out for the
@@ -160,6 +164,7 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
     const target = num(event.targetID);
     if (max !== null && max > (maxHp.get(target) ?? 0)) maxHp.set(target, max);
   }
+  const mp = mpSeries(events, at);
   const combatants = new Map(
     ofType(events.combatants, 'combatantinfo').map(e => [num(e.sourceID), e]),
   );
@@ -171,6 +176,8 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       job: player.job,
       role: player.role,
       maxHp: maxHp.get(player.id) ?? null,
+      maxMp: mp.get(player.id)?.max ?? null,
+      mp: mp.get(player.id)?.samples ?? [],
       stats: info ? statsOf(info) : null,
     };
   });
@@ -259,6 +266,44 @@ function names(
     actions: named(actionIds, 0),
     statuses: named(statusIds, STATUS_OFFSET),
   };
+}
+
+// Each player's MP as the log reads it: as they cast (the caster's
+// resources) and as they're hit or healed (the target's), only the readings
+// where it changed, in time order; and their max MP.
+function mpSeries(
+  events: {
+    playerCasts: FflogsEvent[];
+    damage: FflogsEvent[];
+    heals: FflogsEvent[];
+  },
+  at: (event: FflogsEvent) => number,
+) {
+  const readings: {player: number; at: number; mp: number; max: number}[] = [];
+  const read = (event: FflogsEvent, player: unknown, res: unknown) => {
+    const r = (res ?? null) as Resources | null;
+    const value = orNull(r?.mp);
+    if (value === null) return;
+    readings.push({
+      player: num(player),
+      at: at(event),
+      mp: value,
+      max: num(r?.maxMP),
+    });
+  };
+  for (const e of events.playerCasts) read(e, e.sourceID, e.sourceResources);
+  for (const e of [...events.damage, ...events.heals]) {
+    read(e, e.targetID, e.targetResources);
+  }
+  readings.sort((a, b) => a.at - b.at);
+  const series = new Map<number, {max: number | null; samples: MpSample[]}>();
+  for (const r of readings) {
+    const own = series.get(r.player) ?? {max: null, samples: []};
+    if (r.max > (own.max ?? 0)) own.max = r.max;
+    if (own.samples.at(-1)?.mp !== r.mp) own.samples.push({at: r.at, mp: r.mp});
+    series.set(r.player, own);
+  }
+  return series;
 }
 
 export {toTimeline};

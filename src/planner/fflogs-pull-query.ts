@@ -14,7 +14,9 @@ const EVENT_KINDS = {
   damage:
     'dataType: DamageTaken, hostilityType: Friendlies, includeResources: true',
   heals: 'dataType: Healing, hostilityType: Friendlies, includeResources: true',
-  playerCasts: 'dataType: Casts, hostilityType: Friendlies',
+  // With the caster's resources: their MP as they cast.
+  playerCasts:
+    'dataType: Casts, hostilityType: Friendlies, includeResources: true',
   enemyCasts: 'dataType: Casts, hostilityType: Enemies',
   buffs: 'dataType: Buffs, hostilityType: Friendlies',
   debuffs: 'dataType: Debuffs, hostilityType: Friendlies',

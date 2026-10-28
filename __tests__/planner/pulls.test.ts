@@ -74,6 +74,8 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
       job: 'PLD',
       role: 'tank',
       maxHp: 325_090,
+      maxMp: null,
+      mp: [],
       stats: expect.objectContaining({
         level: 100,
         vitality: 7_119,
@@ -81,6 +83,21 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
       }),
     });
     expect(response.body.players[7]).toMatchObject({maxHp: null, stats: null});
+  });
+
+  test("reads each player's MP as they cast, where it changed", async () => {
+    const response = await load();
+
+    expect(pullQueries()[0].query).toContain(
+      'dataType: Casts, hostilityType: Friendlies, includeResources: true',
+    );
+    expect(response.body.players[2]).toMatchObject({
+      maxMp: 10_000,
+      mp: [
+        {at: 1_000, mp: 10_000},
+        {at: 2_390, mp: 9_000},
+      ],
+    });
   });
 
   test('lists the damage the players took from every source, the environment included', async () => {

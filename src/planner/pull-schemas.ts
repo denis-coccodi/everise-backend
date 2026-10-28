@@ -38,6 +38,9 @@ const TimelinePlayer = z.strictObject({
   job: z.string().nullable(),
   role: z.enum(ROLES).nullable(),
   maxHp: int.nullable(),
+  // Their MP as the log reads it, where it changed.
+  maxMp: int.nullable(),
+  mp: z.array(z.strictObject({at, mp: int})),
   stats: PlayerStats.nullable(),
 });
 
