@@ -71,36 +71,44 @@ describe('the Waking Sands room', () => {
     expect(body.available).toBeTrue();
     expect(body.present).toEqual([]);
     expect(body.lines).toEqual([]);
-    expect(body.characters.slice(0, 5)).toStrictEqual([
+    expect(body.characters.slice(0, 3)).toStrictEqual([
       {
         id: 'tataru',
         name: 'Tataru Taru',
         title: 'Receptionist of the Scions of the Seventh Dawn',
         image: `${config.baseUrl}/api/waking-sands/characters/tataru/picture`,
+        local: false,
       },
       {
         id: 'urianger',
         name: 'Urianger Augurelt',
         title: 'Astrologian and scholar of Sharlayan',
         image: `${config.baseUrl}/api/waking-sands/characters/urianger/picture`,
+        local: false,
       },
       {
         id: 'yshtola',
         name: "Y'shtola Rhul",
         title: 'Sorceress of the Scions of the Seventh Dawn',
         image: `${config.baseUrl}/api/waking-sands/characters/yshtola/picture`,
+        local: false,
       },
+    ]);
+    // Everise's own, after the game's.
+    expect(body.characters.slice(-2)).toStrictEqual([
       {
         id: 'barnaby',
         name: 'Barnaby Rostnsthalsyn',
         title: 'Self-proclaimed primal slayer and a right bad influence',
         image: `${config.baseUrl}/api/waking-sands/characters/barnaby/picture`,
+        local: true,
       },
       {
         id: 'bernadette',
         name: 'Bernadette Starling',
         title: 'Astrologian of Vesper Bay, fortunes by the Twelve',
         image: `${config.baseUrl}/api/waking-sands/characters/bernadette/picture`,
+        local: true,
       },
     ]);
     expect(body.characters).toContainEqual({
@@ -108,6 +116,7 @@ describe('the Waking Sands room', () => {
       name: 'Emet-Selch',
       title: 'Ascian, and deeply unimpressed',
       image: `${config.baseUrl}/api/waking-sands/characters/emet-selch/picture`,
+      local: false,
     });
   });
 

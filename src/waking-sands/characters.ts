@@ -38,14 +38,12 @@ function characterOfAuthor(authorId: string) {
 }
 
 // Everyone members can invite, one file each in cast/, in the picker's
-// order. However many there are, at most MAX_PRESENT are in the room (and in
-// a prompt) at once.
+// order: the game's, then Everise's own (`local`). However many there are,
+// at most MAX_PRESENT are in the room (and in a prompt) at once.
 const CHARACTERS: Character[] = [
   TATARU,
   URIANGER,
   YSHTOLA,
-  BARNABY,
-  BERNADETTE,
   THANCRED,
   ALPHINAUD,
   ALISAIE,
@@ -63,6 +61,8 @@ const CHARACTERS: Character[] = [
   HYTHLODAEUS,
   VENAT,
   METEION,
+  BARNABY,
+  BERNADETTE,
 ];
 
 function characterById(id: string) {

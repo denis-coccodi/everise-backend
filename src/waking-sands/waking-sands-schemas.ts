@@ -38,6 +38,8 @@ const SandsRoom = responseSchema(
         name: z.string(),
         title: z.string(),
         image: z.string().optional(),
+        // Everise's own character, not the game's.
+        local: z.boolean(),
       }),
     ),
     // The ids of the characters in the room.
