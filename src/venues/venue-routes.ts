@@ -9,6 +9,7 @@ import {VenueSharesService} from './venue-shares-service';
 import {VenuesBoard, VenuesFetch} from './venues-board';
 import {VenuesRouter} from './venues-router';
 import {venueLookup} from './venue-lookup';
+import {VENUE_DATA_CENTRES} from './venue-data-centres';
 
 // Everything the Venues need, put together for the app (src/app.ts): the
 // data centres' lists, each venue's page, and sharing a venue in Discord;
@@ -41,6 +42,17 @@ function venueRoutes(parts: VenueParts) {
     ],
     // The venue an event is held at, for the event's page.
     venueAt: venueLookup(board),
+    // The venues the site shows this week, every data centre's, for the
+    // sitemap: read one data centre after another, as FFXIV Venues turns
+    // bursts away.
+    listed: async () => {
+      const ids: string[] = [];
+      for (const dataCentre of VENUE_DATA_CENTRES) {
+        const list = await board.venues(dataCentre);
+        ids.push(...(list?.venues.map(venue => venue.id) ?? []));
+      }
+      return ids;
+    },
   };
 }
 

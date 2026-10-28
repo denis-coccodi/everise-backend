@@ -325,7 +325,8 @@ function createApp(
 
   app.use('/api', adminRouter);
 
-  app.use('/api', new SitemapRouter(new SitemapService(db)).router);
+  const sitemap = new SitemapService(db, venueParts.listed, eventParts.listed);
+  app.use('/api', new SitemapRouter(sitemap).router);
 
   // The API's description, built from the routes above.
   app.use('/api', docsRouter());
