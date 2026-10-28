@@ -37,6 +37,22 @@ describe('GET /api/sitemap', () => {
     expect(response.body.dataCentres).toIncludeAllMembers(['Light', 'Chaos']);
   });
 
+  test('leaves out posts with little text of their own', async () => {
+    const {user} = await usersClient.registerRandomUser();
+    const {article: thin} = await articlesClient.createRandomArticle(
+      user.token,
+    );
+    await articlesClient.updateArticle(user.token, thin.id, {
+      body: 'Duty Found!',
+      tagList: [],
+    });
+
+    const response = await request(app).get('/api/sitemap');
+
+    const ids = (response.body.articles as {id: string}[]).map(a => a.id);
+    expect(ids).not.toContain(thin.id);
+  });
+
   test("lists this week's venues, every data centre's, and events", async () => {
     clock.now = new Date('2026-10-29T18:00:00Z');
     ffxivVenues.status = 200;
