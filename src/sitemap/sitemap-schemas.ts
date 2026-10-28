@@ -10,6 +10,9 @@ const SitemapResponse = responseSchema(
     articles: z.array(z.strictObject({id: z.string(), updatedAt: isoDate})),
     // A Party Finder page each (/party-finder?dc=<name in lower case>).
     dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
+    // A page each (/venues/<id>, /events/<id>): this week's.
+    venues: z.array(z.string()),
+    events: z.array(z.number().int()),
   }),
 );
 

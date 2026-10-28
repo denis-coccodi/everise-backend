@@ -2982,7 +2982,7 @@
         "tags": [
           "sitemap"
         ],
-        "summary": "The posts and Party Finder pages for the site's sitemap",
+        "summary": "The posts, Party Finder pages, venues and events for the site's sitemap",
         "parameters": [],
         "responses": {
           "200": {
@@ -9885,11 +9885,27 @@
                 "Materia"
               ]
             }
+          },
+          "venues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
           }
         },
         "required": [
           "articles",
-          "dataCentres"
+          "dataCentres",
+          "venues",
+          "events"
         ],
         "additionalProperties": false
       },

@@ -43,6 +43,9 @@ function eventRoutes(parts: EventParts) {
       parts.venueAt ?? (async () => null),
     ).router,
     atVenues: new EventsAtVenues(board),
+    // The week's events the site shows, for the sitemap.
+    listed: async () =>
+      (await board.events())?.events.map(event => event.id) ?? [],
   };
 }
 
