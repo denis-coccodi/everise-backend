@@ -148,4 +148,13 @@ const PullTimelineResponse = responseSchema(
   }),
 );
 
-export {PullParams, PullTimelineResponse};
+// Other groups' kills of a pull's fight (FFLogs' rankings, fastest first),
+// for the planner to read what the pull doesn't show.
+const ClearsResponse = responseSchema(
+  'PlannerClearsResponse',
+  z.strictObject({
+    clears: z.array(z.strictObject({code: z.string(), pullId: int})),
+  }),
+);
+
+export {ClearsResponse, PullParams, PullTimelineResponse};

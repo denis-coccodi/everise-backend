@@ -6,7 +6,8 @@ import {
   PlannerAvailableResponse,
   ReportParams,
 } from './planner-schemas';
-import {PullParams, PullTimelineResponse} from './pull-schemas';
+import {ClearsResponse, PullParams, PullTimelineResponse} from './pull-schemas';
+import {ClearsService} from './clears-service';
 import {PullSource} from './pull-source';
 import {GuestLookups} from './guest-lookups';
 import {ReportsService} from './reports-service';
@@ -21,6 +22,7 @@ class PlannerRouter {
     private readonly reports: ReportsService,
     private readonly pulls: PullSource,
     private readonly guests: GuestLookups,
+    private readonly clears: ClearsService,
   ) {}
 
   get router() {
@@ -94,6 +96,32 @@ class PlannerRouter {
             this.guestRead(req, 'pull'),
           ),
         );
+      },
+    );
+
+    // Other groups' kills of the pull's fight, to read in turn: an attack
+    // an invulnerability blocked every time in the pull shows there.
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/planner/reports/:code/pulls/:pullId/clears',
+        summary: "Other groups' kills of a pull's fight",
+        auth: this.auth.optional,
+        params: PullParams,
+        responses: {
+          200: {description: 'The kills.', schema: ClearsResponse},
+        },
+      },
+      async (req, res) => {
+        const {code, pullId} = req.params;
+        res.json({
+          clears: await this.clears.clears(
+            code,
+            pullId,
+            this.guestRead(req, 'report'),
+          ),
+        });
       },
     );
 

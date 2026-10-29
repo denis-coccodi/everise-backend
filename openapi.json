@@ -2653,6 +2653,63 @@
         }
       }
     },
+    "/api/planner/reports/{code}/pulls/{pullId}/clears": {
+      "get": {
+        "tags": [
+          "planner"
+        ],
+        "summary": "Other groups' kills of a pull's fight",
+        "security": [
+          {
+            "token": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(a:)?[A-Za-z0-9]{16}$"
+            }
+          },
+          {
+            "name": "pullId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The kills.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlannerClearsResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error; `errors.body` says what went wrong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/profile-images/{id}": {
       "get": {
         "tags": [
@@ -8367,6 +8424,36 @@
         },
         "required": [
           "available"
+        ],
+        "additionalProperties": false
+      },
+      "PlannerClearsResponse": {
+        "type": "object",
+        "properties": {
+          "clears": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "pullId": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "code",
+                "pullId"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "clears"
         ],
         "additionalProperties": false
       },

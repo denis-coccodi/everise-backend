@@ -76,7 +76,14 @@ interface ReportPull {
 
 type Role = (typeof ROLES)[number];
 
+// Another group's kill of a fight: its report and pull.
+interface ClearRef {
+  code: string;
+  pullId: number;
+}
+
 export {
+  ClearRef,
   FightKinds,
   FightReport,
   LoggedPull,
