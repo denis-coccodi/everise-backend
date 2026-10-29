@@ -57,6 +57,11 @@ Settled with the user (don't re-ask):
 - Each action has `mpCost`: XIVAPI's `PrimaryCostValue` × 100 when `PrimaryCostType` is 3, or 70 (the Eukrasian actions).
 - Built by `POST /api/planner/catalog/refresh` (the duty refresh's `x-refresh-key`), step 3 of `refresh-game-data.yaml`; kept as JSON text in one `plannerCatalog` document and sent as is. Without one, `GET` answers 503.
 
+## Other groups' clears (built)
+
+- `GET /api/planner/reports/:code/pulls/:pullId/clears` (`clears-service.ts`, `fflogs-clears.ts`): up to three ranked kills of the pull's fight (`worldData.encounter(id).fightRankings(difficulty)`, fastest first; difficulty 101 for Savage, 100 for Extreme and Ultimate), the group's own report left out. Kept in `fflogsClears` per `<encounter>:<difficulty>` for a week. The browser loads them through the pull endpoint in turn; today it reads only the damage of attacks an invulnerability blocked every time in the pull.
+- Agreed with the user (memory): wipes nobody survives are left out before any completion from others' clears, and a pull is planned whole only when it covers at least half the fight.
+
 ## Next steps
 
 1. The planner in the browser (frontend): reading the timeline and the catalog, the options form, the scheduler, one tab per player and the timeline graph.

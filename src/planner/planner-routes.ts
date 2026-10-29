@@ -8,6 +8,7 @@ import {GuestLookups} from './guest-lookups';
 import {PlannerRouter} from './planner-router';
 import {LocalPulls, PullSource} from './pull-source';
 import {ReportsService} from './reports-service';
+import {ClearsService} from './clears-service';
 import {FflogsSettings} from './fflogs-model';
 import {FightKinds} from './fight-report-model';
 
@@ -52,6 +53,7 @@ function plannerRoutes(parts: PlannerParts) {
       reports,
       pulls,
       new GuestLookups(parts.db, parts.now),
+      new ClearsService(parts.db, client, reports, parts.now),
     ).router,
     new CatalogRouter(catalog, parts.refreshKey).router,
   ];

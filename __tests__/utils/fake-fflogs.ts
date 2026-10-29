@@ -17,7 +17,8 @@ interface FakePull {
 // FFLogs does), and `status` its next answers' status. `tokens` counts the
 // tokens the app asked for, `expiredTokens` makes the API refuse that many
 // requests as unauthorized, `gate` holds pull answers until it resolves,
-// and `queries` holds what the app asked (the query and its variables).
+// `queries` holds what the app asked (the query and its variables), and
+// `rankings` the kills ranked per "<encounter>:<difficulty>".
 class FakeFflogs {
   reports: Record<string, Record<string, unknown>> = {};
   privateCodes = new Set<string>();
@@ -28,8 +29,10 @@ class FakeFflogs {
   tokens = 0;
   expiredTokens = 0;
   queries: {query: string; variables: Record<string, unknown>}[] = [];
+  rankings: Record<string, {code: string; fightID: number}[]> = {};
 
   reset() {
+    this.rankings = {};
     this.reports = {};
     this.privateCodes = new Set();
     this.pulls = {};
@@ -56,6 +59,14 @@ class FakeFflogs {
     const {query, variables} = JSON.parse(init.body);
     this.queries.push({query, variables});
     if (this.status !== 200) return answer(this.status, {});
+    if (query.includes('fightRankings')) {
+      const ranked =
+        this.rankings[`${variables.encounter}:${variables.difficulty}`] ?? [];
+      const rankings = ranked.map(report => ({duration: 400_000, report}));
+      return answer(200, {
+        data: {worldData: {encounter: {fightRankings: {page: 1, rankings}}}},
+      });
+    }
     const code = String(variables.code);
     if (this.privateCodes.has(code)) {
       return answer(200, {
