@@ -366,6 +366,12 @@ describe('GET /api/planner/reports/:code', () => {
       'That FFLogs report is private. Make it public or unlisted on FFLogs, then try again.',
     ],
     [
+      'a report FFLogs archived',
+      () => fflogs.archivedCodes.add(CODE),
+      403,
+      'FFLogs has archived that report, so it can no longer be read. Upload the log again, or pick a newer report.',
+    ],
+    [
       'FFLogs being busy',
       () => (fflogs.status = 429),
       502,

@@ -148,7 +148,7 @@ const PullTimelineResponse = responseSchema(
   }),
 );
 
-// Other groups' kills of a pull's fight (FFLogs' rankings, fastest first),
+// Other groups' kills of a pull's fight (FFLogs' rankings, newest first),
 // for the planner to read what the pull doesn't show.
 const ClearsResponse = responseSchema(
   'PlannerClearsResponse',

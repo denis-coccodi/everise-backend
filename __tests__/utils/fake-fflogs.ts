@@ -11,7 +11,7 @@ interface FakePull {
 }
 
 // FFLogs' v2 API: `reports` by code (as its GraphQL sends them; a code in
-// `privateCodes` is refused), `pulls` by "<code>:<pull id>", sent
+// `privateCodes` is refused, one in `archivedCodes` archived), `pulls` by "<code>:<pull id>", sent
 // `pageSize` events of each kind a page (more to finish the last
 // timestamp, and nothing past the first page without an end time, as
 // FFLogs does), and `status` its next answers' status. `tokens` counts the
@@ -22,6 +22,7 @@ interface FakePull {
 class FakeFflogs {
   reports: Record<string, Record<string, unknown>> = {};
   privateCodes = new Set<string>();
+  archivedCodes = new Set<string>();
   pulls: Record<string, FakePull> = {};
   pageSize = Infinity;
   gate?: Promise<void>;
@@ -29,12 +30,16 @@ class FakeFflogs {
   tokens = 0;
   expiredTokens = 0;
   queries: {query: string; variables: Record<string, unknown>}[] = [];
-  rankings: Record<string, {code: string; fightID: number}[]> = {};
+  rankings: Record<
+    string,
+    {code: string; fightID: number; startTime?: number}[]
+  > = {};
 
   reset() {
     this.rankings = {};
     this.reports = {};
     this.privateCodes = new Set();
+    this.archivedCodes = new Set();
     this.pulls = {};
     this.pageSize = Infinity;
     this.gate = undefined;
@@ -71,6 +76,14 @@ class FakeFflogs {
     if (this.privateCodes.has(code)) {
       return answer(200, {
         errors: [{message: 'You do not have permission to view this report.'}],
+        data: {reportData: {report: null}},
+      });
+    }
+    if (this.archivedCodes.has(code)) {
+      const archived =
+        'This report has been archived. Subscribing users can access the report content via the /user API endpoint.';
+      return answer(200, {
+        errors: [{message: archived}],
         data: {reportData: {report: null}},
       });
     }

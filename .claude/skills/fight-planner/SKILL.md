@@ -59,7 +59,7 @@ Settled with the user (don't re-ask):
 
 ## Other groups' clears (built)
 
-- `GET /api/planner/reports/:code/pulls/:pullId/clears` (`clears-service.ts`, `fflogs-clears.ts`): up to three ranked kills of the pull's fight (`worldData.encounter(id).fightRankings(difficulty)`, fastest first; difficulty 101 for Savage, 100 for Extreme and Ultimate), the group's own report left out. Kept in `fflogsClears` per `<encounter>:<difficulty>` for a week. The browser loads them through the pull endpoint in turn; today it reads only the damage of attacks an invulnerability blocked every time in the pull.
+- `GET /api/planner/reports/:code/pulls/:pullId/clears` (`clears-service.ts`, `fflogs-clears.ts`): up to three ranked kills of the pull's fight (`worldData.encounter(id).fightRankings(difficulty)`, sorted most recent first: FFLogs archives old reports and its API answers "archived" for them, now a 403; difficulty 101 for Savage, 100 for Extreme and Ultimate), the group's own report left out. Kept in `fflogsClears` per `<encounter>:<difficulty>` for a week. The browser loads them through the pull endpoint in turn; today it reads only the damage of attacks an invulnerability blocked every time in the pull.
 - Agreed with the user (memory): wipes nobody survives are left out before any completion from others' clears, and a pull is planned whole only when it covers at least half the fight.
 
 ## Next steps
