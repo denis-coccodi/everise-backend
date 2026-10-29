@@ -128,6 +128,12 @@ function reportError(message: string) {
       'That FFLogs report is private. Make it public or unlisted on FFLogs, then try again.',
     );
   }
+  // FFLogs archives old reports: only their owner's subscription reads them.
+  if (/archived/i.test(message)) {
+    return new ForbiddenError(
+      'FFLogs has archived that report, so it can no longer be read. Upload the log again, or pick a newer report.',
+    );
+  }
   console.error(`FFLogs: the API answered "${message}"`);
   return unreachable();
 }

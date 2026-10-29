@@ -56,6 +56,22 @@ describe('GET /api/planner/reports/:code/pulls/:pullId/clears', () => {
     });
   });
 
+  test('offers the most recent kills first: FFLogs archives old reports', async () => {
+    fflogs.rankings['101:101'] = [
+      {code: 'Kill0000000000aa', fightID: 1, startTime: 1_000},
+      {code: 'Kill0000000000bb', fightID: 2, startTime: 3_000},
+      {code: 'Kill0000000000cc', fightID: 3, startTime: 2_000},
+    ];
+
+    const response = await clears();
+
+    expect(response.body.clears.map((c: {code: string}) => c.code)).toEqual([
+      'Kill0000000000bb',
+      'Kill0000000000cc',
+      'Kill0000000000aa',
+    ]);
+  });
+
   test("asks FFLogs for an Extreme fight's kills at its own difficulty", async () => {
     fflogs.rankings['201:100'] = ranked(['Kill0000000000ee']);
 
