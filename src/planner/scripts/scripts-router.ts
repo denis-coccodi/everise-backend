@@ -25,7 +25,7 @@ class ScriptsRouter {
         method: 'post',
         path: '/planner/scripts/sync',
         summary:
-          "Read cactbot's latest timelines now, a few files a call (needs x-refresh-key)",
+          'Read the latest community fight timelines now, a few files a call (needs x-refresh-key)',
         responses: {
           200: {
             description: 'Where the copy stands.',
