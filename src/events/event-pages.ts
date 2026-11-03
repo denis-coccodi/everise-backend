@@ -24,11 +24,12 @@ class EventPages {
   ) {}
 
   // Undefined for an event without a page here; null while Partake can't
-  // be reached.
+  // be reached. Read again when it's time, or when the clock reads before
+  // the last read (a clock set back).
   async event(id: number): Promise<EventDetail | undefined | null> {
     const at = this.now().getTime();
     let kept = this.read.get(id);
-    if (!kept || at - kept.at >= REFRESH_MS) {
+    if (!kept || at - kept.at >= REFRESH_MS || at < kept.at) {
       kept = (await this.readFrom(id, at)) ?? kept;
     }
     if (!kept || at - kept.at > STALE_MS) return null;
