@@ -2767,30 +2767,20 @@
         }
       }
     },
-    "/api/planner/scripts": {
+    "/api/planner/scripts/check": {
       "post": {
         "tags": [
           "planner"
         ],
-        "summary": "Keep a fight's script, from a cactbot timeline (needs x-refresh-key)",
+        "summary": "Which fights have no script yet (needs x-refresh-key)",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewScript"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "What was kept.",
+            "description": "The scripts kept.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScriptStoredResponse"
+                  "$ref": "#/components/schemas/ScriptsCheckResponse"
                 }
               }
             }
@@ -2808,20 +2798,20 @@
         }
       }
     },
-    "/api/planner/scripts/check": {
+    "/api/planner/scripts/sync": {
       "post": {
         "tags": [
           "planner"
         ],
-        "summary": "Which fights have no script yet (needs x-refresh-key)",
+        "summary": "Read cactbot's latest timelines now, a few files a call (needs x-refresh-key)",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The scripts kept.",
+            "description": "Where the copy stands.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScriptsCheckResponse"
+                  "$ref": "#/components/schemas/ScriptsSyncResponse"
                 }
               }
             }
@@ -4515,36 +4505,6 @@
           }
         },
         "required": [
-          "text"
-        ]
-      },
-      "NewScript": {
-        "type": "object",
-        "properties": {
-          "commit": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{40}$"
-          },
-          "path": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "zone": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 90000
-          }
-        },
-        "required": [
-          "commit",
-          "path",
-          "zone",
           "text"
         ]
       },
@@ -10314,33 +10274,37 @@
         ],
         "additionalProperties": false
       },
-      "ScriptStoredResponse": {
+      "ScriptsSyncResponse": {
         "type": "object",
         "properties": {
-          "zone": {
+          "busy": {
+            "type": "boolean"
+          },
+          "commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pending": {
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "title": {
-            "type": "string"
-          },
-          "mechanicCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "enrageCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
+          "kept": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
           }
         },
         "required": [
-          "zone",
-          "title",
-          "mechanicCount",
-          "enrageCount"
+          "busy",
+          "commit",
+          "pending",
+          "kept"
         ],
         "additionalProperties": false
       },

@@ -58,6 +58,7 @@ function createApp(
     venues = url => fetch(url),
     events = url => fetch(url),
     fflogs = {settings: config.fflogs, fetch: (url, init) => fetch(url, init)},
+    cactbot = (url, init) => fetch(url, init),
     turnstile = config.turnstile,
     leakedPasswords,
     uploadStorageBytes = config.uploadStorageBytes,
@@ -305,18 +306,19 @@ function createApp(
   // The fight planner: the FFLogs reports it plans from. Still being
   // built, so only where it's switched on.
   if (features.includes('planner')) {
-    app.use(
-      '/api',
-      ...plannerRoutes({
-        auth,
-        db,
-        ...fflogs,
-        duties: dutiesService,
-        xivapi: httpGet,
-        refreshKey: config.dutiesRefreshKey,
-        now,
-      }),
-    );
+    const planner = plannerRoutes({
+      auth,
+      db,
+      ...fflogs,
+      duties: dutiesService,
+      xivapi: httpGet,
+      refreshKey: config.dutiesRefreshKey,
+      cactbot,
+      now,
+    });
+    app.use('/api', ...planner.routers);
+    // Kept as cactbot has them, on the cron trigger.
+    if (jobs) jobs.readScripts = planner.readScripts;
   }
 
   app.use('/api', roulettePostsRouter);

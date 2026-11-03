@@ -144,7 +144,8 @@ export default {
 
   // The cron trigger (wrangler.jsonc): shared Party Finder listings that
   // ended are told to their sharers, and in the Discord; the relayed
-  // Discord channels are read again.
+  // Discord channels are read again; the fight planner's scripts follow
+  // cactbot.
   async scheduled(_controller: unknown, _env: unknown, ctx: Context) {
     ctx.waitUntil(
       (jobs.checkSharedListings?.() ?? Promise.resolve()).catch(error =>
@@ -152,6 +153,11 @@ export default {
       ),
     );
     ctx.waitUntil(jobs.readRelays?.() ?? Promise.resolve());
+    ctx.waitUntil(
+      (jobs.readScripts?.() ?? Promise.resolve()).catch(error =>
+        console.error('Fight scripts: reading cactbot failed', error),
+      ),
+    );
   },
 };
 

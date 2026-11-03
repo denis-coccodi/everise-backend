@@ -11,6 +11,7 @@ import {ReportsService} from './reports-service';
 import {ClearsService} from './clears-service';
 import {ScriptsRouter} from './scripts/scripts-router';
 import {ScriptsService} from './scripts/scripts-service';
+import {CactbotFetch, ScriptsSync} from './scripts/scripts-sync';
 import {FflogsSettings} from './fflogs-model';
 import {FightKinds} from './fight-report-model';
 
@@ -35,9 +36,14 @@ interface PlannerParts {
   // key, which rebuilds it.
   xivapi: CatalogGet;
   refreshKey?: string;
+  // How the fights' scripts reach cactbot on GitHub; without it (local
+  // runs) they're never read.
+  cactbot?: CactbotFetch;
   now: () => Date;
 }
 
+// The planner's routes, and its job for the cron trigger: keeping the
+// fights' scripts as cactbot has them (none without `cactbot`).
 function plannerRoutes(parts: PlannerParts) {
   const client = new FflogsClient(parts.settings, parts.fetch, parts.now);
   const reports = new ReportsService(
@@ -55,18 +61,24 @@ function plannerRoutes(parts: PlannerParts) {
     () => parts.duties.fightKinds(),
     parts.now,
   );
-  return [
-    new PlannerRouter(
-      parts.auth,
-      reports,
-      pulls,
-      new GuestLookups(parts.db, parts.now),
-      new ClearsService(parts.db, client, reports, parts.now),
-      scripts,
-    ).router,
-    new CatalogRouter(catalog, parts.refreshKey).router,
-    new ScriptsRouter(scripts, parts.refreshKey).router,
-  ];
+  const sync =
+    parts.cactbot &&
+    new ScriptsSync(parts.db, scripts, parts.cactbot, parts.now);
+  return {
+    routers: [
+      new PlannerRouter(
+        parts.auth,
+        reports,
+        pulls,
+        new GuestLookups(parts.db, parts.now),
+        new ClearsService(parts.db, client, reports, parts.now),
+        scripts,
+      ).router,
+      new CatalogRouter(catalog, parts.refreshKey).router,
+      new ScriptsRouter(scripts, sync, parts.refreshKey).router,
+    ],
+    readScripts: sync && (async () => void (await sync.sync())),
+  };
 }
 
 export {plannerRoutes};

@@ -1,10 +1,6 @@
 import {z} from 'zod';
-import {requestSchema, responseSchema} from '../../api';
+import {responseSchema} from '../../api';
 import {PULL_KINDS} from '../fight-report';
-
-// The longest timeline file taken (the largest today is 43,000 characters),
-// within the API's 100 KB request bodies.
-const MAX_TIMELINE_LENGTH = 90_000;
 
 const ScriptMechanic = z.strictObject({
   // ms on the timeline's own clock (a typical group's).
@@ -35,32 +31,16 @@ const FightScriptResponse = responseSchema(
   }),
 );
 
-const NewScript = requestSchema(
-  'NewScript',
-  z.object({
-    // Cactbot's commit the file was read at, and its path there.
-    commit: z
-      .string()
-      .regex(/^[0-9a-f]{40}$/, {error: 'Give the full 40-character commit.'}),
-    path: z.string().min(1).max(200),
-    // The game zone (TerritoryType id) the file is for.
-    zone: z.number().int().positive(),
-    text: z
-      .string()
-      .min(1)
-      .max(MAX_TIMELINE_LENGTH, {
-        error: `Keep a timeline to ${MAX_TIMELINE_LENGTH} characters.`,
-      }),
-  }),
-);
-
-const ScriptStoredResponse = responseSchema(
-  'ScriptStoredResponse',
+const ScriptsSyncResponse = responseSchema(
+  'ScriptsSyncResponse',
   z.strictObject({
-    zone: z.number().int(),
-    title: z.string(),
-    mechanicCount: z.number().int(),
-    enrageCount: z.number().int(),
+    // Another run was going on: nothing was done this time.
+    busy: z.boolean(),
+    // Cactbot's commit the copy follows; null before its first run.
+    commit: z.string().nullable(),
+    // Files still to read, and the zones whose scripts this run kept.
+    pending: z.number().int(),
+    kept: z.array(z.number().int()),
   }),
 );
 
@@ -76,10 +56,4 @@ const ScriptsCheckResponse = responseSchema(
   }),
 );
 
-export {
-  FightScriptResponse,
-  MAX_TIMELINE_LENGTH,
-  NewScript,
-  ScriptStoredResponse,
-  ScriptsCheckResponse,
-};
+export {FightScriptResponse, ScriptsCheckResponse, ScriptsSyncResponse};
