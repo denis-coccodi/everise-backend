@@ -63,10 +63,13 @@ class VenuesBoard {
     return snapshot ? snapshot.entries.filter(isShown) : null;
   }
 
-  // The data centre's venues as last read, read again when it's time.
+  // The data centre's venues as last read, read again when it's time, or
+  // when the clock reads before the last read (a clock set back): that
+  // read's week isn't this one.
   private async snapshotOf(dataCentre: VenueDataCentre) {
     const attempted = this.attemptedAt.get(dataCentre) ?? -Infinity;
-    if (this.now().getTime() - attempted >= REFRESH_MS) {
+    const since = this.now().getTime() - attempted;
+    if (since >= REFRESH_MS || since < 0) {
       await this.refresh(dataCentre);
     } else {
       await this.reading.get(dataCentre);

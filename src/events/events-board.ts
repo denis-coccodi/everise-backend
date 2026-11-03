@@ -31,9 +31,11 @@ class EventsBoard {
     private readonly now: () => Date,
   ) {}
 
-  // Null while Partake can't be reached.
+  // Null while Partake can't be reached. Read again when it's time, or
+  // when the clock reads before the last read (a clock set back).
   async events(): Promise<EventList | null> {
-    if (this.now().getTime() - this.attemptedAt >= REFRESH_MS) {
+    const since = this.now().getTime() - this.attemptedAt;
+    if (since >= REFRESH_MS || since < 0) {
       await this.refresh();
     } else {
       await this.reading;
