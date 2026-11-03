@@ -1,11 +1,20 @@
 import 'jest-extended';
 import request from 'supertest';
-import {app, clearDb, clock, fflogs, fflogsReport, usersClient} from '../utils';
+import {
+  app,
+  cactbot,
+  clearDb,
+  clock,
+  fflogs,
+  fflogsReport,
+  jobs,
+  usersClient,
+} from '../utils';
 import {refreshGameData} from '../utils/planner-game-data';
 
 const CODE = 'aBcD1234eFgH5678';
 const KEY = process.env.DUTIES_REFRESH_KEY!;
-const COMMIT = 'e79ea7f16093be5b80cda0e2d5bc8eb899d6fb4b';
+const DIR = 'ui/raidboss/data/07-dt';
 // The fake report's Savage pulls are fought here (M5S); its Extreme one in
 // 1243, an older zone.
 const SAVAGE_ZONE = 1257;
@@ -27,16 +36,29 @@ hideall "--sync--"
 ### Phase 2: Frogtourage
 100.0 "Hi-NRG Fever (enrage)" Ability { id: "A6F0", source: "Dancing Green" }
 `;
+// An older timeline, without a ZoneId line: its triggers name the zone.
+const OLD_TIMELINE = `### Sphene's Burden
+10.0 "Legitimate Force" Ability { id: "8F92", source: "Queen Eternal" }
+`;
 
-const store = (body: Record<string, unknown>, key: string | null = KEY) => {
-  const req = request(app).post('/api/planner/scripts');
-  return (key ? req.set('x-refresh-key', key) : req).send({
-    commit: COMMIT,
-    path: 'ui/raidboss/data/07-dt/raid/r5s.txt',
-    zone: SAVAGE_ZONE,
-    text: TIMELINE,
-    ...body,
-  });
+// Cactbot's repository: two fights, an older one, and files the planner
+// leaves out (a normal raid, an unreal trial).
+function repository() {
+  cactbot.files = {
+    [`${DIR}/raid/r5s.txt`]: TIMELINE,
+    [`${DIR}/raid/r5s.ts`]: 'export default {};',
+    [`${DIR}/raid/r5n.txt`]: TIMELINE.replace('1257', '1256'),
+    [`${DIR}/trial/queen-eternal-ex.txt`]: OLD_TIMELINE,
+    [`${DIR}/trial/queen-eternal-ex.ts`]:
+      'const triggerSet = {\n  zoneId: ZoneId.TheMinstrelsBalladSphenesBurden,\n};',
+    [`${DIR}/trial/byakko-un.txt`]: TIMELINE.replace('1257', '1300'),
+    'resources/zone_id.ts': `const data = {\n  'TheMinstrelsBalladSphenesBurden': ${EXTREME_ZONE},\n  'Other': 1,\n};`,
+  };
+}
+
+const sync = (key: string | null = KEY) => {
+  const req = request(app).post('/api/planner/scripts/sync');
+  return key ? req.set('x-refresh-key', key) : req;
 };
 const check = (key: string | null = KEY) => {
   const req = request(app).post('/api/planner/scripts/check');
@@ -49,11 +71,15 @@ const script = (pull: number | string = 3, auth = true) => {
   );
   return auth ? req.set('authorization', `Token ${token}`) : req;
 };
+const read = (path: string) =>
+  cactbot.requests.filter(url => url.endsWith(path)).length;
 
 beforeEach(async () => {
   await clearDb();
   fflogs.reset();
   fflogs.reports[CODE] = fflogsReport();
+  cactbot.reset();
+  repository();
   clock.now = new Date('2026-10-21T12:00:00Z');
   token = (await usersClient.registerRandomUser()).user.token;
   expect((await refreshGameData()).status).toBe(200);
@@ -63,48 +89,97 @@ afterAll(() => {
   clock.now = undefined;
 });
 
-describe('POST /api/planner/scripts', () => {
-  test('keeps a timeline as its zone’s script, and says what it has', async () => {
-    const response = await store({});
+describe('POST /api/planner/scripts/sync', () => {
+  test("keeps cactbot's Savage, Extreme and Ultimate timelines, the zone from an older file's triggers", async () => {
+    const response = await sync();
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      zone: SAVAGE_ZONE,
-      title: 'AAC CRUISERWEIGHT M1 (SAVAGE)',
-      mechanicCount: 4,
-      enrageCount: 1,
+      busy: false,
+      commit: cactbot.commit,
+      pending: 0,
+      kept: [SAVAGE_ZONE, EXTREME_ZONE],
     });
+    // The normal raid and the unreal trial aren't read.
+    expect(read('r5n.txt')).toBe(0);
+    expect(read('byakko-un.txt')).toBe(0);
+  });
+
+  test('reads a few files a call', async () => {
+    for (const n of [6, 7, 8]) {
+      cactbot.files[`${DIR}/raid/r${n}s.txt`] = TIMELINE.replace(
+        '1257',
+        String(1257 + n),
+      );
+    }
+
+    const first = await sync();
+    const second = await sync();
+
+    expect(first.body).toMatchObject({pending: 2});
+    expect(first.body.kept).toHaveLength(3);
+    expect(second.body).toMatchObject({pending: 0});
+    expect(second.body.kept).toHaveLength(2);
+  });
+
+  test('reads again only the files a new commit changed', async () => {
+    await sync();
+    cactbot.requests = [];
+    cactbot.commit = 'b'.repeat(40);
+    cactbot.files[`${DIR}/raid/r5s.txt`] = TIMELINE.replace(
+      'Deep Cut',
+      'Deeper Cut',
+    );
+
+    const response = await sync();
+
+    expect(response.body).toMatchObject({
+      commit: cactbot.commit,
+      kept: [SAVAGE_ZONE],
+    });
+    expect(read('queen-eternal-ex.txt')).toBe(0);
+    expect((await script()).body.script.mechanics[0].name).toBe('Deeper Cut');
+  });
+
+  test('tries a file that fails again, then gives it up', async () => {
+    cactbot.failing.add(`${DIR}/raid/r5s.txt`);
+
+    const runs = [];
+    for (let i = 0; i < 4; i++) runs.push((await sync()).body);
+
+    expect(runs.map(run => run.pending)).toEqual([1, 1, 0, 0]);
+    expect(read('r5s.txt')).toBe(3);
   });
 
   test.each([[null], ['not-the-key']])(
     'needs the refresh key (%s)',
     async key => {
-      const response = await store({}, key);
-
-      expect(response.status).toBe(401);
+      expect((await sync(key)).status).toBe(401);
     },
   );
+});
 
-  test('refuses a file that is no timeline, a short commit and an overlong file', async () => {
-    const notTimeline = await store({text: 'export default {};'});
-    const commit = await store({commit: 'e79ea7f'});
-    const long = await store({text: 'x'.repeat(90_001)});
+describe('the cron trigger', () => {
+  test("asks for cactbot's commit about once an hour, and nothing more while it's the same", async () => {
+    await jobs.readScripts?.();
+    cactbot.requests = [];
 
-    expect(notTimeline.status).toBe(422);
-    expect(notTimeline.body.errors.body[0]).toContain('has no mechanics');
-    expect(commit.status).toBe(422);
-    expect(commit.body.errors.body).toEqual([
-      'Give the full 40-character commit.',
-    ]);
-    expect(long.body.errors.body).toEqual([
-      'Keep a timeline to 90000 characters.',
+    clock.now = new Date('2026-10-21T12:30:00Z');
+    await jobs.readScripts?.();
+    expect(cactbot.requests).toEqual([]);
+
+    clock.now = new Date('2026-10-21T13:01:00Z');
+    await jobs.readScripts?.();
+    // Asked with its ETag: unchanged, so nothing is listed or read.
+    expect(cactbot.requests).toEqual([
+      'https://api.github.com/repos/OverlayPlugin/cactbot/commits/main',
     ]);
   });
 });
 
 describe('GET /api/planner/reports/:code/pulls/:pullId/script', () => {
   test("answers the pull's fight's mechanics, enrages and where they came from", async () => {
-    await store({});
+    await sync();
 
     const response = await script();
 
@@ -148,7 +223,7 @@ describe('GET /api/planner/reports/:code/pulls/:pullId/script', () => {
       ],
       enrageIds: [0xa6f0],
       ignoredIds: [0xa721, 0xa722],
-      source: {commit: COMMIT, path: 'ui/raidboss/data/07-dt/raid/r5s.txt'},
+      source: {commit: cactbot.commit, path: `${DIR}/raid/r5s.txt`},
     });
   });
 
@@ -160,15 +235,14 @@ describe('GET /api/planner/reports/:code/pulls/:pullId/script', () => {
   });
 
   test("refuses a pull the planner doesn't cover", async () => {
-    const response = await script(5);
-
-    expect(response.status).toBe(404);
+    expect((await script(5)).status).toBe(404);
   });
 });
 
 describe('POST /api/planner/scripts/check', () => {
   test('lists the fights newer than the newest with a script', async () => {
-    await store({zone: EXTREME_ZONE});
+    delete cactbot.files[`${DIR}/raid/r5s.txt`];
+    await sync();
 
     const response = await check();
 
@@ -181,7 +255,7 @@ describe('POST /api/planner/scripts/check', () => {
   });
 
   test('lists none once the newest fight has one, and needs the key', async () => {
-    await store({});
+    await sync();
 
     expect((await check()).body).toMatchObject({
       newestZone: SAVAGE_ZONE,

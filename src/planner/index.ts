@@ -8,3 +8,4 @@ export {
 } from './fight-report-model';
 export {plannerRoutes} from './planner-routes';
 export {PullSource} from './pull-source';
+export {CactbotFetch} from './scripts/scripts-sync';

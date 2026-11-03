@@ -1,20 +1,18 @@
 import * as express from 'express';
 import {route} from '../../api';
-import {UnauthorizedError} from '../../errors';
+import {UnauthorizedError, UnavailableError} from '../../errors';
 import {REFRESH_KEY_HEADER, isRefreshKey} from '../refresh-key';
-import {
-  NewScript,
-  ScriptStoredResponse,
-  ScriptsCheckResponse,
-} from './scripts-schemas';
+import {ScriptsCheckResponse, ScriptsSyncResponse} from './scripts-schemas';
 import {ScriptsService} from './scripts-service';
+import {ScriptsSync} from './scripts-sync';
 
-// The fights' scripts, sent by the game data refresh (with the duties'
-// key): one cactbot timeline file a request, then a check of which fights
-// have none yet.
+// The fights' scripts, for the game data refresh (with the duties' key):
+// a run of the cactbot sync now (it also runs on the cron trigger), and a
+// check of which fights have none yet.
 class ScriptsRouter {
   constructor(
     private readonly scripts: ScriptsService,
+    private readonly sync: ScriptsSync | undefined,
     private readonly refreshKey: string | undefined,
   ) {}
 
@@ -25,18 +23,29 @@ class ScriptsRouter {
       router,
       {
         method: 'post',
-        path: '/planner/scripts',
+        path: '/planner/scripts/sync',
         summary:
-          "Keep a fight's script, from a cactbot timeline (needs x-refresh-key)",
-        body: NewScript,
+          "Read cactbot's latest timelines now, a few files a call (needs x-refresh-key)",
         responses: {
-          200: {description: 'What was kept.', schema: ScriptStoredResponse},
+          200: {
+            description: 'Where the copy stands.',
+            schema: ScriptsSyncResponse,
+          },
         },
       },
       async (req, res) => {
         this.checkKey(req);
-        const {commit, path, zone, text} = req.body;
-        res.json(await this.scripts.store({commit, path}, zone, text));
+        if (!this.sync) {
+          throw new UnavailableError(
+            "The fight scripts can't reach GitHub here.",
+          );
+        }
+        const run = await this.sync.sync(true);
+        res.json(
+          run
+            ? {busy: false, ...run}
+            : {busy: true, commit: null, pending: 0, kept: []},
+        );
       },
     );
 

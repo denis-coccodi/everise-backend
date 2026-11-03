@@ -17,6 +17,7 @@ import {OAuthFetch} from '../../src/social-login';
 import {PwnedFetch} from '../../src/users';
 import {VenuesFetch} from '../../src/venues';
 import {CharacterModel, ModelMessage} from '../../src/waking-sands';
+import {FakeCactbot} from './fake-cactbot';
 import {FakeFflogs} from './fake-fflogs';
 import {FakeXivApi} from './fake-xivapi';
 import {SqliteStorage} from './sqlite-storage';
@@ -32,6 +33,7 @@ const xivApi = new FakeXivApi();
 
 // FFLogs, for the fight planner.
 const fflogs = new FakeFflogs();
+const cactbot = new FakeCactbot();
 
 // The app's clock. Tests that depend on the date set `clock.now`; undefined
 // means the real time.
@@ -436,6 +438,7 @@ const app = createApp(
       settings: {clientId: 'fflogs-client', clientSecret: 'fflogs-secret'},
       fetch: fflogs.fetch,
     },
+    cactbot: cactbot.fetch,
     leakedPasswords: pwnedFetch,
   },
 );
@@ -446,6 +449,7 @@ async function clearDb() {
 
 export {
   app,
+  cactbot,
   jobs,
   characters,
   clearDb,

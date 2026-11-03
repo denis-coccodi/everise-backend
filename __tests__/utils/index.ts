@@ -1,5 +1,6 @@
 export {
   app,
+  cactbot,
   characters,
   clearDb,
   clock,

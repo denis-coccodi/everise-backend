@@ -6,7 +6,7 @@ import {FileStore} from './files';
 import {GifFetch} from './media';
 import {MarketSource, UniversalisFetch} from './market';
 import {PartyFinderSource} from './party-finder';
-import {FflogsFetch, FflogsSettings, PullSource} from './planner';
+import {CactbotFetch, FflogsFetch, FflogsSettings, PullSource} from './planner';
 import {RelayFetch} from './relays';
 import {OAuthFetch, SocialLoginSettings} from './social-login';
 import {TurnstileFetch} from './turnstile';
@@ -20,6 +20,8 @@ interface AppJobs {
   checkSharedListings?: () => Promise<void>;
   // The relayed Discord channels read again.
   readRelays?: () => Promise<void>;
+  // The fight planner's scripts kept as cactbot has them.
+  readScripts?: () => Promise<void>;
 }
 
 // What createApp (src/app.ts) can be given instead of its defaults: the
@@ -70,6 +72,8 @@ interface AppOptions {
   // The fight planner's FFLogs API client, how the app reaches FFLogs, and
   // where pulls are read (in the Worker, a Durable Object).
   fflogs?: {settings: FflogsSettings; fetch: FflogsFetch; pulls?: PullSource};
+  // How the fight planner reaches cactbot on GitHub for the fights' scripts.
+  cactbot?: CactbotFetch;
   // The bot check (Cloudflare Turnstile): its secret, the site's hostnames,
   // and how the app reaches siteverify. Without a secret, nothing is checked.
   turnstile?: {
