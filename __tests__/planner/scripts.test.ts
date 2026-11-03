@@ -5,6 +5,7 @@ import {
   cactbot,
   clearDb,
   clock,
+  db,
   fflogs,
   fflogsReport,
   jobs,
@@ -103,6 +104,43 @@ describe('POST /api/planner/scripts/sync', () => {
     // The normal raid and the unreal trial aren't read.
     expect(read('r5n.txt')).toBe(0);
     expect(read('byakko-un.txt')).toBe(0);
+  });
+
+  test("keeps older expansions' fights too, which are played with today's jobs", async () => {
+    const data = 'ui/raidboss/data';
+    const at = (zone: number) => TIMELINE.replace('1257', String(zone));
+    cactbot.files = {
+      [`${data}/06-ew/raid/p1s.txt`]: at(1003),
+      [`${data}/06-ew/raid/p1n.txt`]: at(1002),
+      [`${data}/04-sb/ultimate/unending_coil_ultimate.txt`]: at(733),
+      [`${data}/02-arr/trial/ultima-ex.txt`]: at(1048),
+      [`${data}/02-arr/trial/titan-hm.txt`]: at(1047),
+      [`${data}/00-misc/test.txt`]: at(1),
+    };
+
+    const first = await sync();
+
+    expect(first.body).toMatchObject({pending: 0});
+    expect([...first.body.kept].sort((a, b) => a - b)).toEqual([
+      733, 1003, 1048,
+    ]);
+  });
+
+  test('lists cactbot again after the files it lists changed, its commit the same', async () => {
+    // Synced with the earlier listing (the latest expansion only).
+    await db.set('plannerScriptsSync', 'cactbot', {
+      commit: cactbot.commit,
+      etag: `"${cactbot.commit}"`,
+      listing: 1,
+      checkedAt: 0,
+      files: {},
+      pending: [],
+      until: 0,
+    });
+
+    const response = await sync();
+
+    expect(response.body.kept).toEqual([SAVAGE_ZONE, EXTREME_ZONE]);
   });
 
   test('reads a few files a call', async () => {
