@@ -135,7 +135,7 @@ class PlannerRouter {
       {
         method: 'get',
         path: '/planner/reports/:code/pulls/:pullId/script',
-        summary: "A pull's fight's mechanics, from cactbot's timeline",
+        summary: "A pull's fight's mechanics, from a community fight timeline",
         auth: this.auth.optional,
         params: PullParams,
         responses: {
