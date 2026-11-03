@@ -15,15 +15,15 @@ type CactbotFetch = (
 const REPO = 'OverlayPlugin/cactbot';
 const API = `https://api.github.com/repos/${REPO}`;
 const RAW = `https://raw.githubusercontent.com/${REPO}`;
-// The current expansion's timeline folders. The next expansion's (08-…)
-// goes here when it's out.
-const FOLDERS = [
-  'ui/raidboss/data/07-dt/raid',
-  'ui/raidboss/data/07-dt/trial',
-  'ui/raidboss/data/07-dt/ultimate',
-];
-// Of their files, the Savage, Extreme and Ultimate fights' timelines.
-const FIGHT_FILE = /\/(raid\/r\d+s|trial\/[^/]+-ex|ultimate\/[^/]+)\.txt$/;
+// Where cactbot keeps its timelines, a folder per expansion (02-arr ...
+// 07-dt; the next one's is picked up when it comes).
+const DATA = 'ui/raidboss/data';
+// Of their files, the Savage, Extreme and Ultimate fights' timelines, in
+// every expansion: older fights are played with today's jobs too. Savage
+// raids are a letter, a number and "s" (a1s, o1s, e1s, p1s, r1s); Extreme
+// trials end "-ex" (not "-hm" or "-un"); every Ultimate.
+const FIGHT_FILE =
+  /^0[1-9]-[a-z]+\/(raid\/[a-z]\d+s|trial\/[^/]+-ex|ultimate\/[^/]+)\.txt$/;
 // How often cactbot's latest commit is asked for; files are read a few a
 // run (each run is a Worker invocation, with few outbound requests).
 const CHECK_MS = 60 * 60 * 1000;
@@ -33,6 +33,10 @@ const MAX_ATTEMPTS = 3;
 const LEASE_MS = 90 * 1000;
 const SYNC = 'plannerScriptsSync';
 const SYNC_ID = 'cactbot';
+// Which files are listed. Raised whenever FIGHT_FILE changes, so the next
+// check lists cactbot again though its commit hasn't changed (2: every
+// expansion, not only the latest).
+const LISTING = 2;
 // GitHub's API wants a User-Agent; the version header pins its answers.
 const HEADERS = {
   'user-agent': 'everise-planner',
@@ -40,11 +44,13 @@ const HEADERS = {
 };
 
 // Where the copy of cactbot's timelines stands: the commit last listed
-// (and its ETag, so asking again costs nothing when it's unchanged), each
-// fight file's content hash as kept, and the files still to read.
+// (and its ETag, so asking again costs nothing when it's unchanged), by
+// which listing, each fight file's content hash as kept, and the files
+// still to read.
 interface SyncDoc extends Doc {
   commit?: string;
   etag?: string;
+  listing?: number;
   checkedAt?: number;
   files?: Record<string, string>;
   pending?: {path: string; sha: string; attempts: number}[];
@@ -93,7 +99,9 @@ class ScriptsSync {
     const head = await this.fetch(`${API}/commits/main`, {
       headers: {
         ...HEADERS,
-        ...(state.etag ? {'if-none-match': state.etag} : {}),
+        ...(state.etag && state.listing === LISTING
+          ? {'if-none-match': state.etag}
+          : {}),
       },
     });
     if (head.status === 304) return this.save({...state, checkedAt: now});
@@ -102,28 +110,27 @@ class ScriptsSync {
     const commit = String(
       (JSON.parse(await head.text()) as {sha?: unknown}).sha,
     );
+    // Every timeline folder in one listing (about 800 entries, 190 KB).
+    const response = await this.fetch(
+      `${API}/git/trees/${commit}:${DATA}?recursive=1`,
+      {headers: HEADERS},
+    );
+    if (!response.ok)
+      throw new Error(`GitHub answered ${response.status} for ${DATA}`);
+    const tree = JSON.parse(await response.text()) as {
+      truncated?: unknown;
+      tree?: {path?: unknown; sha?: unknown; type?: unknown}[];
+    };
+    if (tree.truncated) throw new Error(`GitHub cut the listing of ${DATA}`);
     const listed: {path: string; sha: string}[] = [];
-    for (const folder of FOLDERS) {
-      const response = await this.fetch(
-        `${API}/contents/${folder}?ref=${commit}`,
-        {
-          headers: HEADERS,
-        },
-      );
-      if (!response.ok)
-        throw new Error(`GitHub answered ${response.status} for ${folder}`);
-      const entries = JSON.parse(await response.text()) as {
-        path?: unknown;
-        sha?: unknown;
-      }[];
-      for (const {path, sha} of entries) {
-        if (
-          typeof path === 'string' &&
-          typeof sha === 'string' &&
-          FIGHT_FILE.test(path)
-        ) {
-          listed.push({path, sha});
-        }
+    for (const {path, sha, type} of tree.tree ?? []) {
+      if (
+        type === 'blob' &&
+        typeof path === 'string' &&
+        typeof sha === 'string' &&
+        FIGHT_FILE.test(path)
+      ) {
+        listed.push({path: `${DATA}/${path}`, sha});
       }
     }
     const files = state.files ?? {};
@@ -134,6 +141,7 @@ class ScriptsSync {
       ...state,
       commit,
       etag: head.headers.get('etag') ?? undefined,
+      listing: LISTING,
       checkedAt: now,
       pending,
     });
@@ -198,10 +206,11 @@ class ScriptsSync {
   }
 
   private async save(state: SyncDoc) {
-    const {commit, etag, checkedAt, files, pending, until} = state;
+    const {commit, etag, listing, checkedAt, files, pending, until} = state;
     await this.db.set(SYNC, SYNC_ID, {
       ...(commit ? {commit} : {}),
       ...(etag ? {etag} : {}),
+      listing: listing ?? 0,
       checkedAt: checkedAt ?? 0,
       files: files ?? {},
       pending: pending ?? [],

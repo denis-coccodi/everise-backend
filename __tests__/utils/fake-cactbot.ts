@@ -16,8 +16,9 @@ const answer = (
 });
 
 // Answers as GitHub does for cactbot's repository: its latest commit (with
-// an ETag; 304 when asked with it), a folder's listing (each file's content
-// hash), and a file's text at a commit. `failing` paths answer 500.
+// an ETag; 304 when asked with it), a folder's tree at a commit (each
+// file's content hash), and a file's text at a commit. `failing` paths
+// answer 500.
 class FakeCactbot {
   commit = 'a'.repeat(40);
   files: Record<string, string> = {};
@@ -38,16 +39,19 @@ class FakeCactbot {
       if (init?.headers?.['if-none-match'] === etag) return answer(304);
       return answer(200, JSON.stringify({sha: this.commit}), {etag});
     }
-    const listing = new RegExp(`^${API}/contents/(.+)\\?ref=(\\w+)$`).exec(url);
-    if (listing) {
+    const tree = new RegExp(
+      `^${API}/git/trees/(\\w+):(.+)\\?recursive=1$`,
+    ).exec(url);
+    if (tree) {
+      const folder = `${tree[2]}/`;
       const entries = Object.entries(this.files)
-        .filter(([path]) => path.slice(0, path.lastIndexOf('/')) === listing[1])
+        .filter(([path]) => path.startsWith(folder))
         .map(([path, text]) => ({
-          path,
-          name: path.slice(path.lastIndexOf('/') + 1),
+          path: path.slice(folder.length),
+          type: 'blob',
           sha: createHash('sha1').update(text).digest('hex'),
         }));
-      return answer(200, JSON.stringify(entries));
+      return answer(200, JSON.stringify({tree: entries, truncated: false}));
     }
     const prefix = `${RAW}/${this.commit}/`;
     if (url.startsWith(prefix)) {
