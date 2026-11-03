@@ -15,6 +15,8 @@ type BeforeRead = () => Promise<void>;
 const REFRESH_MS = 2 * 60 * 1000;
 // A report that ended this long before it was read won't change any more.
 const FINISHED_MS = 60 * 60 * 1000;
+const NOT_COVERED =
+  "That pull isn't in this report, or isn't an Extreme, Savage or Ultimate fight. Pick one from the report's pulls.";
 // How reports are read from FFLogs. Raised whenever that changes, so the
 // reports kept before are read again.
 const READ_VERSION = 3;
@@ -68,11 +70,7 @@ class ReportsService {
   ): Promise<{input: PullInput; finished: boolean}> {
     const report = await this.report(code, beforeRead);
     const pull = report.pulls.find(p => p.id === pullId);
-    if (!pull) {
-      throw new NotFoundError(
-        "That pull isn't in this report, or isn't an Extreme, Savage or Ultimate fight. Pick one from the report's pulls.",
-      );
-    }
+    if (!pull) throw new NotFoundError(NOT_COVERED);
     const inPull = new Set(pull.playerIds);
     return {
       input: {
@@ -84,6 +82,17 @@ class ReportsService {
       finished:
         this.now().getTime() - Date.parse(report.endedAt) >= FINISHED_MS,
     };
+  }
+
+  // Where one of the report's covered pulls was fought: the game
+  // territory, null when the log doesn't say.
+  async territory(code: string, pullId: number, beforeRead?: BeforeRead) {
+    const report = await this.report(code, beforeRead);
+    if (!report.pulls.some(p => p.id === pullId)) {
+      throw new NotFoundError(NOT_COVERED);
+    }
+    const logged = await this.logged(code, beforeRead);
+    return logged.pulls.find(p => p.id === pullId)?.territory ?? null;
   }
 
   private async logged(code: string, beforeRead?: BeforeRead) {

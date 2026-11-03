@@ -11,6 +11,8 @@ import {ClearsService} from './clears-service';
 import {PullSource} from './pull-source';
 import {GuestLookups} from './guest-lookups';
 import {ReportsService} from './reports-service';
+import {FightScriptResponse} from './scripts/scripts-schemas';
+import {ScriptsService} from './scripts/scripts-service';
 
 // The fight planner: the FFLogs reports it plans from, for everyone. Each
 // new report or pull spends the site's FFLogs points, so guests may only
@@ -23,6 +25,7 @@ class PlannerRouter {
     private readonly pulls: PullSource,
     private readonly guests: GuestLookups,
     private readonly clears: ClearsService,
+    private readonly scripts: ScriptsService,
   ) {}
 
   get router() {
@@ -117,6 +120,35 @@ class PlannerRouter {
         const {code, pullId} = req.params;
         res.json({
           clears: await this.clears.clears(
+            code,
+            pullId,
+            this.guestRead(req, 'report'),
+          ),
+        });
+      },
+    );
+
+    // The pull's fight's script (cactbot's timeline): its mechanics and
+    // enrages, for the part of a wipe it never reached.
+    route(
+      router,
+      {
+        method: 'get',
+        path: '/planner/reports/:code/pulls/:pullId/script',
+        summary: "A pull's fight's mechanics, from cactbot's timeline",
+        auth: this.auth.optional,
+        params: PullParams,
+        responses: {
+          200: {
+            description: 'The script, or none.',
+            schema: FightScriptResponse,
+          },
+        },
+      },
+      async (req, res) => {
+        const {code, pullId} = req.params;
+        res.json({
+          script: await this.scripts.forPull(
             code,
             pullId,
             this.guestRead(req, 'report'),

@@ -6,8 +6,9 @@ name: Refresh game data from XIVAPI
 # image the site shows from it: duty banners and type icons, job, role and
 # Party Finder icons (POST /api/duties/refresh/images, a batch per call),
 # and builds the fight planner's action catalog again (POST
-# /api/planner/catalog/refresh), warning of actions whose tooltip changed.
-# Nothing is deployed.
+# /api/planner/catalog/refresh), warning of actions whose tooltip changed,
+# then sends it cactbot's fight timelines (POST /api/planner/scripts),
+# warning of fights that have none yet. Nothing is deployed.
 #
 # Needs a DUTIES_REFRESH_KEY secret in each GitHub environment (staging,
 # production), equal to the Worker secret of the same name:
@@ -42,6 +43,9 @@ jobs:
           # Staging is behind Cloudflare Access; this service token lets CI through.
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          # For listing cactbot's public files (GitHub's API limits anonymous
+          # callers); it needs no permissions.
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$DUTIES_REFRESH_KEY" ]; then
             echo "::error::DUTIES_REFRESH_KEY is not set in the $TARGET environment's secrets."
@@ -117,6 +121,54 @@ jobs:
           fi
           jq -r '.changed[] | "::warning::Fight planner action \(.name) (\(.id)): its tooltip no longer has \(.missing | join(", ")). Check its effects in src/planner/catalog."' catalog.json
 
+          # 4. The fights' scripts: cactbot's raidboss timelines of the
+          #    Dawntrail Savage, Extreme and Ultimate fights, read at its
+          #    latest commit, a file a call (POST /api/planner/scripts), then
+          #    a check of the fights newer than the newest with one. Cactbot
+          #    can be a month or two behind a new fight; the planner then
+          #    completes wipes from other groups' kills alone.
+          planner=$status
+          kept=0
+          if [ "$planner" != 404 ]; then
+            repo=OverlayPlugin/cactbot
+            dir=ui/raidboss/data/07-dt
+            raw() { curl -sfL "https://raw.githubusercontent.com/$repo/$commit/$1"; }
+            commit=$(gh api "repos/$repo/commits/main" --jq .sha)
+            zone_ids=$(raw resources/zone_id.ts)
+            for sub in raid trial ultimate; do
+              for name in $(gh api "repos/$repo/contents/$dir/$sub?ref=$commit" --jq '.[].name'); do
+                case "$sub/$name" in
+                  raid/r*s.txt | trial/*-ex.txt | ultimate/*.txt) ;;
+                  *) continue ;;
+                esac
+                raw "$dir/$sub/$name" > timeline.txt
+                # Its zone: the file's own header, or else its triggers'
+                # ZoneId name looked up in cactbot's zone list.
+                zone=$(sed -n 's/^# *ZoneId: *\([0-9]*\).*/\1/p' timeline.txt | head -1)
+                if [ -z "$zone" ]; then
+                  zone_name=$(raw "$dir/$sub/${name%.txt}.ts" | sed -n 's/.*zoneId: *ZoneId\.\([A-Za-z0-9]*\).*/\1/p' | head -1)
+                  zone=$(printf '%s\n' "$zone_ids" | sed -n "s/^ *'$zone_name': *\([0-9]*\),.*/\1/p" | head -1)
+                fi
+                if [ -z "$zone" ]; then
+                  echo "::warning::No zone found for cactbot's $sub/$name: not kept."
+                  continue
+                fi
+                jq -n --arg commit "$commit" --arg path "$dir/$sub/$name" --argjson zone "$zone" --rawfile text timeline.txt \
+                  '{commit: $commit, path: $path, zone: $zone, text: $text}' > script.json
+                code=$(post /api/planner/scripts "$@" -H 'content-type: application/json' --data @script.json)
+                if [ "$code" = 200 ]; then
+                  kept=$((kept + 1))
+                else
+                  echo "::warning::Cactbot's $sub/$name wasn't kept (HTTP $code): $(jq -c '.errors.body' response.json 2>/dev/null)"
+                fi
+              done
+            done
+            code=$(post /api/planner/scripts/check "$@")
+            fail_on "$code" "Scripts check"
+            cp response.json scripts.json
+            jq -r '.missing[] | "::warning::No cactbot timeline yet for the \(.kind) fight in game zone \(.zone): the planner completes its wipes from other groups'"'"' kills alone."' scripts.json
+          fi
+
           {
             echo "Refreshed **$TARGET** ($url):"
             echo
@@ -124,10 +176,12 @@ jobs:
             jq -r '.groups[] | "  - \(.name): \(.count)"' refresh.json
             jq -r '"- \(.total - (.failed | length)) of \(.total) images downloaded"' images.json
             if [ -n "$failed" ]; then echo "  - Not on XIVAPI: $failed"; fi
-            if [ "$status" = 404 ]; then
+            if [ "$planner" = 404 ]; then
               echo "- Fight planner: switched off"
             else
               jq -r '"- Fight planner catalog: \(.actionCount) actions, \(.effectCount) with heals or mitigations, \(.changed | length) to check"' catalog.json
               jq -r '.changed[] | "  - \(.name) (\(.id)): \(.missing | join(", "))"' catalog.json
+              echo "- Fight scripts from cactbot ($commit): $kept files kept"
+              jq -r '.missing[] | "  - No timeline yet: the \(.kind) fight in game zone \(.zone)"' scripts.json
             fi
           } >> "$GITHUB_STEP_SUMMARY"
