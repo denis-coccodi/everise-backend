@@ -9,6 +9,8 @@ import {PlannerRouter} from './planner-router';
 import {LocalPulls, PullSource} from './pull-source';
 import {ReportsService} from './reports-service';
 import {ClearsService} from './clears-service';
+import {ScriptsRouter} from './scripts/scripts-router';
+import {ScriptsService} from './scripts/scripts-service';
 import {FflogsSettings} from './fflogs-model';
 import {FightKinds} from './fight-report-model';
 
@@ -47,6 +49,12 @@ function plannerRoutes(parts: PlannerParts) {
   );
   const pulls = parts.pulls ?? new LocalPulls(client);
   const catalog = new CatalogService(parts.db, parts.xivapi, parts.now);
+  const scripts = new ScriptsService(
+    parts.db,
+    reports,
+    () => parts.duties.fightKinds(),
+    parts.now,
+  );
   return [
     new PlannerRouter(
       parts.auth,
@@ -54,8 +62,10 @@ function plannerRoutes(parts: PlannerParts) {
       pulls,
       new GuestLookups(parts.db, parts.now),
       new ClearsService(parts.db, client, reports, parts.now),
+      scripts,
     ).router,
     new CatalogRouter(catalog, parts.refreshKey).router,
+    new ScriptsRouter(scripts, parts.refreshKey).router,
   ];
 }
 
