@@ -20,6 +20,10 @@ const MP_EFFECTS: EffectEntry[] = [
   },
   mp(3571, 5), // Assize
   mp(166, 20), // Aetherflow
+  // The Astrologian's draws: "Additional Effect: Restores 20% of maximum MP".
+  // Umbral Draw replaces Astral Draw on the hotbar, so is read for this.
+  mp(37017, 20), // Astral Draw
+  mp(37018, 20), // Umbral Draw
   // The Addersgall heals.
   mp(24296, 7), // Druochole
   mp(24298, 7), // Kerachole
