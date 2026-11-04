@@ -335,6 +335,21 @@ describe('the effect tables', () => {
     }
   });
 
+  test("give back the MP the healers' resources restore, the Astrologian's draws too", () => {
+    const mpOf = (id: number) =>
+      ENTRIES.find(entry => entry.id === id)
+        ?.effects.filter(e => e.kind === 'mp')
+        .map(e => e.percent);
+
+    // Aetherflow, Assize, Astral Draw, Umbral Draw.
+    expect([166, 3571, 37017, 37018].map(mpOf)).toEqual([
+      [20],
+      [5],
+      [20],
+      [20],
+    ]);
+  });
+
   test('list each action once', () => {
     const ids = ENTRIES.map(entry => entry.id);
 
