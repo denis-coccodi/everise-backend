@@ -145,6 +145,11 @@ const PullTimelineResponse = responseSchema(
         source: int.nullable(),
       }),
     ),
+    // Where each phase began, as FFLogs names them: an Ultimate's (none
+    // for fights without phases).
+    phases: z.array(
+      z.strictObject({at, name: z.string(), intermission: z.boolean()}),
+    ),
   }),
 );
 

@@ -8,6 +8,10 @@ interface FakePull {
   actors: Record<string, unknown>[];
   abilities: {gameID: number; name: string; type?: number}[];
   events: Record<string, Record<string, unknown>[]>;
+  // An Ultimate's: where its phases began, and the names FFLogs gives them.
+  encounterID?: number;
+  phaseTransitions?: {id: number; startTime: number}[];
+  phaseNames?: {id: number; name: string; isIntermission: boolean}[];
 }
 
 // FFLogs' v2 API: `reports` by code (as its GraphQL sends them; a code in
@@ -110,6 +114,9 @@ class FakeFflogs {
     const page: Record<string, unknown> = {};
     if (query.includes('fights(')) {
       page.fights = pull ? [{id: variables.pull, ...pull}] : [];
+      page.phases = pull?.phaseNames
+        ? [{encounterID: pull.encounterID, phases: pull.phaseNames}]
+        : [];
       page.masterData = {
         actors: pull?.actors ?? [],
         abilities: pull?.abilities ?? [],

@@ -129,6 +129,28 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
     ]);
   });
 
+  test("gives an Ultimate's phases where they began, as FFLogs names them, and other fights none", async () => {
+    expect((await load()).body.phases).toEqual([]);
+
+    // Pulled at 600,000; P2 from 2:27.5. FFLogs names phase 1 only.
+    fflogs.pulls[`${CODE}:3`] = {
+      ...fflogsPull(),
+      encounterID: 1079,
+      phaseTransitions: [
+        {id: 1, startTime: 600_000},
+        {id: 2, startTime: 747_500},
+      ],
+      phaseNames: [{id: 1, name: 'P1: Fatebreaker', isIntermission: false}],
+    };
+    await clearDb();
+    token = (await usersClient.registerRandomUser()).user.token;
+
+    expect((await load()).body.phases).toEqual([
+      {at: 0, name: 'P1: Fatebreaker', intermission: false},
+      {at: 147_500, name: 'Phase 2', intermission: false},
+    ]);
+  });
+
   test('reads physical, magic and unique damage from the ability types', async () => {
     const pull = fflogsPull();
     pull.abilities.push(

@@ -224,6 +224,7 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       action: orNull(event.killingAbilityGameID),
       source: orNull(event.killerID),
     })),
+    phases: data.phases,
   };
   return {...timeline, ...names(timeline, data.abilities)};
 }
