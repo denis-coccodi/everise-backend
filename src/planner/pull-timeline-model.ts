@@ -129,6 +129,15 @@ interface PullTimeline {
   enemyCasts: Cast[];
   auras: StatusSpan[];
   deaths: Death[];
+  // Where each phase began, for fights FFLogs splits into phases (the
+  // Ultimates); none for the others.
+  phases: TimelinePhase[];
+}
+
+interface TimelinePhase {
+  at: number;
+  name: string;
+  intermission: boolean;
 }
 
 // A status on someone (a player, or an enemy for debuffs such as
@@ -182,5 +191,6 @@ export {
   PullTimeline,
   StatusSpan,
   TimelineEnemy,
+  TimelinePhase,
   TimelinePlayer,
 };

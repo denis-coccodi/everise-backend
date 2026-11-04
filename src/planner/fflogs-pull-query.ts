@@ -45,7 +45,8 @@ const eventsField = (kind: EventKind) =>
 const FIRST_QUERY = `query Pull($code: String!, $pull: Int!, $start: Float, $end: Float) {
   reportData {
     report(code: $code) {
-      fights(fightIDs: [$pull]) { id startTime endTime }
+      fights(fightIDs: [$pull]) { id encounterID startTime endTime phaseTransitions { id startTime } }
+      phases { encounterID phases { id name isIntermission } }
       masterData {
         actors { id name type subType server petOwner }
         abilities { gameID name type }
@@ -60,8 +61,23 @@ const pageQuery = (kind: EventKind) =>
   reportData { report(code: $code) { ${eventsField(kind)} } }
 }`;
 
+interface FflogsFight {
+  encounterID?: number;
+  startTime: number;
+  endTime: number;
+  phaseTransitions?: {id: number; startTime: number}[] | null;
+}
+
+// The phases FFLogs names for an encounter (an Ultimate's; a Savage fight
+// has none).
+interface EncounterPhases {
+  encounterID: number;
+  phases: {id: number; name: string; isIntermission?: boolean | null}[];
+}
+
 type ReportData = Record<string, unknown> & {
-  fights?: {startTime: number; endTime: number}[];
+  fights?: FflogsFight[];
+  phases?: EncounterPhases[] | null;
   masterData?: {
     actors?: FflogsPullActor[];
     abilities?: {gameID: number; name: string}[];
@@ -111,10 +127,26 @@ async function readPull(
   return {
     startTime: fight.startTime,
     endTime: fight.endTime,
+    phases: phasesOf(fight, first.phases ?? []),
     actors: first.masterData?.actors ?? [],
     abilities: first.masterData?.abilities ?? [],
     events,
   };
+}
+
+// Where each of the pull's phases began (ms from its start), by the names
+// FFLogs gives the encounter's phases; none for a fight without phases.
+function phasesOf(fight: FflogsFight, named: EncounterPhases[]) {
+  const names =
+    named.find(e => e.encounterID === fight.encounterID)?.phases ?? [];
+  return (fight.phaseTransitions ?? []).map(transition => {
+    const phase = names.find(p => p.id === transition.id);
+    return {
+      at: Math.max(transition.startTime - fight.startTime, 0),
+      name: phase?.name ?? `Phase ${transition.id}`,
+      intermission: !!phase?.isIntermission,
+    };
+  });
 }
 
 export {EVENT_KINDS, readPull};

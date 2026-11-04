@@ -9586,6 +9586,31 @@
               ],
               "additionalProperties": false
             }
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "intermission": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "at",
+                "name",
+                "intermission"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -9603,7 +9628,8 @@
           "playerCasts",
           "enemyCasts",
           "auras",
-          "deaths"
+          "deaths",
+          "phases"
         ],
         "additionalProperties": false
       },
