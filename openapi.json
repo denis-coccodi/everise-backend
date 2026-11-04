@@ -3222,7 +3222,7 @@
         "tags": [
           "user"
         ],
-        "summary": "The signed-in user",
+        "summary": "The signed-in user, with the session renewed",
         "security": [
           {
             "token": []

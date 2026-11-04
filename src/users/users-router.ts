@@ -217,12 +217,15 @@ class UsersRouter {
       {
         method: 'get',
         path: '/user',
-        summary: 'The signed-in user',
+        summary: 'The signed-in user, with the session renewed',
         auth: this.auth.required,
         responses: signedIn,
       },
+      // The site asks on every visit, so the session lasts as long as it's
+      // used: it ends only after JWT_SECONDS_TO_EXPIRATION without a visit
+      // (or a password change, or "sign out everywhere").
       (req, res) => {
-        res.json(this.toDto(req.user!));
+        res.json(this.signIn(res, req.user!));
       },
     );
 
