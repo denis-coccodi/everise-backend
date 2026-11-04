@@ -3,6 +3,7 @@ import request from 'supertest';
 import {faker} from '@faker-js/faker';
 import {app} from '../utils/app';
 import {usersClient, jwt} from '../utils';
+import {config} from '../../src/config';
 
 describe('GET /api/user', () => {
   const getCurrentUserUrl = '/api/user';
@@ -33,6 +34,24 @@ describe('GET /api/user', () => {
         pendingEmail: null,
       },
     });
+  });
+
+  test('renews the session: a new cookie for as long again', async () => {
+    const user = await usersClient.registerRandomUser();
+
+    const response = await request(app)
+      .get(getCurrentUserUrl)
+      .set('Cookie', `token=${user.user.token}`)
+      .send();
+
+    expect(response.status).toBe(200);
+    const cookies = ([] as string[]).concat(
+      response.headers['set-cookie'] ?? [],
+    );
+    const session = cookies.find(c => c.startsWith('token='));
+    expect(session).toContain(`token=${response.body.user.token};`);
+    expect(session).toContain(`Max-Age=${config.jwt.secondsToExpiration};`);
+    expect(session).toContain('HttpOnly');
   });
 
   test('given no authorization header is set should return http status code 401 and an errors object', async () => {
