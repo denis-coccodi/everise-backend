@@ -9693,6 +9693,35 @@
               ],
               "additionalProperties": false
             }
+          },
+          "limitBreakGauge": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "value": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "bars": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "at",
+                "value",
+                "bars"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -9712,7 +9741,8 @@
           "auras",
           "deaths",
           "phases",
-          "downtime"
+          "downtime",
+          "limitBreakGauge"
         ],
         "additionalProperties": false
       },

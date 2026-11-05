@@ -152,6 +152,9 @@ const PullTimelineResponse = responseSchema(
     ),
     // When nothing could be targeted (an intermission).
     downtime: z.array(z.strictObject({from: at, to: at})),
+    // The party's Limit Break gauge where it changed: `value` of its `bars`
+    // bars, 10,000 a bar.
+    limitBreakGauge: z.array(z.strictObject({at, value: int, bars: int})),
   }),
 );
 
