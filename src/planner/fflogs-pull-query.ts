@@ -25,6 +25,8 @@ const EVENT_KINDS = {
   combatants: 'dataType: CombatantInfo, hostilityType: Friendlies',
   // When the boss and its adds became targetable or untargetable.
   targetability: `hostilityType: Enemies, filterExpression: "type = 'targetabilityupdate'"`,
+  // The party's Limit Break gauge, each time it changes.
+  limitBreak: `filterExpression: "type = 'limitbreakupdate'"`,
 } as const;
 
 // FFLogs' most per page; a Savage pull fits in one of each kind.

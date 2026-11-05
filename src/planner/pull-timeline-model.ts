@@ -135,11 +135,20 @@ interface PullTimeline {
   // When nothing could be targeted (an intermission): the only time a
   // player's GCDs may stop for the fight's sake.
   downtime: Downtime[];
+  // The party's Limit Break gauge where it changed.
+  limitBreakGauge: LimitBreakGauge[];
 }
 
 interface Downtime {
   from: number;
   to: number;
+}
+
+// The gauge from `at`: `value` of its `bars` bars, 10,000 a bar.
+interface LimitBreakGauge {
+  at: number;
+  value: number;
+  bars: number;
 }
 
 interface TimelinePhase {
@@ -192,6 +201,7 @@ export {
   Cast,
   DamageType,
   Downtime,
+  LimitBreakGauge,
   Death,
   Heal,
   Hit,

@@ -151,6 +151,33 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
     ]);
   });
 
+  test("gives the party's Limit Break gauge where it changed", async () => {
+    expect((await load()).body.limitBreakGauge).toEqual([]);
+
+    // Three bars, filling from the pull's start (600,000), spent at 4:00.
+    const pull = fflogsPull();
+    const gauge = (ms: number, value: number) => ({
+      timestamp: 600_000 + ms,
+      type: 'limitbreakupdate',
+      value,
+      bars: 3,
+    });
+    pull.events.limitBreak = [
+      gauge(2_000, 220),
+      gauge(200_000, 30_000),
+      gauge(240_000, 0),
+    ];
+    fflogs.pulls[`${CODE}:3`] = pull;
+    await clearDb();
+    token = (await usersClient.registerRandomUser()).user.token;
+
+    expect((await load()).body.limitBreakGauge).toEqual([
+      {at: 2_000, value: 220, bars: 3},
+      {at: 200_000, value: 30_000, bars: 3},
+      {at: 240_000, value: 0, bars: 3},
+    ]);
+  });
+
   test('gives the downtime, when nothing could be targeted, and none for a boss that never leaves', async () => {
     expect((await load()).body.downtime).toEqual([]);
 

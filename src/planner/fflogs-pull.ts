@@ -232,6 +232,13 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       durationMs,
       enemyActs([...events.enemyCasts, ...events.damage], at),
     ),
+    limitBreakGauge: ofType(events.limitBreak, 'limitbreakupdate').map(
+      event => ({
+        at: at(event),
+        value: num(event.value),
+        bars: num(event.bars),
+      }),
+    ),
   };
   return {...timeline, ...names(timeline, data.abilities)};
 }
