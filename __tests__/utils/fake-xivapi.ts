@@ -284,12 +284,16 @@ class FakeXivApi {
       };
     }
 
-    // The players' actions (IsPlayerAction), PAGE_SIZE a page; the next
-    // page is the same address with &cursor=<index>.
-    if (/\/search\?sheets=Action&/.test(url)) {
+    // The jobs' actions (+ClassJobLevel>0 -IsPvP=true) and traits
+    // (+Level>0), PAGE_SIZE a page; the next page is the same address with
+    // &cursor=<index>.
+    const searched = /\/search\?sheets=(Action|Trait)&/.exec(url)?.[1];
+    if (searched) {
       const from = Number(/&cursor=(\d+)/.exec(url)?.[1] ?? 0);
-      const all = (this.sheets.Action ?? []).filter(
-        row => row.fields.IsPlayerAction,
+      const all = (this.sheets[searched] ?? []).filter(row =>
+        searched === 'Action'
+          ? Number(row.fields.ClassJobLevel) > 0 && !row.fields.IsPvP
+          : Number(row.fields.Level) > 0,
       );
       const results = all.slice(from, from + PAGE_SIZE);
       const next = from + PAGE_SIZE < all.length ? from + PAGE_SIZE : null;

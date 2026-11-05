@@ -5121,6 +5121,60 @@
               "additionalProperties": false
             }
           },
+          "traits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "level": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "icon": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "level",
+                "icon",
+                "jobs",
+                "description"
+              ],
+              "additionalProperties": false
+            }
+          },
           "changed": {
             "type": "array",
             "items": {
@@ -5154,6 +5208,7 @@
           "dataVersion",
           "builtAt",
           "actions",
+          "traits",
           "changed"
         ],
         "additionalProperties": false

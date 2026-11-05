@@ -70,6 +70,17 @@ const ActionCatalogResponse = responseSchema(
     dataVersion: z.string(),
     builtAt: isoDate,
     actions: z.array(CatalogAction),
+    // Every trait of the combat jobs: what each job has at each level.
+    traits: z.array(
+      z.strictObject({
+        id: int,
+        name: z.string(),
+        level: int,
+        icon: int.nullable(),
+        jobs: z.array(z.string()),
+        description: z.string().nullable(),
+      }),
+    ),
     // Actions whose effects may be out of date after a patch.
     changed: z.array(TooltipChange),
   }),

@@ -66,6 +66,14 @@ beforeEach(async () => {
     action(22, 'Bulwark', 'PLD', {ClassJobLevel: 52, Recast100ms: 900}),
     // A crafter's: none of the planner's jobs.
     action(100001, 'Basic Synthesis', 'CRP'),
+    // What a combo turns Fell Cleave into: not flagged as a player action,
+    // yet a WAR GCD; and a duty's copy of it, with no level.
+    action(16465, 'Inner Chaos', 'WAR', {
+      IsPlayerAction: false,
+      ClassJobLevel: 80,
+      CooldownGroup: 58,
+    }),
+    action(17696, 'Inner Chaos', '', {IsPlayerAction: false, ClassJobLevel: 0}),
     // Replaces Diagnosis on the hotbar: not flagged as a player action. Its
     // MP comes under another cost type.
     action(24291, 'Eukrasian Diagnosis', 'SGE', {
@@ -87,6 +95,19 @@ beforeEach(async () => {
     row_id: id as number,
     fields: {Name: name, Level: level},
   }));
+  // A trait no table needs, listed for what each job has.
+  xivApi.sheets.Trait.push({
+    row_id: 318,
+    fields: {
+      Name: 'Nascent Chaos',
+      Level: 72,
+      'Icon@as(raw)': 2566,
+      ClassJobCategory: {row_id: 22, fields: {Name: 'WAR'}},
+    },
+  });
+  xivApi.sheets.TraitTransient = [
+    tooltip(318, 'Infuriate grants Nascent Chaos.'),
+  ];
   xivApi.sheets.Status = [
     [1191, 'Rampart'],
     [297, 'Galvanize'],
@@ -143,12 +164,12 @@ describe('POST /api/planner/catalog/refresh', () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       dataVersion: 'test-version',
-      actionCount: 8,
+      actionCount: 9,
       effectCount: 7,
     });
     expect(
       xivApi.requests.filter(url => url.includes('/search?sheets=Action')),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
   });
 
   test('lists actions whose tooltip lost a number of their effects', async () => {
@@ -227,8 +248,20 @@ describe('GET /api/planner/catalog', () => {
     const byId = new Map(
       response.body.actions.map((a: {id: number}) => [a.id, a]),
     );
+    // Inner Chaos too, a combo's GCD; not its duty copy.
     expect([...byId.keys()]).toEqual([
-      9, 22, 185, 188, 3570, 7531, 16230, 24291,
+      9, 22, 185, 188, 3570, 7531, 16230, 16465, 24291,
+    ]);
+    expect(byId.get(16465)).toMatchObject({jobs: ['WAR'], gcd: true});
+    expect(response.body.traits).toEqual([
+      {
+        id: 318,
+        name: 'Nascent Chaos',
+        level: 72,
+        icon: 2566,
+        jobs: ['WAR'],
+        description: 'Infuriate grants Nascent Chaos.',
+      },
     ]);
     expect(byId.get(7531)).toEqual({
       id: 7531,
