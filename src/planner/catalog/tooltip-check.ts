@@ -33,6 +33,13 @@ const NOT_IN_TOOLTIP: Record<number, string[]> = {
   7390: ['600'], // Delirium
   3623: ['600'], // Syphon Strike
   3643: ['600'], // Carve and Spit
+  // Limit Breaks: their statuses last less in logs than the tooltips say;
+  // the level 3 ones but Last Bastion have empty tooltips.
+  198: ['12s'], // Stronghold
+  199: ['8s'], // Last Bastion
+  4240: ['80%', '8s'], // Land Waker
+  4241: ['80%', '8s'], // Dark Force
+  17105: ['80%', '8s'], // Gunmetal Soul
 };
 
 function tooltipChanges(

@@ -1,5 +1,6 @@
 import {AST_SGE_EFFECTS} from './ast-sge-effects';
 import {DPS_EFFECTS} from './dps-effects';
+import {LIMIT_BREAK_EFFECTS} from './limit-breaks';
 import {MP_EFFECTS} from './mp-effects';
 import {TANK_EFFECTS} from './tank-effects';
 import {WHM_SCH_EFFECTS} from './whm-sch-effects';
@@ -13,6 +14,7 @@ const ENTRIES: EffectEntry[] = [
   ...WHM_SCH_EFFECTS,
   ...AST_SGE_EFFECTS,
   ...DPS_EFFECTS,
+  ...LIMIT_BREAK_EFFECTS,
 ].map(entry => {
   const mp = MP_EFFECTS.find(m => m.id === entry.id);
   return mp

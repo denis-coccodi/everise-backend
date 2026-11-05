@@ -52,6 +52,8 @@ interface CatalogAction {
   effects: ActionEffect[];
   // What it was before each trait that changes it, highest level first.
   traits: TraitChange[];
+  // A tank's Limit Break: never planned, kept where a group used it.
+  limitBreak?: true;
 }
 
 // An action below the level of a trait: its values without that trait (and

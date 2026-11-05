@@ -228,6 +228,47 @@ test('lists traits that changed, and tooltips with other charges', async () => {
   });
 });
 
+test("lists the tanks' Limit Breaks for their jobs, flagged, with their mitigation", async () => {
+  // All classes', as the game data has them; Land Waker's tooltip is empty.
+  xivApi.sheets.Action.push(
+    action(197, 'Shield Wall', 'All Classes', {ClassJobLevel: 0}),
+    action(4240, 'Land Waker', 'All Classes', {ClassJobLevel: 0}),
+  );
+  xivApi.sheets.ActionTransient.push(
+    tooltip(
+      197,
+      'Reduces damage taken by all party members by 20%.\nDuration: 10s',
+    ),
+  );
+  xivApi.sheets.Status.push(
+    {row_id: 194, fields: {Name: 'Shield Wall'}},
+    {row_id: 863, fields: {Name: 'Land Waker'}},
+  );
+
+  const response = await refresh();
+  const catalog = await request(app).get('/api/planner/catalog');
+
+  const byId = new Map(
+    catalog.body.actions.map((a: {id: number}) => [a.id, a]),
+  );
+  expect(byId.get(197)).toMatchObject({
+    jobs: ['PLD', 'WAR', 'DRK', 'GNB'],
+    limitBreak: true,
+    effects: [{kind: 'mitigation', target: 'party', percent: 20}],
+  });
+  expect(byId.get(4240)).toMatchObject({
+    jobs: ['WAR'],
+    limitBreak: true,
+    effects: [
+      {kind: 'mitigation', target: 'party', percent: 80, durationMs: 8_000},
+    ],
+  });
+  expect(byId.get(7531)).not.toHaveProperty('limitBreak');
+  const changed = response.body.changed.map((c: {id: number}) => c.id);
+  expect(changed).not.toContain(197);
+  expect(changed).not.toContain(4240);
+});
+
 describe('GET /api/planner/catalog', () => {
   test('says it is not ready before the first refresh', async () => {
     const response = await request(app).get('/api/planner/catalog');
