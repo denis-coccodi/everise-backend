@@ -23,6 +23,8 @@ const EVENT_KINDS = {
   enemyDebuffs: 'dataType: Debuffs, hostilityType: Enemies',
   deaths: 'dataType: Deaths, hostilityType: Friendlies',
   combatants: 'dataType: CombatantInfo, hostilityType: Friendlies',
+  // When the boss and its adds became targetable or untargetable.
+  targetability: `hostilityType: Enemies, filterExpression: "type = 'targetabilityupdate'"`,
 } as const;
 
 // FFLogs' most per page; a Savage pull fits in one of each kind.

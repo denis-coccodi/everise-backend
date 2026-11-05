@@ -151,6 +151,80 @@ describe('GET /api/planner/reports/:code/pulls/:pullId', () => {
     ]);
   });
 
+  test('gives the downtime, when nothing could be targeted, and none for a boss that never leaves', async () => {
+    expect((await load()).body.downtime).toEqual([]);
+
+    // The pull starts at 600,000: the boss (13) leaves at 1:00, its add
+    // (14) can be targeted from 1:20 to 1:30, the boss is back at 1:45.
+    const pull = fflogsPull();
+    const change = (ms: number, targetID: number, targetable: boolean) => ({
+      timestamp: 600_000 + ms,
+      type: 'targetabilityupdate',
+      sourceID: targetID,
+      targetID,
+      targetable: targetable ? 1 : 0,
+    });
+    pull.events.targetability = [
+      change(60_000, 13, false),
+      change(80_000, 14, true),
+      change(90_000, 14, false),
+      change(105_000, 13, true),
+    ];
+    fflogs.pulls[`${CODE}:3`] = pull;
+    await clearDb();
+    token = (await usersClient.registerRandomUser()).user.token;
+
+    expect((await load()).body.downtime).toEqual([
+      {from: 60_000, to: 80_000},
+      {from: 90_000, to: 105_000},
+    ]);
+  });
+
+  test("counts an add there from its first act, and a boss gone after its last, as their changes don't say", async () => {
+    // The boss (13) leaves at 1:00 for good; an add (14) first acts at
+    // 1:30, and its first change makes it untargetable at 2:00. Its last
+    // act is at 2:00 too; the pull goes on to 8:20.
+    const pull = fflogsPull();
+    const t = (ms: number) => 600_000 + ms;
+    pull.events.targetability = [
+      {
+        timestamp: t(60_000),
+        type: 'targetabilityupdate',
+        targetID: 13,
+        targetable: 0,
+      },
+      {
+        timestamp: t(120_000),
+        type: 'targetabilityupdate',
+        targetID: 14,
+        targetable: 0,
+      },
+    ];
+    pull.events.enemyCasts.push(
+      {
+        timestamp: t(90_000),
+        type: 'cast',
+        sourceID: 14,
+        targetID: 1,
+        abilityGameID: 45956,
+      },
+      {
+        timestamp: t(120_000),
+        type: 'cast',
+        sourceID: 14,
+        targetID: 1,
+        abilityGameID: 45956,
+      },
+    );
+    fflogs.pulls[`${CODE}:3`] = pull;
+
+    // Nothing from 1:00 until the add, from 2:00 to the end.
+    expect((await load()).body.downtime).toEqual([
+      {from: 60_000, to: 90_000},
+      {from: 120_000, to: 500_000},
+    ]);
+  });
+
   test('reads physical, magic and unique damage from the ability types', async () => {
     const pull = fflogsPull();
     pull.abilities.push(

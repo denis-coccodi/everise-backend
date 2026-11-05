@@ -132,6 +132,14 @@ interface PullTimeline {
   // Where each phase began, for fights FFLogs splits into phases (the
   // Ultimates); none for the others.
   phases: TimelinePhase[];
+  // When nothing could be targeted (an intermission): the only time a
+  // player's GCDs may stop for the fight's sake.
+  downtime: Downtime[];
+}
+
+interface Downtime {
+  from: number;
+  to: number;
 }
 
 interface TimelinePhase {
@@ -183,6 +191,7 @@ export {
   MpSample,
   Cast,
   DamageType,
+  Downtime,
   Death,
   Heal,
   Hit,
