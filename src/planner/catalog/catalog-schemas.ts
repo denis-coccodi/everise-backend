@@ -55,6 +55,9 @@ const CatalogAction = z.strictObject({
       effects: z.array(ActionEffect),
     }),
   ),
+  // A tank's Limit Break: the planner keeps one where a group used it,
+  // and never plans one.
+  limitBreak: z.literal(true).optional(),
 });
 
 const TooltipChange = z.strictObject({

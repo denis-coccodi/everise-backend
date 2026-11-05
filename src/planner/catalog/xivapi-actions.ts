@@ -1,5 +1,6 @@
 import {UpstreamError} from '../../errors';
 import {ActionEffect, CatalogAction} from './catalog-model';
+import {LIMIT_BREAK_JOBS} from './limit-breaks';
 import {ActionRow} from './xivapi-dto';
 
 const XIVAPI = 'https://v2.xivapi.com/api';
@@ -140,9 +141,11 @@ function toCatalogAction(
 ): CatalogAction | null {
   const f = row.fields;
   const category = f.ClassJobCategory as {fields?: {Name?: unknown}} | null;
-  const its = String(category?.fields?.Name ?? '')
-    .split(' ')
-    .filter(job => jobs.has(job));
+  // A Limit Break's category is all classes: its jobs come from the table.
+  const limitBreak = LIMIT_BREAK_JOBS[row.row_id];
+  const its = (
+    limitBreak ?? String(category?.fields?.Name ?? '').split(' ')
+  ).filter(job => jobs.has(job));
   if (its.length === 0) return null;
   const icon = num(f['Icon@as(raw)']);
   return {
@@ -165,6 +168,7 @@ function toCatalogAction(
     radius: num(f.EffectRange),
     effects,
     traits: [],
+    ...(limitBreak ? {limitBreak: true} : {}),
   };
 }
 
