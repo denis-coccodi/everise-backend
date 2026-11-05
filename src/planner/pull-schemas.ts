@@ -150,6 +150,8 @@ const PullTimelineResponse = responseSchema(
     phases: z.array(
       z.strictObject({at, name: z.string(), intermission: z.boolean()}),
     ),
+    // When nothing could be targeted (an intermission).
+    downtime: z.array(z.strictObject({from: at, to: at})),
   }),
 );
 

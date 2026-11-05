@@ -1,4 +1,5 @@
 import {creditMergedHots} from './fflogs-hots';
+import {downtimeOf, enemyActs} from './pull-downtime';
 import {
   STATUS_OFFSET,
   numberOr,
@@ -225,6 +226,12 @@ function toTimeline(data: FflogsPullData, input: PullInput): PullTimeline {
       source: orNull(event.killerID),
     })),
     phases: data.phases,
+    downtime: downtimeOf(
+      events.targetability,
+      at,
+      durationMs,
+      enemyActs([...events.enemyCasts, ...events.damage], at),
+    ),
   };
   return {...timeline, ...names(timeline, data.abilities)};
 }
