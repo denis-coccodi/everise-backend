@@ -30,14 +30,17 @@ const FIELDS = [
   'EffectRange',
 ].join(',');
 
-// Every action a player has, outside PvP.
-const PLAYER_ACTIONS = '+IsPlayerAction=true -IsPvP=true +ClassJobLevel>0';
+// Every action a job learns, outside PvP: the hotbar's, and the ones a
+// combo or a proc turns another into (Inner Chaos, Sepulchre, Blade of
+// Faith), which the game doesn't flag as player actions. Their copies for
+// duties and NPCs have no level; `toCatalogAction` keeps the combat jobs'.
+const PLAYER_ACTIONS = '-IsPvP=true +ClassJobLevel>0';
 // The global cooldown's recast group.
 const GCD_GROUP = 58;
 // A sheet read 100 rows at a time.
 const ROWS_PER_READ = 100;
 
-async function getJson(get: CatalogGet, url: string) {
+export async function getJson(get: CatalogGet, url: string) {
   const response = await get(url);
   if (!response.ok) {
     throw new UpstreamError(`XIVAPI answered ${response.status} for ${url}`);

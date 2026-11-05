@@ -95,6 +95,8 @@ interface ActionCatalog {
   dataVersion: string;
   builtAt: string;
   actions: CatalogAction[];
+  // Every trait of the combat jobs, planned for or not.
+  traits: CatalogTrait[];
   // Actions whose tooltip no longer has a number of their effects.
   changed: TooltipChange[];
 }
@@ -110,11 +112,23 @@ interface TooltipChange {
   missing: string[];
 }
 type ShieldBase = (typeof SHIELD_BASES)[number];
+// A job's trait, for the planner to know what each job has at each level,
+// whether or not it plans for it.
+interface CatalogTrait {
+  id: number;
+  name: string;
+  level: number;
+  icon: number | null;
+  jobs: string[];
+  // Its tooltip (TraitTransient), what it does.
+  description: string | null;
+}
 
 export {
   ActionCatalog,
   ActionEffect,
   CatalogAction,
+  CatalogTrait,
   EffectEntry,
   EffectKind,
   EffectTarget,

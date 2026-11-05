@@ -1,4 +1,5 @@
 import {Db, Doc} from '../../db';
+import {readJobTraits} from './xivapi-traits';
 import {UnavailableError} from '../../errors';
 import {JOBS} from '../fight-report';
 import {EFFECTS, ENTRIES} from './effect-table';
@@ -48,11 +49,14 @@ class CatalogService {
       ),
     ];
     const traitIds = [...new Set(TRAITS.map(trait => trait.traitId))];
-    const [{version, rows}, statusNames, traits] = await Promise.all([
-      readActions(this.get, ids),
-      readStatusNames(this.get, statusIds),
-      readTraits(this.get, traitIds),
-    ]);
+    const [{version, rows}, statusNames, traits, jobTraits] = await Promise.all(
+      [
+        readActions(this.get, ids),
+        readStatusNames(this.get, statusIds),
+        readTraits(this.get, traitIds),
+        readJobTraits(this.get, COMBAT_JOBS),
+      ],
+    );
     const jobActions = rows
       .map(row =>
         toCatalogAction(row, COMBAT_JOBS, EFFECTS.get(row.row_id) ?? []),
@@ -89,6 +93,7 @@ class CatalogService {
       dataVersion: version,
       builtAt: this.now().toISOString(),
       actions,
+      traits: jobTraits,
       changed,
     };
     await this.db.set(CATALOGS, CATALOG_ID, {json: JSON.stringify(catalog)});
