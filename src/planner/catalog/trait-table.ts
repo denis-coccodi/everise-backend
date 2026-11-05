@@ -106,6 +106,12 @@ const TRAITS: TraitEntry[] = [
   t(3614, 634, 'Enhanced Essential Dignity II', 98, {charges: 3}),
   t(16556, 500, 'Enhanced Celestial Intersection', 88, {charges: 2}),
   t(24298, 375, 'Enhanced Kerachole', 78, {undo: without('regen')}),
+  // Pictomancer: Living Muse's (Pom, Winged, Clawed and Fanged Muse) third
+  // charge, and Striking Muse's second.
+  ...[34670, 34671, 34672, 34673].map(muse =>
+    t(muse, 545, 'Enhanced Pictomancy IV', 96, {charges: 3}),
+  ),
+  t(34674, 540, 'Enhanced Pictomancy II', 86, {charges: 2}),
   t(24300, 378, 'Enhanced Zoe', 88, {recastMs: 90_000}),
   t(24294, 636, 'Enhanced Soteria', 94, {recastMs: 60_000}),
   t(24302, 638, 'Enhanced Physis II', 98, {undo: was('Autophysis', {s: 10})}),
