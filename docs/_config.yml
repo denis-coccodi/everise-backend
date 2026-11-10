@@ -1,0 +1,16 @@
+# The backend's documentation site, published by GitHub Pages from docs/ on
+# main. Pages here change in the same pull requests as the code they describe.
+title: Everise backend
+description: How the Everise backend works - API, data, features and operations.
+remote_theme: just-the-docs/just-the-docs@v0.10.1
+plugins:
+  - jekyll-remote-theme
+  - jekyll-relative-links
+search_enabled: true
+color_scheme: dark
+aux_links:
+  everise.dev: https://everise.dev
+  API docs (Swagger): https://apis.everise.dev/api/docs
+  Repository: https://github.com/denis-coccodi/everise-backend
+  Frontend docs: https://denis-coccodi.github.io/everise-frontend/
+footer_content: Edited with the code - see the repository's <code>docs/</code> folder.

@@ -5,3 +5,4 @@
 - Trunk-based development (`trunk-based` skill): `main` is always releasable, so unfinished features merge switched off in production behind a `FEATURES` flag; each production deploy is tagged `prod-YYYY-MM-DD-HHMM`.
 - `npm test` runs the tests, type-check, lint, format check and size check; it must exit 0 before pushing.
 - Follow the `backend-best-practices` skill when writing or changing code under `src/` or `__tests__/` (routers, services, `HttpError` errors, no `any`, file size limits).
+- The technical documentation is the GitHub Pages site built from `docs/` (https://denis-coccodi.github.io/everise-backend/). Update its pages in the same pull request as a change to what they describe (endpoints, settings, data, features, operations). Non-technical pages (site guide, onboarding) live in Confluence.
