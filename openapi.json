@@ -8365,11 +8365,28 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "dataCentre": {
+                  "type": "string",
+                  "enum": [
+                    "Light",
+                    "Chaos",
+                    "Aether",
+                    "Crystal",
+                    "Dynamis",
+                    "Primal",
+                    "Elemental",
+                    "Gaia",
+                    "Mana",
+                    "Meteor",
+                    "Materia"
+                  ]
                 }
               },
               "required": [
                 "id",
-                "name"
+                "name",
+                "dataCentre"
               ],
               "additionalProperties": false
             }

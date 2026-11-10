@@ -71,7 +71,9 @@ class PartyFinderBoard implements PartyFinderSource {
     return {
       dataCentre,
       dataCentres: together,
-      worlds: together.flatMap(name => DATA_CENTRES[name]),
+      worlds: together.flatMap(name =>
+        DATA_CENTRES[name].map(world => ({...world, dataCentre: name})),
+      ),
       fetchedAt: new Date(this.snapshot.at).toISOString(),
       listings: together
         .flatMap(up)

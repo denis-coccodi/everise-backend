@@ -10,8 +10,8 @@ interface Board {
   dataCentre: DataCentre;
   // The data centres shown together, the one asked for among them.
   dataCentres: DataCentre[];
-  // Their worlds, data centre by data centre.
-  worlds: readonly {id: number; name: string}[];
+  // Their worlds, data centre by data centre, each with its own.
+  worlds: readonly {id: number; name: string; dataCentre: DataCentre}[];
   // When the site last read xivpf.
   fetchedAt: string;
   listings: PartyFinderListing[];
