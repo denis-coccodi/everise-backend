@@ -27,7 +27,10 @@ afterAll(() => {
 
 describe('GET /api/party-finder', () => {
   test("shows Light's listings by default, in the page's shape, for everyone", async () => {
-    xivpf.listings = [entry(), entry({id: 2, world: {id: 71, name: 'Moogle'}})];
+    xivpf.listings = [
+      entry(),
+      entry({id: 2, world: {id: 91, name: 'Balmung'}}),
+    ];
 
     const response = await board();
 
@@ -35,12 +38,15 @@ describe('GET /api/party-finder', () => {
     expect(response.headers['cache-control']).toBe('public, max-age=15');
     expect(response.body).toMatchObject({
       dataCentre: 'Light',
+      // One Party Finder with Chaos, its physical data centre's other.
+      dataCentres: ['Light', 'Chaos'],
       fetchedAt: clock.now!.toISOString(),
       // The game's role icons and the beginners' sprout.
       icons: {tank: 62581, healer: 62582, dps: 62583, beginner: 61523},
     });
     expect(response.body.worlds).toContainEqual({id: 66, name: 'Odin'});
-    expect(response.body.worlds).toHaveLength(8);
+    expect(response.body.worlds).toContainEqual({id: 71, name: 'Moogle'});
+    expect(response.body.worlds).toHaveLength(16);
     // Every data centre, by region, Europe (and Light) first.
     expect(response.body.regions).toStrictEqual([
       {name: 'Europe', dataCentres: ['Light', 'Chaos']},
@@ -98,17 +104,39 @@ describe('GET /api/party-finder', () => {
     ]);
   });
 
-  test("shows Chaos's when asked, from the same read of xivpf", async () => {
-    xivpf.listings = [entry(), entry({id: 2, world: {id: 71, name: 'Moogle'}})];
+  test('shows Light and Chaos together, latest first, as the game has since patch 7.58: one physical data centre', async () => {
+    xivpf.listings = [
+      entry(),
+      entry({id: 2, world: {id: 71, name: 'Moogle'}, updatedSecondsAgo: 10}),
+    ];
 
-    await board();
+    const light = await board();
     const chaos = await board('?dataCentre=Chaos');
 
     expect(chaos.body.dataCentre).toBe('Chaos');
-    expect(chaos.body.listings.map((l: {id: string}) => l.id)).toEqual([
-      'chaos-1789630212-2',
-    ]);
+    expect(chaos.body.dataCentres).toEqual(['Light', 'Chaos']);
+    for (const shown of [light, chaos]) {
+      expect(shown.body.listings.map((l: {id: string}) => l.id)).toEqual([
+        'chaos-1789630212-2',
+        'light-1789630212-1',
+      ]);
+    }
     expect(xivpf.reads).toBe(1);
+  });
+
+  test("shows a data centre alone when it's the only one in its physical data centre: Materia", async () => {
+    xivpf.listings = [
+      entry(),
+      entry({id: 6, world: {id: 22, name: 'Bismarck'}}),
+    ];
+
+    const response = await board('?dataCentre=Materia');
+
+    expect(response.body.dataCentres).toEqual(['Materia']);
+    expect(response.body.worlds).toHaveLength(5);
+    expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
+      'materia-1789630212-6',
+    ]);
   });
 
   test('counts the listings up on every data centre, for the picker', async () => {

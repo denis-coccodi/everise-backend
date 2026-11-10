@@ -1,4 +1,9 @@
-import {DATA_CENTRES, DATA_CENTRE_NAMES, dataCentreOf} from './data-centres';
+import {
+  DATA_CENTRES,
+  DATA_CENTRE_NAMES,
+  dataCentreOf,
+  physicalDataCentre,
+} from './data-centres';
 import {toListing} from './xivpf-listing';
 import {DataCentre} from './party-finder-model';
 import {Board} from './party-finder-model';
@@ -62,11 +67,15 @@ class PartyFinderBoard implements PartyFinderSource {
           Date.parse(listing.expiresAt) > now &&
           now - Date.parse(listing.updatedAt) <= UNSEEN_MS,
       );
+    const together = physicalDataCentre(dataCentre);
     return {
       dataCentre,
-      worlds: DATA_CENTRES[dataCentre],
+      dataCentres: together,
+      worlds: together.flatMap(name => DATA_CENTRES[name]),
       fetchedAt: new Date(this.snapshot.at).toISOString(),
-      listings: up(dataCentre),
+      listings: together
+        .flatMap(up)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
       counts: DATA_CENTRE_NAMES.map(name => ({
         dataCentre: name,
         listings: up(name).length,

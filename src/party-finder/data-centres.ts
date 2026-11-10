@@ -162,4 +162,20 @@ function dataCentreOf(worldId: number): DataCentre | undefined {
   return WORLD_DATA_CENTRES.get(worldId);
 }
 
-export {DATA_CENTRES, DATA_CENTRE_NAMES, REGION_LIST, dataCentreOf, REGIONS};
+// The data centres in one physical data centre with `dataCentre`, in order:
+// each region's are one. The Party Finder works across a physical data
+// centre (Japan's for a while, North America's and Europe's since patch
+// 7.58, 10 November 2026), so Light's players see Chaos's listings too.
+function physicalDataCentre(dataCentre: DataCentre): DataCentre[] {
+  const region = REGION_LIST.find(r => r.dataCentres.includes(dataCentre));
+  return region ? region.dataCentres : [dataCentre];
+}
+
+export {
+  DATA_CENTRES,
+  DATA_CENTRE_NAMES,
+  REGION_LIST,
+  dataCentreOf,
+  physicalDataCentre,
+  REGIONS,
+};
