@@ -44,3 +44,12 @@ The frontend repository's `docs-site` skill is the full reference: the Worker th
   - Markdown is excluded from Prettier (`.prettierignore`), so keep tables and lists tidy by hand, with a blank line before every list.
   - `docs/_layouts` and `docs/_includes` are excluded too, because Prettier breaks Liquid tags.
 - **Checking a change:** after the merge, wait for the Pages build (`gh api repos/denis-coccodi/everise-backend/pages/builds/latest`), then open the changed pages at everise.dev/docs/backend/.
+
+## The wiki
+
+The repository's GitHub wiki is a **read-only copy** of these technical pages (not the site guide):
+- **How it's written:** `.github/workflows/wiki.yaml` runs `scripts/wiki-sync.mjs` on every merge to `main` that touches `docs/`, and pushes to `<repo>.wiki.git`.
+- **Conversion:** the script strips front matter and `{: .…}` markers, turns links between pages into wiki page names (from each page's `title`) and links to the other repository or the guide into everise.dev addresses, points pictures at `raw.githubusercontent.com/.../main/docs/`, and writes `Home`, `_Sidebar` and `_Footer`.
+- **Never edit the wiki:** the next sync overwrites it. Change `docs/`.
+- **Both repositories:** the script is the same in both; change both together.
+- **First time:** the wiki's git repository only exists after its first page is saved in the web interface (Wiki → Create the first page).
