@@ -6,6 +6,8 @@ nav_order: 2
 
 # Discord, Weekly and Hunts
 
+Frontend: [Discord, Weekly and Hunts](/docs/frontend/features/discord.html). Players' guide: [site guide](/guide/).
+
 ## Sharing to the Discord channel
 
 Nothing goes to Discord unless a member asks. Everything is posted through the channel's webhook (`DISCORD_WEBHOOK_URL`, production only).

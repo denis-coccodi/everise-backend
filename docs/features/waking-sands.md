@@ -6,6 +6,8 @@ nav_order: 6
 
 # The Waking Sands
 
+Frontend: [The Waking Sands](/docs/frontend/features/waking-sands.html). Players' guide: [site guide](/guide/).
+
 One room where members talk with FINAL FANTASY XIV characters voiced by Workers AI (`src/waking-sands`).
 
 - **The cast:** the Scions and others from the game (Tataru, Urianger, Y'shtola, Thancred, Alphinaud, Alisaie and more), plus the free company's own Barnaby and Bernie Starling.

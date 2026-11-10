@@ -6,6 +6,8 @@ nav_order: 1
 
 # Posts, comments and media
 
+Frontend: [Posts, comments and media](/docs/frontend/features/posts-and-media.html). Players' guide: [site guide](/guide/).
+
 ## Posts and comments
 
 - Posts (`articles`) and comments are Markdown. Anyone reads them; members write, favourite and follow.

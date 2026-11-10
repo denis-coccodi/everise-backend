@@ -6,6 +6,8 @@ nav_order: 4
 
 # Market History
 
+Frontend: [Market History](/docs/frontend/features/market-history.html). Players' guide: [site guide](/guide/).
+
 One item's price over time on every world of a region, a line per world, so a player can see where it sells for least. Reading prices costs Universalis and XIVAPI requests and storage writes, so the history and the item search are for members; the regions and icons are open.
 
 ## Items (XIVAPI)

@@ -6,7 +6,7 @@ has_children: true
 
 # Features
 
-How each feature works inside the backend.
+How each feature works inside the backend. Each has a [frontend twin](/docs/frontend/features/) for how it works in the browser, and the [site guide](/guide/) explains it to players.
 
 | Feature | Module | Source of data | Who can use it |
 |---|---|---|---|
