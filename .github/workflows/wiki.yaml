@@ -22,15 +22,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      # Until the wiki's first page is saved, its git repository doesn't exist:
+      # say so and stop, instead of failing.
+      - name: Check the wiki exists
+        id: wiki
+        run: |
+          if git ls-remote "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.wiki.git" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=No wiki yet::Open the repository's Wiki tab, choose 'Create the first page' and save it, then run this workflow again."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.wiki.outputs.exists == 'true'
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.repository }}.wiki
           path: wiki
-      - uses: actions/setup-node@v5
+      - if: steps.wiki.outputs.exists == 'true'
+        uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: node scripts/wiki-sync.mjs docs wiki "$GITHUB_REPOSITORY"
+      - if: steps.wiki.outputs.exists == 'true'
+        run: node scripts/wiki-sync.mjs docs wiki "$GITHUB_REPOSITORY"
       - name: Push the wiki
+        if: steps.wiki.outputs.exists == 'true'
         working-directory: wiki
         run: |
           git config user.name "github-actions[bot]"
