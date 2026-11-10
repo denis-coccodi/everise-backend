@@ -111,6 +111,27 @@ describe('GET /api/party-finder', () => {
     expect(xivpf.reads).toBe(1);
   });
 
+  test('counts the listings up on every data centre, for the picker', async () => {
+    xivpf.listings = [
+      entry(),
+      entry({id: 2, world: {id: 71, name: 'Moogle'}}),
+      entry({id: 3, world: {id: 91, name: 'Balmung'}}),
+      entry({id: 4, world: {id: 67, name: 'Shiva'}}),
+      // Its time ran out: not counted.
+      entry({id: 5, secondsRemaining: 0}),
+    ];
+
+    const response = await board('?dataCentre=Chaos');
+
+    expect(response.body.counts).toHaveLength(11);
+    expect(response.body.counts).toIncludeAllMembers([
+      {dataCentre: 'Light', listings: 2},
+      {dataCentre: 'Chaos', listings: 1},
+      {dataCentre: 'Crystal', listings: 1},
+      {dataCentre: 'Materia', listings: 0},
+    ]);
+  });
+
   test('shows any data centre: a Crystal listing on Crystal', async () => {
     xivpf.listings = [
       entry(),

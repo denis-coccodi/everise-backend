@@ -81,6 +81,13 @@ const PartyFinderResponse = responseSchema(
     fetchedAt: isoDate,
     icons: PartyFinderIcons,
     listings: z.array(PartyFinderListing),
+    // How many listings are up on each data centre, in the regions' order.
+    counts: z.array(
+      z.strictObject({
+        dataCentre: z.enum(DATA_CENTRE_NAMES),
+        listings: z.number().int(),
+      }),
+    ),
   }),
 );
 

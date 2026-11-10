@@ -11,6 +11,8 @@ interface Board {
   // When the site last read xivpf.
   fetchedAt: string;
   listings: PartyFinderListing[];
+  // How many listings are up on every data centre, for the page's picker.
+  counts: {dataCentre: DataCentre; listings: number}[];
 }
 
 // A listing as the site shows it: with its duty's level, sort key and type icon.

@@ -32,7 +32,7 @@ Parsing that takes more CPU than a Worker request may use (10 ms), so the `Party
 
 ## API
 
-- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, worlds, regions, fetchedAt, icons, listings}`. `regions` lists every data centre by region, Europe first.
+- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, worlds, regions, fetchedAt, icons, listings, counts}`. `regions` lists every data centre by region, Europe first; `counts` says how many listings are up on each (`{dataCentre, listings}`), for the page's data centre picker.
 - `GET /api/party-finder/listings/:id` answers one listing while it's up, 404 after.
 
 ## Sharing (`src/party-finder-shares`)

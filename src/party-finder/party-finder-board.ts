@@ -55,15 +55,22 @@ class PartyFinderBoard implements PartyFinderSource {
     }
     if (!this.snapshot) return null;
     const now = this.now().getTime();
+    const {listings} = this.snapshot;
+    const up = (name: DataCentre) =>
+      listings[name].filter(
+        listing =>
+          Date.parse(listing.expiresAt) > now &&
+          now - Date.parse(listing.updatedAt) <= UNSEEN_MS,
+      );
     return {
       dataCentre,
       worlds: DATA_CENTRES[dataCentre],
       fetchedAt: new Date(this.snapshot.at).toISOString(),
-      listings: this.snapshot.listings[dataCentre].filter(
-        listing =>
-          Date.parse(listing.expiresAt) > now &&
-          now - Date.parse(listing.updatedAt) <= UNSEEN_MS,
-      ),
+      listings: up(dataCentre),
+      counts: DATA_CENTRE_NAMES.map(name => ({
+        dataCentre: name,
+        listings: up(name).length,
+      })),
     };
   }
 
