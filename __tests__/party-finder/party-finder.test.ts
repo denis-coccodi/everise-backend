@@ -44,8 +44,16 @@ describe('GET /api/party-finder', () => {
       // The game's role icons and the beginners' sprout.
       icons: {tank: 62581, healer: 62582, dps: 62583, beginner: 61523},
     });
-    expect(response.body.worlds).toContainEqual({id: 66, name: 'Odin'});
-    expect(response.body.worlds).toContainEqual({id: 71, name: 'Moogle'});
+    expect(response.body.worlds).toContainEqual({
+      id: 66,
+      name: 'Odin',
+      dataCentre: 'Light',
+    });
+    expect(response.body.worlds).toContainEqual({
+      id: 71,
+      name: 'Moogle',
+      dataCentre: 'Chaos',
+    });
     expect(response.body.worlds).toHaveLength(16);
     // Every data centre, by region, Europe (and Light) first.
     expect(response.body.regions).toStrictEqual([
@@ -169,7 +177,11 @@ describe('GET /api/party-finder', () => {
     const response = await board('?dataCentre=Crystal');
 
     expect(response.body.dataCentre).toBe('Crystal');
-    expect(response.body.worlds).toContainEqual({id: 91, name: 'Balmung'});
+    expect(response.body.worlds).toContainEqual({
+      id: 91,
+      name: 'Balmung',
+      dataCentre: 'Crystal',
+    });
     expect(response.body.listings.map((l: {id: string}) => l.id)).toEqual([
       'crystal-1789630212-3',
     ]);

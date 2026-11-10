@@ -43,7 +43,7 @@ So a board asked for one data centre holds the listings of every data centre in 
 
 ## API
 
-- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, dataCentres, worlds, regions, fetchedAt, icons, listings, counts}`. `dataCentres` names the data centres shown together (`["Light", "Chaos"]`); `regions` lists every data centre by region, Europe first; `counts` says how many listings are up on each (`{dataCentre, listings}`), for the page's data centre picker.
+- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, dataCentres, worlds, regions, fetchedAt, icons, listings, counts}`. `dataCentres` names the data centres shown together (`["Light", "Chaos"]`), and each of `worlds` says its own (`{id, name, dataCentre}`), for the world picker's groups; `regions` lists every data centre by region, Europe first; `counts` says how many listings are up on each (`{dataCentre, listings}`), for the page's data centre picker.
 - `GET /api/party-finder/listings/:id` answers one listing while it's up, 404 after.
 
 ## Sharing (`src/party-finder-shares`)

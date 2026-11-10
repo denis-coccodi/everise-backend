@@ -73,8 +73,15 @@ const PartyFinderResponse = responseSchema(
     // those in its physical data centre, which share one Party Finder
     // (Light and Chaos; North America's four; Japan's four; Materia).
     dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
-    // Their worlds, data centre by data centre.
-    worlds: z.array(World),
+    // Their worlds, data centre by data centre, each with its own (for the
+    // world picker's groups).
+    worlds: z.array(
+      z.strictObject({
+        id: z.number().int(),
+        name: z.string(),
+        dataCentre: z.enum(DATA_CENTRE_NAMES),
+      }),
+    ),
     // Every data centre, by region (Europe first), for the page's list.
     regions: z.array(
       z.strictObject({
