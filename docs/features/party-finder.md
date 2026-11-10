@@ -21,6 +21,17 @@ Parsing that takes more CPU than a Worker request may use (10 ms), so the `Party
 - drops listings whose time ran out, or that no plugin has reported for **5 minutes**. xivpf never hears that a party filled up, so without this the page showed about three times what the game did;
 - keeps the last listings for 15 minutes when xivpf is down. With none, it answers 502.
 
+## One board per physical data centre
+
+In the game the Party Finder works across a physical data centre: Japan for a while, and North America and Europe since patch 7.58 (10 November 2026). The physical data centres are the regions in `data-centres.ts`:
+
+- **Europe:** Light and Chaos.
+- **North America:** Aether, Crystal, Dynamis and Primal.
+- **Japan:** Elemental, Gaia, Mana and Meteor.
+- **Oceania:** Materia.
+
+So a board asked for one data centre holds the listings of every data centre in its physical one, latest first, with all their worlds (`physicalDataCentre`). A listing keeps the data centre it was made on, in its id and its world.
+
 ## Cleaning up xivpf's data
 
 - **Beastmaster slots:** an open slot only a Beastmaster may join comes with no jobs (xivpf's job list predates it). Such a slot is read as open to BST and shown as a DPS slot (`xivpf-listing.ts`).
@@ -32,7 +43,7 @@ Parsing that takes more CPU than a Worker request may use (10 ms), so the `Party
 
 ## API
 
-- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, worlds, regions, fetchedAt, icons, listings}`. `regions` lists every data centre by region, Europe first.
+- `GET /api/party-finder?dataCentre=Light` answers `{dataCentre, dataCentres, worlds, regions, fetchedAt, icons, listings, counts}`. `dataCentres` names the data centres shown together (`["Light", "Chaos"]`); `regions` lists every data centre by region, Europe first; `counts` says how many listings are up on each (`{dataCentre, listings}`), for the page's data centre picker.
 - `GET /api/party-finder/listings/:id` answers one listing while it's up, 404 after.
 
 ## Sharing (`src/party-finder-shares`)

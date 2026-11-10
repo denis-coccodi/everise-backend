@@ -106,7 +106,7 @@ Each endpoint is defined once with `route()` (`src/api`): its method and path, w
 
 | Method | Path | Auth | What |
 |---|---|---|---|
-| GET | `/api/party-finder` | | A data centre's listings (`?dataCentre=Light`) |
+| GET | `/api/party-finder` | | The listings of a data centre's physical data centre (`?dataCentre=Light`: Light and Chaos) |
 | GET | `/api/party-finder/listings/:id` | | One listing while it's up |
 | POST | `/api/party-finder/posts` | required | Share a listing as a post |
 | POST | `/api/party-finder/discord` | required | Share a listing in the Discord only |

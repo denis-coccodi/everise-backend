@@ -69,6 +69,11 @@ const PartyFinderResponse = responseSchema(
   'PartyFinderResponse',
   z.strictObject({
     dataCentre: z.enum(DATA_CENTRE_NAMES),
+    // The data centres whose listings these are: the one asked for and
+    // those in its physical data centre, which share one Party Finder
+    // (Light and Chaos; North America's four; Japan's four; Materia).
+    dataCentres: z.array(z.enum(DATA_CENTRE_NAMES)),
+    // Their worlds, data centre by data centre.
     worlds: z.array(World),
     // Every data centre, by region (Europe first), for the page's list.
     regions: z.array(
@@ -81,6 +86,13 @@ const PartyFinderResponse = responseSchema(
     fetchedAt: isoDate,
     icons: PartyFinderIcons,
     listings: z.array(PartyFinderListing),
+    // How many listings are up on each data centre, in the regions' order.
+    counts: z.array(
+      z.strictObject({
+        dataCentre: z.enum(DATA_CENTRE_NAMES),
+        listings: z.number().int(),
+      }),
+    ),
   }),
 );
 

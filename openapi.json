@@ -8334,6 +8334,25 @@
               "Materia"
             ]
           },
+          "dataCentres": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Light",
+                "Chaos",
+                "Aether",
+                "Crystal",
+                "Dynamis",
+                "Primal",
+                "Elemental",
+                "Gaia",
+                "Mana",
+                "Meteor",
+                "Materia"
+              ]
+            }
+          },
           "worlds": {
             "type": "array",
             "items": {
@@ -8678,15 +8697,51 @@
               ],
               "additionalProperties": false
             }
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dataCentre": {
+                  "type": "string",
+                  "enum": [
+                    "Light",
+                    "Chaos",
+                    "Aether",
+                    "Crystal",
+                    "Dynamis",
+                    "Primal",
+                    "Elemental",
+                    "Gaia",
+                    "Mana",
+                    "Meteor",
+                    "Materia"
+                  ]
+                },
+                "listings": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "dataCentre",
+                "listings"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
           "dataCentre",
+          "dataCentres",
           "worlds",
           "regions",
           "fetchedAt",
           "icons",
-          "listings"
+          "listings",
+          "counts"
         ],
         "additionalProperties": false
       },

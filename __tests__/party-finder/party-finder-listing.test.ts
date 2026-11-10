@@ -23,18 +23,20 @@ describe('GET /api/party-finder/listings/:id', () => {
   test('finds a listing anyone has the link to, on any data centre, by an id that names it', async () => {
     xivpf.listings = [
       xivpfEntry(),
-      xivpfEntry({id: 2, world: {id: 71, name: 'Moogle'}}),
+      xivpfEntry({id: 2, world: {id: 91, name: 'Balmung'}}),
     ];
-    const board = await request(app).get('/api/party-finder?dataCentre=Chaos');
+    const board = await request(app).get(
+      '/api/party-finder?dataCentre=Crystal',
+    );
     const [shown] = board.body.listings;
-    expect(shown.id).toBe('chaos-1789630212-2');
+    expect(shown.id).toBe('crystal-1789630212-2');
 
     const response = await listing(shown.id);
 
     expect(response.status).toBe(200);
     expect(response.headers['cache-control']).toBe('public, max-age=15');
     expect(response.body).toEqual({
-      dataCentre: 'Chaos',
+      dataCentre: 'Crystal',
       fetchedAt: board.body.fetchedAt,
       icons: board.body.icons,
       listing: shown,

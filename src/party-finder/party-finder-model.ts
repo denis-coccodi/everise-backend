@@ -4,13 +4,19 @@ import {withDuty} from './party-finder-reader';
 // "Light" | "Chaos" | "Aether" | ...
 type DataCentre = DataCentresOf<(typeof REGIONS)[number]>;
 
-// One data centre's listings, as the page gets them.
+// One physical data centre's listings, as the page gets them: those of the
+// data centre asked for and of the others it shares a Party Finder with.
 interface Board {
   dataCentre: DataCentre;
+  // The data centres shown together, the one asked for among them.
+  dataCentres: DataCentre[];
+  // Their worlds, data centre by data centre.
   worlds: readonly {id: number; name: string}[];
   // When the site last read xivpf.
   fetchedAt: string;
   listings: PartyFinderListing[];
+  // How many listings are up on every data centre, for the page's picker.
+  counts: {dataCentre: DataCentre; listings: number}[];
 }
 
 // A listing as the site shows it: with its duty's level, sort key and type icon.
