@@ -36,5 +36,9 @@
         </p>
       </main>
     </div>
+    <script>
+      // On narrow screens the contents start folded, so the page comes first.
+      if (matchMedia("(max-width: 59.99rem)").matches) document.querySelector(".contents")?.removeAttribute("open");
+    </script>
   </body>
 </html>
