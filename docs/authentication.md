@@ -5,6 +5,8 @@ nav_order: 5
 
 # Authentication and account security
 
+Frontend: [Accounts and sign-in](/docs/frontend/features/accounts.html).
+
 ## Tokens and sessions
 
 - **Signing in** (or opening an email confirmation link) returns a JWT in the body and also sets it in an `httpOnly`, `Secure` cookie named `token`.

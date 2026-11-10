@@ -6,6 +6,8 @@ nav_order: 7
 
 # Notifications and live updates
 
+Frontend: [Notifications and live updates](/docs/frontend/features/notifications-and-live.html). Players' guide: [site guide](/guide/).
+
 ## Notifications (`src/notifications`)
 
 A member hears when:

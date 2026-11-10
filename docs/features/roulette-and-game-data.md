@@ -6,6 +6,8 @@ nav_order: 8
 
 # Duty Roulette and game data
 
+Frontend: [Duty Roulette and game data](/docs/frontend/features/roulette-and-game-data.html). Players' guide: [site guide](/guide/).
+
 ## Game data (`src/duties`)
 
 The backend keeps a copy of FINAL FANTASY XIV game data from [XIVAPI](https://v2.xivapi.com/api/docs): every duty and duty roulette, the combat jobs, and the images they refer to.

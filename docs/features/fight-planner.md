@@ -6,6 +6,8 @@ nav_order: 9
 
 # Fight planner
 
+Frontend: [Fight planner](/docs/frontend/features/fight-planner.html). Players' guide: [site guide](/guide/).
+
 The fight planner schedules a party's heals and mitigations for one pull of an Extreme, Savage or Ultimate fight, from that party's FFLogs report.
 
 - **Where the work happens:** the planning itself runs in the browser (the frontend's `libs/planner`). The backend (`src/planner`) reads FFLogs and keeps what it read.

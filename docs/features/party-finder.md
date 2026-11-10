@@ -6,6 +6,8 @@ nav_order: 3
 
 # Party Finder
 
+Frontend: [Party Finder](/docs/frontend/features/party-finder.html). Players' guide: [site guide](/guide/).
+
 ## Where the listings come from
 
 Square Enix has no Party Finder API. [xivpf.com](https://xivpf.com/listings) collects listings from players who run the Remote Party Finder plugin (Dalamud), so a quiet data centre or hour can show few. Its `GET /api/listings` has no filters: it always sends every listing in the game, about 1.3 MB.

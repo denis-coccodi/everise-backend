@@ -6,6 +6,8 @@ nav_order: 10
 
 # Admin
 
+Frontend: [Admin](/docs/frontend/features/admin.html). Players' guide: [site guide](/guide/).
+
 Admins are whoever's email is in the `ADMIN_EMAILS` secret. The role is never stored, so the API can't give or remove it. Everything here is under `/api/admin` and answers 403 for anyone else.
 
 ## Members

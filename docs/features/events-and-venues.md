@@ -6,6 +6,8 @@ nav_order: 5
 
 # Events and Venues
 
+Frontend: [Events and Venues](/docs/frontend/features/events-and-venues.html). Players' guide: [site guide](/guide/).
+
 Both are open to everyone, and neither is stored in the database: they're kept in memory between requests.
 
 ## Events (Partake, `src/events`)
