@@ -7,8 +7,9 @@ nav_order: 6
 # The Waking Sands
 
 One room where members talk with FINAL FANTASY XIV characters voiced by Workers AI (`src/waking-sands`).
+
 - **The cast:** the Scions and others from the game (Tataru, Urianger, Y'shtola, Thancred, Alphinaud, Alisaie and more), plus the free company's own Barnaby and Bernie Starling.
-- **Access:** guests can watch; members talk.
+- **Access:** the room's answer (`GET /api/waking-sands/room`) is open, but the site shows the room to signed-in members only, and only members can talk.
 
 ## The room
 
@@ -39,10 +40,11 @@ Every line, who's in the room, and who's writing are pushed on `GET /api/live` a
 - **Rules no persona can lift:** every prompt also carries:
   - short spoken lines;
   - stay in Eorzea;
-  - no story spoilers past A Realm Reborn;
   - no slurs, no mocking anyone for who they are;
   - nothing sexual, nothing harmful;
   - honesty about being an AI when sincerely asked.
+
+There's no rule against story spoilers: the characters know their whole story, up to the latest expansion, and the site shows a spoiler warning above the room.
 
 ## Characters
 

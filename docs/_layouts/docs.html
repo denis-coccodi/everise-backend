@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- A technical page: the site's look, a contents column, the page. Same layout in both repositories' docs/. -->
+<html lang="en">
+  <head>
+    {% assign here = page.url | relative_url %}{% include head.html path=here %}
+  </head>
+  <body>
+    {% include topbar.html section=site.section %}
+    <div class="layout">
+      <details class="contents" open>
+        <summary>{{ site.title }}</summary>
+        <nav aria-label="{{ site.title }}">
+          <ul>
+            {% assign top = site.html_pages | where_exp: "p", "p.nav_order" | where_exp: "p", "p.parent == nil" | sort: "nav_order" %}
+            {% for p in top %}
+            <li>
+              <a href="{{ p.url | relative_url }}"{% if p.url == page.url %} aria-current="page"{% endif %}>{{ p.title }}</a>
+              {% if p.has_children %}
+              {% assign kids = site.html_pages | where: "parent", p.title | sort: "nav_order" %}
+              <ul>
+                {% for k in kids %}
+                <li><a href="{{ k.url | relative_url }}"{% if k.url == page.url %} aria-current="page"{% endif %}>{{ k.title }}</a></li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      </details>
+      <main id="main" class="page">
+        {{ content }}
+        <p class="edit">
+          <a href="https://github.com/denis-coccodi/{{ site.repository_name }}/edit/main/docs/{{ page.path }}">Edit this page</a>
+          · changed in the same pull requests as the code.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

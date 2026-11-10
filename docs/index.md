@@ -1,13 +1,13 @@
 ---
-title: Home
+title: Overview
 nav_order: 1
 ---
 
 # Everise backend
 
-The TypeScript backend of [everise.dev](https://everise.dev), the Everise FC community site. It runs on Cloudflare Workers and keeps its data in SQLite inside a Durable Object. The [frontend](https://denis-coccodi.github.io/everise-frontend/) is an Angular app on Cloudflare Workers that forwards `/api` here.
+The TypeScript backend of [everise.dev](https://everise.dev), the Everise FC community site. It runs on Cloudflare Workers and keeps its data in SQLite inside a Durable Object. The [frontend](/docs/frontend/) is an Angular app on Cloudflare Workers that forwards `/api` here.
 
-These pages are the technical reference. They live in the repository's `docs/` folder and change in the same pull requests as the code.
+These pages are the backend's technical reference, served at everise.dev/docs/backend/. They live in the repository's `docs/` folder and change in the same pull requests as the code. For what the site offers and how to use it, see the [site guide](/guide/).
 
 | Page | What it covers |
 |---|---|

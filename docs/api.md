@@ -10,6 +10,7 @@ Live reference with every schema: [apis.everise.dev/api/docs](https://apis.everi
 ## One definition per endpoint
 
 Each endpoint is defined once with `route()` (`src/api`): its method and path, who may call it, zod schemas for its parameters, query and body, and a schema for each answer. That one definition:
+
 - **checks each request.** An invalid request gets a 422 with one message per failing field, and the handler receives the values parsed and typed;
 - **builds the OpenAPI 3.1 document;**
 - **checks every answer in the tests.** With `CHECK_API_RESPONSES` on, an answer that doesn't match its schema, or a status the route doesn't declare, fails with a 500.
