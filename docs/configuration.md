@@ -18,6 +18,7 @@ nav_order: 6
 4. Check it: `curl http://localhost:8080/api/tags`.
 
 Notes:
+
 - Add `RESEND_API_KEY=console` to print emails in the terminal.
 - Local data survives restarts. Delete `.wrangler/state` to start from an empty database.
 - Values in `.dev.vars` override the `vars` in `wrangler.jsonc`.

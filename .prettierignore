@@ -6,3 +6,7 @@ worker-configuration.d.ts
 *.md
 # Written by __tests__/openapi (npm test).
 openapi.json
+
+# Jekyll layouts (Liquid), which Prettier would break.
+docs/_layouts
+docs/_includes

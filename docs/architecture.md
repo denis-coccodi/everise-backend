@@ -54,6 +54,7 @@ Code rules (routers and services, `HttpError`, no `any`, file size limits) are i
 ## Scheduled work
 
 The cron trigger (`*/2 * * * *`, in production and on staging) runs `scheduled` in `src/worker.ts`. Each run:
+
 1. reads the relayed Discord channels (Weekly and Hunts);
 2. checks which shared Party Finder listings have ended, and notifies whoever shared them.
 

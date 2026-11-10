@@ -1,0 +1,14 @@
+<a class="skip" href="#main">Skip to main content</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/"><img src="/assets/images/everise-crest.png" alt="" width="28" height="28" />Everise</a>
+    <nav aria-label="Documentation">
+      <ul class="sections">
+        <li><a href="/guide/"{% if include.section == "guide" %} aria-current="true"{% endif %}>Site guide</a></li>
+        <li><a href="/docs/frontend/"{% if include.section == "frontend" %} aria-current="true"{% endif %}>Frontend docs</a></li>
+        <li><a href="/docs/backend/"{% if include.section == "backend" %} aria-current="true"{% endif %}>Backend docs</a></li>
+        <li><a href="/">Back to the site</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>

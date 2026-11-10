@@ -21,12 +21,14 @@ The backend keeps a copy of FINAL FANTASY XIV game data from [XIVAPI](https://v2
 - **`GET /api/resets`:** the game day and week in progress.
 
 **Grouping quirks:** some of the game's flags are unreliable, so the grouping relies on names and types.
+
 - Extreme, Unreal and Savage duties are recognised by name, and alliance raids by their 24-player party size.
 - Quest battles and tutorials are left out.
 
 ### Refreshing it
 
 Run the **Refresh game data from XIVAPI** workflow after a game patch. It calls:
+
 1. **`POST /api/duties/refresh`** (`X-Refresh-Key`), which downloads the duties, roulettes and jobs again. A failure answers 502 and leaves the cached data unchanged.
 2. **`POST /api/duties/refresh/images`**, which downloads the next 25 images. A Worker may make 50 outbound requests per call, so the roughly 530 images take about 22 calls.
    - Until a batch replaces an image, the old copy is still served.

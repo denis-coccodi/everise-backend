@@ -13,6 +13,7 @@ Square Enix has no Party Finder API. [xivpf.com](https://xivpf.com/listings) col
 ## PartyFinderHub
 
 Parsing that takes more CPU than a Worker request may use (10 ms), so the `PartyFinderHub` Durable Object (`PARTY_FINDER`, up to 30 s) holds the board in memory. It:
+
 - reads xivpf **at most once a minute, and only while someone asks**;
 - keeps the followed data centres' listings (`data-centres.ts`);
 - drops listings whose time ran out, or that no plugin has reported for **5 minutes**. xivpf never hears that a party filled up, so without this the page showed about three times what the game did;
@@ -35,6 +36,7 @@ Parsing that takes more CPU than a Worker request may use (10 ms), so the `Party
 ## Sharing (`src/party-finder-shares`)
 
 Members name a listing by `{dataCentre, listingId}`. The backend reads it from the board itself, so only listings up in the game can be shared.
+
 - **`POST /api/party-finder/posts`** posts to the feeds, once every 15 s per member.
   - The post is titled `Party Finder: <duty>` and tagged `party-finder`.
   - `partyFinder` holds the listing as it was then.

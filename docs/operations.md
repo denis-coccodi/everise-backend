@@ -34,6 +34,7 @@ Work that spans several PRs merges switched off in production behind `FEATURES` 
 
 ### Test and deploy staging (`ci-cd.yaml`)
 Runs on pushes to `main`, on pull requests, and by hand.
+
 1. **test:** `npm test`, which runs the tests, type-check, lint, format and size checks.
 2. **deploy-staging** (pushes to `main` and manual runs):
    - runs `wrangler deploy --env staging`, then `scripts/smoke.sh` against staging;
@@ -42,12 +43,14 @@ Runs on pushes to `main`, on pull requests, and by hand.
 Each run leaves one smoke-test user in the staging database and sends one email. **To try a branch on staging:** run the workflow by hand on that branch. The next merge to `main` puts `main` back.
 
 ### Deploy production (`deploy-production.yaml`)
+
 - Runs by hand only.
 - Deploys the latest commit on `main` and checks that the API responds.
 - Tags the commit `prod-YYYY-MM-DD-HHMM` (UTC), so the latest `prod-*` tag is what production runs.
 - Refuses a commit whose staging run didn't succeed. The `production` GitHub environment only accepts `main`.
 
 ### Refresh game data from XIVAPI (`refresh-game-data.yaml`)
+
 - Runs by hand, by the repository owner only, for staging or production (production only from `main`).
 - Calls `POST /api/duties/refresh`, then `POST /api/duties/refresh/images` until every image is downloaded. Then it rebuilds the planner's action catalog.
 - Run it after every game patch.
@@ -56,6 +59,7 @@ Each run leaves one smoke-test user in the staging database and sends one email.
 Opens update PRs every Monday: one for all minor and patch updates, and one per major update. They're merged like any PR once `test` passes.
 
 ### Deploying production
+
 1. Merge into `main` and wait for **Test and deploy staging** to go green.
 2. Optionally, try the change on staging.
 3. Actions → **Deploy production** → Run workflow on `main`.
@@ -63,6 +67,7 @@ Opens update PRs every Monday: one for all minor and patch updates, and one per 
 **Hotfixes:** a production fix is normally a `hotfix/` branch merged into `main` and deployed as usual. If `main` holds work that can't go to production yet, the hotfix starts from the latest `prod-*` tag instead (`trunk-based` skill).
 
 **Order between the two repositories:**
+
 - Deploy the backend first when the frontend needs a new endpoint or field.
 - Deploy the frontend first when the backend starts requiring something new from it (Turnstile, for example).
 
@@ -73,15 +78,18 @@ Opens update PRs every Monday: one for all minor and patch updates, and one per 
 Staging (frontend `staging` and backend `be-staging`) is behind Cloudflare Access. Only allowed emails can open it, after a one-time code sent by email.
 
 ### Getting in
+
 - **Browser:** open https://staging.apis.everise.dev once and log in, then use https://staging.everise.dev.
 - **CI and scripts:** use an Access service token, `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET`.
 
 ### Testers
+
 - Both staging applications use one reusable Allow policy (`Staging Testers`).
 - After every role change, the **production** backend writes the admins' and staging testers' emails into that policy (`src/admin/staging-access.ts`). `POST /api/admin/staging-access` writes them again.
 - Only production has the Cloudflare settings. A second backend writing its own testers would undo the first.
 
 ### Setting it up
+
 1. Create a service token (`github-actions-staging`) and store it as the repository secrets.
 2. Enable Access on `be-staging` (workers.dev and preview URLs) and add `staging.apis.everise.dev`. Policies: Allow `Staging Testers`, and Service Auth for the token.
 3. In the same application, set CORS:

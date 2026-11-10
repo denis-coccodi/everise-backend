@@ -9,6 +9,7 @@ nav_order: 7
 ## Notifications (`src/notifications`)
 
 A member hears when:
+
 - someone **favourites** one of their posts, grouped per post ("Alisaie and 2 others liked your post");
 - someone **comments** on one of their posts, grouped per post, with the newest comment's opening words;
 - someone **follows** them;
@@ -16,10 +17,12 @@ A member hears when:
 - an **admin changed their role**.
 
 Rules:
+
 - **Nobody hears about what they did themselves**, and the Waking Sands characters hear nothing.
 - **Ids say what happened** (`favorite:<post>:<member>`, `comment:<comment>`, `follow:<followee>:<follower>`). Liking twice makes one notification, and undoing the action removes it.
 
 The endpoints:
+
 - **`GET /api/notifications`** answers the newest 100, grouped (at most 30 groups, each naming up to 3 members), with `unseenCount`.
 - **Seen:** a group is seen once the member opens the list (`POST /api/notifications/seen`).
 - **Read:** a group is read once its item is opened (`POST /api/notifications/:id/read`) or all are marked read (`POST /api/notifications/read`).
