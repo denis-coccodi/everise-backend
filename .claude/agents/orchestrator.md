@@ -25,8 +25,12 @@ in one checkout overwrite each other's files, branches and staging area. So:
   If an area is taken, wait for it or ask the user; never run two agents on it.
 - Only one change uses staging at a time: a manual `gh workflow run ci-cd.yaml
   --ref <branch>` replaces what staging runs. Claim staging on the board first.
-- `wrangler dev` ports: give each agent its own port (8791, 8792, …) and
-  `--ip 127.0.0.1`; a stopped wrangler on Windows can keep its port.
+- Ports: give each agent its own and write it on the board. Backend
+  `wrangler dev`: 8791, 8792, … with `--ip 127.0.0.1` (a stopped wrangler on
+  Windows can keep its port). Frontend dev server: 4201, 4202, …; 4200 belongs
+  to the window open on `everise-frontend`.
+- New worktrees need `npm ci`. A backend one also needs copies of the main
+  checkout's untracked `.env` and `.dev.vars`; the frontend has none to copy.
 - The git stash is shared by every worktree. Agents set work aside with a WIP
   commit, never `git stash`. The repo's guard hook blocks the risky commands.
 
@@ -73,8 +77,10 @@ claim once its PR is merged or dropped and its worktree is removed.
    - **Frontend:** if a window is open on `everise-frontend` (`ListAgents`),
      send it the task with `SendMessage`, including the API contract (method,
      path, request and response fields, the flag). Don't start a frontend agent
-     next to a window that is working there. If no window is, tell the user to
-     open one, or ask before running a frontend agent there.
+     next to a window that is working there. If no window is, ask the user to
+     open one on `everise-frontend`: its own agents (`frontend-dev`,
+     `reviewer`, `ci-doctor`, `docs-writer`, `planner-bench`) live in that
+     repo's `.claude/agents/` and can only be started from a session there.
    - **Docs-only work** (docs that drift from the code, a page to write):
      `docs-writer`. Docs for a code change go in that change's own PR, written
      by the agent making it.
