@@ -30,6 +30,22 @@ Trunk-based: `main` is the only long-lived branch and must always be deployable.
 
 Work that spans several PRs merges switched off in production behind `FEATURES` (see [Architecture](architecture.md#feature-flags)).
 
+### Claude agents
+
+The repository carries Claude Code agents in `.claude/agents/`:
+
+| Agent | Does |
+|---|---|
+| `orchestrator` | Runs as the main session (`claude --agent orchestrator --add-dir ../everise-frontend` from the main checkout). Splits a request into one-PR tasks, hands them out, keeps the work board, merges what the user approved. Edits no code. |
+| `backend-dev` | Makes one change (code, tests, affected docs) and opens its PR. |
+| `docs-writer` | Docs-only changes to `docs/`. |
+| `reviewer` | Reviews a PR before it merges. Read-only. |
+| `ci-doctor` | Finds out why an Actions run failed. Read-only. |
+
+Several sessions work at once, so each change is made in its own git worktree, in `.claude/worktrees/` (ignored by git, Prettier, ESLint and Jest). A new worktree needs `npm ci` and copies of the local `.env` and `.dev.vars`. The orchestrator records who works where (repo, files, branch, worktree, `wrangler dev` port, who holds staging) on a board, `.claude/board.md` in the folder that holds both repositories. Frontend work goes to the Claude window open on `everise-frontend`.
+
+`.claude/settings.json` runs `.claude/hooks/guard.mjs` before every shell command. It blocks staging everything (`git add -A`, `.`, `-u`), `git stash` without a unique message, discarding all changes (`reset --hard`, `clean -f`, `checkout .`), force pushes, pushes to `main`, commits on `main` or a detached HEAD, and switching branches in a checkout with uncommitted changes. It also asks before any `wrangler deploy` or production deploy workflow run.
+
 ## GitHub Actions
 
 ### Test and deploy staging (`ci-cd.yaml`)

@@ -10,3 +10,6 @@ openapi.json
 # Jekyll layouts (Liquid), which Prettier would break.
 docs/_layouts
 docs/_includes
+
+# Worktrees Claude agents work in, each a whole copy of the repo.
+.claude/worktrees/
