@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "everise@everise": true
+  },
+  "extraKnownMarketplaces": {
+    "everise": {
+      "source": {
+        "source": "github",
+        "repo": "denis-coccodi/everise-agents"
+      }
+    }
+  }
+}
