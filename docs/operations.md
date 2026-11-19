@@ -44,7 +44,19 @@ The repository carries Claude Code agents in `.claude/agents/`:
 
 Several sessions work at once, so each change is made in its own git worktree, in `.claude/worktrees/` (ignored by git, Prettier, ESLint and Jest). A new worktree needs `npm ci` and copies of the local `.env` and `.dev.vars`. The orchestrator records who works where (repo, files, branch, worktree, `wrangler dev` port, who holds staging) on a board, `.claude/board.md` in the folder that holds both repositories. Frontend work goes to the Claude window open on `everise-frontend`.
 
-`.claude/settings.json` runs `.claude/hooks/guard.mjs` before every shell command. It blocks staging everything (`git add -A`, `.`, `-u`), `git stash` without a unique message, discarding all changes (`reset --hard`, `clean -f`, `checkout .`), force pushes, pushes to `main`, commits on `main` or a detached HEAD, and switching branches in a checkout with uncommitted changes. It also asks before any `wrangler deploy` or production deploy workflow run.
+`.claude/settings.json` runs two hooks. `.claude/hooks/session-start.mjs` tells each new session which checkout and branch it's in, what's uncommitted there, and the repository's other worktrees. `.claude/hooks/guard.mjs` runs before every shell command and blocks:
+
+- staging everything (`git add -A`, `.`, `-u`), and `git stash` without a unique message;
+- discarding all changes (`reset --hard`, `clean -f`, `checkout .`);
+- force pushes, pushes to `main`, and commits on `main` or a detached HEAD;
+- switching branches in a checkout with uncommitted changes;
+- a new or renamed branch not named `feature/`, `bugfix/` or `hotfix/<description>`;
+- a production tag not named `prod-YYYY-MM-DD-HHMM`;
+- `gh pr merge` before the pull request's `test` check has passed;
+- changing branch protection or rulesets (`gh api` writes to them);
+- `prettier --write` on a folder or a glob (it rewrites untouched files' line endings).
+
+It asks first before a write to production (`curl` or `Invoke-RestMethod` sending data to apis.everise.dev or everise.dev; reads and staging stay free), and `settings.json` itself before any `wrangler deploy` or production deploy workflow run.
 
 ## GitHub Actions
 
