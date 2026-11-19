@@ -30,6 +30,33 @@ Trunk-based: `main` is the only long-lived branch and must always be deployable.
 
 Work that spans several PRs merges switched off in production behind `FEATURES` (see [Architecture](architecture.md#feature-flags)).
 
+### Claude agents
+
+The repository carries its own Claude Code agents in `.claude/agents/`:
+
+| Agent | Does |
+|---|---|
+| `backend-dev` | Makes one change (code, tests, affected docs) and opens its PR. |
+| `docs-writer` | Docs-only changes to `docs/`. |
+| `reviewer` | Reviews a PR before it merges. Read-only. |
+| `ci-doctor` | Finds out why an Actions run failed. Read-only. |
+
+What it shares with `everise-frontend` comes from the `everise` plugin, in its own repository, [everise-agents](https://github.com/denis-coccodi/everise-agents), switched on in `.claude/settings.json`:
+
+- **`everise:orchestrator`:** plans work across both repositories and hands it to their agents, each in its own worktree; keeps a work board in `.claude/board.md` (ignored by git); merges what the user approved. Edits no code. Run it as the main session from the main checkout: `claude --agent everise:orchestrator --add-dir ../everise-frontend`. The added folder brings the frontend's agents and skills along.
+- **`everise:workspace`:** a skill with the rules for working across both repositories: one git worktree per change, who owns a checkout, ports, the order of a change across both.
+- **The guard hook**, before every shell command. It blocks the git commands that trample other sessions' work (`git add -A`, `git stash`, `reset --hard`, force pushes, commits or pushes to `main`), branches not named `feature/`, `bugfix/` or `hotfix/`, production tags not named `prod-YYYY-MM-DD-HHMM`, `gh pr merge` before `test` passed, writes to branch protection, and `prettier --write` on a folder. It asks first before a deploy by hand or a write to production.
+- **The session-start hook**, which tells each new session its checkout, branch, uncommitted files and the repository's other worktrees.
+
+Committing the settings doesn't install the plugin: on each machine, once per clone, run from the repository's folder:
+
+```sh
+claude plugin marketplace add denis-coccodi/everise-agents --scope project
+claude plugin install everise@everise --scope project
+```
+
+Several sessions work at once, so each change is made in its own git worktree, in `.claude/worktrees/` (ignored by git, Prettier, ESLint and Jest). A new worktree needs `npm ci` and copies of the local `.env` and `.dev.vars`.
+
 ## GitHub Actions
 
 ### Test and deploy staging (`ci-cd.yaml`)
