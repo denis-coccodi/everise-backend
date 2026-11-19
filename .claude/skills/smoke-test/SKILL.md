@@ -25,7 +25,7 @@ sh scripts/smoke.sh verify <base-url> <scratchpad>/jar.txt
 
 ## Local
 
-1. Start the server in the background: `npx wrangler dev --port 8080` (needs `.dev.vars`; see README). Wait until `curl -s http://localhost:8080/api/tags` answers.
+1. Start the server in the background: `npx wrangler dev --port 8080` (needs `.dev.vars`; see `docs/configuration.md`). Wait until `curl -s http://localhost:8080/api/tags` answers.
 2. Run `create`. To test persistence, stop the server, start it again, run `verify` with the same jar.
    - On Windows, killing the background Bash task does not always free the port. Stop it from PowerShell:
      `Get-NetTCPConnection -LocalPort 8080 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`
