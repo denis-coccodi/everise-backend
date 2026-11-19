@@ -1,37 +1,13 @@
 {
-  "permissions": {
-    "ask": [
-      "Bash(gh workflow run deploy-production*)",
-      "Bash(npx wrangler deploy*)",
-      "Bash(wrangler deploy*)",
-      "Bash(npm run deploy*)",
-      "PowerShell(gh workflow run deploy-production*)",
-      "PowerShell(npx wrangler deploy*)",
-      "PowerShell(wrangler deploy*)",
-      "PowerShell(npm run deploy*)"
-    ]
+  "enabledPlugins": {
+    "everise@everise": true
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.mjs\""
-          }
-        ]
+  "extraKnownMarketplaces": {
+    "everise": {
+      "source": {
+        "source": "github",
+        "repo": "denis-coccodi/everise-agents"
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash|PowerShell",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.mjs\""
-          }
-        ]
-      }
-    ]
+    }
   }
 }

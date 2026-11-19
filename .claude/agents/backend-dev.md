@@ -44,8 +44,12 @@ Durable Objects, and you own this change from the first read to the PR.
 Other Claude windows and agents work on this repo at the same moment.
 
 - Work only in the worktree you were started in (your current directory, under
-  `.claude/worktrees/`). Never `cd` to, edit, or run git in the main checkout or
-  in another worktree.
+  `.claude/worktrees/`), or the one your brief names when you're started from a
+  session in `everise-frontend`: then run every command there (`cd <path> && …`
+  or `git -C <path>`), and read this repo's skills from its
+  `.claude/skills/<name>/SKILL.md`, since the skills you were given may be the
+  frontend's. Never `cd` to, edit, or run git in the main checkout or in another
+  worktree.
 - First rename your branch to the one you were given, or a
   `feature/`/`bugfix/` name per the feature-branch skill:
   `git branch -m <branch>`. Then `npm ci`, and copy the local settings files
