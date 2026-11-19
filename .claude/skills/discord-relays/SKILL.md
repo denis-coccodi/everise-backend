@@ -5,7 +5,7 @@ description: Explains how the Weekly and Hunts tabs get their posts from channel
 
 # Discord relays (Weekly and Hunts)
 
-The README's "Weekly and hunt trains" section is the reference for what is shown and kept. This skill is about working on it.
+The docs' Discord page (`docs/features/discord.md`) is the reference for what is shown and kept. This skill is about working on it.
 
 ## How it fits
 

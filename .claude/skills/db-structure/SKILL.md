@@ -26,7 +26,7 @@ The app's collections, their fields and the files that define them are in [colle
 
 ## Updating the diagram
 
-`docs/db-structure.svg` is hand-written SVG (1200×2070) and is what the README embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
+`docs/db-structure.svg` is hand-written SVG (1200×2070) and is what the docs' Data model page embeds; `docs/db-structure.png` is rendered from it. After changing the SVG:
 
 1. Render the PNG with headless Edge from PowerShell, in the repo root (Bash quoting of the Edge path fails):
    ```
@@ -35,7 +35,7 @@ The app's collections, their fields and the files that define them are in [colle
    ```
    Match `--window-size` to the SVG's width and height.
 2. Read the PNG to check the layout visually (overlapping labels, crossing arrows) before committing.
-3. Keep the README "Database" bullets in sync with the diagram.
+3. Keep the docs' Data model page (`docs/data-model.md`) in sync with the diagram.
 
 ## History
 

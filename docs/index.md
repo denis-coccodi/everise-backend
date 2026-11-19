@@ -19,4 +19,4 @@ These pages are the backend's technical reference, served at everise.dev/docs/ba
 | [Operations](operations.md) | Environments, CI/CD, deploying, staging access, one-time setup |
 | [Features](features/index.md) | How each feature works inside |
 
-The full README in the repository has every detail. The live API description is at [apis.everise.dev/api/docs](https://apis.everise.dev/api/docs).
+The repository's README has only the stack and how to start; everything else is here. The live API description is at [apis.everise.dev/api/docs](https://apis.everise.dev/api/docs).
