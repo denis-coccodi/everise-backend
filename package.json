@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "start": "wrangler dev",
+    "orchestrator": "claude --agent everise:orchestrator --add-dir ../everise-frontend",
     "postinstall": "wrangler types",
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "test": "jest --runInBand",
