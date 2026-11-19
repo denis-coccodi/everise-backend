@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuses a commit message that isn't Conventional Commits (feature-branch skill).
+# Git runs it from here: `npm install` points core.hooksPath at .githooks.
+exec node scripts/check-commit-msg.mjs "$1"

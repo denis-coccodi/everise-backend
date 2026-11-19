@@ -60,6 +60,7 @@ Co-Authored-By: …
 - **Footers:** after another blank line: `Refs: #123` when there is an issue, then the attribution line from the current session's instructions.
 - One logical change per commit; a follow-up fix on the same branch is its own commit (`fix(events): …`), never a "wip" or "fix stuff".
 - For a multi-line message, write it with a heredoc (`git commit -F - <<'EOF'`), not several `-m`.
+- The `commit-msg` git hook (`.githooks/commit-msg`, set up by `npm install`) refuses a subject that doesn't start `<type>(<scope>): ` or `<type>: `. It can't judge the rest (the imperative, the length, the body): that's still yours.
 
 ## 3. Open a pull request to main
 

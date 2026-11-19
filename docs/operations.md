@@ -23,7 +23,7 @@ nav_order: 7
 
 Trunk-based: `main` is the only long-lived branch and must always be deployable. It rejects direct pushes, admins included.
 
-1. Branch from `main`: `feature/<name>`, `bugfix/<description>`, or `hotfix/<description>` when production is broken. Commit messages follow Conventional Commits (`fix(events): …`).
+1. Branch from `main`: `feature/<name>`, `bugfix/<description>`, or `hotfix/<description>` when production is broken. Commit messages follow Conventional Commits (`fix(events): …`): a commit-msg hook (`.githooks/commit-msg`, running `scripts/check-commit-msg.mjs`) refuses one that doesn't. `npm install` points git's `core.hooksPath` at `.githooks`.
 2. Push as often as you like; pushing deploys nothing.
 3. Open a pull request to `main`. The `test` check runs on it.
 4. Merge once `test` passes and the branch is up to date. The merge deploys staging.
