@@ -58,8 +58,10 @@ Co-Authored-By: …
   - A breaking API change (a removed or renamed field or endpoint) gets `!` before the colon (`feat(api)!: …`) and a `BREAKING CHANGE: …` footer.
 - **Body:** after a blank line, wrapped at 72 columns. Say what was wrong or missing and why this is the fix; the diff shows how. A small, obvious change needs no body.
 - **Footers:** after another blank line: `Refs: #123` when there is an issue, then the attribution line from the current session's instructions.
-- One logical change per commit; a follow-up fix on the same branch is its own commit (`fix(events): …`), never a "wip" or "fix stuff".
+- One logical change per commit; a follow-up fix on the same branch is its own commit (`fix(events): …`), never a "fix stuff".
+- To set unfinished work aside (instead of `git stash`, which every worktree shares), commit it as `wip(<scope>): <what it holds>`. Only on a branch: the squash merge replaces its commits with the PR's title on `main`.
 - For a multi-line message, write it with a heredoc (`git commit -F - <<'EOF'`), not several `-m`.
+- The `commit-msg` git hook (`.githooks/commit-msg`, set up by `npm install`) refuses a subject that doesn't start `<type>(<scope>): ` or `<type>: `. It can't judge the rest (the imperative, the length, the body): that's still yours.
 
 ## 3. Open a pull request to main
 
