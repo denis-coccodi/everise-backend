@@ -1,10 +1,15 @@
 import {effect} from './action-catalog';
-import {EffectEntry} from './catalog-model';
+import {EffectEntry, EffectTarget} from './catalog-model';
 
-// Shorthands for the effect tables.
-const heal = (id: number, potency: number, party = false): EffectEntry => ({
+// Shorthands for the effect tables. A plain heal names who it reaches:
+// 'target' (one chosen player, or the user) or 'party' (everyone around).
+const heal = (
+  id: number,
+  potency: number,
+  reach: Extract<EffectTarget, 'target' | 'party'>,
+): EffectEntry => ({
   id,
-  effects: [effect('heal', party ? 'party' : 'target', null, {potency})],
+  effects: [effect('heal', reach, null, {potency})],
 });
 
 // A heal that also leaves a barrier of `percent` of the HP it restored

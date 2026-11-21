@@ -6,10 +6,10 @@ import {EffectEntry} from './catalog-model';
 // (Dawntrail). Actions a trait replaces are kept for lower levels.
 const AST_SGE_EFFECTS: EffectEntry[] = [
   // Astrologian.
-  heal(3594, 500), // Benefic
-  heal(3610, 800), // Benefic II
-  heal(3600, 400, true), // Helios
-  heal(7445, 400, true), // Lady of Crowns
+  heal(3594, 500, 'target'), // Benefic
+  heal(3610, 800, 'target'), // Benefic II
+  heal(3600, 400, 'party'), // Helios
+  heal(7445, 400, 'party'), // Lady of Crowns
   {
     id: 3595, // Aspected Benefic
     effects: [
@@ -153,11 +153,11 @@ const AST_SGE_EFFECTS: EffectEntry[] = [
   },
 
   // Sage.
-  heal(24284, 450), // Diagnosis
-  heal(24286, 300, true), // Prognosis
-  heal(24296, 600), // Druochole
-  heal(24299, 400, true), // Ixochole
-  heal(24318, 600, true), // Pneuma
+  heal(24284, 450, 'target'), // Diagnosis
+  heal(24286, 300, 'party'), // Prognosis
+  heal(24296, 600, 'target'), // Druochole
+  heal(24299, 400, 'party'), // Ixochole
+  heal(24318, 600, 'party'), // Pneuma
   healAndShield(
     24291,
     'target',

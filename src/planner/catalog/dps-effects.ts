@@ -137,7 +137,7 @@ const DPS_EFFECTS: EffectEntry[] = [
       effect('mitigation', 'enemies', 'Dismantled', {percent: 10, s: 10}),
     ],
   },
-  heal(16015, 300, true), // Curing Waltz
+  heal(16015, 300, 'party'), // Curing Waltz
   {
     id: 16014, // Improvisation
     effects: [effect('regen', 'party', 'Improvisation', {potency: 100, s: 15})],
@@ -157,8 +157,8 @@ const DPS_EFFECTS: EffectEntry[] = [
   // Black Mage, Summoner, Red Mage, Pictomancer.
   selfShield(157, 'Manaward', 30, 20),
   selfShield(25799, 'Radiant Aegis', 20, 30),
-  heal(16230, 400), // Physick
-  heal(36997, 500, true), // Lux Solaris
+  heal(16230, 400, 'target'), // Physick
+  heal(36997, 500, 'party'), // Lux Solaris
   {
     id: 25857, // Magick Barrier
     effects: [
@@ -169,7 +169,7 @@ const DPS_EFFECTS: EffectEntry[] = [
       }),
     ],
   },
-  heal(7514, 350), // Vercure
+  heal(7514, 350, 'target'), // Vercure
   selfShield(34685, 'Tempera Coat', 20, 10),
   {
     id: 34686, // Tempera Grassa
@@ -181,7 +181,7 @@ const DPS_EFFECTS: EffectEntry[] = [
       }),
     ],
   },
-  heal(34681, 400, true), // Star Prism
+  heal(34681, 400, 'party'), // Star Prism
 ];
 
 export {DPS_EFFECTS};
