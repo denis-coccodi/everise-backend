@@ -6,14 +6,14 @@ import {EffectEntry} from './catalog-model';
 // (Dawntrail). Actions a trait replaces are kept for lower levels.
 const WHM_SCH_EFFECTS: EffectEntry[] = [
   // White Mage.
-  heal(120, 500), // Cure
-  heal(124, 400, true), // Medica
-  heal(131, 600, true), // Cure III
-  heal(135, 800), // Cure II
-  heal(3570, 700), // Tetragrammaton
-  heal(3571, 400, true), // Assize
-  heal(16531, 800), // Afflatus Solace
-  heal(16534, 400, true), // Afflatus Rapture
+  heal(120, 500, 'target'), // Cure
+  heal(124, 400, 'party'), // Medica
+  heal(131, 600, 'party'), // Cure III
+  heal(135, 800, 'target'), // Cure II
+  heal(3570, 700, 'target'), // Tetragrammaton
+  heal(3571, 400, 'party'), // Assize
+  heal(16531, 800, 'target'), // Afflatus Solace
+  heal(16534, 400, 'party'), // Afflatus Rapture
   {
     id: 133, // Medica II
     effects: [
@@ -102,10 +102,10 @@ const WHM_SCH_EFFECTS: EffectEntry[] = [
   },
 
   // Scholar.
-  heal(189, 600), // Lustrate
-  heal(190, 450), // Physick
-  heal(3583, 400, true), // Indomitability
-  heal(16543, 320, true), // Fey Blessing
+  heal(189, 600, 'target'), // Lustrate
+  heal(190, 450, 'target'), // Physick
+  heal(3583, 400, 'party'), // Indomitability
+  heal(16543, 320, 'party'), // Fey Blessing
   healAndShield(185, 'target', 300, 'Galvanize', 180, 'Catalyze'), // Adloquium
   healAndShield(186, 'party', 200, 'Galvanize', 160), // Succor
   healAndShield(37013, 'party', 200, 'Galvanize', 180), // Concitation
